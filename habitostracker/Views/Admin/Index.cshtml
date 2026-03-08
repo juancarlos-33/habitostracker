@@ -1,0 +1,214 @@
+﻿<h2 class="mb-4 fw-bold">⚙️ Panel de Administración</h2>
+
+<div class="row g-4">
+
+    <!-- USUARIOS -->
+
+    <div class="col-md-3">
+
+        <a asp-controller="Admin"
+           asp-action="Users"
+           class="text-decoration-none">
+
+            <div class="card shadow-sm border-0 rounded-4 p-4 text-center">
+
+                <div style="font-size:40px;">👥</div>
+
+                <h5 class="mt-3 fw-bold">
+                    Usuarios
+                </h5>
+
+                <p class="text-muted small">
+                    Gestionar usuarios registrados
+                </p>
+
+            </div>
+
+        </a>
+
+    </div>
+
+    <!-- HABITOS -->
+
+    <div class="col-md-3">
+
+        <a asp-controller="Admin"
+           asp-action="Habits"
+           class="text-decoration-none">
+
+            <div class="card shadow-sm border-0 rounded-4 p-4 text-center">
+
+                <div style="font-size:40px;">🔥</div>
+
+                <h5 class="mt-3 fw-bold">
+                    Hábitos
+                </h5>
+
+                <p class="text-muted small">
+                    Ver hábitos creados
+                </p>
+
+            </div>
+
+        </a>
+
+    </div>
+
+    <!-- MENSAJES -->
+
+    <div class="col-md-3">
+
+        <a asp-controller="Admin"
+           asp-action="Messages"
+           class="text-decoration-none">
+
+            <div class="card shadow-sm border-0 rounded-4 p-4 text-center">
+
+                <div style="font-size:40px;">💬</div>
+
+                <h5 class="mt-3 fw-bold">
+                    Mensajes
+                </h5>
+
+                <p class="text-muted small">
+                    Actividad del chat
+                </p>
+
+            </div>
+
+        </a>
+
+    </div>
+
+    <!-- ESTADISTICAS -->
+
+    <div class="col-md-3">
+
+        <a asp-controller="Admin"
+           asp-action="Statistics"
+           class="text-decoration-none">
+
+            <div class="card shadow-sm border-0 rounded-4 p-4 text-center">
+
+                <div style="font-size:40px;">📊</div>
+
+                <h5 class="mt-3 fw-bold">
+                    Estadísticas
+                </h5>
+
+                <p class="text-muted small">
+                    Información general
+                </p>
+
+            </div>
+
+        </a>
+
+    </div>
+
+    <!-- COMENTARIOS -->
+
+    <div class="col-md-3">
+
+        <a asp-controller="Admin"
+           asp-action="Feedbacks"
+           class="text-decoration-none">
+
+            <div class="card shadow-sm border-0 rounded-4 p-4 text-center">
+
+                <div style="font-size:40px;">📩</div>
+
+                <h5 class="mt-3 fw-bold">
+                    Comentarios
+                    <span class="badge bg-danger ms-1">
+                        @ViewBag.TotalFeedbacks
+                    </span>
+                </h5>
+
+                <p class="text-muted small">
+                    Opiniones de los usuarios
+                </p>
+
+            </div>
+
+        </a>
+
+    </div>
+
+    <div class="col-md-3">
+
+        <a asp-controller="Admin"
+           asp-action="AdminLogs"
+           class="text-decoration-none">
+
+            <div class="card shadow-sm border-0 rounded-4 p-4 text-center">
+
+                <div style="font-size:40px;">📜</div>
+
+                <h5 class="mt-3 fw-bold">
+                    Historial
+                </h5>
+
+                <p class="text-muted small">
+                    Acciones de administradorres
+                </p>
+
+            </div>
+
+        </a>
+
+    </div>
+
+</div>
+
+
+@section Scripts{
+<script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
+
+<script>
+
+    const connection = new signalR.HubConnectionBuilder()
+        .withUrl("/chatHub")
+        .build();
+
+    connection.start().catch(function (err) {
+        return console.error(err.toString());
+    });
+
+    // 🔔 cuando llegue un comentario nuevo
+       connection.on("NewFeedback", function () {
+
+        const badge = document.querySelector("#feedbackCounter");
+
+        if (badge) {
+            let current = parseInt(badge.innerText);
+            badge.innerText = current + 1;
+        }
+
+        // 🔔 mostrar notificación
+        const toast = document.createElement("div");
+
+        toast.innerHTML = "💬 Nuevo comentario recibido";
+
+        toast.style.position = "fixed";
+        toast.style.bottom = "20px";
+        toast.style.right = "20px";
+        toast.style.background = "#111827";
+        toast.style.color = "white";
+        toast.style.padding = "12px 18px";
+        toast.style.borderRadius = "10px";
+        toast.style.boxShadow = "0 10px 25px rgba(0,0,0,0.2)";
+        toast.style.zIndex = "9999";
+
+        document.body.appendChild(toast);
+
+        setTimeout(() => {
+            toast.remove();
+        }, 4000);
+
+    });
+
+</script>
+
+        }
+

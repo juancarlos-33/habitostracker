@@ -1,0 +1,388 @@
+﻿@model List<HabitTrackerApp.Models.Message>
+
+@{
+    ViewData["Title"] = "Chat";
+    var myId = int.Parse(User.FindFirst("UserId").Value);
+}
+
+<div class="container mt-4">
+
+    <h3 class="mb-4 d-flex align-items-center gap-2">
+
+        💬 @ViewBag.OtherUsername
+
+        @{
+            bool isOnline = false;
+
+            if (ViewBag.OtherLastOnline != null)
+            {
+                var seconds = (DateTime.Now - ((DateTime)ViewBag.OtherLastOnline)).TotalSeconds;
+                isOnline = seconds < 60;
+            }
+        }
+
+        @if (isOnline)
+        {
+            <span id="onlineStatus" style="font-size:13px;background:#16a34a;color:white;padding:3px 8px;border-radius:10px;">
+                🟢 En línea
+            </span>
+        }
+        else
+        {
+            <span id="onlineStatus" style="font-size:13px;background:#6b7280;color:white;padding:3px 8px;border-radius:10px;">
+                ⚫ Offline
+            </span>
+        }
+
+    </h3>
+
+    <div id="chatBox" class="chat-box">
+
+        @foreach (var msg in Model)
+        {
+            if (msg.SenderId == myId)
+            {
+                <div class="chat-row me">
+
+                    <div>
+
+                        <div class="chat-bubble me-bubble">
+                            @msg.Content
+                        </div>
+
+                        @if (msg.IsRead)
+                        {
+                            <div class="message-status seen">
+                                ✔✔ visto
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="message-status sent" data-message-id="@msg.Id">
+                                ✔ enviado
+                            </div>
+                        }
+
+                    </div>
+
+                    @if (!string.IsNullOrEmpty(msg.Sender?.ProfileImage))
+                    {
+                        <img src="@msg.Sender.ProfileImage" class="chat-avatar" />
+                    }
+                    else
+                    {
+                        <div class="chat-avatar avatar-letter">
+                            @(msg.Sender?.Username?.Substring(0, 1).ToUpper())
+                        </div>
+                    }
+
+                </div>
+            }
+            else
+            {
+                <div class="chat-row">
+
+                    @if (!string.IsNullOrEmpty(msg.Sender?.ProfileImage))
+                    {
+                        <img src="@msg.Sender.ProfileImage" class="chat-avatar" />
+                    }
+                    else
+                    {
+                        <div class="chat-avatar avatar-letter-gray">
+                            @(msg.Sender?.Username?.Substring(0, 1).ToUpper())
+                        </div>
+                    }
+
+                    <div class="chat-bubble other-bubble">
+                        @msg.Content
+                    </div>
+
+                </div>
+            }
+        }
+
+        <div id="typingIndicator" class="typing-indicator" style="display:none">
+            ✍️ escribiendo...
+        </div>
+
+    </div>
+
+    <form id="chatForm" asp-controller="Message" asp-action="Send" method="post" data-no-loader="true">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="receiverId" value="@ViewBag.OtherUserId" />
+
+        <div class="input-group">
+
+            <input type="text"
+                   id="messageInput"
+                   name="content"
+                   class="form-control"
+                   placeholder="Escribe un mensaje..."
+                   required />
+
+            <button class="btn btn-primary">
+                Enviar
+            </button>
+
+        </div>
+
+    </form>
+
+</div>
+
+<style>
+
+    .chat-box {
+        height: 450px;
+        overflow-y: auto;
+        background: #f1f3f5;
+        padding: 20px;
+        border-radius: 10px;
+    }
+
+    .chat-row {
+        display: flex;
+        align-items: flex-end;
+        margin-bottom: 12px;
+        gap: 10px;
+    }
+
+        .chat-row.me {
+            justify-content: flex-end;
+        }
+
+    .chat-bubble {
+        padding: 10px 14px;
+        border-radius: 18px;
+        max-width: 60%;
+        font-size: 14px;
+        word-break: break-word;
+    }
+
+    .me-bubble {
+        background: #2563eb;
+        color: white;
+    }
+
+    .other-bubble {
+        background: #dee2e6;
+    }
+
+    .chat-avatar {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        object-fit: cover;
+    }
+
+    .avatar-letter {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background: #2563eb;
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+    }
+
+    .avatar-letter-gray {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background: #6c757d;
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+    }
+
+    .typing-indicator {
+        font-size: 13px;
+        color: #6b7280;
+    }
+
+    .message-status {
+        font-size: 11px;
+        margin-top: 2px;
+    }
+
+    .sent {
+        color: #9ca3af;
+    }
+
+    .seen {
+        color: #16a34a;
+    }
+</style>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
+
+<script>
+
+       const chatBox = document.getElementById("chatBox");
+    chatBox.scrollTop = chatBox.scrollHeight;
+
+    const connection = new signalR.HubConnectionBuilder()
+        .withUrl("/chatHub")
+        .build();
+
+    connection.start().then(async function () {
+
+        const myId = "@User.FindFirst("UserId").Value";
+        const receiverId = "@ViewBag.OtherUserId";
+
+        // entrar al grupo del usuario
+        await connection.invoke("JoinUserGroup", myId);
+
+        fetch("/Message/MarkAsSeen?senderId=" + receiverId, { method: "POST" });
+
+
+        // marcar mensajes como vistos al abrir el chat
+        await fetch("/Message/MarkAsSeen?senderId=" + receiverId, {
+            method: "POST"
+        });
+
+    }).catch(function (err) {
+        console.error(err.toString());
+    });
+
+    connection.on("UserOnline", function (userId) {
+
+        const otherUser = "@ViewBag.OtherUserId";
+
+        if (userId == otherUser) {
+
+            const status = document.getElementById("onlineStatus");
+
+            status.innerHTML = "🟢 En línea";
+            status.style.background = "#16a34a";
+
+        }
+
+    });
+    connection.on("UserOffline", function (userId) {
+
+        const otherUser = "@ViewBag.OtherUserId";
+
+        if (userId == otherUser) {
+
+            const status = document.getElementById("onlineStatus");
+
+            status.innerHTML = "⚫ Offline";
+            status.style.background = "#6b7280";
+
+        }
+
+    });
+
+
+        connection.onclose(() => {
+        console.log("SignalR desconectado, reconectando...");
+        setTimeout(() => connection.start(), 2000);
+    });
+    connection.on("ReceiveMessage", function (senderId, receiverId, senderName, message) {
+
+        const indicator = document.getElementById("typingIndicator");
+        indicator.style.display = "none";
+
+        const div = document.createElement("div");
+        div.className = "chat-row";
+
+        const profileImage = "@ViewBag.OtherUserProfileImage";
+        const firstLetter = senderName.charAt(0).toUpperCase();
+
+        let avatarHTML = "";
+
+        if (profileImage && profileImage !== "") {
+            avatarHTML = `<img src="${profileImage}" class="chat-avatar" />`;
+        } else {
+            avatarHTML = `<div class="chat-avatar avatar-letter-gray">${firstLetter}</div>`;
+        }
+
+        div.innerHTML = `
+            ${avatarHTML}
+            <div class="chat-bubble other-bubble">
+                ${message}
+            </div>
+        `;
+
+        chatBox.appendChild(div);
+        chatBox.scrollTop = chatBox.scrollHeight;
+
+        fetch("/Message/MarkAsSeen?senderId=" + senderId, { method: "POST" });
+
+        // marcar como visto automáticamente
+        fetch("/Message/MarkAsSeen?senderId=" + senderId, {
+            method: "POST"
+        });
+
+        connection.invoke("MessagesViewed", senderId);
+
+    });
+
+    connection.on("MessageSeen", function (messageId) {
+
+        const status = document.querySelector(`[data-message-id='${messageId}']`);
+
+        if (status) {
+            status.innerHTML = "✔✔ visto";
+            status.classList.remove("sent");
+            status.classList.add("seen");
+        }
+
+    });
+
+    connection.on("ForceSeenUpdate", function () {
+
+        const messages = document.querySelectorAll(".message-status.sent");
+
+        messages.forEach(m => {
+            m.innerHTML = "✔✔ visto";
+            m.classList.remove("sent");
+            m.classList.add("seen");
+        });
+
+    });
+
+    let typingTimer;
+    const input = document.getElementById("messageInput");
+
+    input.addEventListener("keydown", function () {
+
+        const receiverId = "@ViewBag.OtherUserId";
+        const username = "@User.Identity.Name";
+
+        connection.invoke("UserTyping", receiverId, username);
+
+        clearTimeout(typingTimer);
+
+        typingTimer = setTimeout(function () {
+            connection.invoke("StopTyping", receiverId);
+        },1500);
+
+    });
+
+    connection.on("ShowTyping", function (username){
+
+        const indicator = document.getElementById("typingIndicator");
+
+        indicator.style.display = "block";
+        indicator.innerText = "✍️ " + username + " está escribiendo...";
+
+    });
+
+    connection.on("HideTyping", function (){
+
+        const indicator = document.getElementById("typingIndicator");
+        indicator.style.display = "none";
+
+    });
+
+    /* 🔥 ENVÍO SIN RECARGAR */
+
+  
+
+</script>

@@ -1,0 +1,96 @@
+﻿@model List<HabitTrackerApp.Models.HabitHistory>
+
+@{
+    ViewData["Title"] = "Historial Diario";
+}
+
+<div class="container mt-5">
+
+    <h2 class="fw-bold mb-4">📅 Historial Diario</h2>
+
+    <!-- FILTRO POR FECHA -->
+    <form method="get" class="mb-4">
+        <div class="row g-2 align-items-end">
+
+            <div class="col-auto">
+                <label class="form-label">Filtrar por fecha</label>
+                <input type="date"
+                       name="date"
+                       class="form-control"
+                       value="@(ViewBag.SelectedDate != null ? ((DateTime)ViewBag.SelectedDate).ToString("yyyy-MM-dd") : "")" />
+            </div>
+
+            <div class="col-auto">
+                <button type="submit" class="btn btn-primary">
+                    🔍 Filtrar
+                </button>
+            </div>
+
+            <div class="col-auto">
+                <a asp-action="History" class="btn btn-outline-secondary">
+                    Limpiar
+                </a>
+            </div>
+
+        </div>
+    </form>
+
+    @if (Model == null || Model.Count == 0)
+    {
+        <div class="card shadow border-0 rounded-4">
+            <div class="card-body text-center">
+                <p class="opacity-75 mb-0">
+                    No hay registros para la fecha seleccionada.
+                </p>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="card shadow border-0 rounded-4">
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-light text-uppercase small">
+                            <tr>
+                                <th>Fecha</th>
+                                <th>Hábito</th>
+                                <th>Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in Model)
+                            {
+                                <tr>
+                                    <td>
+                                        @item.Date.ToString("dd/MM/yyyy")
+                                    </td>
+
+                                    <td class="fw-semibold">
+                                        @item.HabitName
+                                    </td>
+
+                                    <td>
+                                        @if (item.Completed)
+                                        {
+                                            <span class="badge bg-success">
+                                                ✔ Completado
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-danger">
+                                                ✖ Fallado
+                                            </span>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    }
+
+</div>

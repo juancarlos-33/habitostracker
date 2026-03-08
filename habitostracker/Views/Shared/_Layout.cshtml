@@ -1,0 +1,598 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - HabitTracker Pro</title>
+
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+
+        body {
+            font-family: 'Inter',sans-serif;
+            transition: background 0.3s ease,color 0.3s ease;
+        }
+
+        .navbar-brand {
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+
+        body.bg-dark .card {
+            background-color: #1f1f2e !important;
+            color: white !important;
+        }
+
+        body.bg-dark .table {
+            color: white !important;
+        }
+
+            body.bg-dark .table thead {
+                background-color: #2a2a3d !important;
+            }
+
+        .user-avatar {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            background: linear-gradient(135deg,#2563eb,#7c3aed);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        .user-avatar-img {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
+        body.bg-dark .modal-content {
+            background-color: #1f1f2e;
+            color: white;
+        }
+
+        /* LOADER GLOBAL */
+
+        #globalLoader {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: white;
+            z-index: 99999;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+        }
+
+        .loader-circle {
+            width: 70px;
+            height: 70px;
+            border: 6px solid #e5e7eb;
+            border-top: 6px solid #2563eb;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @@keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .loader-text {
+            font-weight: 600;
+            margin-top: 15px;
+            letter-spacing: 1px;
+            color: #111827;
+        }
+
+        .loader-sub {
+            font-size: 14px;
+            color: #6b7280;
+        }
+    </style>
+
+</head>
+
+<body class="bg-light text-dark" id="appBody">
+    <div id="appNotification"
+         style="position:fixed;
+            top:20px;
+            right:20px;
+            background:#0d6efd;
+            color:white;
+            padding:12px 18px;
+            border-radius:8px;
+            display:none;
+            z-index:9999;
+            box-shadow:0 4px 10px rgba(0,0,0,0.2);">
+    </div>
+    <!-- LOADER GLOBAL -->
+
+    <div id="globalLoader">
+        <div class="loader-circle"></div>
+        <div class="loader-text">Pajeros 😎</div>
+        <div class="loader-sub" id="loadingText">Cargando</div>
+    </div>
+
+    <!-- NAVBAR -->
+
+    <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom px-4 shadow-sm">
+        <div class="container-fluid">
+
+            @{
+                var isLoginPage = Context.Request.Path.Value?.Contains("/Account/Login") ?? false;
+            }
+
+            <a class="navbar-brand" asp-controller="Habit" asp-action="Index">
+                🚀 HabitTracker
+                @if (isLoginPage)
+                {
+                    <span> | inicien sesión pajeros 😎</span>
+                }
+            </a>
+
+            <div class="d-flex align-items-center gap-3">
+
+                @if (User.Identity != null && User.Identity.IsAuthenticated)
+                {
+
+                    <a class="btn btn-sm btn-outline-primary rounded-pill px-3"
+                       asp-controller="Habit"
+                       asp-action="Index">
+                        🏠 Inicio
+                    </a>
+
+                    <a class="btn btn-sm btn-outline-success rounded-pill px-3"
+                       asp-controller="Habit"
+                       asp-action="History">
+                        📅 Historial 😈
+                    </a>
+
+                    <a class="btn btn-sm btn-outline-info rounded-pill px-3"
+                       asp-controller="Habit"
+                       asp-action="Calendar">
+                        📅 Calendario bro
+                    </a>
+                
+                    <li class="nav-item">
+                        <a class="nav-link" asp-controller="User" asp-action="Index">
+                            👥 Agregar amigos
+                        </a>
+                    </li>
+                
+                    <li class="nav-item">
+                        <a class="nav-link" asp-controller="User" asp-action="FriendRequests">
+                            📩 Solicitudes bro
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link position-relative" asp-controller="Message" asp-action="Inbox">
+                            📨 Mensajes
+
+                            @if (ViewBag.NewMessages != null && ViewBag.NewMessages > 0)
+                            {
+                                <span class="badge bg-danger position-absolute top-0 start-100 translate-middle">
+                                    @ViewBag.NewMessages
+                                </span>
+                            }
+
+                        </a>
+                    </li>
+
+                    <div class="dropdown">
+
+                        @{
+                            var userName = User.Identity.Name ?? "U";
+                            var firstLetter = userName.Substring(0, 1).ToUpper();
+                            var profileImage = User.FindFirst("ProfileImage")?.Value;
+                        }
+
+                        <button class="btn btn-light rounded-pill px-3 d-flex align-items-center gap-2 shadow-sm"
+                                type="button"
+                                data-bs-toggle="dropdown">
+
+                            @if (!string.IsNullOrWhiteSpace(profileImage))
+                            {
+                                <img src="@profileImage?v=@DateTime.Now.Ticks" class="user-avatar-img" />
+                            }
+                            else
+                            {
+                                <div class="user-avatar">
+                                    @firstLetter
+                                </div>
+                            }
+
+                            <span class="fw-semibold">@userName</span>
+
+                        </button>
+
+                        <ul class="dropdown-menu dropdown-menu-end shadow border-0 rounded-4">
+
+                            <li>
+                                <a class="dropdown-item"
+                                   asp-controller="Account"
+                                   asp-action="Profile">
+                                    👤 Mi Perfil
+                                </a>
+                            </li>
+
+                            <li>
+                                <a class="dropdown-item"
+                                   asp-controller="Habit"
+                                   asp-action="Achievements">
+                                    🏆 Logros
+                                </a>
+                            </li>
+                            @if (User.IsInRole("Admin") || User.IsInRole("SuperAdmin"))
+                            {
+                                <li>
+                                    <a class="dropdown-item text-primary fw-semibold"
+                                       asp-controller="Admin"
+                                       asp-action="Index">
+                                        👑 Panel Admin
+                                    </a>
+                                </li>
+                            }
+
+                            <li><hr class="dropdown-divider"></li>
+
+                            <li>
+
+                                <button class="dropdown-item text-danger fw-semibold"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#logoutModal">
+                                    🚪 Cerrar sesión
+                                </button>
+
+                            </li>
+
+                        </ul>
+
+                    </div>
+
+                }
+
+                <button onclick="toggleDarkMode()"
+                        data-no-loader
+                        class="btn btn-sm btn-outline-secondary rounded-pill px-3">
+                    🌙
+                </button>
+
+            </div>
+        </div>
+    </nav>
+
+    <!-- CONTENIDO -->
+
+    <div class="container mt-5" style="max-width:1200px;">
+        @RenderBody()
+    </div>
+
+    <!-- MODAL LOGOUT -->
+
+    <div class="modal fade" id="logoutModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content rounded-4 shadow-lg border-0">
+                <div class="modal-body text-center p-5">
+
+                    <div style="font-size:50px;">🚪</div>
+
+                    <h5 class="fw-bold mt-3">
+                        ¿Seguro que deseas cerrar sesión bro?
+                    </h5>
+
+                    <p class="text-muted small">
+                        Tendrás que volver a ingresar tus datos otra vez bro.
+                    </p>
+
+                    <div class="d-flex justify-content-center gap-3 mt-4">
+
+                        <button type="button"
+                                class="btn btn-secondary rounded-pill px-4"
+                                data-bs-dismiss="modal">
+                            Cancelar
+                        </button>
+
+                        <form asp-controller="Account"
+                              asp-action="Logout"
+                              method="post"
+                              class="d-inline">
+
+                            @Html.AntiForgeryToken()
+
+                            <button type="submit"
+                                    class="btn btn-danger rounded-pill px-4 shadow">
+                                Sí, salir
+                            </button>
+
+                        </form>
+
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SCRIPTS -->
+
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
+    <script>
+
+             const connectionGlobal = new signalR.HubConnectionBuilder()
+            .withUrl("/chatHub")
+            .build();
+
+        // escuchar evento del servidor
+                connectionGlobal.on("ForceLogout", function (message) {
+
+            alert(message);
+
+            window.location.href = "/Account/Login";
+
+        });
+
+        //aqui 2 xd
+
+                connectionGlobal.on("UserConnectedNotification", function (username) {
+
+            showAdminNotification(username);
+
+        });
+
+
+
+        // iniciar conexión
+        connectionGlobal.start()
+            .then(function () {
+                console.log("SignalR conectado");
+            })
+            .catch(function (err) {
+                console.error("Error SignalR:", err.toString());
+            });
+
+
+            //aqui xd
+
+                 function showAdminNotification(username)
+        {
+            const box = document.createElement("div");
+
+            box.innerHTML = `
+                <div style="
+                    background:#111827;
+                    color:white;
+                    padding:14px 18px;
+                    border-radius:12px;
+                    box-shadow:0 10px 25px rgba(0,0,0,0.3);
+                    font-size:14px;
+                    min-width:220px;
+                ">
+                    <strong>${username}</strong><br>
+                    <span style="color:#22c55e;">● En línea</span>
+                </div>
+            `;
+
+            box.style.position = "fixed";
+            box.style.top = "20px";
+            box.style.right = "20px";
+            box.style.zIndex = "9999";
+
+            document.body.appendChild(box);
+
+            setTimeout(()=>{
+                box.remove();
+            },4000);
+        }
+
+    </script>
+
+    <script>
+
+        const loader = document.getElementById("globalLoader");
+
+                /* ❌ NO activar loader en páginas de chat */
+
+        const isChatPage = window.location.pathname.toLowerCase().includes("/message/chat");
+
+        if (!isChatPage) {
+
+            /* LINKS */
+                  document.querySelectorAll("a").forEach(link=>{
+            link.addEventListener("click",function(e){
+
+                if(link.hasAttribute("data-no-loader")) return;
+
+                // si el link tiene confirm y el usuario cancela
+                if(link.getAttribute("onclick") && link.getAttribute("onclick").includes("confirm")){
+                    const confirmText = link.getAttribute("onclick").match(/confirm\('(.*)'\)/);
+
+                    if(confirmText){
+                        const confirmed = confirm(confirmText[1]);
+
+                        if(!confirmed){
+                            e.preventDefault();
+                            return;
+                        }
+                    }
+                }
+
+                loader.style.display="flex";
+
+            });
+        });
+
+            /* BOTONES */
+            document.querySelectorAll("button").forEach(btn=>{
+                btn.addEventListener("click",function(){
+
+                    const form = btn.closest("form");
+
+                    if(form && !form.checkValidity()){
+                        return;
+                    }
+
+                    if(
+                        !btn.hasAttribute("data-bs-toggle") &&
+                        !btn.hasAttribute("data-bs-dismiss") &&
+                        !btn.hasAttribute("data-no-loader")
+                    ){
+                        loader.style.display="flex";
+                    }
+
+                });
+            });
+
+        
+
+      
+
+            /* BOTONES */
+            document.querySelectorAll("button").forEach(btn=>{
+                btn.addEventListener("click",function(){
+                    if(
+                        !btn.hasAttribute("data-bs-toggle") &&
+                        !btn.hasAttribute("data-bs-dismiss") &&
+                        !btn.hasAttribute("data-no-loader")
+                    ){
+                        loader.style.display="flex";
+                    }
+                });
+            });
+
+            /* FORMULARIOS */
+            document.querySelectorAll("form").forEach(form=>{
+                form.addEventListener("submit",function(){
+                    if(!form.hasAttribute("data-no-loader")){
+                        loader.style.display="flex";
+                    }
+                });
+            });
+
+        }
+        /* ANIMACIÓN DE CARGANDO */
+
+        let dots=0;
+
+        setInterval(function(){
+
+        const text=document.getElementById("loadingText");
+
+        if(!text) return;
+
+        dots++;
+
+        if(dots>3){
+        dots=0;
+        }
+
+        text.innerText="Cargando"+".".repeat(dots);
+
+        },500);
+
+        /* DARK MODE */
+
+        const body=document.getElementById("appBody");
+        const navbar=document.querySelector(".navbar");
+
+        if(localStorage.getItem("darkMode")==="enabled"){
+        enableDarkMode();
+        }
+
+        function toggleDarkMode(){
+        if(body.classList.contains("bg-dark")){
+        disableDarkMode();
+        }else{
+        enableDarkMode();
+        }
+        }
+
+        function enableDarkMode(){
+        body.classList.remove("bg-light","text-dark");
+        body.classList.add("bg-dark","text-light");
+        navbar.classList.remove("navbar-light","bg-white");
+        navbar.classList.add("navbar-dark","bg-dark");
+        localStorage.setItem("darkMode","enabled");
+        }
+
+        function disableDarkMode(){
+        body.classList.remove("bg-dark","text-light");
+        body.classList.add("bg-light","text-dark");
+        navbar.classList.remove("navbar-dark","bg-dark");
+        navbar.classList.add("navbar-light","bg-white");
+        localStorage.setItem("darkMode","disabled");
+        }
+
+        window.addEventListener("pageshow",function(event){
+        if(event.persisted){
+        window.location.reload();
+        }
+        });
+
+    </script>
+
+    @RenderSection("Scripts", required: false)
+
+    <script>
+
+        if ("Notification" in window) {
+            Notification.requestPermission();
+        }
+
+    </script>
+
+    <script>
+
+        function showNotification(message) {
+
+            const box = document.getElementById("appNotification");
+
+            box.innerText = message;
+
+            box.style.display = "block";
+
+            setTimeout(() => {
+                box.style.display = "none";
+            }, 4000);
+
+        }
+
+    </script>
+
+    <script>
+
+        const connection = new signalR.HubConnectionBuilder()
+            .withUrl("/chatHub")
+            .build();
+
+        connection.start().catch(err => console.error(err.toString()));
+
+        connection.on("ReceiveMessage", function (user, message) {
+
+            showNotification("💬 " + user + ": " + message);
+
+        });
+
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,53 @@
+﻿@model HabitTrackerApp.Models.VerifyCodeViewModel
+
+@{
+    ViewData["Title"] = "Verificar Código";
+}
+
+<div class="container mt-5" style="max-width:400px;">
+    <div class="card shadow rounded-4 p-4 border-0">
+
+        <h3 class="text-center mb-4">🔐 Verificar Código</h3>
+
+        <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+        @if (TempData["GeneratedCode"] != null)
+        {
+            <div class="alert alert-warning text-center">
+                🔢 Código generado (modo prueba):
+                <strong>@TempData["GeneratedCode"]</strong>
+            </div>
+        }
+
+        <form asp-action="VerifyCode" method="post">
+            @Html.AntiForgeryToken()
+
+            <div class="mb-3">
+                <label class="form-label">Correo</label>
+                <input asp-for="Email" class="form-control" readonly />
+                <span asp-validation-for="Email" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Código recibido</label>
+                <input asp-for="Code" class="form-control" />
+                <span asp-validation-for="Code" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Nueva contraseña</label>
+                <input asp-for="NewPassword" type="password" class="form-control" />
+                <span asp-validation-for="NewPassword" class="text-danger"></span>
+            </div>
+
+            <button type="submit" class="btn btn-success w-100 rounded-pill">
+                Cambiar contraseña
+            </button>
+        </form>
+
+        <div class="text-center mt-3">
+            <a asp-action="Login">Volver al login</a>
+        </div>
+
+    </div>
+</div>

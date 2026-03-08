@@ -1,0 +1,299 @@
+﻿@model HabitTrackerApp.Models.User
+
+@{
+    ViewData["Title"] = "Mi Perfil";
+}
+
+<link rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.css" />
+
+<h3 class="mb-4 fw-bold">👤 Mi Perfil</h3>
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success">
+        @TempData["Success"]
+    </div>
+}
+
+@if (TempData["PendingEmail"] != null)
+{
+    <div class="alert alert-warning">
+        ⚠️ Debes confirmar tu nuevo correo:
+        <strong>@TempData["PendingEmail"]</strong>
+    </div>
+}
+
+<div class="text-center mb-4">
+
+   @if (!string.IsNullOrEmpty(Model.ProfileImage))
+{
+    <img id="previewImage"
+         src="@Model.ProfileImage?v=@DateTime.Now.Ticks"
+         class="rounded-circle shadow"
+         style="width:120px;height:120px;object-fit:cover;" />
+}
+else
+{
+    <div id="previewLetter"
+         class="rounded-circle shadow d-flex align-items-center justify-content-center"
+         style="width:120px;height:120px;
+                background:linear-gradient(135deg,#2563eb,#7c3aed);
+                color:white;
+                font-size:40px;
+                font-weight:bold;
+                margin:auto;">
+
+        @Model.Username.Substring(0,1).ToUpper()
+
+    </div>
+}
+    
+
+</div>
+
+<button type="button"
+        id="removePhotoBtn"
+        data-no-loader
+        class="btn btn-outline-danger rounded-pill px-4 ms-2">
+    🗑️ Eliminar foto
+</button>
+
+
+<!-- ================================================= -->
+<!-- FORMULARIO DEL PERFIL -->
+<!-- ================================================= -->
+
+<form asp-controller="Account"
+      asp-action="Profile"
+      method="post"
+      enctype="multipart/form-data"
+      data-no-loader>
+
+    @Html.AntiForgeryToken()
+
+    <input type="hidden" id="croppedImageInput" name="croppedImage" />
+
+    <div class="mb-3">
+
+        <label class="form-label">Foto de perfil</label>
+
+        <input type="file"
+               id="imageInput"
+               name="profilePhoto"
+               class="form-control"
+               accept="image/*" />
+
+    </div>
+
+    <!-- ======================= -->
+    <!-- RECORTE DE IMAGEN -->
+    <!-- ======================= -->
+
+    <div class="text-center">
+
+        <img id="cropImage"
+             style="max-width:300px; display:none; margin-top:20px;" />
+
+        <br>
+
+        <button type="button"
+                id="cropButton"
+                data-no-loader
+                class="btn btn-success mt-3"
+                style="display:none;">
+            Recortar imagen
+        </button>
+
+    </div>
+
+    <div class="mb-3 mt-4">
+
+        <label class="form-label">Usuario</label>
+
+        <input class="form-control"
+               value="@Model.Username"
+               disabled />
+
+    </div>
+
+    <div class="mb-3">
+
+        <label class="form-label">Nombre completo</label>
+
+        <input asp-for="FullName"
+               class="form-control" />
+
+    </div>
+
+    <div class="mb-3">
+
+        <label class="form-label">Correo electrónico</label>
+
+        <input asp-for="Email"
+               class="form-control" />
+
+    </div>
+
+    <div class="mb-3">
+
+        <label class="form-label">Miembro desde</label>
+
+        <input class="form-control"
+               value="@Model.CreatedAt.ToString("dd MMM yyyy")"
+               disabled />
+
+    </div>
+
+    <button type="submit"
+            class="btn btn-primary rounded-pill px-4">
+        💾 Guardar cambios
+    </button>
+
+    <!-- ============================== -->
+    <!-- NUEVO BOTÓN ELIMINAR FOTO -->
+    <!-- ============================== -->
+
+</form>
+
+
+<a href="/Account/ChangePassword"
+   class="btn btn-danger rounded-pill px-4 mt-3">
+    🔐 Cambiar contraseña
+</a>
+
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.js"></script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.js"></script>
+
+<script>
+
+    let cropper;
+
+    const input = document.getElementById("imageInput");
+    const image = document.getElementById("cropImage");
+    let preview = document.getElementById("previewImage");
+    const hiddenInput = document.getElementById("croppedImageInput");
+    const cropButton = document.getElementById("cropButton");
+
+    input.addEventListener("change", function(e){
+
+    const file = e.target.files[0];
+
+    if(!file) return;
+
+    const reader = new FileReader();
+
+    reader.onload = function(event){
+
+    image.src = event.target.result;
+
+    image.style.display = "block";
+    cropButton.style.display = "inline-block";
+
+    if(cropper){
+    cropper.destroy();
+    }
+
+    cropper = new Cropper(image,{
+    aspectRatio:1,
+    viewMode:1,
+    autoCropArea:1,
+    zoomable:true,
+    movable:true,
+    zoomOnWheel:true
+    });
+
+    };
+
+    reader.readAsDataURL(file);
+
+    });
+
+    cropButton.addEventListener("click", function(){
+
+    if(!cropper) return;
+
+    const canvas = cropper.getCroppedCanvas({
+    width:300,
+    height:300
+    });
+
+    const base64 = canvas.toDataURL("image/png");
+
+        if(!preview){
+
+        const letter = document.getElementById("previewLetter");
+        if(letter) letter.remove();
+
+        const img = document.createElement("img");
+
+        img.id="previewImage";
+        img.className="rounded-circle shadow";
+        img.style.width="120px";
+        img.style.height="120px";
+        img.style.objectFit="cover";
+
+        document.querySelector(".text-center.mb-4").appendChild(img);
+
+        preview = img;
+
+    }
+
+    preview.src = base64;
+
+    hiddenInput.value = base64;
+
+    const navbarAvatar = document.querySelector(".user-avatar-img");
+
+    if(navbarAvatar){
+    navbarAvatar.src = base64;
+    }
+
+    image.style.display = "none";
+    cropButton.style.display = "none";
+
+    cropper.destroy();
+    cropper = null;
+
+    });
+
+    /* ================================= */
+    /* ELIMINAR FOTO (MEJORADO) */
+    /* ================================= */
+
+    const removeBtn = document.getElementById("removePhotoBtn");
+
+    removeBtn.addEventListener("click", function(){
+
+        hiddenInput.value = "REMOVE";
+
+        preview.style.display="none";
+
+        const oldLetter=document.getElementById("previewLetter");
+
+        if(oldLetter) return;
+
+        const letter=document.createElement("div");
+
+        letter.id="previewLetter";
+
+        letter.className="rounded-circle shadow d-flex align-items-center justify-content-center";
+
+        letter.style.width="120px";
+        letter.style.height="120px";
+        letter.style.background="linear-gradient(135deg,#2563eb,#7c3aed)";
+        letter.style.color="white";
+        letter.style.fontSize="40px";
+        letter.style.fontWeight="bold";
+        letter.style.margin="auto";
+
+        letter.innerText="@Model.Username.Substring(0, 1).ToUpper()";
+
+        preview.parentElement.appendChild(letter);
+
+    });
+
+</script>

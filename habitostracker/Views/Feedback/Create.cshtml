@@ -1,0 +1,46 @@
+﻿@inject HabitTrackerApp.Data.HabitDbContext _context
+
+@{
+    ViewData["Title"] = "Enviar comentarios";
+
+    var userId = int.Parse(User.FindFirst("UserId").Value);
+
+    var alreadySent = _context.Feedbacks
+        .Any(f => f.UserId == userId && f.CreatedAt.Date == DateTime.Today);
+}
+
+<div class="container mt-5" style="max-width:600px;">
+
+    <h3 class="mb-4 text-center">
+        Tu opinión es muy importante para nosotros 🙂‍↔️
+    </h3>
+
+    @if (alreadySent)
+    {
+        <div class="alert alert-warning text-center">
+            Ya enviaste tu comentario de hoy 
+        </div>
+    }
+    else
+    {
+        <form method="post">
+
+            <div class="mb-3">
+                <textarea name="message"
+                      class="form-control"
+                      rows="5"
+                      placeholder="Escribe aquí lo que piensas de la app..."
+                      required>
+                </textarea>
+            </div>
+
+            <div class="text-center">
+                <button class="btn btn-primary">
+                    Enviar comentario
+                </button>
+            </div>
+
+        </form>
+    }
+
+</div>

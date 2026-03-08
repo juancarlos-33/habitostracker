@@ -1,0 +1,14 @@
+﻿@model HabitTrackerApp.Models.Habit
+
+<h2>Crear Nuevo Hábito</h2>
+
+<form asp-action="Create" method="post">
+    <div>
+        <label>Nombre:</label>
+        <input type="text" asp-for="Name" />
+    </div>
+
+    <br />
+
+    <button type="submit">Guardar</button>
+</form>

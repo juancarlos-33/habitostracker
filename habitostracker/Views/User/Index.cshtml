@@ -1,0 +1,127 @@
+﻿@model List<HabitTrackerApp.Models.User>
+
+@{
+    ViewData["Title"] = "Usuarios";
+    var myId = int.Parse(User.FindFirst("UserId").Value);
+}
+
+<div class="container mt-4">
+
+    <h2 class="mb-4">🔎 Descubrir amigos</h2>
+
+    <table class="table table-bordered text-center">
+
+        <thead class="table-light">
+
+            <tr>
+                <th>Foto</th>
+                <th>Usuario</th>
+                <th>Perfil</th>
+            </tr>
+
+        </thead>
+
+        <tbody>
+
+            @foreach (var user in Model)
+            {
+                <tr>
+
+                    <td>
+
+                        @if (user.ProfileImage != null)
+                        {
+                            <img src="@user.ProfileImage" width="50" height="50" style="border-radius:50%;" />
+                        }
+                        else
+                        {
+                            <span>👤</span>
+                        }
+
+                    </td>
+
+                    <td class="d-flex align-items-center gap-2">
+
+                        @if (!string.IsNullOrEmpty(user.ProfileImage))
+                        {
+                            <img src="@user.ProfileImage"
+                                 style="width:35px;height:35px;border-radius:50%;object-fit:cover;" />
+                        }
+                        else
+                        {
+                            <div style="
+                                            width:35px;
+                                            height:35px;
+                                            border-radius:50%;
+                                            background:#2563eb;
+                                            color:white;
+                                            display:flex;
+                                            align-items:center;
+                                            justify-content:center;
+                                            font-weight:bold;">
+                                @user.Username.Substring(0, 1).ToUpper()
+                            </div>
+                        }
+
+                        <span>
+                            @user.Username
+
+                            @if (user.Role == "Admin")
+                            {
+                                <span class="badge bg-warning text-dark ms-1">
+                                    Administrador
+                                </span>
+                            }
+
+                            @if (user.Role == "SuperAdmin")
+                            {
+                                <span class="badge bg-dark ms-1">
+                                    👑 Propietario
+                                </span>
+                            }
+                        </span>
+
+                    </td>
+
+                    <td>
+
+                        @if (user.Role == "SuperAdmin")
+                        {
+                            <div class="dropdown">
+
+                                <button class="btn btn-light btn-sm dropdown-toggle"
+                                        data-bs-toggle="dropdown">
+                                    ☰
+                                </button>
+
+                                <ul class="dropdown-menu">
+
+                                    <li>
+                                        <a class="dropdown-item"
+                                           href="/Feedback/Create">
+                                            Enviar comentarios
+                                        </a>
+                                    </li>
+
+                                </ul>
+
+                            </div>
+                        }
+                        else
+                        {
+                            <a href="/User/Profile/@user.Id"
+                               class="btn btn-sm btn-primary">
+                                Ver perfil
+                            </a>
+                        }
+
+                    </td>
+
+                </tr>
+            }
+
+        </tbody>
+
+    </table>
+
+</div>

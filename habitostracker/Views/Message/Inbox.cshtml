@@ -1,0 +1,86 @@
+﻿@model List<HabitTrackerApp.Models.Message>
+
+@{
+    ViewData["Title"] = "Mensajes";
+    var myId = int.Parse(User.FindFirst("UserId").Value);
+}
+
+<div class="container mt-4">
+
+    <h2 class="mb-4">📨 Conversaciones</h2>
+
+    <table class="table table-hover">
+
+        <tbody>
+
+            @if (!Model.Any())
+            {
+                <tr>
+                    <td class="text-center text-muted">
+                        No tienes mensajes todavía 📭
+                    </td>
+                </tr>
+            }
+            else
+            {
+                @foreach (var msg in Model)
+                {
+                    var otherUserId = msg.SenderId == myId ? msg.ReceiverId : msg.SenderId;
+                    var username = msg.Sender?.Username ?? ("Usuario " + otherUserId);
+                    var firstLetter = username?.Substring(0, 1).ToUpper();
+
+                    <tr style="cursor:pointer"
+                        onclick="window.location='/Message/Chat?userId=@otherUserId'">
+
+                        <td>
+
+                            <div class="d-flex align-items-center gap-3">
+
+                                <!-- FOTO O INICIAL -->
+                                <img src="/profiles/user_@(otherUserId).png"
+                                     onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+                                     style="width:45px;height:45px;border-radius:50%;object-fit:cover;" />
+
+                                <div style="
+                                            width:45px;
+                                            height:45px;
+                                            border-radius:50%;
+                                            background:#2563eb;
+                                            color:white;
+                                            display:none;
+                                            align-items:center;
+                                            justify-content:center;
+                                            font-weight:bold;
+                                            font-size:18px;">
+                                    @firstLetter
+                                </div>
+
+                                <div>
+
+                                    <div class="fw-bold">
+                                        @username
+                                    </div>
+
+                                    <div class="text-muted small">
+                                        @msg.Content
+                                    </div>
+
+                                </div>
+
+                            </div>
+
+                        </td>
+
+                        <td class="text-end text-muted small">
+                            @msg.SentAt.ToString("HH:mm")
+                        </td>
+
+                    </tr>
+                }
+            }
+
+        </tbody>
+
+    </table>
+
+</div>

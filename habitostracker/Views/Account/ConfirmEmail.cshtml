@@ -1,0 +1,97 @@
+﻿@model HabitTrackerApp.Models.ConfirmEmailViewModel
+
+@{
+    ViewData["Title"] = "Confirmar correo";
+}
+
+<div class="container mt-5" style="max-width:400px;">
+    <div class="card shadow rounded-4 border-0">
+        <div class="card-body p-4">
+
+            <h3 class="text-center mb-4 fw-bold">📧 Confirmar correo</h3>
+
+            @if (!ViewData.ModelState.IsValid)
+            {
+                <div class="alert alert-danger text-center">
+                    @Html.ValidationSummary()
+                </div>
+            }
+
+            <form asp-action="ConfirmEmail" method="post" onsubmit="return this.checkValidity();">
+                @Html.AntiForgeryToken()
+
+                <div class="mb-3">
+                    <label class="form-label">Correo</label>
+                    <input asp-for="Email"
+                           class="form-control rounded-pill"
+                           readonly />
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Código de confirmación</label>
+                    <input asp-for="Code"
+                           type="text"
+                           class="form-control rounded-pill"
+                           placeholder="Ingresa el código"
+                           required />
+                    <span asp-validation-for="Code" class="text-danger"></span>
+                </div>
+
+                <button type="submit"
+                        class="btn btn-success w-100 rounded-pill shadow-sm mt-2"
+                        onclick="if(!this.form.checkValidity()) return false;">
+                    Confirmar cuenta
+                </button>
+            </form>
+
+            <form asp-action="ResendConfirmation" method="post" class="mt-3">
+                @Html.AntiForgeryToken()
+
+                <input type="hidden" name="email" value="@Model.Email" />
+
+                <button id="resendBtn" type="submit" class="btn btn-outline-secondary w-100">
+                    🔁 Reenviar código
+                </button>
+
+                <!-- BOTÓN EDITAR CORREO (ARREGLADO PARA IR A EditEmail) -->
+                <a asp-controller="Account"
+                   asp-action="EditEmail"
+                   asp-route-email="@Model.Email"
+                   class="btn btn-outline-warning w-100 mt-2">
+                    ✏️ Editar correo
+                </a>
+
+            </form>
+
+        </div>
+    </div>
+</div>
+
+<script>
+    const resendBtn = document.getElementById("resendBtn");
+
+    let seconds = 30;
+
+    resendBtn.disabled = true;
+    resendBtn.innerText = "⏳ Reenviar en 30s";
+
+    const timer = setInterval(() => {
+
+        seconds--;
+
+        resendBtn.innerText = "⏳ Reenviar en " + seconds + "s";
+
+        if (seconds <= 0) {
+
+            clearInterval(timer);
+
+            resendBtn.disabled = false;
+            resendBtn.innerText = "🔁 Reenviar código";
+
+        }
+
+    }, 1000);
+</script>
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

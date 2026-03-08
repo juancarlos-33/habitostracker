@@ -1,0 +1,328 @@
+﻿@model List<HabitTrackerApp.Models.User>
+
+@{
+    var myId = int.Parse(User.FindFirst("UserId").Value);
+
+    var activeNow = Model.Count(u =>
+        u.IsActive &&
+        !u.IsBanned &&
+        u.LastOnline != null &&
+        (DateTime.Now - u.LastOnline.Value).TotalSeconds < 60
+    );
+}
+
+
+
+<h2 class="mb-4">👥Usuarios registrados </h2>
+
+<div class="row mb-4 text-center">
+
+    <div class="col-md-3">
+        <div class="card shadow-sm border-0 rounded-4 p-3">
+            <h6 class="text-muted">Usuarios</h6>
+            <h3>@Model.Count</h3>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card shadow-sm border-0 rounded-4 p-3">
+            <h6 class="text-muted">Baneados</h6>
+            <h3 class="text-danger">@Model.Count(u => u.IsBanned)</h3>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card shadow-sm border-0 rounded-4 p-3">
+            <h6 class="text-muted">Desactivados</h6>
+            <h3 class="text-warning">@Model.Count(u => !u.IsActive)</h3>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card shadow-sm border-0 rounded-4 p-3">
+            <h6 class="text-muted">Activos ahora</h6>
+            <h3 class="text-success" id="activeUsers">@activeNow</h3>
+        </div>
+    </div>
+
+</div>
+
+</div>
+
+<table class="table table-bordered table-hover">
+
+    <thead class="table-dark">
+        <tr>
+            <th>Foto</th>
+            <th>Usuario</th>
+            <th>Email</th>
+            <th>Estado</th>
+            <th>Acciones</th>
+        </tr>
+    </thead>
+
+    <tbody>
+
+        @foreach (var user in Model)
+        {
+            <tr>
+
+                <td>
+                    @if (!string.IsNullOrEmpty(user.ProfileImage))
+                    {
+                        <img src="@user.ProfileImage" width="40" height="40" style="border-radius:50%" />
+                    }
+                    else
+                    {
+                        <div style="width:40px;height:40px;border-radius:50%;background:#2563eb;color:white;
+                                            display:flex;align-items:center;justify-content:center;font-weight:bold;">
+                            @user.Username.Substring(0, 1).ToUpper()
+                        </div>
+                    }
+                </td>
+
+                <td>
+                    @user.Username
+
+                    @if (user.Role == "SuperAdmin")
+                    {
+                        <span class="badge bg-warning text-dark ms-1">
+                            👑 SUPER ADMIN
+                        </span>
+                    }
+                    else if (user.Role == "Admin")
+                    {
+                        <span class="badge bg-info text-dark ms-1">
+                            Admin
+                        </span>
+                    }
+                </td>
+
+                <td>@user.Email</td>
+
+                <td id="status-@user.Id">
+
+                    @if (user.IsBanned)
+                    {
+                        <span class="badge bg-danger">Baneado</span>
+                    }
+                    else if (!user.IsActive)
+                    {
+                        <span class="badge bg-warning text-dark">Desactivado</span>
+                    }
+                    else if (user.LastOnline != null && (DateTime.Now - user.LastOnline.Value).TotalSeconds < 60)
+                    {
+                        <span class="badge bg-success">Activo</span>
+                    }
+                    else
+                    {
+                        <span class="badge bg-secondary">Inactivo</span>
+                    }
+
+                   
+                    
+
+                </td>
+
+              <td>
+
+@if (user.Role == "SuperAdmin")
+{
+    <span class="badge bg-dark">Propietario</span>
+}
+else if (user.Id == myId)
+{
+    <span class="badge bg-secondary">Tu cuenta</span>
+}
+else
+{
+    if (!user.IsActive)
+    {
+        <a asp-controller="Admin"
+           asp-action="ReactivateUser"
+           asp-route-id="@user.Id"
+           class="btn btn-success btn-sm"
+           data-no-loader="true"
+           onclick="return confirm('¿Reactivar este usuario?')">
+            🔓 Reactivar
+        </a>
+    }
+    else if (user.IsBanned)
+    {
+        <a asp-controller="Admin"
+           asp-action="UnbanUser"
+           asp-route-id="@user.Id"
+           class="btn btn-success btn-sm"
+           data-no-loader="true"
+           onclick="return confirm('¿Desbanear este usuario?')">
+            🔓 Desbanear
+        </a>
+    }
+    else
+    {
+        <button type="button"
+                class="btn btn-danger btn-sm"
+                data-no-loader="true"
+                onclick="confirmDelete(@user.Id)">
+            🔒 Desactivar
+        </button>
+
+        <a asp-controller="Admin"
+           asp-action="BanUser"
+           asp-route-id="@user.Id"
+           class="btn btn-warning btn-sm"
+           data-no-loader="true"
+           onclick="return confirm('¿Seguro que quieres banear este usuario?');">
+            🚫 Banear
+        </a>
+
+        @if (User.IsInRole("SuperAdmin"))
+        {
+            if (user.Role == "Admin")
+            {
+                <a href="#"
+                   class="btn btn-secondary btn-sm"
+                   data-no-loader="true"
+                   onclick="event.preventDefault(); confirmRemoveAdmin(@user.Id);">
+                    Quitar Admin
+                </a>
+            }
+            else
+            {
+                <a asp-controller="Admin"
+                   asp-action="MakeAdmin"
+                   asp-route-id="@user.Id"
+                   class="btn btn-primary btn-sm"
+                   data-no-loader="true"
+                   onclick="return confirm('¿Seguro que quieres convertir a este usuario en administrador?');">
+                    Hacer Admin
+                </a>
+            }
+        }
+    }
+}
+
+</td>
+
+            </tr>
+        }
+
+    </tbody>
+
+</table>
+<script>
+
+    function confirmDelete(userId)
+    {
+        const confirmacion = confirm("¿Seguro que quieres desactivar este usuario?");
+
+        if (confirmacion)
+        {
+            window.location.href = "/Admin/DeleteUser/" + userId;
+        }
+    }
+
+    function confirmRemoveAdmin(userId)
+    {
+        const confirmacion = confirm("¿Seguro que quieres quitar los permisos de administrador a este usuario?");
+
+        if (confirmacion)
+        {
+            window.location.href = "/Admin/RemoveAdmin/" + userId;
+        }
+    }
+
+</script>
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
+
+<script>
+
+    const connection = new signalR.HubConnectionBuilder()
+        .withUrl("/chatHub")
+        .build();
+
+    connection.start().catch(function (err) {
+        return console.error(err.toString());
+    });
+
+    connection.on("UserOnline", function (userId) {
+
+        const statusCell = document.getElementById("status-" + userId);
+
+        if (statusCell)
+        {
+            statusCell.innerHTML = '<span class="badge bg-success">Activo</span>';
+        }
+
+    });
+
+    connection.on("UserOffline", function (userId) {
+
+        const statusCell = document.getElementById("status-" + userId);
+
+        if (statusCell)
+        {
+            statusCell.innerHTML = '<span class="badge bg-secondary">Inactivo</span>';
+        }
+
+    });
+
+</script>
+
+<script>
+
+    connection.on("UserOnline", function () {
+
+        const counter = document.getElementById("activeUsers");
+
+        if(counter)
+        {
+            let value = parseInt(counter.innerText);
+            counter.innerText = value + 1;
+        }
+
+    });
+
+    connection.on("UserOffline", function () {
+
+        const counter = document.getElementById("activeUsers");
+
+        if(counter)
+        {
+            let value = parseInt(counter.innerText);
+            counter.innerText = Math.max(0, value - 1);
+        }
+
+    });
+
+</script>
+
+<script>
+
+    let activeCount = 0;
+
+    const activeUsersElement = document.getElementById("activeUsers");
+
+    connection.on("UserOnline", function (userId) {
+
+        activeCount++;
+
+        if (activeUsersElement)
+            activeUsersElement.innerText = activeCount;
+
+    });
+
+    connection.on("UserOffline", function (userId) {
+
+        activeCount--;
+
+        if (activeCount < 0) activeCount = 0;
+
+        if (activeUsersElement)
+            activeUsersElement.innerText = activeCount;
+
+    });
+
+</script>

@@ -1,0 +1,92 @@
+﻿@model List<HabitTrackerApp.Models.FriendRequestViewModel>
+
+@{
+    ViewData["Title"] = "Solicitudes de amistad";
+}
+
+<div class="container mt-4">
+
+    <h2 class="mb-4">📩 Solicitudes de amistad</h2>
+
+    <table class="table table-bordered text-center">
+
+        <thead class="table-light">
+
+            <tr>
+                <th>Usuario</th>
+                <th>Acción</th>
+            </tr>
+
+        </thead>
+
+        <tbody>
+
+            @if (!Model.Any())
+            {
+                <tr>
+                    <td colspan="2" class="text-center text-muted">
+                        Todavía no tienes solicitudes de amistad bot 🙃
+                    </td>
+                </tr>
+            }
+            else
+            {
+                @foreach (var request in Model)
+                {
+                    <tr>
+
+                        <td class="d-flex align-items-center">
+
+                            <a asp-controller="User"
+                               asp-action="Profile"
+                               asp-route-id="@request.SenderId">
+
+                                <img src="@Url.Content(string.IsNullOrEmpty(request.ProfileImage)
+                                                                             ? "/profiles/default.png" 
+                                                                             : request.ProfileImage)"
+                             style="width:40px;height:40px;border-radius:50%;margin-right:10px;cursor:pointer;object-fit:cover;" />
+
+                            </a>
+
+                            <span>
+                                @request.SenderUsername quiere ser tu amigo
+                            </span>
+
+                        </td>
+
+                        <td>
+
+                            <form asp-controller="User"
+                                  asp-action="AcceptFriendRequest"
+                                  method="post"
+                                  style="display:inline;">
+
+                                <input type="hidden" name="requestId" value="@request.Id" />
+
+                                <button type="submit" class="btn btn-success btn-sm">
+                                    Aceptar
+                                </button>
+
+                            </form>
+                            <form asp-controller="User"
+                                  asp-action="RejectFriendRequest"
+                                  method="post"
+                                  style="display:inline;">
+
+                                <input type="hidden" name="requestId" value="@request.Id" />
+
+                                <button type="submit" class="btn btn-danger btn-sm">
+                                    Rechazar
+                                </button>
+
+                            </form>
+                        </td>
+
+                    </tr>
+                        }
+            }
+
+        </tbody>
+    </table>
+
+</div>

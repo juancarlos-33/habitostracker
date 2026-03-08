@@ -1,0 +1,32 @@
+﻿@model HabitTrackerApp.Models.EditEmailViewModel
+@{
+    ViewData["Title"] = "Editar correo";
+}
+
+<div class="container mt-5" style="max-width:400px;">
+    <div class="card shadow rounded-4 p-4 border-0">
+
+        <h3 class="text-center mb-4">✏️ Editar correo</h3>
+        @if (!ViewData.ModelState.IsValid)
+        {
+            <div class="alert alert-danger text-center">
+                @Html.ValidationSummary()
+            </div>
+        }
+
+        <form asp-action="EditEmail" method="post">
+            @Html.AntiForgeryToken()
+
+            <div class="mb-3">
+                <label class="form-label">Nuevo correo</label>
+                <input asp-for="Email" class="form-control" />
+            </div>
+
+            <button type="submit" class="btn btn-primary w-100">
+                Guardar nuevo correo
+            </button>
+
+        </form>
+
+    </div>
+</div>

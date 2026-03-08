@@ -1,0 +1,54 @@
+﻿@model List<HabitTrackerApp.Models.Feedback>
+
+<h2 class="mb-4 fw-bold">📩 Comentarios de usuarios</h2>
+
+<div class="row">
+
+    @foreach (var feedback in Model)
+    {
+        <div class="col-md-6 mb-4">
+
+            <div class="card shadow-sm border-0 rounded-4 p-3">
+
+                <div class="d-flex align-items-center mb-2">
+
+                    <!-- Avatar -->
+                    @if (!string.IsNullOrEmpty(feedback.User?.ProfileImage))
+                    {
+                        <img src="@feedback.User.ProfileImage"
+                             width="40"
+                             height="40"
+                             style="border-radius:50%;object-fit:cover;" />
+                    }
+                    else
+                    {
+                        <div style="width:40px;height:40px;border-radius:50%;background:#2563eb;color:white;
+                                display:flex;align-items:center;justify-content:center;font-weight:bold;">
+                            @feedback.User?.Username.Substring(0, 1).ToUpper()
+                        </div>
+                    }
+
+                    <div class="ms-3">
+
+                        <div class="fw-bold">
+                            @feedback.User?.Username
+                        </div>
+
+                        <small class="text-muted">
+                            @feedback.CreatedAt.ToString("dd MMM yyyy - HH:mm")
+                        </small>
+
+                    </div>
+
+                </div>
+
+                <div class="mt-2">
+                    💬 @feedback.Message
+                </div>
+
+            </div>
+
+        </div>
+    }
+
+</div>

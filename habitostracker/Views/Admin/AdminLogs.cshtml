@@ -1,0 +1,30 @@
+﻿@model List<HabitTrackerApp.Models.AdminLog>
+
+<h2 class="mb-4">📜 Historial de acciones de administración</h2>
+
+<table class="table table-bordered table-hover">
+
+    <thead class="table-dark">
+        <tr>
+            <th>Administrador</th>
+            <th>Acción</th>
+            <th>Usuario afectado</th>
+            <th>Fecha</th>
+        </tr>
+    </thead>
+
+    <tbody>
+
+        @foreach (var log in Model)
+        {
+            <tr>
+                <td>@log.AdminName</td>
+                <td>@log.Action</td>
+                <td>@log.TargetUsername</td>
+                <td>@log.CreatedAt.ToString("dd/MM/yyyy HH:mm")</td>
+            </tr>
+        }
+
+    </tbody>
+
+</table>

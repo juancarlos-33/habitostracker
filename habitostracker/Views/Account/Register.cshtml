@@ -1,0 +1,63 @@
+﻿@model HabitTrackerApp.Models.RegisterViewModel
+
+@{
+    ViewData["Title"] = "Registro";
+}
+
+<div class="container mt-5" style="max-width:400px;">
+    <div class="card shadow rounded-4 p-4 border-0">
+
+        <h3 class="text-center mb-4">📝 Crear Cuenta</h3>
+
+        <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+        <form asp-action="Register" method="post">
+            @Html.AntiForgeryToken()
+
+            <div class="mb-3">
+                <label class="form-label">Usuario</label>
+                <input asp-for="Username" class="form-control" />
+                <span asp-validation-for="Username" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Correo</label>
+                <input asp-for="Email" class="form-control" />
+                <span asp-validation-for="Email" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Contraseña</label>
+                <input asp-for="Password" type="password" class="form-control" />
+                <span asp-validation-for="Password" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Género</label>
+                <select asp-for="Gender" class="form-select">
+                    <option value="">Seleccionar</option>
+                    <option value="Masculino">Masculino</option>
+                    <option value="Femenino">Femenino</option>
+                    <option value="Therian">Therian</option>
+                </select>
+                <span asp-validation-for="Gender" class="text-danger"></span>
+            </div>
+
+            <button type="submit" class="btn btn-primary w-100 rounded-pill">
+                Registrarme
+            </button>
+
+        </form>
+
+        <div class="text-center mt-3">
+            <a asp-action="Login">
+                ¿Ya tienes cuenta? Inicia sesión
+            </a>
+        </div>
+
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

@@ -1,0 +1,32 @@
+﻿@model List<HabitTrackerApp.Models.Habit>
+
+<h2 class="mb-4 fw-bold">🔥 Hábitos registrados</h2>
+
+<table class="table table-bordered table-hover">
+
+    <thead class="table-dark">
+        <tr>
+            <th>Usuario</th>
+            <th>Hábito</th>
+            <th>Racha</th>
+        </tr>
+    </thead>
+
+    <tbody>
+
+        @foreach (var habit in Model)
+        {
+            <tr>
+
+                <td>@habit.User.Username</td>
+
+                <td>@habit.Name</td>
+
+                <td>@habit.StreakDays días</td>
+
+            </tr>
+        }
+
+    </tbody>
+
+</table>

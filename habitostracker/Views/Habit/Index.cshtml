@@ -1,0 +1,248 @@
+﻿@model List<HabitTrackerApp.Models.Habit>
+@inject HabitTrackerApp.Data.HabitDbContext _context
+
+@{
+    var username = User.Identity?.Name ?? "";
+
+    var user = _context.Users.FirstOrDefault(u => u.Username == username);
+
+    string welcomeMessage = "";
+    string welcomeClass = "welcome-neutral";
+
+    if (user != null)
+    {
+        if (user.Gender?.ToLower() == "masculino")
+        {
+            welcomeMessage = $"Bienvenido {user.Username}";
+            welcomeClass = "welcome-male";
+        }
+        else if (user.Gender?.ToLower() == "femenino")
+        {
+            welcomeMessage = $"Bienvenida {user.Username}";
+            welcomeClass = "welcome-female";
+        }
+        else
+        {
+            welcomeMessage = $"Bienvenido {user.Username}";
+            welcomeClass = "welcome-neutral";
+        }
+    }
+
+    ViewData["Title"] = "HabitTracker Pro";
+
+    var totalHabits = Model.Count;
+    var totalStreak = Model.Sum(h => h.StreakDays);
+    var bestRecord = Model.Count > 0 ? Model.Max(h => h.MaxStreak) : 0;
+
+    var completedToday = Model.Count(h => h.LastCheckDate == DateTime.Today && h.Completed);
+    var completionRate = totalHabits > 0 ? (int)((double)completedToday / totalHabits * 100) : 0;
+
+    var last7Days = Enumerable.Range(0, 7)
+        .Select(i => DateTime.Today.AddDays(-i))
+        .Reverse()
+        .ToList();
+
+    var dailyCompletion = last7Days
+        .Select(date => Model.Count(h => h.LastCheckDate == date && h.Completed))
+        .ToList();
+}
+
+<div class="welcome-card @welcomeClass mb-4">
+    <div class="welcome-content">
+        <div class="welcome-avatar">
+            @(username.Length > 0 ? username.Substring(0, 1).ToUpper() : "?")
+        </div>
+        <div>
+            <h5 class="mb-1 fw-bold">@welcomeMessage</h5>
+            <small>Disciplina diaria. Resultados extraordinarios.</small>
+        </div>
+    </div>
+</div>
+
+<div class="container mt-5" style="max-width:1200px;">
+
+    <div class="text-center mb-4">
+        <h1 class="fw-bold display-5">🚀 HabitTracker Pro</h1>
+        <p class="opacity-75">Disciplina diaria. Resultados extraordinarios.</p>
+    </div>
+
+    <!-- KPIs -->
+    <div class="row text-center mb-4">
+
+        <div class="col-md-3 mb-3">
+            <div class="card border-0 shadow-sm rounded-4 p-4">
+                <h6 class="text-muted">Hábitos</h6>
+                <h3 class="fw-bold">@totalHabits</h3>
+            </div>
+        </div>
+
+        <div class="col-md-3 mb-3">
+            <div class="card border-0 shadow-sm rounded-4 p-4">
+                <h6 class="text-muted">Racha Total</h6>
+                <h3 class="fw-bold text-success">@totalStreak</h3>
+            </div>
+        </div>
+
+        <div class="col-md-3 mb-3">
+            <div class="card border-0 shadow-sm rounded-4 p-4">
+                <h6 class="text-muted">Hoy</h6>
+                <h3 class="fw-bold text-primary">@completionRate%</h3>
+            </div>
+        </div>
+
+        <div class="col-md-3 mb-3">
+            <div class="card border-0 shadow-sm rounded-4 p-4">
+                <h6 class="text-muted">Mejor Récord</h6>
+                <h3 class="fw-bold text-warning">@bestRecord</h3>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="text-center mb-4">
+        <a asp-action="Create" class="btn btn-primary rounded-pill px-4 shadow-sm">
+            ➕ Crear Nuevo Hábito
+        </a>
+    </div>
+
+    <!-- TABLA SIEMPRE VISIBLE -->
+    <div class="card shadow rounded-4 p-4 mb-4 border-0">
+
+        @if (Model.Count == 0)
+        {
+            <div class="text-center text-muted mb-3">
+                Aún no tienes hábitos creados.
+            </div>
+        }
+
+        <table class="table align-middle table-hover">
+            <thead class="text-uppercase small text-muted">
+                <tr>
+                    <th>Hábito</th>
+                    <th>Estado</th>
+                    <th>Racha</th>
+                    <th>Récord</th>
+                    <th>Creado</th>
+                    <th class="text-center">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var habit in Model)
+                {
+                    <tr>
+                        <td class="fw-semibold">@habit.Name</td>
+
+                        <td>
+                            @if (habit.LastCheckDate == DateTime.Today && habit.Completed)
+                            {
+                                <span class="badge bg-success">✔ Hoy</span>
+                            }
+                            else if (habit.LastCheckDate == DateTime.Today && !habit.Completed)
+                            {
+                                <span class="badge bg-danger">✖ Hoy</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-secondary">Pendiente</span>
+                            }
+                        </td>
+
+                        <td class="fw-bold text-primary">@habit.StreakDays</td>
+                        <td class="fw-bold text-warning">@habit.MaxStreak</td>
+
+                        <td>
+                            <small class="text-muted">
+                                @habit.CreatedDate.ToString("dd MMM yyyy")
+                            </small>
+                        </td>
+
+                        <td class="text-center">
+                            <a href="/Habit/Complete/@habit.Id" class="btn btn-sm btn-outline-success rounded-pill me-1">✔</a>
+                            <a href="/Habit/Fail/@habit.Id" class="btn btn-sm btn-outline-danger rounded-pill me-1">✖</a>
+                            <a asp-action="Edit" asp-route-id="@habit.Id" class="btn btn-sm btn-outline-warning rounded-pill me-1">✏</a>
+                            <a asp-action="Delete" asp-route-id="@habit.Id"
+                               class="btn btn-sm btn-outline-secondary rounded-pill"
+                               data-no-loader="true"
+                               onclick="if(!confirm('¿Eliminar hábito?')) return false;">
+                                🗑
+                            </a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <!-- GRÁFICO SIEMPRE VISIBLE -->
+    <div class="card shadow rounded-4 p-4 border-0">
+        <h5 class="fw-bold mb-3">📈 Progreso últimos 7 días</h5>
+        <canvas id="habitChart"></canvas>
+    </div>
+
+</div>
+
+@section Scripts {
+    <script>
+        const labels=@Html.Raw(System.Text.Json.JsonSerializer.Serialize(last7Days.Select(d => d.ToString("dd/MM"))));
+        const data=@Html.Raw(System.Text.Json.JsonSerializer.Serialize(dailyCompletion));
+
+        new Chart(document.getElementById('habitChart'),{
+            type:'line',
+            data:{
+                labels:labels,
+                datasets:[{
+                    data:data,
+                    borderWidth:3,
+                    tension:0.4,
+                    fill:true,
+                    backgroundColor:'rgba(99,102,241,0.1)',
+                    borderColor:'#6366f1'
+                }]
+            },
+            options:{
+                responsive:true,
+                plugins:{legend:{display:false}},
+                scales:{y:{beginAtZero:true,ticks:{precision:0}}}
+            }
+        });
+    </script>
+}
+
+<style>
+    .welcome-card {
+        color: white;
+        padding: 22px 26px;
+        border-radius: 22px;
+        box-shadow: 0 20px 45px rgba(0,0,0,0.18);
+    }
+
+    .welcome-male {
+        background: linear-gradient(135deg, #2563eb, #1e3a8a);
+    }
+
+    .welcome-female {
+        background: linear-gradient(135deg, #ec4899, #9d174d);
+    }
+
+    .welcome-neutral {
+        background: linear-gradient(135deg, #6366f1, #7c3aed);
+    }
+
+    .welcome-content {
+        display: flex;
+        align-items: center;
+        gap: 18px;
+    }
+
+    .welcome-avatar {
+        width: 55px;
+        height: 55px;
+        border-radius: 50%;
+        background: rgba(255,255,255,0.25);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 22px;
+        font-weight: bold;
+    }
+</style>

@@ -1,0 +1,113 @@
+﻿@model HabitTrackerApp.Models.LoginViewModel
+
+@{
+    ViewData["Title"] = "Iniciar Sesión";
+}
+
+<div class="container mt-5" style="max-width:400px;">
+    <div class="card shadow rounded-4 border-0">
+        <div class="card-body p-4">
+
+            <h3 class="text-center mb-4 fw-bold">
+                🔐 Iniciar sesión
+            </h3>
+
+            @if (TempData["Success"] != null)
+            {
+                <div class="alert alert-success text-center">
+                    @TempData["Success"]
+                </div>
+            }
+
+            @if (!ViewData.ModelState.IsValid)
+            {
+                <div class="alert alert-danger text-center">
+                    @Html.ValidationSummary()
+                </div>
+            }
+
+            @* ========================================= *@
+            @* NUEVO: CONTADOR VISUAL DE INTENTOS LOGIN *@
+            @* ========================================= *@
+
+            @{
+                var errorText = ViewData.ModelState.Values
+                .SelectMany(v => v.Errors)
+                .Select(e => e.ErrorMessage)
+                .FirstOrDefault();
+
+                if (errorText != null && errorText.Contains("Intento"))
+                {
+                    <div class="text-center mb-2 fw-semibold text-danger">
+                        @errorText
+                    </div>
+                }
+            }
+
+            @if (TempData["UnconfirmedEmail"] != null)
+            {
+                <div class="text-center mt-2">
+                    <form asp-controller="Account" asp-action="ResendConfirmation" method="post">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="email" value="@TempData["UnconfirmedEmail"]" />
+
+                        <button type="submit" class="btn btn-sm btn-outline-primary">
+                            Reenviar código de confirmación
+                        </button>
+                    </form>
+                </div>
+            }
+
+            <form asp-action="Login" method="post">
+
+                @Html.AntiForgeryToken()
+
+                <div class="mb-3">
+                    <label class="form-label">Ingresar usuario bro</label>
+
+                    <input asp-for="Username"
+                           class="form-control rounded-pill" />
+
+                    <span asp-validation-for="Username" class="text-danger"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">La contraseña bro</label>
+
+                    <input asp-for="Password"
+                           type="password"
+                           class="form-control rounded-pill" />
+
+                    <span asp-validation-for="Password" class="text-danger"></span>
+                </div>
+
+                <div class="mb-3" style="margin-left:10px;">
+                    <a asp-controller="Account"
+                       asp-action="ForgotPassword"
+                       class="text-decoration-none small text-danger">
+                        ¿Olvidaste tu contraseña?
+                    </a>
+                </div>
+
+                <button type="submit"
+                        class="btn btn-primary w-100 rounded-pill shadow-sm mt-2">
+                    Entrar 👀
+                </button>
+
+                <div class="text-center mt-3">
+
+                    <span class="text-muted">¿No tienes cuenta?</span>
+
+                    <a asp-controller="Account"
+                       asp-action="Register"
+                       class="fw-semibold text-decoration-none ms-1">
+                        Crear cuenta
+                    </a>
+
+                </div>
+
+            </form>
+
+        </div>
+    </div>
+</div>

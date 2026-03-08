@@ -1,0 +1,71 @@
+﻿@model List<HabitTrackerApp.Models.FriendRequest>
+
+@{
+    ViewData["Title"] = "Mis amigos";
+    var myId = int.Parse(User.FindFirst("UserId").Value);
+}
+
+<div class="container mt-4">
+
+    <h2 class="mb-4">👥 Mis amigos</h2>
+
+    <table class="table table-bordered text-center align-middle">
+
+        <thead class="table-light">
+
+            <tr>
+                <th>Foto</th>
+                <th>Usuario</th>
+                <th>Perfil</th>
+            </tr>
+
+        </thead>
+
+        <tbody>
+
+            @foreach (var friend in Model)
+            {
+                var friendUser = friend.SenderId == myId ? friend.ReceiverId : friend.SenderId;
+
+                <tr>
+
+                    <td>
+                        👤
+                    </td>
+
+                    <td>
+                        Usuario @friendUser
+                    </td>
+
+                    <td>
+                        <div class="dropdown">
+
+                            <button class="btn btn-sm btn-light border"
+                                    type="button"
+                                    data-bs-toggle="dropdown">
+                                ⋮
+                            </button>
+
+                            <ul class="dropdown-menu">
+
+                                <li>
+                                    <a class="dropdown-item"
+                                       href="/Feedback/Create">
+                                        Enviar comentario
+                                    </a>
+                                </li>
+
+                            </ul>
+
+                        </div>
+
+                    </td>
+
+                </tr>
+            }
+
+        </tbody>
+
+    </table>
+
+</div>

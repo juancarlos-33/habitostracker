@@ -1,0 +1,193 @@
+﻿@model List<HabitTrackerApp.Models.HabitHistory>
+
+@{
+    ViewData["Title"] = "Calendario";
+
+    int year = DateTime.Today.Year;
+    int month = DateTime.Today.Month;
+
+    if (Context.Request.Query["month"].Count > 0)
+    {
+        var selected = DateTime.Parse(Context.Request.Query["month"]);
+        year = selected.Year;
+        month = selected.Month;
+    }
+
+    var firstDay = new DateTime(year, month, 1);
+    var daysInMonth = DateTime.DaysInMonth(year, month);
+
+    var prevMonth = firstDay.AddMonths(-1).ToString("yyyy-MM-dd");
+    var nextMonth = firstDay.AddMonths(1).ToString("yyyy-MM-dd");
+
+    var startDayOfWeek = (int)firstDay.DayOfWeek;
+}
+
+<div class="container mt-5" style="max-width:1000px;">
+
+    <!-- HEADER -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+
+        <a class="btn btn-outline-secondary rounded-pill"
+           asp-action="Calendar"
+           asp-route-month="@prevMonth">⬅</a>
+
+        <h3 class="fw-bold text-capitalize mb-0">
+            @firstDay.ToString("MMMM yyyy")
+        </h3>
+
+        <a class="btn btn-outline-secondary rounded-pill"
+           asp-action="Calendar"
+           asp-route-month="@nextMonth">➡</a>
+    </div>
+
+    <!-- STATS -->
+    <div class="row mb-4 text-center">
+
+        <div class="col-md-3">
+            <div class="card shadow-sm rounded-4 p-3 border-0">
+                <h6>Consistencia</h6>
+                <h4 class="text-primary">@ViewBag.Consistency%</h4>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card shadow-sm rounded-4 p-3 border-0">
+                <h6>Semana ✔</h6>
+                <h4 class="text-success">@ViewBag.WeeklyCompleted</h4>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card shadow-sm rounded-4 p-3 border-0">
+                <h6>Semana ✖</h6>
+                <h4 class="text-danger">@ViewBag.WeeklyFailed</h4>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card shadow-sm rounded-4 p-3 border-0">
+                <h6>Meta mensual</h6>
+                @{
+                    int goal = ViewBag.MonthlyGoal ?? 0;
+                    int done = ViewBag.MonthlyCompleted ?? 0;
+                    int progress = goal > 0 ? (int)((double)done / goal * 100) : 0;
+                }
+                <div class="progress mt-2" style="height:8px;">
+                    <div class="progress-bar bg-warning"
+                         style="width:@progress%"></div>
+                </div>
+                <small>@done / @goal</small>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- MEJOR DÍA -->
+    @if (ViewBag.BestDay != null)
+    {
+        <div class="alert alert-success rounded-4 text-center shadow-sm mb-4">
+            🏆 Mejor día:
+            <strong>@(((DateTime)ViewBag.BestDay.Date).ToString("dd MMM"))</strong>
+            con <strong>@ViewBag.BestDay.Count</strong> hábitos completados
+        </div>
+    }
+
+    <!-- CALENDARIO -->
+    <div class="calendar-grid">
+
+        <div class="day-header">Dom</div>
+        <div class="day-header">Lun</div>
+        <div class="day-header">Mar</div>
+        <div class="day-header">Mié</div>
+        <div class="day-header">Jue</div>
+        <div class="day-header">Vie</div>
+        <div class="day-header">Sáb</div>
+
+        @for (int i = 0; i < startDayOfWeek; i++)
+        {
+            <div></div>
+        }
+
+        @for (int day = 1; day <= daysInMonth; day++)
+        {
+            var date = new DateTime(year, month, day);
+            var completedCount = Model.Count(h => h.Date.Date == date.Date && h.Completed);
+
+            string levelClass = "level-0";
+            if (completedCount == 1) levelClass = "level-1";
+            else if (completedCount == 2) levelClass = "level-2";
+            else if (completedCount >= 3) levelClass = "level-3";
+
+            <div class="calendar-cell @levelClass"
+                 title="@date.ToString("dd/MM/yyyy") - @completedCount completados">
+
+                <span>@day</span>
+
+            </div>
+        }
+
+    </div>
+
+</div>
+
+<style>
+
+    .calendar-grid {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 8px;
+    }
+
+    .day-header {
+        text-align: center;
+        font-weight: 600;
+        opacity: 0.6;
+    }
+
+    .calendar-cell {
+        height: 70px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        transition: 0.2s ease;
+    }
+
+        .calendar-cell:hover {
+            transform: translateY(-3px);
+        }
+
+    .level-0 {
+        background-color: #f3f4f6;
+    }
+
+    .level-1 {
+        background-color: #86efac;
+    }
+
+    .level-2 {
+        background-color: #22c55e;
+    }
+
+    .level-3 {
+        background-color: #15803d;
+    }
+
+    body.bg-dark .level-0 {
+        background-color: #374151;
+    }
+
+    body.bg-dark .level-1 {
+        background-color: #166534;
+    }
+
+    body.bg-dark .level-2 {
+        background-color: #15803d;
+    }
+
+    body.bg-dark .level-3 {
+        background-color: #22c55e;
+    }
+
+</style>

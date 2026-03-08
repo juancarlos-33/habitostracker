@@ -1,0 +1,62 @@
+﻿@model List<HabitTrackerApp.Models.Achievement>
+
+@{
+    ViewData["Title"] = "Logros";
+
+}
+
+<div class="container mt-5">
+
+    <div class="text-center mb-5">
+        <h2 class="fw-bold">🏆 Logros Desbloqueados</h2>
+        <p class="opacity-75">Tu disciplina está dando resultados.</p>
+    </div>
+
+    @if (Model == null || Model.Count == 0)
+    {
+        <div class="card shadow border-0 rounded-4">
+            <div class="card-body text-center">
+                <h5 class="fw-bold">Aún no tienes logros desbloqueados</h5>
+                <p class="opacity-75">Sigue completando hábitos para desbloquear insignias 🔥</p>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="row">
+
+            @foreach (var achievement in Model)
+            {
+                <div class="col-md-4 mb-4">
+                    <div class="card shadow-sm border-0 rounded-4 h-100">
+                        <div class="card-body text-center">
+
+                            <div style="font-size: 40px;">
+                                🏅
+                            </div>
+
+                            <h5 class="fw-bold mt-3">
+                                @achievement.Title
+                            </h5>
+
+                            <p class="mb-1">
+                                Hábito:
+                                <span class="fw-semibold">
+                                    @achievement.HabitName
+                                </span>
+                            </p>
+
+                            <small class="opacity-75">
+                                Desbloqueado el
+                                @achievement.DateUnlocked.ToString("dd/MM/yyyy")
+                            </small>
+
+                        </div>
+                    </div>
+                </div>
+            }
+
+        </div>
+    }
+
+</div>

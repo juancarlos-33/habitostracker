@@ -1,0 +1,35 @@
+﻿@model List<HabitTrackerApp.Models.Message>
+
+<h2 class="mb-4 fw-bold">💬 Mensajes enviados</h2>
+
+<table class="table table-bordered table-hover">
+
+    <thead class="table-dark">
+        <tr>
+            <th>De</th>
+            <th>Para</th>
+            <th>Mensaje</th>
+            <th>Fecha</th>
+        </tr>
+    </thead>
+
+    <tbody>
+
+        @foreach (var msg in Model)
+        {
+            <tr>
+
+                <td>@msg.Sender.Username</td>
+
+                <td>@msg.Receiver.Username</td>
+
+                <td>@msg.Content</td>
+
+                <td>@msg.SentAt</td>
+
+            </tr>
+        }
+
+    </tbody>
+
+</table>

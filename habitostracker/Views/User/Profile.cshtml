@@ -1,0 +1,60 @@
+﻿@model HabitTrackerApp.Models.User
+
+@{
+    ViewData["Title"] = "Perfil de usuario";
+}
+
+<div class="container mt-4" style="max-width:600px;">
+
+    <div class="card shadow p-4 text-center">
+
+        <h3 class="mb-3">👤 Perfil de @Model.Username</h3>
+
+        @if (Model.ProfileImage != null)
+        {
+            <img src="@Model.ProfileImage"
+                 width="120"
+                 height="120"
+                 style="border-radius:50%; object-fit:cover;" />
+        }
+        else
+        {
+            <div style="font-size:80px;">👤</div>
+        }
+
+        <div class="mt-3">
+
+            <p><strong>Nombre:</strong> @Model.FullName</p>
+
+            <p><strong>Miembro desde:</strong> @Model.CreatedAt.ToShortDateString()</p>
+
+        </div>
+
+    </div>
+    <div class="mt-4">
+
+        <form asp-action="SendFriendRequest" method="post">
+
+            <input type="hidden" name="receiverId" value="@Model.Id" />
+
+            <button type="submit" class="btn btn-success">
+                ➕ Agregar amigo
+            </button>
+
+           
+
+            </a>
+            <!-- 💬 ENVIAR MENSAJE -->
+            <!-- 💬 ENVIAR MENSAJE -->
+            <a asp-controller="Message"
+               asp-action="Chat"
+               asp-route-userId="@Model.Id"
+               class="btn btn-primary btn-sm mt-3">
+                💬 Enviar mensaje
+            </a>
+
+            </form>
+       
+
+    </div>
+</div>
