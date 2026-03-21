@@ -15,13 +15,17 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
+    <PackageReference Include="OpenAI" Version="2.9.1" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="8.0.0" />
     <PackageReference Include="Swashbuckle.AspNetCore.Swagger" Version="8.0.0" />
   </ItemGroup>
 
   <ItemGroup>
     <Folder Include="Properties\" />
-    <Folder Include="wwwroot\images\" />
+    <Folder Include="wwwroot\payments\" />
+    <Folder Include="wwwroot\uploads\" />
+    <Folder Include="wwwroot\posts\" />
     <Folder Include="wwwroot\profiles\" />
   </ItemGroup>
 

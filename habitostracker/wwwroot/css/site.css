@@ -20,3 +20,15 @@ html {
 body {
   margin-bottom: 60px;
 }
+
+.chat-row.me {
+    display: flex;
+    justify-content: flex-end;
+}
+
+.me-bubble {
+    display: inline-block !important;
+    max-width: 70%;
+    word-break: break-word;
+    white-space: normal;
+}

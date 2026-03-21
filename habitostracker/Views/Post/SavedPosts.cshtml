@@ -1,0 +1,60 @@
+﻿@model List<HabitTrackerApp.Models.Post>
+
+<h2 class="mb-4">🔖 Publicaciones guardadas</h2>
+
+@if (Model.Count == 0)
+{
+    <p>No tienes publicaciones guardadas.</p>
+}
+
+@foreach (var post in Model)
+{
+    <div class="post-card">
+
+        <div class="post-header">
+
+            <a asp-controller="User"
+                   asp-action="Profile"
+                   asp-route-id="@post.UserId"
+                   class="post-avatar-link">
+
+                @if (!string.IsNullOrEmpty(post.User?.ProfileImage))
+                {
+                    <img src="@post.User.ProfileImage" class="post-avatar" />
+                }
+                else
+                {
+                    <div class="post-avatar-placeholder">
+                        @post.DisplayUsername.Substring(0, 1).ToUpper()
+                    </div>
+                }
+
+            </a>
+
+            <div>
+
+                <div class="post-username">
+                    @post.DisplayUsername
+                </div>
+
+                <div class="post-time">
+                    @post.CreatedAt.ToString("dd MMM yyyy HH:mm")
+                </div>
+
+            </div>
+
+        </div>
+
+        <p class="post-description">
+            @post.Description
+        </p>
+
+        @if (!string.IsNullOrEmpty(post.ImagePath))
+        {
+            <img src="@post.ImagePath"
+                 class="post-image"
+                 style="max-width:100%;" />
+        }
+
+    </div>
+}

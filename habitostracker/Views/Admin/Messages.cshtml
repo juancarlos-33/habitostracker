@@ -1,15 +1,16 @@
 ﻿@model List<HabitTrackerApp.Models.Message>
 
-<h2 class="mb-4 fw-bold">💬 Mensajes enviados</h2>
+<h2 class="mb-4 fw-bold">💬 Panel de mensajes</h2>
 
-<table class="table table-bordered table-hover">
-
+<table class="table table-hover align-middle shadow-sm">
     <thead class="table-dark">
         <tr>
             <th>De</th>
             <th>Para</th>
             <th>Mensaje</th>
+            <th>Estado</th>
             <th>Fecha</th>
+            <th></th>
         </tr>
     </thead>
 
@@ -19,17 +20,121 @@
         {
             <tr>
 
-                <td>@msg.Sender.Username</td>
+                <td>
+                    <div class="d-flex align-items-center gap-2">
 
-                <td>@msg.Receiver.Username</td>
+                        @if (msg.Sender != null && !string.IsNullOrEmpty(msg.Sender.ProfileImage))
+                        {
+                            <img src="@msg.Sender.ProfileImage"
+                                 width="35"
+                                 height="35"
+                                 style="border-radius:50%;object-fit:cover;">
+                        }
+                        else
+                        {
+                            <div class="avatar-circle">
+                                @(msg.Sender != null
+                                ? msg.Sender.Username.Substring(0, 1).ToUpper()
+                                : "X")
+                            </div>
+                        }
 
-                <td>@msg.Content</td>
+                        <strong>
+                            @(msg.Sender != null
+                            ? msg.Sender.Username
+                            : "Cuenta eliminada")
+                        </strong>
 
-                <td>@msg.SentAt</td>
+                    </div>
+                </td>
+
+                <td>
+                    <div class="d-flex align-items-center gap-2">
+
+                        @if (msg.Receiver != null && !string.IsNullOrEmpty(msg.Receiver.ProfileImage))
+                        {
+                            <img src="@msg.Receiver.ProfileImage"
+                                 width="35"
+                                 height="35"
+                                 style="border-radius:50%;object-fit:cover;">
+                        }
+                        else
+                        {
+                            <div class="avatar-circle">
+                                @(msg.Receiver != null
+                                ? msg.Receiver.Username.Substring(0, 1).ToUpper()
+                                : "X")
+                            </div>
+                        }
+
+                        <strong>
+                            @(msg.Receiver != null
+                            ? msg.Receiver.Username
+                            : "Cuenta eliminada")
+                        </strong>
+
+                    </div>
+                </td>
+
+                <td style="max-width:300px;">
+                    @msg.Content
+                </td>
+
+                <td>
+
+                    @if (msg.IsRead)
+                    {
+                        <span class="badge bg-success">
+                            ✔ Visto
+                        </span>
+                    }
+                    else
+                    {
+                        <span class="badge bg-warning text-dark">
+                            📩 No visto
+                        </span>
+                    }
+
+                </td>
+
+                <td>
+                    @msg.SentAt.ToString("dd/MM/yyyy HH:mm")
+                </td>
+
+                <td>
+
+                    @if (msg.SenderId != null && msg.ReceiverId != null)
+                    {
+                        <a class="btn btn-sm btn-outline-primary"
+                               asp-controller="Admin"
+                               asp-action="Conversation"
+                               asp-route-user1="@msg.SenderId"
+                               asp-route-user2="@msg.ReceiverId">
+
+                            💬 Ver chat
+
+                        </a>
+                    }
+
+                </td>
 
             </tr>
         }
 
     </tbody>
-
 </table>
+
+<style>
+
+    .avatar-circle {
+        width: 35px;
+        height: 35px;
+        border-radius: 50%;
+        background: #2563eb;
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+    }
+</style>

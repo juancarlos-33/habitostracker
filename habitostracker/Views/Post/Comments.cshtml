@@ -1,0 +1,82 @@
+﻿@model List<HabitTrackerApp.Models.PostComment>
+
+<h3 class="mb-4">💬 Comentarios</h3>
+
+<form asp-action="AddComment" method="post" enctype="multipart/form-data">
+
+    <input type="hidden" name="postId" value="@ViewBag.PostId" />
+
+    <input type="file" name="image" class="form-control mt-2" accept="image/*" />
+
+    <div class="mb-3">
+        <textarea name="comment"
+                  class="form-control"
+                  placeholder="Escribe un comentario..."
+                  required></textarea>
+    </div>
+
+    <button class="btn btn-primary">
+        Comentar
+    </button>
+
+</form>
+
+<hr />
+
+@foreach (var c in Model)
+{
+    <div class="mb-3 p-3 border rounded">
+
+        <div class="d-flex justify-content-between">
+
+            <div>
+
+                <strong>@c.Username</strong>
+
+                <br />
+
+                <small class="text-muted">
+                    @c.CreatedAt.ToString("dd/MM/yyyy HH:mm")
+                </small>
+
+            </div>
+
+            @if (c.UserId == int.Parse(User.FindFirst("UserId").Value))
+            {
+                <div>
+
+                    <a asp-controller="Post"
+                       asp-action="EditComment"
+                       asp-route-id="@c.Id"
+                       class="text-primary me-2"
+                       style="text-decoration:none;"
+                       title="Editar comentario">
+                        ✏️
+                    </a>
+
+                    <a asp-controller="Post"
+                       asp-action="DeleteComment"
+                       asp-route-id="@c.Id"
+                       class="text-danger"
+                       style="font-size:18px;"
+                       onclick="return confirm('¿Eliminar este comentario?')">
+                        🗑
+                    </a>
+
+                </div>
+            }
+
+        </div>
+
+        <p class="mt-2 mb-2">
+            @c.Comment
+        </p>
+
+        @if (!string.IsNullOrEmpty(c.ImagePath))
+        {
+            <img src="@c.ImagePath"
+                 style="max-width:250px;border-radius:10px;margin-top:8px;" />
+        }
+
+    </div>
+}

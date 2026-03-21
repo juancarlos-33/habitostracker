@@ -41,7 +41,7 @@ namespace HabitTrackerApp.Models
         public string? ResetCode { get; set; }
         public DateTime? ResetCodeExpiry { get; set; }
 
-        public DateTime CreatedAt { get; set; } = DateTime.Now;
+        public DateTime? CreatedAt { get; set; } = DateTime.Now;
 
         // ⚥ Género
         [Required(ErrorMessage = "Debe seleccionar un género.")]
@@ -54,6 +54,27 @@ namespace HabitTrackerApp.Models
         public bool IsBanned { get; set; } = false;
 
         public bool IsActive { get; set; } = true;
+
+        public string? LastIp { get; set; }
+        public string? Country { get; set; }
+
+        public string? City { get; set; }
+
+        public bool IsPremium { get; set; } = false;
+
+        // 💳 pago Nequi
+        public string? PaymentProofImage { get; set; } // imagen subida
+        public bool PaymentApproved { get; set; } = false;
+
+        public string? ISP { get; set; }
+        public double? Latitude { get; set; }
+
+        public double? Longitude { get; set; }
+
+        public string? Municipality { get; set; }
+        public string? Device { get; set; }
+        public string? OperatingSystem { get; set; }
+        public string? Browser { get; set; }
 
 
 

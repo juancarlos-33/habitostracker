@@ -1,5 +1,6 @@
 using HabitTrackerApp.Data;
 using HabitTrackerApp.Filters;
+using HabitTrackerApp.Hubs;
 using HabitTrackerApp.Services;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -33,6 +34,14 @@ namespace HabitTrackerApp
             });
 
             builder.Services.AddSignalR();
+
+
+            builder.Services.AddSingleton<OnlineUsersService>();
+
+
+
+            builder.Services.AddSingleton<IUserIdProvider, HabitTrackerApp.Hubs.CustomUserIdProvider>();
+
             builder.Services.AddSingleton<Microsoft.AspNetCore.SignalR.IUserIdProvider, HabitTrackerApp.UserIdProvider>();
 
             // 🔥 Registrar EmailService
@@ -126,6 +135,7 @@ namespace HabitTrackerApp
             app.UseRouting();
 
             app.UseAuthentication();
+            app.UseMiddleware<ConnectionBlockMiddleware>();
             app.UseAuthorization();
             app.Use(async (context, next) =>
             {
@@ -153,6 +163,24 @@ namespace HabitTrackerApp
 
                 await next();
             });
+
+            app.Use(async (context, next) =>
+            {
+                if (context.User.Identity != null && context.User.Identity.IsAuthenticated)
+                {
+                    var db = context.RequestServices.GetRequiredService<HabitTrackerApp.Data.HabitDbContext>();
+
+                    var userId = int.Parse(context.User.FindFirst("UserId").Value);
+
+                    var count = db.Notifications
+                        .Count(n => n.UserId == userId && !n.IsRead);
+
+                    context.Items["NewNotifications"] = count;
+                }
+
+                await next();
+            });
+
 
             app.MapControllerRoute(
                 name: "default",

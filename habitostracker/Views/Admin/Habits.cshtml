@@ -2,31 +2,213 @@
 
 <h2 class="mb-4 fw-bold">🔥 Hábitos registrados</h2>
 
-<table class="table table-bordered table-hover">
+<!-- 🔍 BUSCADOR + FILTROS -->
+<div class="d-flex flex-wrap gap-2 mb-4">
 
-    <thead class="table-dark">
-        <tr>
-            <th>Usuario</th>
-            <th>Hábito</th>
-            <th>Racha</th>
-        </tr>
-    </thead>
+    <input type="text" id="searchInput" class="form-control w-auto"
+           placeholder="🔍 Buscar usuario o hábito..." style="min-width:220px;">
 
-    <tbody>
+    <select id="filterStreak" class="form-select w-auto">
+        <option value="">Todas</option>
+        <option value="low">0 - 4 días</option>
+        <option value="mid">5 - 9 días</option>
+        <option value="high">10+ días</option>
+    </select>
 
-        @foreach (var habit in Model)
-        {
+</div>
+
+<!-- 📊 STATS -->
+<div class="row mb-4 text-center">
+
+    <div class="col-md-3">
+        <div class="card shadow-sm border-0 rounded-4 p-3">
+            <small class="text-muted">Total hábitos</small>
+            <h3>@Model.Count</h3>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card shadow-sm border-0 rounded-4 p-3">
+            <small class="text-muted">Mejor racha</small>
+            <h3 class="text-success">@Model.Max(h => h.StreakDays)</h3>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card shadow-sm border-0 rounded-4 p-3">
+            <small class="text-muted">Promedio</small>
+            <h3 class="text-primary">@Math.Round(Model.Average(h => h.StreakDays), 1)</h3>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card shadow-sm border-0 rounded-4 p-3">
+            <small class="text-muted">Top usuario</small>
+            <strong>
+                @Model.OrderByDescending(h => h.StreakDays).First().User.Username
+            </strong>
+        </div>
+    </div>
+
+</div>
+
+<!-- 🏆 TOP 5 -->
+<div class="card border-0 shadow-sm rounded-4 mb-4 p-3">
+    <h6 class="fw-bold mb-3">🏆 Top 5 hábitos</h6>
+
+    @foreach (var top in Model.OrderByDescending(h => h.StreakDays).Take(5))
+    {
+        <div class="d-flex justify-content-between align-items-center mb-2">
+
+            <div class="d-flex align-items-center gap-2">
+                <div class="avatar">
+                    @top.User.Username.Substring(0, 1).ToUpper()
+                </div>
+
+                <span>@top.Name</span>
+            </div>
+
+            <span class="badge bg-success">@top.StreakDays días</span>
+        </div>
+    }
+</div>
+
+<!-- 📋 TABLA CON SCROLL -->
+<div class="table-container">
+    <table class="table align-middle">
+
+        <thead class="table-dark sticky-top">
             <tr>
-
-                <td>@habit.User.Username</td>
-
-                <td>@habit.Name</td>
-
-                <td>@habit.StreakDays días</td>
-
+                <th onclick="sortTable(0)">Usuario ⬍</th>
+                <th onclick="sortTable(1)">Hábito ⬍</th>
+                <th onclick="sortTable(2)">Racha ⬍</th>
             </tr>
+        </thead>
+
+        <tbody id="habitTable">
+
+            @foreach (var habit in Model)
+            {
+                <tr class="habit-row" data-streak="@habit.StreakDays">
+
+                    <td>
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="avatar">
+                                @habit.User.Username.Substring(0, 1).ToUpper()
+                            </div>
+                            @habit.User.Username
+                        </div>
+                    </td>
+
+                    <td class="fw-semibold">@habit.Name</td>
+
+                    <td>
+                        @if (habit.StreakDays >= 10)
+                        {
+                            <span class="badge bg-success">🔥 @habit.StreakDays</span>
+                        }
+                        else if (habit.StreakDays >= 5)
+                        {
+                            <span class="badge bg-warning text-dark">⚡ @habit.StreakDays</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-secondary">@habit.StreakDays</span>
+                        }
+                    </td>
+
+                </tr>
+            }
+
+        </tbody>
+
+    </table>
+</div>
+
+<!-- 🧠 JS -->
+<script>
+
+    function applyFilters() {
+
+        let search = document.getElementById("searchInput").value.toLowerCase();
+        let filter = document.getElementById("filterStreak").value;
+
+        let rows = document.querySelectorAll(".habit-row");
+
+        rows.forEach(row => {
+
+            let text = row.innerText.toLowerCase();
+            let streak = parseInt(row.dataset.streak);
+
+            let matchSearch = text.includes(search);
+
+            let matchFilter = true;
+
+            if (filter === "low") matchFilter = streak < 5;
+            if (filter === "mid") matchFilter = streak >= 5 && streak < 10;
+            if (filter === "high") matchFilter = streak >= 10;
+
+            row.style.display = (matchSearch && matchFilter) ? "" : "none";
+        });
+    }
+
+    document.getElementById("searchInput").addEventListener("keyup", applyFilters);
+    document.getElementById("filterStreak").addEventListener("change", applyFilters);
+
+
+    // 🔃 ORDENAR
+    function sortTable(col) {
+
+        let table = document.getElementById("habitTable");
+        let rows = Array.from(table.rows);
+
+        let asc = table.getAttribute("data-sort") !== "asc";
+
+        rows.sort((a, b) => {
+
+            let A = a.cells[col].innerText;
+            let B = b.cells[col].innerText;
+
+            if (!isNaN(A) && !isNaN(B)) return asc ? A - B : B - A;
+
+            return asc ? A.localeCompare(B) : B.localeCompare(A);
+        });
+
+        table.innerHTML = "";
+        rows.forEach(r => table.appendChild(r));
+
+        table.setAttribute("data-sort", asc ? "asc" : "desc");
+    }
+
+</script>
+
+<!-- 🎨 ESTILO -->
+<style>
+
+    .avatar {
+        width: 35px;
+        height: 35px;
+        border-radius: 50%;
+        background: linear-gradient(135deg,#2563eb,#7c3aed);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+    }
+
+    .table-container {
+        max-height: 500px;
+        overflow-y: auto;
+        border-radius: 12px;
+    }
+
+    .table tbody tr {
+        transition: all .2s ease;
+    }
+
+        .table tbody tr:hover {
+            background: #f8fafc;
+            transform: scale(1.01);
         }
-
-    </tbody>
-
-</table>
+</style>

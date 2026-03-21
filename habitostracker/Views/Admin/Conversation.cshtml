@@ -1,0 +1,70 @@
+﻿@model List<HabitTrackerApp.Models.Message>
+
+<h2 class="mb-4">💬 Conversación (modo moderación)</h2>
+
+<div id="chatBox" class="card shadow p-4" style="max-height:500px;overflow-y:auto;">
+
+    @foreach (var msg in Model)
+    {
+        <div class="mb-3">
+
+            <strong>
+                @(msg.Sender != null ? msg.Sender.Username : "Cuenta eliminada")
+            </strong>
+
+            <span class="text-muted small">
+                @msg.SentAt.ToString("dd/MM/yyyy HH:mm")
+            </span>
+
+            <div class="p-2 border rounded mt-1">
+                @msg.Content
+            </div>
+
+        </div>
+    }
+
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
+
+<script>
+
+    const user1 = "@ViewBag.User1";
+    const user2 = "@ViewBag.User2";
+
+    const connectionAdminChat = new signalR.HubConnectionBuilder()
+    .withUrl("/chatHub")
+    .build();
+
+    connectionAdminChat.on("ReceiveMessage", function(senderId, receiverId, username, message, time){
+
+    if(
+    (senderId == user1 && receiverId == user2) ||
+    (senderId == user2 && receiverId == user1)
+    ){
+
+    const chatBox = document.getElementById("chatBox");
+
+    const msg = document.createElement("div");
+
+    msg.className = "mb-3";
+
+    msg.innerHTML = `
+    <strong>${username}</strong>
+    <span class="text-muted small">${time}</span>
+
+    <div class="p-2 border rounded mt-1">
+    ${message}
+    </div>
+    `;
+
+    chatBox.appendChild(msg);
+
+    chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    });
+
+    connectionAdminChat.start();
+
+</script>

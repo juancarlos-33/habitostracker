@@ -9,6 +9,7 @@ namespace HabitTrackerApp.Models
         public int AdminId { get; set; }
 
         public string AdminName { get; set; }
+        public string? AdminProfileImage { get; set; }
 
         public int TargetUserId { get; set; }
 

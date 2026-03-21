@@ -1,10 +1,36 @@
 ﻿@model List<HabitTrackerApp.Models.Habit>
 @inject HabitTrackerApp.Data.HabitDbContext _context
 
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger">
+        @TempData["Error"]
+    </div>
+}
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success">
+        @TempData["Success"]
+    </div>
+}
+
 @{
     var username = User.Identity?.Name ?? "";
-
     var user = _context.Users.FirstOrDefault(u => u.Username == username);
+
+    var habits = Model;
+
+    int totalHabits = habits.Count();
+    int totalStreak = habits.Sum(h => h.StreakDays);
+    int bestRecord = habits.Any() ? habits.Max(h => h.MaxStreak) : 0;
+
+    int completedToday = habits.Count(h =>
+        h.LastCheckDate == DateTime.Today && h.Completed);
+
+    int completionRate = totalHabits > 0
+        ? (int)((completedToday * 100.0) / totalHabits)
+        : 0;
 
     string welcomeMessage = "";
     string welcomeClass = "welcome-neutral";
@@ -24,18 +50,10 @@
         else
         {
             welcomeMessage = $"Bienvenido {user.Username}";
-            welcomeClass = "welcome-neutral";
         }
     }
 
     ViewData["Title"] = "HabitTracker Pro";
-
-    var totalHabits = Model.Count;
-    var totalStreak = Model.Sum(h => h.StreakDays);
-    var bestRecord = Model.Count > 0 ? Model.Max(h => h.MaxStreak) : 0;
-
-    var completedToday = Model.Count(h => h.LastCheckDate == DateTime.Today && h.Completed);
-    var completionRate = totalHabits > 0 ? (int)((double)completedToday / totalHabits * 100) : 0;
 
     var last7Days = Enumerable.Range(0, 7)
         .Select(i => DateTime.Today.AddDays(-i))
@@ -43,8 +61,28 @@
         .ToList();
 
     var dailyCompletion = last7Days
-        .Select(date => Model.Count(h => h.LastCheckDate == date && h.Completed))
+        .Select(date => habits.Count(h => h.LastCheckDate == date && h.Completed))
         .ToList();
+}
+
+@if (user != null)
+{
+    if (!user.IsPremium)
+    {
+        <div class="alert alert-warning d-flex justify-content-between align-items-center">
+            <span>🚀 Estás en versión gratuita (máx 5 hábitos)</span>
+
+            <a asp-controller="User" asp-action="Pay" class="btn btn-dark btn-sm">
+                💳 Volverme Premium
+            </a>
+        </div>
+    }
+    else
+    {
+        <div class="alert alert-success">
+            👑 Eres usuario PREMIUM — sin límites 🔥
+        </div>
+    }
 }
 
 <div class="welcome-card @welcomeClass mb-4">
@@ -52,6 +90,7 @@
         <div class="welcome-avatar">
             @(username.Length > 0 ? username.Substring(0, 1).ToUpper() : "?")
         </div>
+
         <div>
             <h5 class="mb-1 fw-bold">@welcomeMessage</h5>
             <small>Disciplina diaria. Resultados extraordinarios.</small>
@@ -65,7 +104,6 @@
         <h1 class="fw-bold display-5">🚀 HabitTracker Pro</h1>
         <p class="opacity-75">Disciplina diaria. Resultados extraordinarios.</p>
     </div>
-
     <!-- KPIs -->
     <div class="row text-center mb-4">
 
@@ -99,11 +137,19 @@
 
     </div>
 
-    <div class="text-center mb-4">
-        <a asp-action="Create" class="btn btn-primary rounded-pill px-4 shadow-sm">
-            ➕ Crear Nuevo Hábito
+    @if (user != null && user.IsPremium || Model.Count < 5)
+    {
+        <a asp-action="Create" class="btn btn-primary rounded-pill">
+            ➕ Nuevo hábito
         </a>
-    </div>
+    }
+    else
+    {
+        <a asp-controller="User" asp-action="Pay"
+               class="btn btn-dark rounded-pill">
+            🔒 Hazte Premium
+        </a>
+    }
 
     <!-- TABLA SIEMPRE VISIBLE -->
     <div class="card shadow rounded-4 p-4 mb-4 border-0">
@@ -127,6 +173,20 @@
                 </tr>
             </thead>
             <tbody>
+                @if (user != null && !user.IsPremium && Model.Count >= 5)
+                {
+                    <tr>
+                        <td colspan="6">
+                            <div class="alert alert-danger text-center mb-2">
+                                🚫 Alcanzaste el límite de hábitos.
+                                <a asp-controller="User" asp-action="Pay" class="fw-bold">
+                                    Hazte premium 🔥
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                }
+
                 @foreach (var habit in Model)
                 {
                     <tr>
@@ -148,6 +208,7 @@
                         </td>
 
                         <td class="fw-bold text-primary">@habit.StreakDays</td>
+
                         <td class="fw-bold text-warning">@habit.MaxStreak</td>
 
                         <td>
@@ -161,11 +222,38 @@
                             <a href="/Habit/Fail/@habit.Id" class="btn btn-sm btn-outline-danger rounded-pill me-1">✖</a>
                             <a asp-action="Edit" asp-route-id="@habit.Id" class="btn btn-sm btn-outline-warning rounded-pill me-1">✏</a>
                             <a asp-action="Delete" asp-route-id="@habit.Id"
-                               class="btn btn-sm btn-outline-secondary rounded-pill"
-                               data-no-loader="true"
-                               onclick="if(!confirm('¿Eliminar hábito?')) return false;">
+                                   class="btn btn-sm btn-outline-secondary rounded-pill"
+                                   data-no-loader="true"
+                                   onclick="if(!confirm('¿Eliminar hábito?')) return false;">
                                 🗑
                             </a>
+                        </td>
+                    </tr>
+                
+
+                    <!-- 💬 FILA DE COMENTARIOS -->
+                    <tr>
+                        <td colspan="6">
+
+                            <!-- FORM -->
+                            <form asp-action="AddComment" method="post" class="mb-2">
+                                <input type="hidden" name="habitId" value="@habit.Id" />
+
+                                <input type="text"
+                                       name="content"
+                                       class="form-control form-control-sm"
+                                       placeholder="💬 Escribe un comentario..." />
+                            </form>
+
+                            @if (habit.Comments != null && habit.Comments.Any())
+                            {
+                                foreach (var c in habit.Comments.OrderByDescending(x => x.CreatedAt))
+                                {
+                                    <div style="font-size:13px; padding-left:5px;">
+                                        <b>@c.User.Username:</b> @c.Content
+                                    </div>
+                                }
+                            }
                         </td>
                     </tr>
                 }

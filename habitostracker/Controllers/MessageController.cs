@@ -7,6 +7,10 @@ using HabitTrackerApp.Hubs;
 using Microsoft.AspNetCore.Authorization;
 using System.Threading.Tasks;
 
+
+
+
+
 namespace HabitTrackerApp.Controllers
 {
     [Authorize]
@@ -104,31 +108,114 @@ namespace HabitTrackerApp.Controllers
         // ✉️ ENVIAR MENSAJE
         // =====================================
         [HttpPost]
-        public async Task<IActionResult> Send(int receiverId, string content)
+        public async Task<IActionResult> Send(int receiverId, string content, IFormFile file)
         {
             var senderId = int.Parse(User.FindFirst("UserId").Value);
             var senderName = User.Identity?.Name ?? "Usuario";
+
+            // 🔥 VALIDAR QUE EL RECEPTOR EXISTE
+            var receiverExists = _context.Users.Any(u => u.Id == receiverId);
+            if (!receiverExists)
+            {
+                TempData["Error"] = "El usuario ya no existe.";
+                return RedirectToAction("Inbox");
+            }
+
+            string filePath = null;
+
+            // 📁 SI HAY ARCHIVO
+            if (file != null && file.Length > 0)
+            {
+                var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/uploads");
+
+                if (!Directory.Exists(uploadsFolder))
+                    Directory.CreateDirectory(uploadsFolder);
+
+                var fileName = Guid.NewGuid().ToString() + Path.GetExtension(file.FileName);
+                var fullPath = Path.Combine(uploadsFolder, fileName);
+
+                using (var stream = new FileStream(fullPath, FileMode.Create))
+                {
+                    await file.CopyToAsync(stream);
+                }
+
+                filePath = "/uploads/" + fileName;
+            }
+
+            // 🔥 VALIDAR QUE NO ESTÉ TODO VACÍO
+            if (string.IsNullOrWhiteSpace(content) && file == null)
+            {
+                return RedirectToAction("Chat", new { userId = receiverId });
+            }
 
             var message = new Message
             {
                 SenderId = senderId,
                 ReceiverId = receiverId,
-                Content = content,
+                Content = content ?? "",
                 SentAt = DateTime.Now,
-                IsRead = false
+                IsRead = false,
+                FileUrl = filePath
             };
 
             _context.Messages.Add(message);
-            _context.SaveChanges();
 
-            // 🔔 enviar mensaje al receptor EN TIEMPO REAL
-            await _hubContext.Clients.Group(receiverId.ToString()).SendAsync(
-                "ReceiveMessage",
-                senderId,
-                receiverId,
-                senderName,
-                content
-            );
+            // 🔔 GUARDAR NOTIFICACIÓN
+            _context.Notifications.Add(new Notification
+            {
+
+
+                UserId = receiverId,
+                FromUserId = senderId,
+                Message = "💬 Nuevo mensaje de " + senderName,
+                CreatedAt = DateTime.Now,
+                IsRead = false,
+                FromUserImage = _context.Users
+                    .Where(u => u.Id == senderId)
+                    .Select(u => u.ProfileImage)
+                    .FirstOrDefault() ?? "",
+                FromUsername = senderName
+            });
+
+            await _context.SaveChangesAsync();
+            await _hubContext.Clients.Group(receiverId.ToString())
+    .SendAsync(
+        "ReceiveMessage",
+        senderId,
+        receiverId,
+        senderName,
+        content ?? ""
+    );
+
+
+
+            // 🔥 🔥 🔥 AQUÍ ESTÁ LA CLAVE (ENVÍO CORRECTO)
+
+            // 🔥 obtener usuario
+            var sender = _context.Users.FirstOrDefault(u => u.Id == senderId);
+
+            // 🔥 enviar por GRUPO (principal)
+            await _hubContext.Clients.Group(receiverId.ToString())
+                .SendAsync(
+                   "ReceiveNotification",
+                    senderId,
+                    "💬 Nuevo mensaje",
+                    senderName,
+                    sender?.ProfileImage ?? "",
+                    "/Message/Chat?userId=" + senderId
+                );
+
+            // 🔥 respaldo por USER (doble seguridad)
+            await _hubContext.Clients.User(receiverId.ToString())
+                .SendAsync(
+                   "ReceiveNotification",
+                    senderId,
+                    "💬 Nuevo mensaje",
+                    senderName,
+                    sender?.ProfileImage ?? "",
+                    "/Message/Chat?userId=" + senderId
+                );
+
 
             return RedirectToAction("Chat", new { userId = receiverId });
         }
@@ -153,6 +240,62 @@ namespace HabitTrackerApp.Controllers
                     .Group(senderId.ToString())
                     .SendAsync("MessageSeen", msg.Id);
             }
+
+            _context.SaveChanges();
+
+            return Ok();
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> SendAudio(IFormFile audio)
+        {
+            var senderId = int.Parse(User.FindFirst("UserId").Value);
+
+            if (audio == null || audio.Length == 0)
+                return BadRequest();
+
+            // 📁 crear carpeta si no existe
+            var folderPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/audios");
+
+            if (!Directory.Exists(folderPath))
+                Directory.CreateDirectory(folderPath);
+
+            // 🧾 nombre único
+            var fileName = Guid.NewGuid().ToString() + ".webm";
+            var filePath = Path.Combine(folderPath, fileName);
+
+            // 💾 guardar archivo
+            using (var stream = new FileStream(filePath, FileMode.Create))
+            {
+                await audio.CopyToAsync(stream);
+            }
+
+            // 💬 guardar como mensaje
+            var receiverId = int.Parse(Request.Form["receiverId"]);
+
+            var message = new Message
+            {
+                SenderId = senderId,
+                ReceiverId = receiverId, // 🔥 CLAVE
+                Content = "/audios/" + fileName,
+                SentAt = DateTime.Now,
+                IsRead = false
+            };
+            _context.Messages.Add(message);
+            await _context.SaveChangesAsync();
+
+            return Ok();
+        }
+
+        [HttpPost]
+        public IActionResult React(int messageId, string reaction)
+        {
+            var message = _context.Messages.FirstOrDefault(m => m.Id == messageId);
+
+            if (message == null)
+                return NotFound();
+
+            message.Reaction = reaction;
 
             _context.SaveChanges();
 

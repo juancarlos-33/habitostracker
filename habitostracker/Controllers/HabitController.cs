@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
 using System.Linq;
+using Microsoft.EntityFrameworkCore;
 
 namespace HabitTrackerApp.Controllers
 {
@@ -36,6 +37,8 @@ namespace HabitTrackerApp.Controllers
 
             var habits = _context.Habits
                 .Where(h => h.UserId == userId)
+                .Include(h => h.Comments)
+                .ThenInclude(c => c.User)
                 .ToList();
 
             return View(habits);
@@ -99,15 +102,30 @@ namespace HabitTrackerApp.Controllers
         {
             var userId = GetUserId();
 
+            var user = _context.Users.FirstOrDefault(u => u.Id == userId);
+
+            // 🚫 límite para usuarios gratis
+            if (user != null && !user.IsPremium)
+            {
+                var count = _context.Habits.Count(h => h.UserId == userId);
+
+                if (count >= 5)
+                {
+                    TempData["Error"] = "🚫 Límite alcanzado (máx 5 hábitos). Hazte premium 😈";
+                    return RedirectToAction("Index");
+                }
+            }
+
             habit.UserId = userId;
             habit.CreatedDate = DateTime.Now;
             habit.Completed = false;
             habit.StreakDays = 0;
             habit.MaxStreak = 0;
-            habit.LastCheckDate = null;
 
             _context.Habits.Add(habit);
             _context.SaveChanges();
+
+            TempData["Success"] = "✅ Hábito creado correctamente";
 
             return RedirectToAction("Index");
         }
@@ -226,6 +244,48 @@ namespace HabitTrackerApp.Controllers
             return RedirectToAction("Index");
         }
 
+
+        [HttpPost]
+        public IActionResult AddComment(int habitId, string content)
+        {
+            var userId = int.Parse(User.FindFirst("UserId").Value);
+
+            var comment = new HabitComment
+            {
+                HabitId = habitId,
+                UserId = userId,
+                Content = content
+            };
+
+            _context.HabitComments.Add(comment);
+            _context.SaveChanges(); // 🔥 primero guardamos
+
+            var commentId = comment.Id; // 🔥 ahora sí existe
+
+            // 🔥 obtener hábito y usuario actual
+            var habit = _context.Habits.FirstOrDefault(h => h.Id == habitId);
+            var currentUser = _context.Users.FirstOrDefault(u => u.Id == userId);
+
+            if (habit != null && currentUser != null && habit.UserId != userId)
+            {
+                _context.Notifications.Add(new Notification
+                {
+               
+                    UserId = habit.UserId,
+                    FromUserId = userId,
+                   
+                    Message = "💬 comentó tu hábito",
+                    CreatedAt = DateTime.Now,
+                    IsRead = false,
+                    FromUsername = currentUser.Username,
+                    FromUserImage = currentUser.ProfileImage ?? ""
+                });
+            }
+
+            _context.SaveChanges();
+
+            return RedirectToAction("Index");
+        }
         // 🏆 LOGROS
         private void CreateAchievementIfNeeded(Habit habit)
         {

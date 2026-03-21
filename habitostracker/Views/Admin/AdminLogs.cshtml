@@ -2,7 +2,55 @@
 
 <h2 class="mb-4">📜 Historial de acciones de administración</h2>
 
-<table class="table table-bordered table-hover">
+<!-- ESTADISTICAS -->
+<div class="row mb-4">
+
+    <div class="col-md-3">
+        <div class="card shadow-sm text-center">
+            <div class="card-body">
+                <h5>🚫 Baneos</h5>
+                <h3>@Model.Count(x => x.Action.Contains("Banear"))</h3>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card shadow-sm text-center">
+            <div class="card-body">
+                <h5>🔓 Reactivados</h5>
+                <h3>@Model.Count(x => x.Action.Contains("Reactivar"))</h3>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card shadow-sm text-center">
+            <div class="card-body">
+                <h5>⚠ Desactivados</h5>
+                <h3>@Model.Count(x => x.Action.Contains("Desactivar"))</h3>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card shadow-sm text-center">
+            <div class="card-body">
+                <h5>👑 Admins creados</h5>
+                <h3>@Model.Count(x => x.Action.Contains("administrador"))</h3>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+
+<input type="text"
+       id="logSearch"
+       class="form-control mb-3"
+       placeholder="🔍 Buscar administrador, acción o usuario...">
+
+
+<table class="table table-hover shadow-sm" id="adminLogsTable">
 
     <thead class="table-dark">
         <tr>
@@ -17,14 +65,162 @@
 
         @foreach (var log in Model)
         {
-            <tr>
-                <td>@log.AdminName</td>
-                <td>@log.Action</td>
-                <td>@log.TargetUsername</td>
-                <td>@log.CreatedAt.ToString("dd/MM/yyyy HH:mm")</td>
+
+            <tr class="logRow">
+
+                <td>
+
+                    <div style="display:flex;align-items:center;gap:10px">
+
+                        @{
+                            var profileImage = log.AdminProfileImage;
+
+                            if (string.IsNullOrEmpty(profileImage))
+                            {
+                                var allUsers = ViewBag.Users as List<HabitTrackerApp.Models.User>;
+                                var admin = allUsers?.FirstOrDefault(u => u.Id == log.AdminId);
+                                profileImage = admin?.ProfileImage;
+                            }
+                        }
+
+                        @if (!string.IsNullOrEmpty(profileImage))
+                        {
+                            <img src="@profileImage"
+                                 width="35"
+                                 height="35"
+                                 style="border-radius:50%">
+                        }
+                        else
+                        {
+                            <div style="width:35px;height:35px;border-radius:50%;background:#2563eb;color:white;
+                                display:flex;align-items:center;justify-content:center;font-weight:bold;">
+                                @log.AdminName.Substring(0, 1).ToUpper()
+                            </div>
+                        }
+
+                        <strong>@log.AdminName</strong>
+
+                    </div>
+
+                </td>
+
+
+                <td>
+
+                    @if (log.Action.Contains("Banear"))
+                    {
+                        <span class="badge bg-danger">🚫 @log.Action</span>
+                    }
+                    else if (log.Action.Contains("Reactivar"))
+                    {
+                        <span class="badge bg-success">🔓 @log.Action</span>
+                    }
+                    else if (log.Action.Contains("Desactivar"))
+                    {
+                        <span class="badge bg-warning text-dark">⚠ @log.Action</span>
+                    }
+                    else if (log.Action.Contains("administrador"))
+                    {
+                        <span class="badge bg-primary">👑 @log.Action</span>
+                    }
+                    else
+                    {
+                        <span class="badge bg-secondary">@log.Action</span>
+                    }
+
+                </td>
+
+
+                <td>
+
+                    <div style="display:flex;align-items:center;gap:10px">
+
+                        @{
+                            var users = ViewBag.Users as List<HabitTrackerApp.Models.User>;
+                            var targetUser = users?.FirstOrDefault(u => u.Id == log.TargetUserId);
+                        }
+
+                        @if (!string.IsNullOrEmpty(targetUser?.ProfileImage))
+                        {
+                            <img src="@targetUser.ProfileImage"
+                                 width="35"
+                                 height="35"
+                                 style="border-radius:50%">
+                        }
+                        else
+                        {
+                            <div style="width:35px;height:35px;border-radius:50%;background:#64748b;color:white;
+                                display:flex;align-items:center;justify-content:center;font-weight:bold;">
+                                @log.TargetUsername.Substring(0, 1).ToUpper()
+                            </div>
+                        }
+
+                        <strong>@log.TargetUsername</strong>
+
+                    </div>
+
+                </td>
+
+                <td>
+
+                    @{
+                        var diff = DateTime.Now - log.CreatedAt;
+                    }
+
+                    @if (diff.TotalMinutes < 1)
+                    {
+                        <span class="text-success">Hace unos segundos</span>
+                    }
+                    else if (diff.TotalMinutes < 60)
+                    {
+                        <span>Hace @(Math.Floor(diff.TotalMinutes)) min</span>
+                    }
+                    else if (diff.TotalHours < 24)
+                    {
+                        <span>Hace @(Math.Floor(diff.TotalHours)) horas</span>
+                    }
+                    else
+                    {
+                        <span>@log.CreatedAt.ToString("dd/MM/yyyy HH:mm")</span>
+                    }
+
+                </td>
+
             </tr>
+
         }
 
     </tbody>
 
 </table>
+
+
+<style>
+
+    .logRow:hover {
+        background: #f1f5f9;
+        transform: scale(1.01);
+        transition: 0.15s;
+    }
+</style>
+
+
+<script>
+
+    document.getElementById("logSearch").addEventListener("keyup",function(){
+
+    const value=this.value.toLowerCase();
+
+    const rows=document.querySelectorAll("#adminLogsTable tbody tr");
+
+    rows.forEach(row=>{
+
+    const text=row.innerText.toLowerCase();
+
+    row.style.display=text.includes(value)?"":"none";
+
+    });
+
+    });
+
+</script>

@@ -1,0 +1,23 @@
+﻿@{
+    ViewData["Title"] = "Nueva publicación";
+}
+
+<h2 class="mb-4">📸 Nueva publicación</h2>
+
+<form asp-action="Create" method="post" enctype="multipart/form-data">
+
+    <div class="mb-3">
+        <label class="form-label">Descripción</label>
+        <textarea name="description" class="form-control"></textarea>
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Subir foto</label>
+        <input type="file" name="image" class="form-control" />
+    </div>
+
+    <button class="btn btn-primary">
+        Publicar
+    </button>
+
+</form>

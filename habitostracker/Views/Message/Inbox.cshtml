@@ -62,7 +62,14 @@
                                     </div>
 
                                     <div class="text-muted small">
-                                        @msg.Content
+                                        @if (!string.IsNullOrEmpty(msg.Content) && msg.Content.EndsWith(".webm"))
+                                        {
+                                            <span>🎤 Audio</span>
+                                        }
+                                        else
+                                        {
+                                            @msg.Content
+                                        }
                                     </div>
 
                                 </div>

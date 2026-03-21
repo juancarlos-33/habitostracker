@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.SignalR;
 using System.IO;
 using System.Security.Claims;
 using HabitTrackerApp.Hubs;
+using BCrypt.Net;
 
 namespace HabitTrackerApp.Controllers
 {
@@ -36,12 +37,46 @@ namespace HabitTrackerApp.Controllers
         // 🔐 LOGIN
         // =====================================================
         [HttpGet]
-        public async Task<IActionResult> Login()
+        public IActionResult Login()
         {
             if (User.Identity != null && User.Identity.IsAuthenticated)
-                await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+            {
+                return RedirectToAction("Index", "Habit");
+            }
 
             return View();
+        }
+        [HttpGet]
+        public IActionResult CheckIfUserExists()
+        {
+            var userIdClaim = User.FindFirst("UserId");
+
+            if (userIdClaim == null)
+                return Json(false);
+
+            var userId = int.Parse(userIdClaim.Value);
+
+            var exists = _context.Users.Any(u => u.Id == userId);
+
+            return Json(exists);
+        }
+
+        [HttpGet]
+        public IActionResult CheckAccount()
+        {
+            var userIdClaim = User.FindFirst("UserId");
+
+            if (userIdClaim == null)
+                return Json(new { deleted = true });
+
+            var userId = int.Parse(userIdClaim.Value);
+
+            var user = _context.Users.FirstOrDefault(u => u.Id == userId);
+
+            if (user == null)
+                return Json(new { deleted = true });
+
+            return Json(new { deleted = false });
         }
 
         [HttpPost]
@@ -82,6 +117,8 @@ namespace HabitTrackerApp.Controllers
             {
                 user.FailedLoginAttempts++;
 
+
+
                 if (user.FailedLoginAttempts >= 5)
                 {
                     user.LockoutEnd = DateTime.Now.AddMinutes(10);
@@ -105,6 +142,33 @@ namespace HabitTrackerApp.Controllers
             // 🟢 ACTUALIZAR ÚLTIMA VEZ ONLINE
             user.LastOnline = DateTime.Now;
 
+            // 🟢 GUARDAR IP DEL USUARIO
+            var ip = HttpContext.Request.Headers["X-Forwarded-For"].FirstOrDefault();
+
+            var userAgent = HttpContext.Request.Headers["User-Agent"].ToString();
+
+            user.Device = GetDevice(userAgent);
+            user.OperatingSystem = GetOS(userAgent);
+            user.Browser = GetBrowser(userAgent);
+
+            if (string.IsNullOrEmpty(ip))
+            {
+                ip = HttpContext.Connection.RemoteIpAddress?.ToString();
+            }
+
+
+
+
+            user.LastIp = ip;
+
+            if (user.LastIp != ip)
+            {
+                var info = await GetIPInfo(ip);
+
+                user.Country = info.country;
+                user.City = info.city;
+                user.ISP = info.isp;
+            }
             _context.SaveChanges();
 
             if (!user.EmailConfirmed)
@@ -117,8 +181,8 @@ namespace HabitTrackerApp.Controllers
             await SignInUser(user);
 
             var admins = _context.Users
-     .Where(u => u.Role == "SuperAdmin" || u.Role == "Admin")
-     .ToList();
+                .Where(u => u.Role == "SuperAdmin" || u.Role == "Admin")
+                .ToList();
 
             foreach (var admin in admins)
             {
@@ -128,13 +192,14 @@ namespace HabitTrackerApp.Controllers
                         .SendAsync("UserConnectedNotification", user.Username);
                 }
             }
-            return RedirectToAction("Index", "Habit");
+
+            return RedirectToAction("Index", "Habit", null, "https");
         }
 
-            // =====================================================
-            // 🔁 REENVIAR CONFIRMACIÓN
-            // =====================================================
-            [HttpPost]
+        // =====================================================
+        // 🔁 REENVIAR CONFIRMACIÓN
+        // =====================================================
+        [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ResendConfirmation(string email)
         {
@@ -151,6 +216,44 @@ namespace HabitTrackerApp.Controllers
 
             return RedirectToAction("ConfirmEmail");
         }
+
+
+        [HttpGet]
+        public IActionResult ResetPassword(string email)
+        {
+            var model = new ResetPasswordViewModel
+            {
+                Email = email
+            };
+
+            return View(model);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult ResetPassword(ResetPasswordViewModel model)
+        {
+            if (!ModelState.IsValid)
+                return View(model);
+
+            var user = _context.Users.FirstOrDefault(u => u.Email == model.Email);
+
+            if (user == null)
+            {
+                TempData["Error"] = "Usuario no encontrado";
+                return RedirectToAction("Login");
+            }
+
+            // 🔐 guardar nueva contraseña encriptada
+            user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(model.Password);
+
+            _context.SaveChanges();
+
+            TempData["Success"] = "Contraseña actualizada correctamente 🔥";
+
+            return RedirectToAction("Login");
+        }
+
 
         // =====================================================
         // 📝 REGISTER
@@ -227,22 +330,15 @@ namespace HabitTrackerApp.Controllers
             var user = _context.Users
                 .FirstOrDefault(u => u.Email == model.Email || u.PendingEmail == model.Email);
 
-            if (user == null ||
-    user.ResetCode != model.Code ||
-    user.ResetCodeExpiry == null ||
-    user.ResetCodeExpiry < DateTime.Now)
+            if (user == null || user.ResetCode != model.Code || user.ResetCodeExpiry == null || user.ResetCodeExpiry < DateTime.Now)
             {
                 ModelState.AddModelError("", "Código inválido o expirado.");
-
-                // mantener el correo en el formulario
                 model.Email = TempData.Peek("ResetEmail")?.ToString();
-
                 return View(model);
             }
 
             if (user.PendingEmail != null)
             {
-                // 🔐 verificar si el correo ya existe
                 if (_context.Users.Any(u => u.Email == user.PendingEmail && u.Id != user.Id))
                 {
                     ModelState.AddModelError("", "Ese correo ya está siendo usado por otro usuario.");
@@ -259,14 +355,23 @@ namespace HabitTrackerApp.Controllers
 
             _context.SaveChanges();
 
-            TempData["Success"] = "Correo confirmado correctamente.";
+            // 🔥 DIFERENCIAR FLUJO
 
+            // 👉 SI VIENE DE REGISTRO
             if (TempData["FromRegister"] != null)
+            {
+                TempData["Success"] = "Cuenta verificada correctamente 🎉";
                 return RedirectToAction("Login");
+            }
 
-            if (User.Identity != null && User.Identity.IsAuthenticated)
-                return RedirectToAction("Profile", "Account");
+            // 👉 SI VIENE DE RECUPERAR CONTRASEÑA
+            if (TempData["FromReset"] != null)
+            {
+                TempData["Success"] = "Código verificado. Ahora crea tu nueva contraseña 🔐";
+                return RedirectToAction("ResetPassword", new { email = user.Email });
+            }
 
+            // 👉 fallback
             return RedirectToAction("Login");
         }
 
@@ -319,39 +424,47 @@ namespace HabitTrackerApp.Controllers
             return RedirectToAction("ConfirmEmail");
         }
 
+
+
         // =====================================================
         // 👤 PROFILE
         // =====================================================
         [HttpGet]
-        public IActionResult Profile()
+        public IActionResult Profile(int? id)
         {
             if (!User.Identity.IsAuthenticated)
-            {
                 return RedirectToAction("Login", "Account");
+
+            var myId = int.Parse(User.FindFirst("UserId").Value);
+
+            // 🔥 SI ES MI PERFIL
+            if (id == null || id == myId)
+            {
+                var me = _context.Users.FirstOrDefault(u => u.Id == myId);
+
+                if (me == null)
+                    return RedirectToAction("Login", "Account");
+
+                if (me.PendingEmail != null)
+                    TempData["PendingEmail"] = me.PendingEmail;
+
+                return View("~/Views/Account/Profile.cshtml", me); // 🟢 editable
             }
 
-            var claim = User.FindFirst("UserId");
+            // 🔥 SI ES OTRO USUARIO
+            var user = _context.Users.FirstOrDefault(u => u.Id == id);
 
-            if (claim == null)
-            {
-                return RedirectToAction("Login", "Account");
-            }
+            // 🔥 seguidores
+            ViewBag.FollowersCount = _context.Follows.Count(f => f.FollowingId == user.Id);
 
-            var userId = int.Parse(claim.Value);
-
-            var user = _context.Users.FirstOrDefault(u => u.Id == userId);
+            // 🔥 siguiendo
+            ViewBag.FollowingCount = _context.Follows.Count(f => f.FollowerId == user.Id);
 
             if (user == null)
-            {
-                return RedirectToAction("Login", "Account");
-            }
+                return NotFound();
 
-            if (user.PendingEmail != null)
-                TempData["PendingEmail"] = user.PendingEmail;
-
-            return View("~/Views/Account/Profile.cshtml", user);
+            return View("~/Views/User/Profile.cshtml", user); // 🔵 SOLO VISUAL
         }
-
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Profile(User updatedUser, IFormFile profilePhoto, string croppedImage)
@@ -512,6 +625,7 @@ namespace HabitTrackerApp.Controllers
             {
                 new Claim(ClaimTypes.Name, user.Username),
                 new Claim("UserId", user.Id.ToString()),
+                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
                 new Claim(ClaimTypes.Role, user.Role ?? "User"),
                 new Claim("ProfileImage", user.ProfileImage ?? "")
             };
@@ -573,16 +687,54 @@ namespace HabitTrackerApp.Controllers
         private async Task SendConfirmationCode(User user)
         {
             var random = new Random();
-
             string code = random.Next(100000, 999999).ToString();
 
             user.ResetCode = code;
             user.ResetCodeExpiry = DateTime.Now.AddMinutes(15);
 
+            var html = $@"
+    <div style='font-family:Segoe UI,Arial,sans-serif;background:#f9fafb;padding:30px'>
+        
+        <div style='max-width:500px;margin:auto;background:white;padding:30px;border-radius:12px;
+                    box-shadow:0 5px 20px rgba(0,0,0,0.08)'>
+
+            <h2 style='margin-bottom:10px;color:#111827'>
+                🔐 Confirmación de cuenta
+            </h2>
+
+            <p style='color:#6b7280;font-size:14px'>
+                Hola <b>{user.Username}</b>, usa este código para confirmar tu cuenta:
+            </p>
+
+            <div style='margin:25px 0;text-align:center'>
+                <span style='font-size:30px;font-weight:bold;
+                             letter-spacing:6px;
+                             background:#111827;
+                             color:white;
+                             padding:12px 24px;
+                             border-radius:10px;
+                             display:inline-block'>
+                    {code}
+                </span>
+            </div>
+
+            <p style='font-size:13px;color:#9ca3af'>
+                Este código expira en 15 minutos. No lo compartas con nadie.
+            </p>
+
+            <hr style='margin:25px 0;border:none;border-top:1px solid #eee'>
+
+            <p style='font-size:12px;color:#9ca3af;text-align:center'>
+                HabitTracker Pro 🚀
+            </p>
+
+        </div>
+    </div>";
+
             await _emailService.SendEmailAsync(
                 user.PendingEmail ?? user.Email,
-                "Confirma tu cuenta - HabitTracker",
-                $"<h3>Tu código es:</h3><h1>{code}</h1>"
+                "🔐 Confirma tu cuenta - HabitTracker",
+                html
             );
         }
 
@@ -610,13 +762,14 @@ namespace HabitTrackerApp.Controllers
 
             TempData["ResetEmail"] = user.Email;
 
+            TempData["FromReset"] = true;
+
             return RedirectToAction("ConfirmEmail");
         }
 
         private async Task SendResetCode(User user)
         {
             var random = new Random();
-
             string code = random.Next(100000, 999999).ToString();
 
             user.ResetCode = code;
@@ -624,11 +777,219 @@ namespace HabitTrackerApp.Controllers
 
             _context.SaveChanges();
 
+            var html = $@"
+    <div style='font-family:Segoe UI,Arial,sans-serif;background:#f9fafb;padding:30px'>
+        
+        <div style='max-width:500px;margin:auto;background:white;padding:30px;border-radius:12px;
+                    box-shadow:0 5px 20px rgba(0,0,0,0.08)'>
+
+            <h2 style='margin-bottom:10px;color:#111827'>
+                🔑 Recuperación de contraseña
+            </h2>
+
+            <p style='color:#6b7280;font-size:14px'>
+                Hola <b>{user.Username}</b>, usa este código para restablecer tu contraseña:
+            </p>
+
+            <div style='margin:25px 0;text-align:center'>
+                <span style='font-size:30px;font-weight:bold;
+                             letter-spacing:6px;
+                             background:#2563eb;
+                             color:white;
+                             padding:12px 24px;
+                             border-radius:10px;
+                             display:inline-block'>
+                    {code}
+                </span>
+            </div>
+
+            <p style='font-size:13px;color:#9ca3af'>
+                Este código expira en 10 minutos. No lo compartas con nadie.
+            </p>
+
+            <hr style='margin:25px 0;border:none;border-top:1px solid #eee'>
+
+            <p style='font-size:12px;color:#9ca3af;text-align:center'>
+                HabitTracker Pro 🚀
+            </p>
+
+        </div>
+    </div>";
+
             await _emailService.SendEmailAsync(
                 user.Email,
-                "Código de recuperación",
-                $"<h3>Tu código es:</h3><h1>{code}</h1>"
+                "🔑 Recupera tu contraseña - HabitTracker :)",
+                html
             );
+        }
+
+        private string GetOS(string userAgent)
+        {
+            if (userAgent.Contains("Android")) return "Android";
+            if (userAgent.Contains("iPhone")) return "iOS";
+            if (userAgent.Contains("Mac")) return "MacOS";
+            if (userAgent.Contains("Windows")) return "Windows";
+            if (userAgent.Contains("Linux")) return "Linux";
+
+            return "Desconocido";
+        }
+
+        private string GetBrowser(string userAgent)
+        {
+            if (userAgent.Contains("Chrome")) return "Chrome";
+            if (userAgent.Contains("Firefox")) return "Firefox";
+            if (userAgent.Contains("Safari") && !userAgent.Contains("Chrome")) return "Safari";
+            if (userAgent.Contains("Edg")) return "Edge";
+
+            return "Desconocido";
+        }
+
+        private string GetDevice(string userAgent)
+        {
+            if (string.IsNullOrEmpty(userAgent))
+                return "Desconocido";
+
+            if (userAgent.Contains("Android"))
+            {
+                try
+                {
+                    var start = userAgent.IndexOf("(");
+                    var end = userAgent.IndexOf(")");
+
+                    if (start != -1 && end != -1)
+                    {
+                        var info = userAgent.Substring(start + 1, end - start - 1);
+                        var parts = info.Split(';');
+
+                        foreach (var part in parts)
+                        {
+                            var text = part.Trim();
+
+                            if (string.IsNullOrWhiteSpace(text))
+                                continue;
+
+                            // ignorar cosas inútiles
+                            if (text.Contains("Android") || text.Contains("Linux"))
+                                continue;
+
+                            if (text.Length <= 2)
+                                continue;
+
+                            return text;
+                        }
+                    }
+                }
+                catch { }
+
+                return "Android";
+            }
+
+            if (userAgent.Contains("iPhone"))
+                return "iPhone";
+
+            if (userAgent.Contains("iPad"))
+                return "iPad";
+
+            if (userAgent.Contains("Windows"))
+                return "PC";
+
+            if (userAgent.Contains("Mac"))
+                return "Mac";
+
+            return "Desconocido";
+        }
+        private async Task<(string country, string city, string isp)> GetIPInfo(string ip)
+        {
+            try
+            {
+                using var client = new HttpClient();
+
+                var json = await client.GetStringAsync($"http://ip-api.com/json/{ip}");
+
+                dynamic data = Newtonsoft.Json.JsonConvert.DeserializeObject(json);
+
+                string country = data.country ?? "Desconocido";
+                string city = data.city ?? "Desconocido";
+                string isp = data.isp ?? "Desconocido";
+
+                return (country, city, isp);
+            }
+            catch
+            {
+                return ("Desconocido", "Desconocido", "Desconocido");
+            }
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> SaveLocation([FromBody] LocationDto data)
+        {
+            var claim = User.FindFirst("UserId");
+
+            if (claim == null)
+            {
+                return Ok(); // usuario no logueado
+            }
+
+            var userId = int.Parse(claim.Value);
+
+            var user = _context.Users.FirstOrDefault(x => x.Id == userId);
+
+            if (user == null)
+                return Ok();
+
+            user.Latitude = data.latitude;
+            user.Longitude = data.longitude;
+
+            // recalcular municipio SIEMPRE
+            var municipality = await GetMunicipality(data.latitude, data.longitude);
+
+            user.Municipality = municipality;
+
+            await _context.SaveChangesAsync();
+
+            return Ok();
+        }
+
+        public class LocationDto
+        {
+            public double latitude { get; set; }
+
+            public double longitude { get; set; }
+        }
+
+
+        private async Task<string> GetMunicipality(double lat, double lon)
+        {
+            try
+            {
+                using var client = new HttpClient();
+
+                client.DefaultRequestHeaders.UserAgent.ParseAdd("HabitTracker");
+
+                var url = $"https://nominatim.openstreetmap.org/reverse?format=json&lat={lat}&lon={lon}";
+
+                var response = await client.GetStringAsync(url);
+
+                var json = Newtonsoft.Json.Linq.JObject.Parse(response);
+
+                var address = json["address"];
+
+                if (address == null)
+                    return "Desconocido";
+
+                var municipality =
+                    address["town"]?.ToString() ??
+                    address["city"]?.ToString() ??
+                    address["village"]?.ToString() ??
+                    address["county"]?.ToString() ??
+                    "Desconocido";
+
+                return municipality;
+            }
+            catch
+            {
+                return "Desconocido";
+            }
         }
     }
 }

@@ -1,0 +1,94 @@
+﻿@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html>
+<head>
+
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
+
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Sistema bloqueado</title>
+
+    <link rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+
+    <style>
+
+        body {
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg,#0f172a,#1e293b);
+            color: white;
+            font-family: 'Inter',sans-serif;
+        }
+
+        .box {
+            text-align: center;
+            padding: 50px;
+            border-radius: 20px;
+            background: rgba(255,255,255,0.05);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+            max-width: 500px;
+        }
+
+        .icon {
+            font-size: 70px;
+        }
+    </style>
+
+</head>
+
+<body>
+
+    <div class="box">
+
+        <div class="icon">🚧</div>
+
+        <h2 class="fw-bold mt-3">
+            Sistema temporalmente bloqueado
+        </h2>
+
+        <p class="mt-3">
+            El propietario bloqueó esta conexión
+        </p>
+
+        <p class="text-secondary">
+            Intenta nuevamente más tarde
+        </p>
+
+    </div>
+
+    <script>
+
+        setInterval(function(){
+
+        fetch("/Home/CheckConnection")
+        .then(response => response.json())
+        .then(data => {
+
+            if(data.blocked === false){
+
+                window.location.href = "/Account/Login?refresh=" + new Date().getTime();
+
+            }
+
+        })
+        .catch(error => {
+            console.log("Error comprobando conexión:", error);
+        });
+
+        },2000);
+
+    </script>
+
+</body>
+</html>

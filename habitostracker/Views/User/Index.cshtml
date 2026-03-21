@@ -1,5 +1,4 @@
 ﻿@model List<HabitTrackerApp.Models.User>
-
 @{
     ViewData["Title"] = "Usuarios";
     var myId = int.Parse(User.FindFirst("UserId").Value);
@@ -7,121 +6,379 @@
 
 <div class="container mt-4">
 
-    <h2 class="mb-4">🔎 Descubrir amigos</h2>
+    <h2 class="mb-4 fw-bold">🔎 Descubrir amigos</h2>
 
-    <table class="table table-bordered text-center">
+    <!-- BUSCADOR -->
+    <div class="search-box mb-4">
+        <input type="text" id="userSearch" placeholder="Buscar usuarios..." class="form-control" />
+    </div>
 
-        <thead class="table-light">
+    <div class="user-grid" id="userGrid">
 
-            <tr>
-                <th>Foto</th>
-                <th>Usuario</th>
-                <th>Perfil</th>
-            </tr>
-
-        </thead>
-
-        <tbody>
-
-            @foreach (var user in Model)
+        @foreach (var user in Model)
+        {
+            if (user.Id != myId)
             {
-                <tr>
 
-                    <td>
+                <div class="user-card" id="user-@user.Id" data-username="@user.Username.ToLower()">
 
-                        @if (user.ProfileImage != null)
-                        {
-                            <img src="@user.ProfileImage" width="50" height="50" style="border-radius:50%;" />
-                        }
-                        else
-                        {
-                            <span>👤</span>
-                        }
-
-                    </td>
-
-                    <td class="d-flex align-items-center gap-2">
-
+                    <!-- AVATAR -->
+                    <div class="user-avatar">
                         @if (!string.IsNullOrEmpty(user.ProfileImage))
                         {
-                            <img src="@user.ProfileImage"
-                                 style="width:35px;height:35px;border-radius:50%;object-fit:cover;" />
+                            <img src="@user.ProfileImage" />
                         }
                         else
                         {
-                            <div style="
-                                            width:35px;
-                                            height:35px;
-                                            border-radius:50%;
-                                            background:#2563eb;
-                                            color:white;
-                                            display:flex;
-                                            align-items:center;
-                                            justify-content:center;
-                                            font-weight:bold;">
+                            <div class="avatar-placeholder">
                                 @user.Username.Substring(0, 1).ToUpper()
                             </div>
                         }
+                    </div>
 
-                        <span>
-                            @user.Username
+                    <!-- NOMBRE -->
+                    <div class="user-name">
 
-                            @if (user.Role == "Admin")
-                            {
-                                <span class="badge bg-warning text-dark ms-1">
-                                    Administrador
-                                </span>
-                            }
+                        <span class="status-dot offline" id="status-@user.Id"></span>
 
-                            @if (user.Role == "SuperAdmin")
-                            {
-                                <span class="badge bg-dark ms-1">
-                                    👑 Propietario
-                                </span>
-                            }
-                        </span>
+                        @user.Username
 
-                    </td>
-
-                    <td>
+                        @if (user.Role == "Admin")
+                        {
+                            <span class="role-badge admin">Administrador</span>
+                        }
 
                         @if (user.Role == "SuperAdmin")
                         {
-                            <div class="dropdown">
-
-                                <button class="btn btn-light btn-sm dropdown-toggle"
-                                        data-bs-toggle="dropdown">
-                                    ☰
-                                </button>
-
-                                <ul class="dropdown-menu">
-
-                                    <li>
-                                        <a class="dropdown-item"
-                                           href="/Feedback/Create">
-                                            Enviar comentarios
-                                        </a>
-                                    </li>
-
-                                </ul>
-
-                            </div>
-                        }
-                        else
-                        {
-                            <a href="/User/Profile/@user.Id"
-                               class="btn btn-sm btn-primary">
-                                Ver perfil
-                            </a>
+                            <span class="role-badge owner">👑 Propietario</span>
                         }
 
-                    </td>
+                    </div>
 
-                </tr>
+                    <!-- BOTONES -->
+                    <div class="user-actions">
+
+                        <a href="/User/Profile/@user.Id"
+                               class="btn btn-primary btn-sm">
+                            👁 Ver perfil
+                        </a>
+
+                        <button type="button"
+                                class="btn btn-outline-success btn-sm add-friend-btn"
+                                data-user="@user.Id"
+                                data-no-loader="true"
+                                onclick="sendFriendRequest(this)">
+                            ➕ Agregar
+                        </button>
+
+                    </div>
+
+                </div>
+
             }
+        }
 
-        </tbody>
-
-    </table>
+    </div>
 
 </div>
+
+
+<style>
+
+    .search-box input {
+        border-radius: 12px;
+        padding: 10px;
+    }
+
+    .status-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        display: inline-block;
+        margin-right: 6px;
+    }
+
+    .online {
+        background: #22c55e;
+    }
+
+    .offline {
+        background: #9ca3af;
+    }
+
+    .user-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill,minmax(220px,1fr));
+        gap: 20px;
+    }
+
+    .user-card {
+        background: white;
+        border-radius: 16px;
+        padding: 22px;
+        text-align: center;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+        transition: 0.25s;
+    }
+
+        .user-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 16px 40px rgba(0,0,0,0.15);
+        }
+
+    .user-avatar img {
+        width: 72px;
+        height: 72px;
+        border-radius: 50%;
+        object-fit: cover;
+    }
+
+    .online-avatar {
+        border: 3px solid #22c55e;
+        padding: 2px;
+        border-radius: 50%;
+    }
+
+    .avatar-placeholder {
+        width: 72px;
+        height: 72px;
+        border-radius: 50%;
+        background: #2563eb;
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 26px;
+        font-weight: bold;
+    }
+
+    .online-avatar {
+        border: 3px solid #22c55e;
+        padding: 2px;
+        border-radius: 50%;
+    }
+
+    .user-name {
+        margin-top: 12px;
+        font-size: 16px;
+        font-weight: 600;
+    }
+
+    .role-badge {
+        font-size: 11px;
+        padding: 4px 8px;
+        border-radius: 8px;
+        margin-left: 6px;
+    }
+
+    .admin {
+        background: #facc15;
+        color: #111;
+    }
+
+    .owner {
+        background: #111;
+        color: white;
+    }
+
+    .online-avatar{
+    border:3px solid #22c55e;
+    padding:2px;
+    border-radius:50%;
+    animation: onlinePulse 1.6s infinite;
+}
+
+@@keyframes onlinePulse{
+    0%{
+        box-shadow:0 0 0 0 rgba(34,197,94,0.7);
+    }
+    70%{
+        box-shadow:0 0 0 10px rgba(34,197,94,0);
+    }
+    100%{
+        box-shadow:0 0 0 0 rgba(34,197,94,0);
+    }
+}
+
+.active-now{
+    font-size:12px;
+    color:#22c55e;
+    font-weight:600;
+    margin-left:6px;
+}
+
+    .user-actions {
+        margin-top: 14px;
+        display: flex;
+        gap: 8px;
+        justify-content: center;
+    }
+
+    .add-friend-btn {
+        transition: 0.2s;
+    }
+
+        .add-friend-btn:hover {
+            transform: scale(1.1);
+        }
+</style>
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
+
+<script>
+    const connectionGlobal = new signalR.HubConnectionBuilder()
+    .withUrl("/chatHub")
+    .build();
+</script>
+
+<script>
+
+    connectionGlobal.start()
+    .then(function () {
+
+        console.log("SignalR conectado");
+
+        const myId = '@User.FindFirst("UserId")?.Value';
+
+        connectionGlobal.invoke("JoinUserGroup", myId);
+
+    })
+    .catch(function (err) {
+
+        console.error(err.toString());
+
+    });
+
+
+   connectionGlobal.on("UserOnline", function(userId){
+
+    const dot = document.getElementById("status-" + userId);
+
+    if(dot){
+        dot.classList.remove("offline");
+        dot.classList.add("online");
+    }
+
+    // avatar (img o placeholder)
+    const avatar = document.querySelector("#user-" + userId + " .user-avatar img, #user-" + userId + " .avatar-placeholder");
+
+    if(avatar){
+        avatar.classList.add("online-avatar");
+    }
+
+    // mostrar "Activo ahora"
+    const nameBox = document.querySelector("#user-" + userId + " .user-name");
+
+    if(nameBox && !nameBox.querySelector(".active-now")){
+        const span = document.createElement("span");
+        span.classList.add("active-now");
+        span.innerText = "Activo ahora";
+        nameBox.appendChild(span);
+    }
+
+    // mover usuario arriba
+    const card = document.getElementById("user-" + userId);
+
+    if(card){
+        const grid = document.getElementById("userGrid");
+        grid.prepend(card);
+    }
+
+});
+
+connectionGlobal.on("UserOffline", function(userId){
+
+    const dot = document.getElementById("status-" + userId);
+
+    if(dot){
+        dot.classList.remove("online");
+        dot.classList.add("offline");
+    }
+
+    const avatar = document.querySelector("#user-" + userId + " .user-avatar img, #user-" + userId + " .avatar-placeholder");
+
+    if(avatar){
+        avatar.classList.remove("online-avatar");
+    }
+
+    const activeText = document.querySelector("#user-" + userId + " .active-now");
+
+    if(activeText){
+        activeText.remove();
+    }
+
+});
+
+
+    // detectar usuarios online al cargar la página
+    fetch("/User/GetOnlineUsers")
+    .then(r => r.json())
+    .then(users => {
+
+        users.forEach(id => {
+
+            const dot = document.getElementById("status-" + id);
+
+            if(dot){
+                dot.classList.remove("offline");
+                dot.classList.add("online");
+            }
+
+        });
+
+    });
+
+
+    // buscador
+    document.getElementById("userSearch").addEventListener("keyup", function(){
+
+        const value = this.value.toLowerCase();
+
+        const cards = document.querySelectorAll(".user-card");
+
+        cards.forEach(card=>{
+
+            const username = card.dataset.username;
+
+            if(username.includes(value)){
+                card.style.display="block";
+            }else{
+                card.style.display="none";
+            }
+
+        });
+
+    });
+
+
+    // enviar solicitud
+    function sendFriendRequest(btn){
+
+        event.preventDefault();
+
+        const userId = btn.dataset.user;
+
+        btn.innerHTML="⏳ Enviando...";
+        btn.disabled=true;
+
+        fetch("/User/SendFriendRequest",{
+            method:"POST",
+            headers:{
+                "Content-Type":"application/x-www-form-urlencoded"
+            },
+            body:"receiverId="+userId
+        })
+        .then(()=>{
+            btn.innerHTML="✔ Enviada";
+            btn.classList.remove("btn-outline-success");
+            btn.classList.add("btn-success");
+        })
+        .catch(()=>{
+            btn.innerHTML="❌ Error";
+            btn.disabled=false;
+        });
+
+    }
+
+</script>

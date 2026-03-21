@@ -1,0 +1,36 @@
+﻿@model HabitTrackerApp.Models.PostComment
+
+<h3 class="mb-4">✏️ Editar comentario</h3>
+
+<form asp-controller="Post"
+      asp-action="UpdateComment"
+      method="post">
+
+    <input type="hidden" name="Id" value="@Model.Id" />
+    <input type="hidden" name="PostId" value="@Model.PostId" />
+
+    <div class="mb-3">
+
+        <label class="form-label">Comentario</label>
+
+        <textarea name="Comment"
+                  class="form-control"
+                  rows="3"
+                  required>@Model.Comment</textarea>
+
+    </div>
+
+    <button class="btn btn-success">
+        💾 Guardar cambios
+    </button>
+
+    <a asp-controller="Post"
+       asp-action="Comments"
+       asp-route-postId="@Model.PostId"
+       class="btn btn-secondary">
+
+        Cancelar
+
+    </a>
+
+</form>

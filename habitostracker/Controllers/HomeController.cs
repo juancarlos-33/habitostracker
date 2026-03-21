@@ -28,5 +28,38 @@ namespace habitostracker.Controllers
         {
             return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
         }
+
+        public IActionResult ConnectionBlocked()
+        {
+            return View();
+        }
+
+        [HttpGet]
+        public IActionResult CheckConnection()
+        {
+            using (var db = HttpContext.RequestServices.GetService<HabitTrackerApp.Data.HabitDbContext>())
+            {
+                var block = db.ConnectionBlocks.FirstOrDefault();
+
+                bool blocked = block != null && block.IsBlocked;
+
+                return Json(new { blocked = blocked });
+            }
+        }
+        public IActionResult GetMyIP()
+        {
+            var ip = HttpContext.Request.Headers["X-Forwarded-For"].FirstOrDefault();
+
+            if (!string.IsNullOrEmpty(ip))
+            {
+                ip = ip.Split(',').First().Trim();
+            }
+            else
+            {
+                ip = HttpContext.Connection.RemoteIpAddress?.ToString();
+            }
+
+            return Content(ip ?? "");
+        }
     }
 }

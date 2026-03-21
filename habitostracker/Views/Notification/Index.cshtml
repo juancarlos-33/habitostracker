@@ -1,0 +1,202 @@
+﻿@model List<HabitTrackerApp.Models.Notification>
+
+<h3 class="mb-4 fw-bold">🔔 Notificaciones</h3>
+
+@if (Model.Count == 0)
+{
+    <div class="no-notifications">
+        🔕 No tienes notificaciones
+    </div>
+}
+
+<div class="notifications-list">
+@foreach (var n in Model)
+{
+    var icon = "🔔";
+    if (!string.IsNullOrEmpty(n.Message))
+    {
+        var m = n.Message.ToLower();
+        if (m.Contains("coment")) icon = "💬";
+        else if (m.Contains("like") || m.Contains("gust")) icon = "❤️";
+        else if (m.Contains("solicitud") || m.Contains("amig")) icon = "👥";
+        else if (m.Contains("mensaje")) icon = "✉️";
+    }
+
+<a href="@(n.Message.Contains("mensaje") 
+    ? "/Message/Chat?userId=" + n.FromUserId 
+    : (!string.IsNullOrEmpty(n.Link) 
+        ? n.Link 
+        : "javascript:void(0)"))"
+   class="notification-card @(n.IsRead ? "" : "unread")"
+   data-no-loader="true">
+
+        <div class="notification-avatar">
+
+            @if (!string.IsNullOrEmpty(n.FromUserImage))
+            {
+                <img src="@n.FromUserImage" />
+            }
+            else
+            {
+                <div class="avatar-placeholder">
+                    @((!string.IsNullOrEmpty(n.FromUsername) ? n.FromUsername.Substring(0,1).ToUpper() : "U"))
+                </div>
+            }
+
+            <div class="action-icon">
+                @icon
+            </div>
+
+        </div>
+
+        <div class="notification-content">
+
+            <div class="notification-message">
+                @n.Message
+            </div>
+
+            <div class="notification-time">
+                @GetTimeAgo(n.CreatedAt)
+            </div>
+
+        </div>
+
+        @if (!n.IsRead)
+        {
+            <div class="notification-dot"></div>
+        }
+
+    </a>
+}
+</div>
+
+@functions{
+
+    public string GetTimeAgo(DateTime date)
+    {
+        var span = DateTime.Now - date;
+
+        if (span.TotalSeconds < 60)
+            return "Hace unos segundos";
+
+        if (span.TotalMinutes < 60)
+            return $"Hace {(int)span.TotalMinutes} min";
+
+        if (span.TotalHours < 24)
+            return $"Hace {(int)span.TotalHours} horas";
+
+        if (span.TotalDays < 7)
+            return $"Hace {(int)span.TotalDays} días";
+
+        return date.ToString("dd MMM yyyy");
+    }
+
+}
+
+<style>
+
+.notifications-list{
+    animation:fadeIn .35s ease;
+}
+
+.notification-card{
+    display:flex;
+    align-items:center;
+    gap:14px;
+    padding:14px;
+    background:white;
+    border-radius:16px;
+    text-decoration:none;
+    color:black;
+    margin-bottom:12px;
+    box-shadow:0 6px 18px rgba(0,0,0,0.07);
+    transition:all .18s ease;
+    position:relative;
+}
+
+.notification-card:hover{
+    transform:translateY(-3px);
+    box-shadow:0 12px 28px rgba(0,0,0,0.12);
+    background:#f9fafb;
+}
+
+.notification-avatar{
+    position:relative;
+}
+
+.notification-avatar img{
+    width:44px;
+    height:44px;
+    border-radius:50%;
+    object-fit:cover;
+}
+
+.avatar-placeholder{
+    width:44px;
+    height:44px;
+    border-radius:50%;
+    background:linear-gradient(135deg,#2563eb,#4f46e5);
+    color:white;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-weight:bold;
+    font-size:18px;
+}
+
+.action-icon{
+    position:absolute;
+    bottom:-2px;
+    right:-2px;
+    background:white;
+    border-radius:50%;
+    font-size:14px;
+    padding:2px 4px;
+    box-shadow:0 2px 6px rgba(0,0,0,0.2);
+}
+
+.notification-content{
+    flex:1;
+}
+
+.notification-message{
+    font-weight:500;
+}
+
+.notification-time{
+    font-size:12px;
+    color:#6b7280;
+    margin-top:2px;
+}
+
+.notification-dot{
+    width:10px;
+    height:10px;
+    background:#3b82f6;
+    border-radius:50%;
+}
+
+.unread{
+    background:#eff6ff;
+}
+
+.no-notifications{
+    padding:45px;
+    text-align:center;
+    background:#f1f5f9;
+    border-radius:14px;
+    color:#64748b;
+}
+
+@@keyframes fadeIn{
+    from{
+        opacity:0;
+        transform:translateY(8px);
+    }
+    to{
+        opacity:1;
+        transform:translateY(0);
+    }
+}
+
+</style>

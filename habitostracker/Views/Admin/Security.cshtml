@@ -1,0 +1,32 @@
+﻿@model List<HabitTrackerApp.Models.SuspiciousActivity>
+
+<h2 class="mb-4">🚨 Centro de Seguridad</h2>
+
+<div class="card shadow-sm border-0 rounded-4 p-4">
+
+    <table class="table table-bordered">
+
+        <thead class="table-dark">
+            <tr>
+                <th>Usuario</th>
+                <th>Motivo</th>
+                <th>Fecha</th>
+            </tr>
+        </thead>
+
+        <tbody>
+
+            @foreach (var activity in Model)
+            {
+                <tr>
+                    <td>@activity.Username</td>
+                    <td>@activity.Reason</td>
+                    <td>@activity.CreatedAt.ToString("dd/MM/yyyy HH:mm")</td>
+                </tr>
+            }
+
+        </tbody>
+
+    </table>
+
+</div>

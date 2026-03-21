@@ -1,0 +1,47 @@
+﻿@model List<HabitTrackerApp.Models.PostReport>
+
+<h2 class="mb-4">🚩 Publicaciones reportadas</h2>
+
+<table class="table table-bordered">
+
+    <thead>
+        <tr>
+            <th>Post</th>
+            <th>Reportado por</th>
+            <th>Motivo</th>
+            <th>Fecha</th>
+            <th>Acciones</th>
+        </tr>
+    </thead>
+
+    <tbody>
+
+        @foreach (var report in Model)
+        {
+            <tr>
+
+                <td>@report.PostId</td>
+
+                <td>@report.ReportedByUserId</td>
+
+                <td>@report.Reason</td>
+
+                <td>@report.CreatedAt.ToString("dd/MM/yyyy HH:mm")</td>
+
+                <td>
+
+                    <a asp-controller="Post"
+                       asp-action="Delete"
+                       asp-route-id="@report.PostId"
+                       class="btn btn-danger btn-sm">
+                        🗑 Eliminar Post
+                    </a>
+
+                </td>
+
+            </tr>
+        }
+
+    </tbody>
+
+</table>

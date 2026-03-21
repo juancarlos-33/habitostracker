@@ -1,0 +1,104 @@
+﻿@model List<HabitTrackerApp.Models.Payment>
+
+<h2 class="mb-4 fw-bold">💸 Solicitudes Premium</h2>
+
+<table class="table table-bordered table-hover">
+    <thead class="table-dark">
+        <tr>
+            <th>Usuario</th>
+            <th>Comprobante</th>
+            <th>Fecha</th>
+            <th>Estado</th>
+            <th>Acción</th>
+        </tr>
+    </thead>
+
+    <tbody>
+        @foreach (var p in Model)
+        {
+            <tr>
+                <td>@p.User.Username</td>
+
+                <td>
+                    <img src="@p.Screenshot"
+                         style="width:120px;border-radius:10px;cursor:pointer"
+                         onclick="openImage('@p.Screenshot')" />
+                </td>
+
+                <td>
+                    @p.CreatedAt.ToString("dd/MM/yyyy HH:mm")
+                </td>
+
+                <!-- ESTADO -->
+                <td>
+                    @if (p.IsApproved)
+                    {
+                        <span class="badge bg-success">Aprobado</span>
+                    }
+                    else if (p.IsRejected)
+                    {
+                        <span class="badge bg-danger">Rechazado</span>
+                    }
+                    else
+                    {
+                        <span class="badge bg-warning text-dark">Pendiente</span>
+                    }
+                </td>
+
+                <!-- ACCIONES -->
+                <td>
+                    @if (!p.IsApproved && !p.IsRejected)
+                    {
+                        <a asp-controller="Admin"
+                               asp-action="ApprovePayment"
+                               asp-route-id="@p.Id"
+                               class="btn btn-success btn-sm"
+                               onclick="return confirm('¿Seguro que deseas aprobar este pago?')">
+                            ✅ Aprobar
+                        </a>
+
+                        <a asp-controller="Admin"
+                               asp-action="RejectPayment"
+                               asp-route-id="@p.Id"
+                               class="btn btn-danger btn-sm"
+                               onclick="return confirm('¿Rechazar este pago?')">
+                            ❌ Rechazar
+                        </a>
+                    }
+                    else if (p.IsApproved)
+                    {
+                        <span class="badge bg-success">✔ Ya aprobado</span>
+                    }
+                    else if (p.IsRejected)
+                    {
+                        <span class="badge bg-danger">❌ Rechazado</span>
+                    }
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<!-- MODAL -->
+<div id="imageModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%;
+    background:rgba(0,0,0,0.8); justify-content:center; align-items:center; z-index:9999;">
+
+    <span onclick="closeImage()"
+          style="position:absolute; top:20px; right:30px; font-size:30px; color:white; cursor:pointer;">
+        ✖
+    </span>
+
+    <img id="modalImg" style="max-width:90%; max-height:90%; border-radius:10px;" />
+
+</div>
+
+<script>
+    function openImage(src) {
+        document.getElementById("imageModal").style.display = "flex";
+        document.getElementById("modalImg").src = src;
+    }
+
+    function closeImage() {
+        document.getElementById("imageModal").style.display = "none";
+    }
+</script>

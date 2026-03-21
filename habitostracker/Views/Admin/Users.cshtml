@@ -15,30 +15,86 @@
 
 <h2 class="mb-4">👥Usuarios registrados </h2>
 
-<div class="row mb-4 text-center">
+@{
+    var block = Context.RequestServices
+        .GetService<HabitTrackerApp.Data.HabitDbContext>()
+        .ConnectionBlocks
+        .FirstOrDefault();
 
-    <div class="col-md-3">
+    bool isBlocked = block != null && block.IsBlocked;
+}
+
+@if (User.IsInRole("SuperAdmin"))
+{
+    <div class="mb-4">
+
+        @if (isBlocked)
+        {
+            <div class="alert alert-danger d-flex justify-content-between align-items-center">
+
+                <span>🔴 Conexión bloqueada</span>
+
+                <form asp-controller="Admin" asp-action="ToggleConnectionBlock" method="post">
+                    <button class="btn btn-success"
+                    onclick="return confirm('¿Restaurar la conexión del sistema?')">
+                        🔓 Restaurar conexión global
+                    </button>
+                </form>
+
+            </div>
+        }
+        else
+        {
+            <div class="alert alert-success d-flex justify-content-between align-items-center">
+
+                <span>🟢 Conexión activa</span>
+
+                <form asp-controller="Admin" asp-action="ToggleConnectionBlock" method="post">
+                    <button class="btn btn-danger"
+                    onclick="return confirm('¿Seguro que deseas bloquear la conexión?')">
+                        🔒 Bloquear conexión global
+                    </button>
+                </form>
+
+            </div>
+        }
+
+    </div>
+
+
+}
+
+
+<a asp-controller="Admin"
+   asp-action="Reports"
+   class="btn btn-danger mb-3">
+    🚩 Ver publicaciones reportadas
+</a>
+
+<div class="row mb-4 text-center" style="max-width:900px;">
+
+    <div class="col-md-6 col-lg-3">
         <div class="card shadow-sm border-0 rounded-4 p-3">
             <h6 class="text-muted">Usuarios</h6>
             <h3>@Model.Count</h3>
         </div>
     </div>
 
-    <div class="col-md-3">
+    <div class="col-md-6 col-lg-3">
         <div class="card shadow-sm border-0 rounded-4 p-3">
             <h6 class="text-muted">Baneados</h6>
             <h3 class="text-danger">@Model.Count(u => u.IsBanned)</h3>
         </div>
     </div>
 
-    <div class="col-md-3">
+    <div class="col-md-6 col-lg-3">
         <div class="card shadow-sm border-0 rounded-4 p-3">
             <h6 class="text-muted">Desactivados</h6>
             <h3 class="text-warning">@Model.Count(u => !u.IsActive)</h3>
         </div>
     </div>
 
-    <div class="col-md-3">
+    <div class="col-md-6 col-lg-3">
         <div class="card shadow-sm border-0 rounded-4 p-3">
             <h6 class="text-muted">Activos ahora</h6>
             <h3 class="text-success" id="activeUsers">@activeNow</h3>
@@ -47,9 +103,10 @@
 
 </div>
 
-</div>
 
-<table class="table table-bordered table-hover">
+
+<div class="table-responsive">
+    <table class="table table-bordered table-hover">
 
     <thead class="table-dark">
         <tr>
@@ -58,13 +115,30 @@
             <th>Email</th>
             <th>Estado</th>
             <th>Acciones</th>
+            <th>IP</th>
+            <th>Sistema</th>
+<th>Dispositivo</th>
+<th>Navegador</th>
         </tr>
     </thead>
 
-    <tbody>
+        <tbody>
+@{
+    var ipInfo = ViewBag.IpInfo as Dictionary<string, (string country, string city, string isp)>;
+}
+
+        @if (TempData["NewPassword"] != null)
+        {
+            <div class="alert alert-success">
+                Nueva contraseña generada: <b>@TempData["NewPassword"]</b>
+            </div>
+        }
 
         @foreach (var user in Model)
         {
+            var blockedIps = ViewBag.BlockedIps as List<string> ?? new List<string>();
+            bool isBlockedIp = user.LastIp != null && blockedIps.Contains(user.LastIp);
+
             <tr>
 
                 <td>
@@ -75,7 +149,7 @@
                     else
                     {
                         <div style="width:40px;height:40px;border-radius:50%;background:#2563eb;color:white;
-                                            display:flex;align-items:center;justify-content:center;font-weight:bold;">
+                            display:flex;align-items:center;justify-content:center;font-weight:bold;">
                             @user.Username.Substring(0, 1).ToUpper()
                         </div>
                     }
@@ -86,15 +160,11 @@
 
                     @if (user.Role == "SuperAdmin")
                     {
-                        <span class="badge bg-warning text-dark ms-1">
-                            👑 SUPER ADMIN
-                        </span>
+                        <span class="badge bg-warning text-dark ms-1">👑 SUPER ADMIN</span>
                     }
                     else if (user.Role == "Admin")
                     {
-                        <span class="badge bg-info text-dark ms-1">
-                            Admin
-                        </span>
+                        <span class="badge bg-info text-dark ms-1">Admin</span>
                     }
                 </td>
 
@@ -119,97 +189,244 @@
                         <span class="badge bg-secondary">Inactivo</span>
                     }
 
-                   
-                    
+                </td>
+
+                    <!-- ACCIONES -->
+                    <td>
+                        <div class="d-flex flex-wrap gap-2">
+
+                            @if (user.Role == "SuperAdmin")
+                            {
+                                <span class="badge bg-dark">Propietario</span>
+                            }
+                            else if (user.Id == myId)
+                            {
+                                <span class="badge bg-secondary">Tu cuenta</span>
+                            }
+                            else
+                            {
+                                if (!user.IsActive)
+                                {
+                                    <a asp-controller="Admin"
+                                           asp-action="ReactivateUser"
+                                           asp-route-id="@user.Id"
+                                           class="btn btn-sm btn-outline-success rounded-pill"
+                                           data-no-loader="true"
+                                           onclick="return confirm('¿Reactivar este usuario?')">
+                                        🔓 Reactivar
+                                    </a>
+                                }
+                                else if (user.IsBanned)
+                                {
+                                    <a asp-controller="Admin"
+                                           asp-action="UnbanUser"
+                                           asp-route-id="@user.Id"
+                                           class="btn btn-sm btn-outline-success rounded-pill"
+                                           data-no-loader="true"
+                                           onclick="return confirm('¿Desbanear este usuario?')">
+                                        🔓 Desbanear
+                                    </a>
+                                }
+                                else
+                                {
+                                    @if (user.Id != int.Parse(User.FindFirst("UserId").Value))
+                                    {
+                                        @if (User.IsInRole("SuperAdmin") || user.Role == "User")
+                                        {
+                                            <button type="button"
+                                                    class="btn btn-sm btn-outline-danger rounded-pill"
+                                                    data-no-loader="true"
+                                                    onclick="confirmDelete(@user.Id)">
+                                                🔒 Desactivar
+                                            </button>
+                                        }
+
+                                        @if (User.IsInRole("SuperAdmin") || user.Role == "User")
+                                        {
+                                            <a asp-controller="Admin"
+                                                   asp-action="BanUser"
+                                                   asp-route-id="@user.Id"
+                                                   class="btn btn-sm btn-outline-warning rounded-pill"
+                                                   data-no-loader="true"
+                                                   onclick="return confirm('¿Seguro que quieres banear este usuario?');">
+                                                🚫 Banear
+                                            </a>
+                                        }
+
+                                        @if (User.IsInRole("SuperAdmin"))
+                                        {
+                                            <a asp-controller="Admin"
+                                                   asp-action="DeleteUserPermanently"
+                                                   asp-route-id="@user.Id"
+                                                   class="btn btn-sm btn-outline-dark rounded-pill"
+                                                   data-no-loader="true"
+                                                   onclick="return confirm('¿Eliminar este usuario permanentemente?')">
+                                                💀 Eliminar
+                                            </a>
+                                        }
+                                    }
+
+                                    @if (User.IsInRole("SuperAdmin"))
+                                    {
+                                        if (user.Role == "Admin")
+                                        {
+                                            <a href="#"
+                                                   class="btn btn-sm btn-outline-secondary rounded-pill"
+                                                   data-no-loader="true"
+                                                   onclick="event.preventDefault(); confirmRemoveAdmin(@user.Id);">
+                                                Quitar Admin
+                                            </a>
+                                        }
+                                        else
+                                        {
+                                            <a asp-controller="Admin"
+                                                   asp-action="MakeAdmin"
+                                                   asp-route-id="@user.Id"
+                                                   class="btn btn-sm btn-outline-primary rounded-pill"
+                                                   data-no-loader="true"
+                                                   onclick="return confirm('¿Seguro que quieres convertir a este usuario en administrador?');">
+                                                Hacer Admin
+                                            </a>
+                                        }
+                                    }
+                                }
+
+                                @if (User.IsInRole("SuperAdmin") && user.Id != myId)
+                                {
+                                    <form asp-controller="Admin"
+                                          asp-action="ResetPassword"
+                                          method="post"
+                                          style="display:inline">
+
+                                        <input type="hidden" name="userId" value="@user.Id" />
+
+                                        <button class="btn btn-sm btn-outline-warning rounded-pill"
+                                                onclick="return confirm('¿Resetear la contraseña de este usuario?');">
+                                            🔑 Reset
+                                        </button>
+
+                                    </form>
+                                }
+                            }
+
+                        </div>
+                    </td>
+                       
+
+                
+
+                <!-- IP + PAIS + BLOQUEO -->
+                <td style="min-width:220px">
+
+                    @if (!string.IsNullOrEmpty(user.LastIp))
+                    {
+                        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
+
+                            <span style="font-size:13px;line-height:1.2">
+
+                                @user.LastIp
+
+                                @if (ViewBag.MultiAccounts != null && ViewBag.MultiAccounts.ContainsKey(user.LastIp))
+                                {
+                                    <br />
+
+                                    <span style="color:#ef4444;font-size:12px;font-weight:600;">
+                                        ⚠ @ViewBag.MultiAccounts[user.LastIp] cuentas desde esta IP
+                                    </span>
+                                }
+
+                                @if (ipInfo != null && ipInfo.ContainsKey(user.LastIp))
+                                {
+                                    <br />
+
+                                    <small class="text-muted">
+                                        🌍 @ipInfo[user.LastIp].country <br />
+                                        🏙 @ipInfo[user.LastIp].city <br />
+                                        📍 @user.Municipality <br />
+                                        🧭 @user.Latitude , @user.Longitude <br />
+                                        📡 @ipInfo[user.LastIp].isp <br />
+
+                                        <a target="_blank"
+                                               href="https://www.google.com/maps?q=@user.Latitude,@user.Longitude">
+                                            🗺 Ver en mapa
+                                        </a>
+                                    </small>
+                                }
+
+                            </span>
+
+                            @if (User.IsInRole("SuperAdmin") && user.Id != myId)
+                            {
+                                if (isBlockedIp)
+                                {
+                                    <form asp-controller="Admin"
+                                          asp-action="UnblockIP"
+                                          method="post"
+                                          style="margin:0">
+
+                                        <input type="hidden" name="ip" value="@user.LastIp" />
+
+                                        <button class="btn btn-success btn-sm"
+                                                data-no-loader="true"
+                                                onclick="return confirm('¿Desbloquear esta IP?')">
+                                            🔓
+                                        </button>
+
+                                    </form>
+                                }
+                                else
+                                {
+                                    <form asp-controller="Admin"
+                                          asp-action="BlockIP"
+                                          method="post"
+                                          style="margin:0">
+
+                                        <input type="hidden" name="ip" value="@user.LastIp" />
+
+                                        <button class="btn btn-danger btn-sm"
+                                                data-no-loader="true"
+                                                onclick="return confirm('¿Bloquear esta IP?')">
+                                            🚫
+                                        </button>
+
+                                    </form>
+                                }
+                            }
+
+                        </div>
+                    }
+                    else
+                    {
+                        <span class="text-muted">—</span>
+                    }
 
                 </td>
 
-              <td>
+                <!-- SISTEMA -->
+                <td>
+                    @(string.IsNullOrEmpty(user.OperatingSystem) ? "—" : user.OperatingSystem)
+                </td>
 
-@if (user.Role == "SuperAdmin")
-{
-    <span class="badge bg-dark">Propietario</span>
-}
-else if (user.Id == myId)
-{
-    <span class="badge bg-secondary">Tu cuenta</span>
-}
-else
-{
-    if (!user.IsActive)
-    {
-        <a asp-controller="Admin"
-           asp-action="ReactivateUser"
-           asp-route-id="@user.Id"
-           class="btn btn-success btn-sm"
-           data-no-loader="true"
-           onclick="return confirm('¿Reactivar este usuario?')">
-            🔓 Reactivar
-        </a>
-    }
-    else if (user.IsBanned)
-    {
-        <a asp-controller="Admin"
-           asp-action="UnbanUser"
-           asp-route-id="@user.Id"
-           class="btn btn-success btn-sm"
-           data-no-loader="true"
-           onclick="return confirm('¿Desbanear este usuario?')">
-            🔓 Desbanear
-        </a>
-    }
-    else
-    {
-        <button type="button"
-                class="btn btn-danger btn-sm"
-                data-no-loader="true"
-                onclick="confirmDelete(@user.Id)">
-            🔒 Desactivar
-        </button>
+                <!-- DISPOSITIVO -->
+                <td>
+                    @(string.IsNullOrEmpty(user.Device) ? "—" : user.Device)
+                </td>
 
-        <a asp-controller="Admin"
-           asp-action="BanUser"
-           asp-route-id="@user.Id"
-           class="btn btn-warning btn-sm"
-           data-no-loader="true"
-           onclick="return confirm('¿Seguro que quieres banear este usuario?');">
-            🚫 Banear
-        </a>
-
-        @if (User.IsInRole("SuperAdmin"))
-        {
-            if (user.Role == "Admin")
-            {
-                <a href="#"
-                   class="btn btn-secondary btn-sm"
-                   data-no-loader="true"
-                   onclick="event.preventDefault(); confirmRemoveAdmin(@user.Id);">
-                    Quitar Admin
-                </a>
-            }
-            else
-            {
-                <a asp-controller="Admin"
-                   asp-action="MakeAdmin"
-                   asp-route-id="@user.Id"
-                   class="btn btn-primary btn-sm"
-                   data-no-loader="true"
-                   onclick="return confirm('¿Seguro que quieres convertir a este usuario en administrador?');">
-                    Hacer Admin
-                </a>
-            }
-        }
-    }
-}
-
-</td>
+                <!-- NAVEGADOR -->
+                <td>
+                    @(string.IsNullOrEmpty(user.Browser) ? "—" : user.Browser)
+                </td>
 
             </tr>
+            
+            
+
+
         }
 
-    </tbody>
-
-</table>
+        </tbody>
+    </table>
+</div>
 <script>
 
     function confirmDelete(userId)

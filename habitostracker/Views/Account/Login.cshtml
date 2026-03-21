@@ -2,112 +2,728 @@
 
 @{
     ViewData["Title"] = "Iniciar Sesión";
+    Layout = "_LayoutLogin";
 }
 
-<div class="container mt-5" style="max-width:400px;">
-    <div class="card shadow rounded-4 border-0">
-        <div class="card-body p-4">
+<style>
 
-            <h3 class="text-center mb-4 fw-bold">
-                🔐 Iniciar sesión
-            </h3>
+body{
+margin:0;
+min-height:100vh;
+display:flex;
+align-items:center;
+justify-content:center;
+font-family:Inter;
+background:radial-gradient(circle at 20% 20%,#1e293b,#020617);
+overflow:hidden;
+}
 
-            @if (TempData["Success"] != null)
-            {
-                <div class="alert alert-success text-center">
-                    @TempData["Success"]
-                </div>
-            }
+.login-header{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:10px;
+    margin-bottom:10px;
+}
 
-            @if (!ViewData.ModelState.IsValid)
-            {
-                <div class="alert alert-danger text-center">
-                    @Html.ValidationSummary()
-                </div>
-            }
+.login-header h3{
+    color:white;
+    font-weight:700;
+    font-size:22px;
+}
 
-            @* ========================================= *@
-            @* NUEVO: CONTADOR VISUAL DE INTENTOS LOGIN *@
-            @* ========================================= *@
+.login-mascot{
+    width:45px;
+    height:45px;
+    border-radius:50%;
+    object-fit:cover;
 
-            @{
-                var errorText = ViewData.ModelState.Values
-                .SelectMany(v => v.Errors)
-                .Select(e => e.ErrorMessage)
-                .FirstOrDefault();
+    box-shadow:0 0 12px rgba(255,200,0,0.8);
 
-                if (errorText != null && errorText.Contains("Intento"))
-                {
-                    <div class="text-center mb-2 fw-semibold text-danger">
-                        @errorText
-                    </div>
-                }
-            }
+    animation:
+        mascotJump 1.2s ease,
+        glowPulse 2.5s infinite;
 
-            @if (TempData["UnconfirmedEmail"] != null)
-            {
-                <div class="text-center mt-2">
-                    <form asp-controller="Account" asp-action="ResendConfirmation" method="post">
-                        @Html.AntiForgeryToken()
-                        <input type="hidden" name="email" value="@TempData["UnconfirmedEmail"]" />
+    transition:transform 0.3s;
+}
 
-                        <button type="submit" class="btn btn-sm btn-outline-primary">
-                            Reenviar código de confirmación
-                        </button>
-                    </form>
-                </div>
-            }
+.login-mascot:hover{
+    transform:rotate(-10deg) scale(1.1);
+}
 
-            <form asp-action="Login" method="post">
 
-                @Html.AntiForgeryToken()
+@@keyframes glowPulse{
 
-                <div class="mb-3">
-                    <label class="form-label">Ingresar usuario bro</label>
+    0%{
+        box-shadow:0 0 10px rgba(255,200,0,0.6);
+    }
 
-                    <input asp-for="Username"
-                           class="form-control rounded-pill" />
+    50%{
+        box-shadow:0 0 20px rgba(255,220,0,1);
+    }
 
-                    <span asp-validation-for="Username" class="text-danger"></span>
-                </div>
+    100%{
+        box-shadow:0 0 10px rgba(255,200,0,0.6);
+    }
 
-                <div class="mb-3">
-                    <label class="form-label">La contraseña bro</label>
+}
 
-                    <input asp-for="Password"
-                           type="password"
-                           class="form-control rounded-pill" />
 
-                    <span asp-validation-for="Password" class="text-danger"></span>
-                </div>
+@@keyframes mascotJump{
 
-                <div class="mb-3" style="margin-left:10px;">
-                    <a asp-controller="Account"
-                       asp-action="ForgotPassword"
-                       class="text-decoration-none small text-danger">
-                        ¿Olvidaste tu contraseña?
-                    </a>
-                </div>
+    0%{
+        transform:translateY(-25px) scale(0.8);
+        opacity:0;
+    }
 
-                <button type="submit"
-                        class="btn btn-primary w-100 rounded-pill shadow-sm mt-2">
-                    Entrar 👀
-                </button>
+    50%{
+        transform:translateY(6px) scale(1.05);
+    }
 
-                <div class="text-center mt-3">
+    70%{
+        transform:translateY(-3px);
+    }
 
-                    <span class="text-muted">¿No tienes cuenta?</span>
+    100%{
+        transform:translateY(0);
+        opacity:1;
+    }
 
-                    <a asp-controller="Account"
-                       asp-action="Register"
-                       class="fw-semibold text-decoration-none ms-1">
-                        Crear cuenta
-                    </a>
+}
 
-                </div>
+/* GRID futurista */
 
-            </form>
+body::before{
+content:"";
+position:fixed;
+top:0;
+left:0;
+width:100%;
+height:100%;
+background-image:
+linear-gradient(rgba(255,255,255,0.03) 1px,transparent 1px),
+linear-gradient(90deg,rgba(255,255,255,0.03) 1px,transparent 1px);
+background-size:60px 60px;
+pointer-events:none;
+}
 
-        </div>
-    </div>
+/* luces animadas */
+
+.bg-light1{
+position:fixed;
+width:500px;
+height:500px;
+background:radial-gradient(circle,#3b82f6,transparent);
+filter:blur(120px);
+opacity:0.35;
+top:-200px;
+left:-200px;
+animation:move1 12s infinite alternate ease-in-out;
+}
+
+.bg-light2{
+position:fixed;
+width:500px;
+height:500px;
+background:radial-gradient(circle,#6366f1,transparent);
+filter:blur(120px);
+opacity:0.35;
+bottom:-200px;
+right:-200px;
+animation:move2 14s infinite alternate ease-in-out;
+}
+
+@@keyframes move1{
+from{transform:translateY(0)}
+to{transform:translateY(80px)}
+}
+
+@@keyframes move2{
+from{transform:translateY(0)}
+to{transform:translateY(-80px)}
+}
+
+/* tarjeta login */
+
+.card{
+background:rgba(255,255,255,0.06) !important;
+backdrop-filter:blur(25px);
+border-radius:22px !important;
+border:1px solid rgba(255,255,255,0.08);
+box-shadow:0 25px 80px rgba(0,0,0,0.7);
+}
+
+</style>
+
+<style>
+
+body{
+background:radial-gradient(circle at 20% 20%,#1e293b,#020617);
+min-height:100vh;
+display:flex;
+align-items:center;
+justify-content:center;
+font-family:Inter,system-ui;
+}
+
+
+
+/* luces fondo */
+
+
+
+.bg-glow{
+position:fixed;
+width:600px;
+height:600px;
+background:radial-gradient(circle,#3b82f6,transparent);
+filter:blur(120px);
+opacity:0.25;
+top:-200px;
+left:-200px;
+animation:float 10s infinite alternate ease-in-out;
+}
+
+.bg-glow2{
+position:fixed;
+width:600px;
+height:600px;
+background:radial-gradient(circle,#6366f1,transparent);
+filter:blur(120px);
+opacity:0.25;
+bottom:-200px;
+right:-200px;
+animation:float 12s infinite alternate ease-in-out;
+}
+
+@@keyframes float{
+from{transform:translateY(0)}
+to{transform:translateY(60px)}
+}
+
+/* tarjeta login */
+
+.login-card{
+background:rgba(255,255,255,0.05);
+backdrop-filter:blur(25px);
+border-radius:22px;
+padding:35px;
+box-shadow:0 25px 80px rgba(0,0,0,0.6);
+border:1px solid rgba(255,255,255,0.08);
+animation:fadeIn .4s ease;
+}
+
+@@keyframes fadeIn{
+from{opacity:0;transform:translateY(20px)}
+to{opacity:1;transform:translateY(0)}
+}
+
+.login-title{
+font-size:28px;
+font-weight:700;
+text-align:center;
+margin-bottom:20px;
+color:white;
+}
+
+.neon-btn{
+position:relative;
+overflow:hidden;
+}
+
+.neon-btn::before{
+content:"";
+position:absolute;
+top:0;
+left:-100%;
+width:100%;
+height:100%;
+background:linear-gradient(
+120deg,
+transparent,
+rgba(255,255,255,0.6),
+transparent
+);
+transition:0.5s;
+}
+
+.neon-btn:hover::before{
+left:100%;
+}
+
+/* inputs */
+
+.form-control{
+background:#020617;
+border:none;
+border-radius:14px;
+padding:12px;
+color:white;
+transition:.2s;
+}
+
+.form-control:focus{
+background:#020617;
+color:white;
+box-shadow:0 0 0 2px #3b82f6;
+}
+
+/* botón */
+
+.btn-login{
+background:#2563eb;
+border:none;
+border-radius:14px;
+padding:12px;
+font-weight:600;
+transition:0.25s;
+}
+
+.btn-login:hover{
+background:#1d4ed8;
+transform:scale(1.03);
+box-shadow:0 10px 25px rgba(37,99,235,0.5);
+}
+
+
+#particles-bg{
+    position:fixed;
+    top:0;
+    left:0;
+    width:100%;
+    height:100%;
+    z-index:0;
+    pointer-events:none;
+}
+
+.login-card{
+    position:relative;
+    z-index:2;
+}
+
+.container{
+    position:relative;
+    z-index:2;
+}
+
+/* mostrar contraseña */
+
+.password-toggle{
+position:absolute;
+right:14px;
+top:38px;
+cursor:pointer;
+opacity:.6;
+}
+
+.password-toggle:hover{
+opacity:1;
+}
+
+.planet{
+position:fixed;
+width:350px;
+height:350px;
+border-radius:50%;
+background:radial-gradient(circle at 30% 30%,#60a5fa,#1e40af,#020617);
+top:10%;
+right:10%;
+opacity:0.25;
+filter:blur(2px);
+animation:planetRotate 60s linear infinite;
+z-index:0;
+}
+
+@@keyframes planetRotate{
+0%{transform:rotate(0deg)}
+100%{transform:rotate(360deg)}
+}
+
+</style>
+
+<canvas id="particles-bg"></canvas>
+
+<div class="bg-glow"></div>
+<div class="bg-glow2"></div>
+<div class="planet"></div>
+
+<div class="container mt-5" style="max-width:420px;">
+
+<div class="login-card">
+
+<div class="login-header">
+   <img src="/images/hola.jpeg" class="login-mascot" id="mascota">
+    <h3>HabitTracker</h3>
 </div>
+
+
+@* ⚠ CUENTA ELIMINADA *@
+@if (Context.Request.Query["deleted"] == "true")
+{
+    <div class="alert alert-danger text-center">
+        ⚠ Tu cuenta fue eliminada por un administrador
+    </div>
+
+    <script>
+        if (window.history.replaceState) {
+            const url = new URL(window.location);
+            url.searchParams.delete("deleted");
+            window.history.replaceState({}, document.title, url.pathname);
+        }
+    </script>
+}
+
+@* 🚫 CUENTA BANEADA *@
+@if (Context.Request.Query["banned"] == "true")
+{
+    <div class="alert alert-danger text-center">
+        🚫 Tu cuenta ha sido baneada por un administrador
+    </div>
+}
+
+@* ⚠ CUENTA DESACTIVADA *@
+@if (Context.Request.Query["deactivated"] == "true")
+{
+    <div class="alert alert-warning text-center">
+        ⚠ Tu cuenta fue desactivada por un administrador
+    </div>
+}
+
+@* 🔒 BLOQUEO GLOBAL *@
+@if (Context.Request.Query["blocked"] == "true")
+{
+    <div class="alert alert-danger text-center">
+        ⚠ El propietario bloqueó esta conexión
+    </div>
+}
+
+@* 🚫 IP BLOQUEADA *@
+@if (Context.Request.Query["ipblocked"] == "true")
+{
+    <div class="alert alert-danger text-center">
+        🚫 Tu dirección IP ha sido bloqueada por el Propietario
+    </div>
+}
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success text-center">
+        @TempData["Success"]
+    </div>
+}
+
+@if (!ViewData.ModelState.IsValid)
+{
+    <div class="alert alert-danger text-center">
+        @Html.ValidationSummary()
+    </div>
+}
+
+
+@{
+var errorText = ViewData.ModelState.Values
+.SelectMany(v => v.Errors)
+.Select(e => e.ErrorMessage)
+.FirstOrDefault();
+
+if (errorText != null && errorText.Contains("Intento"))
+{
+<div class="text-center mb-2 fw-semibold text-danger">
+@errorText
+</div>
+}
+}
+
+
+@if (TempData["UnconfirmedEmail"] != null)
+{
+<div class="text-center mt-2">
+
+<form asp-controller="Account" asp-action="ResendConfirmation" method="post">
+
+@Html.AntiForgeryToken()
+
+<input type="hidden" name="email" value="@TempData["UnconfirmedEmail"]" />
+
+<button type="submit" class="btn btn-sm btn-outline-primary">
+Reenviar código de confirmación
+</button>
+
+</form>
+
+</div>
+}
+
+
+<form asp-action="Login" method="post">
+
+@Html.AntiForgeryToken()
+
+<div class="mb-3">
+
+<label class="form-label text-light">Ingresar usuario bro</label>
+
+<input asp-for="Username" class="form-control"/>
+
+<span asp-validation-for="Username" class="text-danger"></span>
+
+</div>
+
+
+<div class="mb-3 position-relative">
+
+<label class="form-label text-light">La contraseña bro</label>
+
+<input asp-for="Password" type="password" class="form-control" id="passwordInput" />
+
+<span class="password-toggle" onclick="togglePassword()">👁</span>
+
+<span asp-validation-for="Password" class="text-danger"></span>
+
+</div>
+
+
+<div class="mb-3" style="margin-left:10px;">
+<a asp-controller="Account"
+asp-action="ForgotPassword"
+class="text-decoration-none small text-danger">
+¿Olvidaste tu contraseña?
+</a>
+</div>
+
+
+<button type="submit"
+class="btn btn-login neon-btn w-100 shadow-sm mt-2">
+Entrar 👀
+</button>
+
+
+<div class="text-center mt-3">
+
+<span class="text-muted">¿No tienes cuenta?</span>
+
+<a asp-controller="Account"
+asp-action="Register"
+class="fw-semibold text-decoration-none ms-1">
+
+Crear cuenta
+
+</a>
+
+</div>
+
+</form>
+
+</div>
+
+</div>
+
+<script>
+
+function togglePassword(){
+
+const input = document.getElementById("passwordInput");
+
+if(input.type==="password")
+input.type="text";
+else
+input.type="password";
+
+}
+
+
+@@keyframes mascotError{
+
+    0%{ transform:translateX(0); }
+
+    25%{ transform:translateX(-6px); }
+
+    50%{ transform:translateX(6px); }
+
+    75%{ transform:translateX(-6px); }
+
+    100%{ transform:translateX(0); }
+
+}
+
+.mascot-error{
+    animation:mascotError 0.4s;
+}
+
+</script>
+
+<script>
+
+const mascota = document.getElementById("mascota");
+
+document.addEventListener("mousemove", function(e){
+
+    const rect = mascota.getBoundingClientRect();
+
+    const mascotX = rect.left + rect.width / 2;
+    const mascotY = rect.top + rect.height / 2;
+
+    const deltaX = e.clientX - mascotX;
+    const deltaY = e.clientY - mascotY;
+
+    const angle = Math.atan2(deltaY, deltaX) * 180 / Math.PI;
+
+    mascota.style.transform = "rotate(" + angle + "deg)";
+
+});
+
+</script>
+
+<script>
+
+const passwordInput = document.getElementById("passwordInput");
+const mascot = document.getElementById("mascota");
+
+passwordInput.addEventListener("focus", function(){
+
+    mascot.style.transform = "rotate(-20deg) scale(1.1)";
+    mascot.style.filter = "brightness(0.7)";
+
+});
+
+passwordInput.addEventListener("blur", function(){
+
+    mascot.style.transform = "rotate(0deg)";
+    mascot.style.filter = "brightness(1)";
+
+});
+
+</script>
+
+<script>
+
+const canvas = document.getElementById("particles-bg");
+const ctx = canvas.getContext("2d");
+
+function resize(){
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+}
+
+resize();
+window.addEventListener("resize",resize);
+
+let particles = [];
+let shootingStars = [];
+let angle = 0;
+
+// crear partículas
+
+for(let i=0;i<140;i++){
+particles.push({
+x:Math.random()*canvas.width,
+y:Math.random()*canvas.height,
+vx:(Math.random()-0.5)*1,
+vy:(Math.random()-0.5)*1
+});
+}
+
+// estrellas fugaces
+
+function createStar(){
+
+shootingStars.push({
+x:Math.random()*canvas.width,
+y:Math.random()*canvas.height*0.3,
+vx:10,
+vy:4,
+life:80
+});
+
+}
+
+setInterval(createStar,3000);
+
+function draw(){
+
+ctx.clearRect(0,0,canvas.width,canvas.height);
+
+// rotación galaxia
+
+angle += 0.0005;
+
+for(let i=0;i<particles.length;i++){
+
+let p = particles[i];
+
+p.x += p.vx;
+p.y += p.vy;
+
+if(p.x<0 || p.x>canvas.width) p.vx*=-1;
+if(p.y<0 || p.y>canvas.height) p.vy*=-1;
+
+// partícula
+
+ctx.beginPath();
+ctx.arc(p.x,p.y,2,0,Math.PI*2);
+
+let glow = ctx.createRadialGradient(p.x,p.y,0,p.x,p.y,8);
+glow.addColorStop(0,"rgba(96,165,250,1)");
+glow.addColorStop(1,"rgba(96,165,250,0)");
+
+ctx.fillStyle=glow;
+ctx.fill();
+
+// conexiones
+
+for(let j=i+1;j<particles.length;j++){
+
+let p2 = particles[j];
+let dx = p.x - p2.x;
+let dy = p.y - p2.y;
+let dist = Math.sqrt(dx*dx + dy*dy);
+
+if(dist < 120){
+
+ctx.beginPath();
+ctx.moveTo(p.x,p.y);
+ctx.lineTo(p2.x,p2.y);
+ctx.strokeStyle="rgba(96,165,250,0.15)";
+ctx.stroke();
+
+}
+
+}
+
+}
+
+// estrellas fugaces
+
+for(let i=shootingStars.length-1;i>=0;i--){
+
+let s = shootingStars[i];
+
+ctx.beginPath();
+ctx.moveTo(s.x,s.y);
+ctx.lineTo(s.x-40,s.y-12);
+ctx.strokeStyle="rgba(255,255,255,0.9)";
+ctx.stroke();
+
+s.x += s.vx;
+s.y += s.vy;
+s.life--;
+
+if(s.life<=0){
+shootingStars.splice(i,1);
+}
+
+}
+
+requestAnimationFrame(draw);
+
+}
+
+draw();
+
+</script>
+
+<script>
+if (window.history.replaceState) {
+    window.history.replaceState(null, null, window.location.href);
+}
+</script>

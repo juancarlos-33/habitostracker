@@ -8,6 +8,8 @@ namespace HabitTrackerApp.Models
 
         public string Name { get; set; }
 
+        public List<HabitComment> Comments { get; set; }
+
         public bool Completed { get; set; }
         public int StreakDays { get; set; }
         public int MaxStreak { get; set; }

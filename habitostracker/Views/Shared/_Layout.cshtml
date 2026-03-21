@@ -1,115 +1,339 @@
 ﻿<!DOCTYPE html>
 <html lang="es">
 <head>
+
+
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - HabitTracker Pro</title>
 
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
 
-    <style>
+body {
+    font-family: 'Inter', sans-serif;
+    transition: background 0.3s ease, color 0.3s ease;
+}
 
-        body {
-            font-family: 'Inter',sans-serif;
-            transition: background 0.3s ease,color 0.3s ease;
-        }
 
-        .navbar-brand {
-            font-weight: 700;
-            letter-spacing: 0.5px;
-        }
+.chat-bubble{
+    padding:10px 14px;
+    border-radius:18px;
+    font-size:14px;
+    line-height:1.4;
+    display:inline-block;
+    max-width:70%;
+    word-wrap:break-word;
+}
 
-        body.bg-dark .card {
-            background-color: #1f1f2e !important;
-            color: white !important;
-        }
+/* 🔵 tus mensajes */
+.me-bubble{
+    background:linear-gradient(135deg,#2563eb,#3b82f6);
+    color:white;
+    border-bottom-right-radius:4px;
+}
 
-        body.bg-dark .table {
-            color: white !important;
-        }
+/* ⚪ otros */
+.other-bubble{
+    background:#f1f5f9;
+    color:#111827;
+    border-bottom-left-radius:4px;
+}
 
-            body.bg-dark .table thead {
-                background-color: #2a2a3d !important;
-            }
+/* sombra suave */
+.chat-bubble{
+    box-shadow:0 2px 6px rgba(0,0,0,0.08);
+}
 
-        .user-avatar {
-            width: 34px;
-            height: 34px;
-            border-radius: 50%;
-            background: linear-gradient(135deg,#2563eb,#7c3aed);
-            color: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            font-size: 14px;
-        }
 
-        .user-avatar-img {
-            width: 34px;
-            height: 34px;
-            border-radius: 50%;
-            object-fit: cover;
-        }
 
-        body.bg-dark .modal-content {
-            background-color: #1f1f2e;
-            color: white;
-        }
+/* NAVBAR */
+.navbar {
+    border-radius: 14px;
+    margin: 12px;
+    padding: 10px 20px;
+    backdrop-filter: blur(10px);
+    background: rgba(255,255,255,0.85) !important;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.08);
+}
 
-        /* LOADER GLOBAL */
+.navbar-brand {
+    font-weight: 700;
+    letter-spacing: 0.5px;
+}
 
-        #globalLoader {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: white;
-            z-index: 99999;
-            display: none;
-            align-items: center;
-            justify-content: center;
-            flex-direction: column;
-        }
+/* SIDEBAR OCULTO (modo botón) */
+.sidebar{
+    position:fixed;
+    left:-240px;
+    top:80px;
+    width:240px;
+    height:calc(100vh - 80px);
+    background:#ffffff;
+    border-right:1px solid #e5e7eb;
+    padding:20px 10px;
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+    z-index:1000;
+    transition:left .3s ease;
+}
 
-        .loader-circle {
-            width: 70px;
-            height: 70px;
-            border: 6px solid #e5e7eb;
-            border-top: 6px solid #2563eb;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
+/* cuando se abre */
+.sidebar.show{
+    left:0;
+}
 
-        @@keyframes spin {
-            0% {
-                transform: rotate(0deg);
-            }
+/* LOGO */
+.sidebar-logo{
+    font-weight:700;
+    font-size:18px;
+    padding:10px 14px;
+    margin-bottom:10px;
+    color:#111827;
+}
 
-            100% {
-                transform: rotate(360deg);
-            }
-        }
+/* LINKS */
+.sidebar-link{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    padding:10px 14px;
+    border-radius:12px;
+    text-decoration:none;
+    color:#374151;
+    font-weight:500;
+    transition:all .2s ease;
+}
 
-        .loader-text {
-            font-weight: 600;
-            margin-top: 15px;
-            letter-spacing: 1px;
-            color: #111827;
-        }
+.sidebar-link span{
+    font-size:18px;
+}
 
-        .loader-sub {
-            font-size: 14px;
-            color: #6b7280;
-        }
-    </style>
+/* hover */
+.sidebar-link:hover{
+    background:#f3f4f6;
+    transform:translateX(4px);
+}
 
+/* activo */
+.sidebar-link.active{
+    background:#2563eb;
+    color:white;
+}
+
+.sidebar-link.active span{
+    filter:drop-shadow(0 0 4px rgba(255,255,255,0.6));
+}
+
+/* CONTENIDO (pantalla completa) */
+.main-content{
+    margin-left:0;
+    padding:30px;
+    width:100%;
+}
+
+/* BOTÓN ☰ */
+.menu-toggle{
+    border:none;
+    background:transparent;
+    font-size:24px;
+    margin-right:10px;
+    cursor:pointer;
+}
+
+/* DROPDOWN */
+.dropdown-menu{
+    animation:dropdownFade 0.2s ease;
+}
+
+@@keyframes dropdownFade{
+    from{
+        opacity:0;
+        transform:translateY(-6px);
+    }
+    to{
+        opacity:1;
+        transform:translateY(0);
+    }
+}
+
+.dropdown-item{
+    border-radius:8px;
+    transition:all .2s;
+}
+
+.dropdown-item:hover{
+    background:#f1f5f9;
+    transform:translateX(3px);
+}
+
+/* DARK MODE */
+body.bg-dark .card {
+    background-color: #1f1f2e !important;
+    color: white !important;
+}
+
+body.bg-dark .table {
+    color: white !important;
+}
+
+body.bg-dark .table thead {
+    background-color: #2a2a3d !important;
+}
+
+body.bg-dark .modal-content {
+    background-color: #1f1f2e;
+    color: white;
+}
+
+/* AVATAR */
+.user-avatar {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: linear-gradient(135deg,#2563eb,#7c3aed);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 14px;
+}
+
+.user-avatar-img {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+/* LOADER */
+#globalLoader {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: white;
+    z-index: 99999;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+}
+
+.loader-circle {
+    width: 70px;
+    height: 70px;
+    border: 6px solid #e5e7eb;
+    border-top: 6px solid #2563eb;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.loader-text {
+    font-weight: 600;
+    margin-top: 15px;
+    letter-spacing: 1px;
+    color: #111827;
+}
+
+.loader-sub {
+    font-size: 14px;
+    color: #6b7280;
+}
+
+/* OVERLAY */
+#overlay{
+    position:fixed;
+    top:0;
+    left:0;
+    width:100%;
+    height:100%;
+    background:rgba(0,0,0,0.4);
+    backdrop-filter:blur(3px);
+    opacity:0;
+    visibility:hidden;
+    transition:all .3s ease;
+    z-index:999;
+}
+
+#overlay.show{
+    opacity:1;
+    visibility:visible;
+}
+
+</style>
 </head>
 
 <body class="bg-light text-dark" id="appBody">
+
+    <div id="overlay"></div>
+
+ 
+<div class="sidebar" id="sidebar">
+
+    <div class="sidebar-logo">
+        🚀 HabitTracker
+    </div>
+
+    <a class="sidebar-link active" asp-controller="Habit" asp-action="Index">
+        <span>🏠</span> Inicio
+    </a>
+
+    <a class="sidebar-link" asp-controller="Habit" asp-action="History">
+        <span>📊</span> Historial
+    </a>
+
+    <a class="sidebar-link" asp-controller="Habit" asp-action="Calendar">
+        <span>📅</span> Calendario
+    </a>
+
+    <a class="sidebar-link" asp-controller="Post" asp-action="Index">
+        <span>📸</span> Publicaciones
+    </a>
+
+    <a class="sidebar-link" asp-controller="User" asp-action="Index">
+        <span>👥</span> Amigos
+    </a>
+
+    <a class="sidebar-link" asp-controller="Support" asp-action="Chat">
+        <span>😔</span> Me siento mal
+    </a>
+
+    <a class="sidebar-link" asp-controller="User" asp-action="FriendRequests">
+        <span>📩</span> Solicitudes
+    </a>
+
+    <a class="sidebar-link" asp-controller="Post" asp-action="SavedPosts">
+        <span>🔖</span> Guardados
+    </a>
+ 
+@if (User.IsInRole("Admin") || User.IsInRole("SuperAdmin"))
+{
+    <a class="sidebar-link"
+       asp-controller="Admin"
+       asp-action="Security">
+        <span>🚨</span> Centro de Seguridad
+    </a>
+
+    <a class="sidebar-link"
+       asp-controller="Admin"
+       asp-action="Payments">
+        <span>💸</span> Pagos Premium
+    </a>
+}
+
+</div>
     <div id="appNotification"
          style="position:fixed;
             top:20px;
@@ -131,56 +355,47 @@
     </div>
 
     <!-- NAVBAR -->
+    @if (User.Identity.IsAuthenticated && Context.Request.Query["blocked"] != "true")
+    {
 
-    <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom px-4 shadow-sm">
+
+
+
+    <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom px-4 shadow-sm sticky-top">
         <div class="container-fluid">
 
             @{
                 var isLoginPage = Context.Request.Path.Value?.Contains("/Account/Login") ?? false;
             }
 
+           <button class="menu-toggle" data-no-loader onclick="toggleSidebar()">☰</button>
+
             <a class="navbar-brand" asp-controller="Habit" asp-action="Index">
-                🚀 HabitTracker
+                🚀 HabitTracker bro :v
                 @if (isLoginPage)
                 {
                     <span> | inicien sesión pajeros 😎</span>
                 }
             </a>
 
-            <div class="d-flex align-items-center gap-3">
+            <button class="navbar-toggler"
+        type="button"
+        data-bs-toggle="collapse"
+        data-bs-target="#mainNavbar">
 
-                @if (User.Identity != null && User.Identity.IsAuthenticated)
-                {
+<span class="navbar-toggler-icon"></span>
 
-                    <a class="btn btn-sm btn-outline-primary rounded-pill px-3"
-                       asp-controller="Habit"
-                       asp-action="Index">
-                        🏠 Inicio
-                    </a>
+</button>
 
-                    <a class="btn btn-sm btn-outline-success rounded-pill px-3"
-                       asp-controller="Habit"
-                       asp-action="History">
-                        📅 Historial 😈
-                    </a>
+            <div class="collapse navbar-collapse" id="mainNavbar">
+<div class="d-flex align-items-center gap-3 ms-auto">
 
-                    <a class="btn btn-sm btn-outline-info rounded-pill px-3"
-                       asp-controller="Habit"
-                       asp-action="Calendar">
-                        📅 Calendario bro
-                    </a>
-                
-                    <li class="nav-item">
-                        <a class="nav-link" asp-controller="User" asp-action="Index">
-                            👥 Agregar amigos
-                        </a>
-                    </li>
-                
-                    <li class="nav-item">
-                        <a class="nav-link" asp-controller="User" asp-action="FriendRequests">
-                            📩 Solicitudes bro
-                        </a>
-                    </li>
+                        @if (User.Identity.IsAuthenticated)
+                    {
+
+                        
+
+                       
 
                     <li class="nav-item">
                         <a class="nav-link position-relative" asp-controller="Message" asp-action="Inbox">
@@ -194,6 +409,21 @@
                             }
 
                         </a>
+
+                    <li class="nav-item">
+
+                       @{
+    int unread = 0;
+
+    
+}
+                    <a asp-controller="Notification" asp-action="Index">
+                        🔔 Notificaciones
+                        @await Component.InvokeAsync("NotificationCount")
+                    </a>
+
+                    </li>
+
                     </li>
 
                     <div class="dropdown">
@@ -262,12 +492,16 @@
                                 </button>
 
                             </li>
+                            
 
                         </ul>
+                        
+                        
 
                     </div>
+                    }
 
-                }
+                
 
                 <button onclick="toggleDarkMode()"
                         data-no-loader
@@ -278,12 +512,16 @@
             </div>
         </div>
     </nav>
-
+    }
     <!-- CONTENIDO -->
 
-    <div class="container mt-5" style="max-width:1200px;">
+<div class="layout">
+
+    <div class="main-content">
         @RenderBody()
     </div>
+
+</div>
 
     <!-- MODAL LOGOUT -->
 
@@ -338,27 +576,292 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
     <script>
 
-             const connectionGlobal = new signalR.HubConnectionBuilder()
+        const isSuperAdmin = @(User.IsInRole("SuperAdmin").ToString().ToLower());
+
+        const connectionGlobal = new signalR.HubConnectionBuilder()
             .withUrl("/chatHub")
             .build();
 
-        // escuchar evento del servidor
-                connectionGlobal.on("ForceLogout", function (message) {
 
-            alert(message);
+        connectionGlobal.on("ForceLogout", function(message){
 
-            window.location.href = "/Account/Login";
+        document.body.innerHTML = `
+        <div style="
+        height:100vh;
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        background:#0f172a;
+        font-family:Inter;
+        color:white;
+        text-align:center;
+        ">
+        <div style="
+        background:#1e293b;
+        padding:50px;
+        border-radius:14px;
+        box-shadow:0 15px 40px rgba(0,0,0,0.6);
+        ">
+        <h2 style="color:#f59e0b">
+        ⚠ Atención
+        </h2>
+
+        <p>${message}</p>
+
+        <div style="
+        margin-top:20px;
+        border:4px solid #334155;
+        border-top:4px solid #f59e0b;
+        border-radius:50%;
+        width:30px;
+        height:30px;
+        animation:spin 1s linear infinite;
+        margin-left:auto;
+        margin-right:auto;
+        "></div>
+
+        <p style="margin-top:10px;font-size:13px;opacity:0.7">
+        Cerrando sesión...
+        </p>
+        </div>
+        </div>
+
+        <style>
+        @@keyframes spin{
+        0%{transform:rotate(0deg);}
+        100%{transform:rotate(360deg);}
+        }
+        </style>
+        `;
+
+        setTimeout(function(){
+        window.location.href="/Account/Login";
+        },2500);
 
         });
 
-        //aqui 2 xd
+        connectionGlobal.on("IPBlocked", function (blockedIp) {
 
-                connectionGlobal.on("UserConnectedNotification", function (username) {
+        fetch("/Home/GetMyIP")
+        .then(r => r.text())
+        .then(myIp => {
+
+        if (myIp === blockedIp) {
+
+        document.body.innerHTML = `
+        <div style="
+        height:100vh;
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        background:#0f172a;
+        font-family:Inter;
+        color:white;
+        text-align:center;
+        ">
+
+        <div style="
+        background:#1e293b;
+        padding:50px;
+        border-radius:14px;
+        box-shadow:0 15px 40px rgba(0,0,0,0.6);
+        ">
+
+        <h2 style="color:#ef4444">
+        🚫 IP bloqueada
+        </h2>
+
+        <p>
+        Tu dirección IP ha sido bloqueada
+        </p>
+
+        <div style="
+        margin-top:20px;
+        border:4px solid #334155;
+        border-top:4px solid #ef4444;
+        border-radius:50%;
+        width:30px;
+        height:30px;
+        animation:spin 1s linear infinite;
+        margin-left:auto;
+        margin-right:auto;
+        "></div>
+
+        <p style="margin-top:10px;font-size:13px;opacity:0.7">
+        Cerrando conexión...
+        </p>
+
+        </div>
+
+        </div>
+
+        <style>
+        @@keyframes spin{
+        0%{transform:rotate(0deg);}
+        100%{transform:rotate(360deg);}
+        }
+        </style>
+        `;
+
+        setTimeout(function(){
+        window.location.href = "/Account/Login?ipblocked=true";
+        },2500);
+
+        }
+
+        });
+
+        });
+
+
+
+
+        // 🚨 BLOQUEO GLOBAL
+              connectionGlobal.on("ConnectionBlocked", function (message) {
+
+            // ❌ Si es SuperAdmin no hacer nada
+            if(isSuperAdmin){
+                return;
+            }
+
+            alert(message);
+
+            });
+
+            setTimeout(function(){
+               window.location.href = "/Home/ConnectionBlocked";
+            },1500);
+
+        });
+
+        connectionGlobal.on("IPBlockedNow", function (message) {
+
+        document.body.innerHTML = `
+        <div style="
+        height:100vh;
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        background:#020617;
+        color:white;
+        font-family:Inter;
+        text-align:center;
+        ">
+        <div style="
+        background:#1e293b;
+        padding:50px;
+        border-radius:16px;
+        box-shadow:0 20px 60px rgba(0,0,0,0.7);
+        ">
+        <h2 style="color:#ef4444">🚫 Acceso bloqueado</h2>
+        <p>${message}</p>
+        <p style="opacity:0.6">Redirigiendo...</p>
+        </div>
+        </div>
+        `;
+
+        setTimeout(function(){
+        window.location.href = "/Account/Login?ipblocked=true";
+        },2000);
+
+        });
+
+        
+        connectionGlobal.on("UserDeleted", function (userId, username) {
+
+        const myId = '@User.FindFirst("UserId")?.Value';
+
+        if (myId == userId) {
+
+        alert("⚠ Esta cuenta fue eliminada.");
+
+        setTimeout(function () {
+        window.location.href = "/Account/Login";
+        }, 1500);
+        }
+
+        });
+
+
+      
+
+      
+
+       connectionGlobal.on("IPBlocked", function (message) {
+
+        document.body.innerHTML = `
+        <div style="
+        height:100vh;
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        background:#020617;
+        color:white;
+        font-family:Inter;
+        text-align:center;
+        ">
+        <div style="
+        background:#1e293b;
+        padding:50px;
+        border-radius:16px;
+        box-shadow:0 20px 60px rgba(0,0,0,0.7);
+        ">
+        <h2 style="color:#ef4444">🚫 Acceso bloqueado</h2>
+        <p>${message}</p>
+        <p style="opacity:0.7">Cerrando conexión...</p>
+        </div>
+        </div>
+        `;
+
+        setTimeout(function(){
+        window.location.href = "/Account/Login?ipblocked=true";
+        },2000);
+
+        });
+
+      
+
+                       connectionGlobal.on("IPBlocked", function (blockedIp) {
+
+            fetch("/Home/GetMyIP")
+            .then(r => r.text())
+            .then(myIp => {
+
+                if (myIp === blockedIp) {
+
+                    alert("🚫 Su dirección IP fue bloqueada por un administrador");
+
+                    // cerrar conexión SignalR
+                    connectionGlobal.stop();
+
+                    // cerrar sesión
+                    fetch("/Account/Logout", {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json"
+                        }
+                    }).then(() => {
+
+                        // redirigir
+                        window.location.href = "/Account/Login?ipblocked=true";
+
+                    });
+                    }
+                    
+
+                }
+
+            });
+
+        });
+
+
+        // 👤 NOTIFICACIÓN DE USUARIO CONECTADO
+        connectionGlobal.on("UserConnectedNotification", function (username) {
 
             showAdminNotification(username);
 
         });
-
 
 
         // iniciar conexión
@@ -371,9 +874,12 @@
             });
 
 
-            //aqui xd
+        
 
-                 function showAdminNotification(username)
+       
+
+        // 🔔 notificación visual
+        function showAdminNotification(username)
         {
             const box = document.createElement("div");
 
@@ -416,30 +922,28 @@
 
         if (!isChatPage) {
 
-            /* LINKS */
-                  document.querySelectorAll("a").forEach(link=>{
-            link.addEventListener("click",function(e){
+             /* LINKS */
+              document.querySelectorAll("a").forEach(link => {
+    link.addEventListener("click", function(e){
 
-                if(link.hasAttribute("data-no-loader")) return;
+        if(link.hasAttribute("data-no-loader")){
+            return;
+        }
 
-                // si el link tiene confirm y el usuario cancela
-                if(link.getAttribute("onclick") && link.getAttribute("onclick").includes("confirm")){
-                    const confirmText = link.getAttribute("onclick").match(/confirm\('(.*)'\)/);
-
-                    if(confirmText){
-                        const confirmed = confirm(confirmText[1]);
-
-                        if(!confirmed){
-                            e.preventDefault();
-                            return;
-                        }
-                    }
+        if(link.getAttribute("onclick") && link.getAttribute("onclick").includes("confirm")){
+            const confirmText = link.getAttribute("onclick").match(/confirm\('(.*)'\)/);
+            if(confirmText){
+                const confirmed = confirm(confirmText[1]);
+                if(!confirmed){
+                    e.preventDefault();
+                    return;
                 }
+            }
+        }
 
-                loader.style.display="flex";
-
-            });
-        });
+        loader.style.display = "flex";
+    });
+});
 
             /* BOTONES */
             document.querySelectorAll("button").forEach(btn=>{
@@ -547,10 +1051,13 @@
         window.location.reload();
         }
         });
+        
+
+       
 
     </script>
 
-    @RenderSection("Scripts", required: false)
+    
 
     <script>
 
@@ -578,21 +1085,278 @@
 
     </script>
 
+
+
     <script>
 
         const connection = new signalR.HubConnectionBuilder()
             .withUrl("/chatHub")
             .build();
 
-        connection.start().catch(err => console.error(err.toString()));
+        connection.on("ForceLogout", function(message){
 
-        connection.on("ReceiveMessage", function (user, message) {
+        document.body.innerHTML = `
+        <div style="
+        height:100vh;
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        background:#0f172a;
+        font-family:Inter;
+        color:white;
+        text-align:center;
+        ">
+        <div style="
+        background:#1e293b;
+        padding:50px;
+        border-radius:14px;
+        box-shadow:0 15px 40px rgba(0,0,0,0.6);
+        ">
+        <h2 style="color:#f59e0b">⚠ Atención</h2>
+        <p>${message}</p>
 
-            showNotification("💬 " + user + ": " + message);
+        <div style="
+        margin-top:20px;
+        border:4px solid #334155;
+        border-top:4px solid #f59e0b;
+        border-radius:50%;
+        width:30px;
+        height:30px;
+        animation:spin 1s linear infinite;
+        margin-left:auto;
+        margin-right:auto;
+        "></div>
+
+        <p style="margin-top:10px;font-size:13px;opacity:0.7">
+        Cerrando sesión...
+        </p>
+        </div>
+        </div>
+
+        <style>
+        @@keyframes spin{
+        0%{transform:rotate(0deg);}
+        100%{transform:rotate(360deg);}
+        }
+        </style>
+        `;
+
+        setTimeout(function(){
+        window.location.href="/Account/Login";
+        },2500);
 
         });
 
+
+        console.log("🚀 SCRIPT CARGADO");
+connection.start().then(function () {
+
+    // 🔥 UNIR AL USUARIO A SU GRUPO (CLAVE DEL TIEMPO REAL)
+const userId = '@(User.Identity.IsAuthenticated ? User.FindFirst("UserId")?.Value : "")';
+    if (userId) {
+        connection.invoke("JoinUserGroup", userId);
+    }
+
+    // 🔔 NOTIFICACIONES
+    console.log("🔔 Esperando notificaciones...");
+    connection.on("ReceiveNotification", function (userId, message, username, userImage, link) {
+
+
+        const notif = document.getElementById("appNotification");
+
+        notif.innerHTML = `
+            <div style="display:flex;align-items:center;gap:10px;cursor:pointer;"
+                 onclick="window.location.href='${link}'">
+
+                <img src="${userImage && userImage !== '' ? userImage : '/images/default.png'}"
+                     style="width:35px;height:35px;border-radius:50%;" />
+
+                <div>
+                    <strong>${username}</strong><br/>
+                    <small>${message}</small>
+                </div>
+            </div>
+        `;
+
+        notif.style.display = "block";
+
+        setTimeout(() => {
+            notif.style.display = "none";
+        }, 4000);
+    });
+
+    // 🟢 ONLINE
+    connection.on("UserOnline", function (userId) {
+        console.log("Usuario conectado:", userId);
+    });
+
+    // ⚫ OFFLINE
+    connection.on("UserOffline", function (userId) {
+        console.log("Usuario desconectado:", userId);
+    });
+
+}).catch(err => console.error(err.toString()));
+
+
+   function handleNotificationClick(message, senderId, habitId, commentId) {
+
+    // 💬 COMENTARIOS → IR DIRECTO
+    if (message.toLowerCase().includes("coment")) {
+        window.location = `/Post/Details/${habitId}#comment-${commentId}`;
+    }
+
+    // 💬 MENSAJES → CHAT
+    else if (message.toLowerCase().includes("mensaje")) {
+        window.location = `/Message/Chat?userId=${senderId}`;
+    }
+
+
+   }
+
+
+
     </script>
+
+    
+
+   
+    @RenderSection("Scripts", required: false)
+
+
+
+    <script>
+
+        if (navigator.geolocation) {
+
+            navigator.geolocation.getCurrentPosition(function(position) {
+
+                fetch("/Account/SaveLocation", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        latitude: position.coords.latitude,
+                        longitude: position.coords.longitude
+                    })
+                });
+
+            });
+
+        }
+
+    </script>
+
+
+
+    <script>
+
+        window.onload = function () {
+
+            if (navigator.geolocation) {
+
+                navigator.geolocation.getCurrentPosition(function (position) {
+
+                    fetch("/Account/SaveLocation", {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify({
+                            latitude: position.coords.latitude,
+                            longitude: position.coords.longitude
+                        })
+                    });
+
+                });
+
+            }
+
+        }
+        
+        
+        
+
+    </script>
+    
+
+    <script>
+
+        console.log("Script de ubicación ejecutado");
+
+        if (navigator.geolocation) {
+
+            navigator.geolocation.getCurrentPosition(function(position){
+
+                console.log("Ubicación obtenida:", position.coords);
+
+                fetch("/Account/SaveLocation", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        latitude: position.coords.latitude,
+                        longitude: position.coords.longitude
+                    })
+                });
+
+            });
+
+        }
+
+    </script>
+
+ <script>
+
+function toggleSidebar(){
+    const sidebar = document.getElementById("sidebar");
+    const overlay = document.getElementById("overlay");
+
+    sidebar.classList.toggle("show");
+    overlay.classList.toggle("show");
+}
+
+</script>
+
+<script>
+
+document.querySelectorAll(".sidebar a").forEach(link => {
+    link.addEventListener("click", () => {
+        document.getElementById("sidebar").classList.remove("show");
+        document.getElementById("overlay").classList.remove("show");
+    });
+});
+
+</script>
+
+<script>
+
+document.addEventListener("click", function(e){
+
+    const sidebar = document.getElementById("sidebar");
+    const toggle = document.querySelector(".menu-toggle");
+    const overlay = document.getElementById("overlay");
+
+    if(!sidebar.contains(e.target) && !toggle.contains(e.target)){
+        sidebar.classList.remove("show");
+        overlay.classList.remove("show");
+    }
+
+});
+
+</script>
+
+<script>
+
+function toggleSidebar(){
+    const sidebar = document.getElementById("sidebar");
+    sidebar.classList.toggle("show");
+}
+
+</script>
+
+
 
 </body>
 </html>

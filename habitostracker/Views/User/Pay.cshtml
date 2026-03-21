@@ -1,0 +1,66 @@
+﻿@{
+    ViewData["Title"] = "Hazte Premium";
+}
+
+<div class="container mt-5" style="max-width:500px;">
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger text-center">
+            @TempData["Error"]
+        </div>
+    }
+
+    <div class="card shadow-lg border-0 rounded-4 p-4 text-center">
+
+        <h3 class="fw-bold mb-3">💳 Hazte Premium</h3>
+
+        <p class="text-muted">
+            Para desbloquear todas las funciones, realiza el pago por Nequi bro :)
+        </p>
+
+        <div class="alert alert-dark fw-bold">
+            📱 Nequi: 3148846006
+        </div>
+
+        <p class="small text-muted">
+            Envía el pago y sube el comprobante abajo 👇
+        </p>
+
+        <!-- ✅ FORM CORREGIDO -->
+        <form asp-controller="User"
+              asp-action="UploadPayment"
+              method="post"
+              enctype="multipart/form-data">
+
+            <input type="file"
+                   id="fileInput"
+                   name="file"
+                   class="form-control mb-3" />
+
+            <button type="button"
+                    class="btn btn-success w-100 rounded-pill"
+                    data-no-loader="true"
+                    onclick="enviarFormulario()">
+                🚀 Enviar comprobante
+            </button>
+
+        </form>
+
+    </div>
+</div>
+
+<!-- ✅ SCRIPT CORRECTO -->
+<script>
+function enviarFormulario() {
+    const fileInput = document.getElementById("fileInput");
+
+    if (!fileInput || fileInput.files.length === 0) {
+        alert("⚠️ Debes subir un comprobante antes de enviar.");
+        return;
+    }
+
+    // 🔥 SOLO aquí se envía → evita loader infinito
+    fileInput.closest("form").submit();
+}
+</script>
