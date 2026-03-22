@@ -1,0 +1,377 @@
+﻿@{
+    ViewData["Title"] = "Llamada";
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Llamada en curso</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Segoe UI', sans-serif;
+            color: white;
+        }
+
+        .call-container {
+            text-align: center;
+            padding: 2rem;
+            width: 100%;
+            max-width: 500px;
+        }
+
+        .call-title {
+            font-size: 14px;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            color: #a0aec0;
+            margin-bottom: 2.5rem;
+        }
+
+        .avatars-wrap {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 0;
+            margin-bottom: 2rem;
+            position: relative;
+        }
+
+        .avatar-box {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.6rem;
+        }
+
+        .avatar-box:first-child {
+            transform: translateX(20px);
+            z-index: 2;
+        }
+
+        .avatar-box:last-child {
+            transform: translateX(-20px);
+            z-index: 1;
+        }
+
+        .avatar-img {
+            width: 110px;
+            height: 110px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 4px solid rgba(255,255,255,0.2);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+        }
+
+        .avatar-letter {
+            width: 110px;
+            height: 110px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5rem;
+            font-weight: bold;
+            border: 4px solid rgba(255,255,255,0.2);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+        }
+
+        .avatar-name {
+            font-size: 13px;
+            color: #cbd5e0;
+            font-weight: 500;
+        }
+
+        /* animación de pulso en el avatar que habla */
+        .pulse {
+            animation: pulse 1.5s infinite;
+        }
+
+        @@keyframes pulse {
+            0%   { box-shadow: 0 0 0 0 rgba(99, 179, 237, 0.5); }
+            70%  { box-shadow: 0 0 0 18px rgba(99, 179, 237, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(99, 179, 237, 0); }
+        }
+
+        .call-status {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 0.4rem;
+        }
+
+        .call-timer {
+            font-size: 28px;
+            font-weight: 300;
+            letter-spacing: 4px;
+            color: #63b3ed;
+            margin-bottom: 3rem;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .call-actions {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            align-items: center;
+        }
+
+        .btn-action {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            border: none;
+            cursor: pointer;
+            font-size: 22px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.15s, opacity 0.15s;
+        }
+
+        .btn-action:hover {
+            transform: scale(1.1);
+            opacity: 0.85;
+        }
+
+        .btn-mute {
+            background: rgba(255,255,255,0.15);
+            color: white;
+        }
+
+        .btn-mute.muted {
+            background: rgba(255,255,255,0.35);
+        }
+
+        .btn-hangup {
+            width: 72px;
+            height: 72px;
+            background: #e53e3e;
+            color: white;
+            font-size: 26px;
+            box-shadow: 0 4px 20px rgba(229, 62, 62, 0.5);
+        }
+
+        .btn-hangup:hover {
+            background: #c53030;
+        }
+
+        .btn-speaker {
+            background: rgba(255,255,255,0.15);
+            color: white;
+        }
+
+        .connecting-dots span {
+            animation: blink 1.4s infinite;
+            font-size: 20px;
+        }
+        .connecting-dots span:nth-child(2) { animation-delay: 0.2s; }
+        .connecting-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+        @@keyframes blink {
+            0%, 80%, 100% { opacity: 0.2; }
+            40% { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="call-container">
+
+    <div class="call-title">Llamada de voz</div>
+
+    <!-- AVATARES -->
+    <div class="avatars-wrap">
+
+        <!-- YO -->
+        <div class="avatar-box">
+            @if (!string.IsNullOrEmpty(ViewBag.MyImage))
+            {
+                <img src="@ViewBag.MyImage" class="avatar-img pulse" id="myAvatar" />
+            }
+            else
+            {
+                <div class="avatar-letter pulse" id="myAvatar"
+                     style="background: linear-gradient(135deg, #2563eb, #7c3aed);">
+                    @(ViewBag.MyUsername?.Substring(0, 1).ToUpper() ?? "?")
+                </div>
+            }
+            <span class="avatar-name">@ViewBag.MyUsername (tú)</span>
+        </div>
+
+        <!-- OTRO USUARIO -->
+        <div class="avatar-box">
+            @if (!string.IsNullOrEmpty(ViewBag.OtherImage))
+            {
+                <img src="@ViewBag.OtherImage" class="avatar-img" id="otherAvatar" />
+            }
+            else
+            {
+                <div class="avatar-letter" id="otherAvatar"
+                     style="background: linear-gradient(135deg, #059669, #0891b2);">
+                    @(ViewBag.OtherUsername?.Substring(0, 1).ToUpper() ?? "?")
+                </div>
+            }
+            <span class="avatar-name">@ViewBag.OtherUsername</span>
+        </div>
+
+    </div>
+
+    <!-- ESTADO -->
+    <div class="call-status" id="callStatus">
+        Conectando
+        <span class="connecting-dots">
+            <span>.</span><span>.</span><span>.</span>
+        </span>
+    </div>
+
+    <!-- TIMER -->
+    <div class="call-timer" id="callTimer" style="display:none;">00:00</div>
+
+    <!-- BOTONES -->
+    <div class="call-actions">
+
+        <button class="btn-action btn-mute" id="muteBtn" onclick="toggleMute()" title="Silenciar">
+            🎤
+        </button>
+
+        <button class="btn-action btn-hangup" onclick="hangUp()" title="Colgar">
+            📵
+        </button>
+
+        <button class="btn-action btn-speaker" onclick="toggleSpeaker()" title="Altavoz">
+            🔊
+        </button>
+
+    </div>
+
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
+<script>
+
+    let isMuted = false;
+    let timerInterval = null;
+    let seconds = 0;
+
+    // ===== TIMER =====
+    function startTimer() {
+        const status = document.getElementById("callStatus");
+        const timer = document.getElementById("callTimer");
+
+        status.style.display = "none";
+        timer.style.display = "block";
+
+        // pulso en el otro avatar también
+        document.getElementById("otherAvatar").classList.add("pulse");
+
+        timerInterval = setInterval(() => {
+            seconds++;
+            const m = String(Math.floor(seconds / 60)).padStart(2, "0");
+            const s = String(seconds % 60).padStart(2, "0");
+            timer.textContent = `${m}:${s}`;
+        }, 1000);
+    }
+
+    // ===== MUTE =====
+    function toggleMute() {
+        const btn = document.getElementById("muteBtn");
+
+        if (window.localStream) {
+            window.localStream.getAudioTracks().forEach(track => {
+                track.enabled = !track.enabled;
+                isMuted = !track.enabled;
+            });
+        }
+
+        btn.textContent = isMuted ? "🔇" : "🎤";
+        btn.classList.toggle("muted", isMuted);
+    }
+
+    // ===== SPEAKER (placeholder) =====
+    function toggleSpeaker() {
+        alert("🔊 Control de altavoz disponible solo en móvil nativo.");
+    }
+
+  
+    // ===== SIGNALR — detectar cuando conecta =====
+    const connection = new signalR.HubConnectionBuilder()
+        .withUrl("/chatHub")
+        .build();
+
+    connection.start().then(() => {
+        const myId = "@ViewBag.MyId";
+        connection.invoke("JoinUserGroup", myId);
+
+
+        function hangUp() {
+    if (timerInterval) clearInterval(timerInterval);
+
+    // 🔥 detener todos los tracks de audio
+    if (window.localStream) {
+        window.localStream.getTracks().forEach(t => {
+            t.stop();
+            t.enabled = false;
+        });
+        window.localStream = null;
+    }
+
+    // 🔥 cerrar conexión peer
+    if (window.peerConnection) {
+        window.peerConnection.getSenders().forEach(s => s.track?.stop());
+        window.peerConnection.close();
+        window.peerConnection = null;
+    }
+
+    // 🔥 detener audios en el DOM
+    document.querySelectorAll("audio").forEach(a => {
+        a.pause();
+        a.srcObject = null;
+    });
+
+    // 🔥 avisar a la ventana del chat que pare el audio
+    if (window.opener && !window.opener.closed) {
+        window.opener.stopCallAudio();
+    }
+
+    const userId = new URLSearchParams(window.location.search).get("userId");
+    window.location.href = "/Message/Chat?userId=" + userId;
+}
+connection.on("ReceiveAnswer", async function (answer) {
+
+    // 🔥 usar el peerConnection de la ventana del chat
+    const pc = window.opener?.peerConnection;
+
+    if (pc) {
+        const desc = new RTCSessionDescription(JSON.parse(answer));
+        await pc.setRemoteDescription(desc);
+    }
+
+    startTimer();
+});
+
+connection.on("ReceiveIceCandidate", async function (candidate) {
+    try {
+        // 🔥 usar el peerConnection de la ventana del chat
+        const pc = window.opener?.peerConnection;
+        if (pc) {
+            await pc.addIceCandidate(new RTCIceCandidate(JSON.parse(candidate)));
+        }
+    } catch (err) {
+        console.error("ICE error:", err);
+    }
+});
+       
+</script>
+
+</body>
+</html>

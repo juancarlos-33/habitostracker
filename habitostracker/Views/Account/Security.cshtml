@@ -1,0 +1,288 @@
+﻿@model HabitTrackerApp.Models.User
+
+@{
+    ViewData["Title"] = "Seguridad";
+}
+
+<div class="sec-container">
+    
+    <div class="sec-header">
+        <h2>🔐 Seguridad</h2>
+        <span>Gestiona tu cuenta</span>
+    </div>
+
+    <!-- INFO -->
+    <div class="sec-card">
+        <div>
+            <strong>Última conexión:</strong>
+            @(Model.LastOnline?.ToString("dd MMM yyyy HH:mm") ?? "No disponible")
+        </div>
+        <div>
+            <strong>IP:</strong>
+            @(string.IsNullOrEmpty(Model.LastIp) ? "No disponible" : Model.LastIp)
+        </div>
+        <div>
+            <strong>Dispositivo:</strong>
+            @(Model.Device ?? "No disponible")
+        </div>
+    </div>
+
+    <!-- SESIONES -->
+    <div class="sec-card">
+        <h5>🟢 Sesiones activas</h5>
+        <div>Dispositivo actual: @(Model.Device ?? "Desconocido")</div>
+        <div>IP actual: @(Model.LastIp ?? "No disponible")</div>
+
+        <button class="sec-btn danger" onclick="logoutAll()">
+            Cerrar todas las sesiones
+        </button>
+    </div>
+
+    <!-- CAMBIAR CONTRASEÑA -->
+    <button class="sec-toggle" onclick="toggleSection('pwd')">
+        🔑 Cambiar contraseña
+    </button>
+
+    <div id="section-pwd" class="sec-box">
+        <form asp-controller="Account" asp-action="ChangePassword" method="post">
+            @Html.AntiForgeryToken()
+
+            <input name="CurrentPassword" type="password" placeholder="Contraseña actual" class="sec-input" />
+            <input name="NewPassword" type="password" placeholder="Nueva contraseña" class="sec-input" />
+            <input name="ConfirmPassword" type="password" placeholder="Confirmar contraseña" class="sec-input" />
+
+            <button type="submit" class="sec-btn-primary">
+                Actualizar contraseña
+            </button>
+        </form>
+    </div>
+
+    <!-- ELIMINAR CUENTA -->
+    <button class="sec-toggle danger" onclick="toggleSection('del')">
+        ⚠️ Eliminar cuenta
+    </button>
+
+    <div id="section-del" class="sec-box">
+        @if (TempData["Error"] != null)
+        {
+            <div class="sec-alert-error">❌ @TempData["Error"]</div>
+        }
+
+        <form asp-controller="Account" asp-action="DeleteAccount" method="post"
+              onsubmit="return validarEliminar()">
+            @Html.AntiForgeryToken()
+
+            <input id="deletePassword" name="password" type="password"
+                   placeholder="Tu contraseña" class="sec-input"
+                   oninput="limpiarError()" />
+
+            <div id="deleteError" class="sec-alert-error" style="display:none;"></div>
+
+            <button type="submit" class="sec-btn-danger">
+                🗑️ Eliminar cuenta
+            </button>
+        </form>
+    </div>
+
+</div>
+
+<style>
+    .sec-container {
+        max-width: 650px;
+        margin: 40px auto;
+        font-family: sans-serif;
+    }
+
+    sec-alert-error {
+        background: #fef2f2;
+        border: 1px solid #fecaca;
+        color: #b91c1c;
+        padding: 8px 12px;
+        border-radius: 8px;
+        margin-bottom: 10px;
+        font-size: 0.875rem;
+    }
+
+    .sec-header {
+        margin-bottom: 20px;
+    }
+
+        .sec-header h2 {
+            margin: 0;
+        }
+
+        .sec-header span {
+            font-size: 0.9rem;
+            color: gray;
+        }
+
+    .sec-card {
+        background: white;
+        padding: 15px;
+        border-radius: 12px;
+        margin-bottom: 15px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+
+    .sec-btn {
+        width: 100%;
+        padding: 10px;
+        margin-top: 10px;
+        border: none;
+        border-radius: 8px;
+        background: #e2e8f0;
+        cursor: pointer;
+    }
+
+        .sec-btn.danger {
+            background: #fee2e2;
+            color: #b91c1c;
+        }
+
+    .sec-toggle {
+        width: 100%;
+        padding: 14px;
+        margin-top: 10px;
+        border: none;
+        border-radius: 10px;
+        background: #f1f5f9;
+        font-weight: 600;
+        text-align: left;
+        cursor: pointer;
+    }
+
+        .sec-toggle:hover {
+            background: #e2e8f0;
+        }
+
+        .sec-toggle.danger {
+            color: #dc2626;
+            background: #fef2f2;
+        }
+
+    .sec-box {
+        display: none;
+        margin-top: 10px;
+        padding: 15px;
+        background: #f8fafc;
+        border-radius: 10px;
+        position: relative;
+        z-index: 9999;
+    }
+
+    .sec-input {
+        width: 100%;
+        margin-bottom: 10px;
+        padding: 10px;
+        border-radius: 8px;
+        border: 1px solid #ccc;
+    }
+
+    .sec-btn-primary {
+        background: #2563eb;
+        color: white;
+        border: none;
+        padding: 10px;
+        border-radius: 8px;
+        width: 100%;
+    }
+
+    .sec-btn-danger {
+        background: #dc2626;
+        color: white;
+        border: none;
+        padding: 10px;
+        border-radius: 8px;
+        width: 100%;
+    }
+</style>
+
+<script>
+    function toggleSection(id) {
+        const el = document.getElementById("section-" + id);
+        el.style.display = el.style.display === "block" ? "none" : "block";
+    }
+
+       function logoutAll() {
+        fetch("/Account/LogoutAll", { method: "POST" })
+            .then(() => window.location.href = "/Account/Login");
+    }
+
+    document.addEventListener("DOMContentLoaded", function () {
+        // 🔥 Quitar overlay
+        const loader = document.getElementById("globalLoader");
+        if (loader) {
+            loader.style.display = "none";
+            loader.style.pointerEvents = "none";
+        }
+
+        // 🔥 Verificar contraseña en tiempo real
+        let passwordValida = false;
+
+        const input = document.getElementById("deletePassword");
+        if (input) {
+            input.addEventListener("input", async function () {
+                const pwd = this.value;
+                const error = document.getElementById("deleteError");
+
+                if (!pwd || pwd.trim() === "") {
+                    error.style.display = "none";
+                    passwordValida = false;
+                    return;
+                }
+
+                const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+
+                const response = await fetch("/Account/VerifyPassword", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/x-www-form-urlencoded",
+                        "RequestVerificationToken": token
+                    },
+                    body: "password=" + encodeURIComponent(pwd)
+                });
+
+                const data = await response.json();
+
+                error.style.display = "block";
+
+                if (data.valid) {
+                    error.style.background = "#f0fdf4";
+                    error.style.borderColor = "#86efac";
+                    error.style.color = "#16a34a";
+                    error.innerText = "✅ Contraseña correcta";
+                    passwordValida = true;
+                } else {
+                    error.style.background = "#fef2f2";
+                    error.style.borderColor = "#fecaca";
+                    error.style.color = "#b91c1c";
+                    error.innerText = "❌ Contraseña incorrecta";
+                    passwordValida = false;
+                }
+            });
+        }
+
+        // 🔥 guardar passwordValida en window para acceder desde validarEliminar
+        window.getPasswordValida = () => passwordValida;
+    });
+
+    function validarEliminar() {
+        const pwd = document.getElementById("deletePassword").value;
+        const error = document.getElementById("deleteError");
+
+        if (!pwd || pwd.trim() === "") {
+            error.style.display = "block";
+            error.style.background = "#fef2f2";
+            error.style.borderColor = "#fecaca";
+            error.style.color = "#b91c1c";
+            error.innerText = "⚠️ Debes ingresar tu contraseña.";
+            return false;
+        }
+
+        if (!window.getPasswordValida()) {
+            return false;
+        }
+
+        return confirm("¿Estás seguro? Tu cuenta se eliminará para siempre.");
+    }
+</script>

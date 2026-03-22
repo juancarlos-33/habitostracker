@@ -62,14 +62,35 @@
                                class="btn btn-primary btn-sm">
                             👁 Ver perfil
                         </a>
+                        
+                        
+                        
+                      
+                       @{
+    var sentList = ViewBag.SentRequests as List<int> ?? new List<int>();
+    var friendList = ViewBag.Friends as List<int> ?? new List<int>();
+}
 
-                        <button type="button"
-                                class="btn btn-outline-success btn-sm add-friend-btn"
-                                data-user="@user.Id"
-                                data-no-loader="true"
-                                onclick="sendFriendRequest(this)">
-                            ➕ Agregar
-                        </button>
+@if (friendList.Contains(user.Id))
+{
+    <button class="btn btn-secondary btn-sm" disabled>
+        ✅ Amigos
+    </button>
+}
+else if (sentList.Contains(user.Id))
+{
+    <button class="btn btn-success btn-sm" disabled>
+        ✔ Enviada
+    </button>
+}
+else
+{
+    <button type="button" class="btn btn-outline-success btn-sm add-friend-btn"
+            data-user="@user.Id" data-no-loader="true"
+            onclick="sendFriendRequest(this)">
+        ➕ Agregar
+    </button>
+}
 
                     </div>
 

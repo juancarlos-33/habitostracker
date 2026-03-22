@@ -475,34 +475,32 @@
 
 <script>
 
-    let peerConnection;
+    window.peerConnection = null;
 
     function createPeerConnection() {
-
     const params = new URLSearchParams(window.location.search);
     const receiverId = params.get("userId");
+    window.peerConnection = new RTCPeerConnection({
+   
+    iceServers: [{ urls: "stun:stun.l.google.com:19302" }]
+    });
 
+
+    peerConnection.ontrack = function (event) {
+    const audio = document.createElement("audio");
+    audio.id = "callAudio";
+    audio.srcObject = event.streams[0];
+    audio.autoplay = true;
+    document.body.appendChild(audio);
+    audio.play().catch(err => console.error("Error reproduciendo audio:", err));
+    };
 
     peerConnection.onicecandidate = function (event) {
     if (event.candidate) {
-
-    const params = new URLSearchParams(window.location.search);
-    const receiverId = params.get("userId");
-
     connection.invoke("SendIceCandidate", receiverId, JSON.stringify(event.candidate));
     }
     };
 
-    peerConnection = new RTCPeerConnection();
-
-    // 🔊 recibir audio del otro usuario
-    peerConnection.ontrack = function (event) {
-    const audio = document.createElement("audio");
-    audio.srcObject = event.streams[0];
-    audio.autoplay = true;
-    };
-
-    // 🎤 enviar nuestro audio
     if (window.localStream) {
     window.localStream.getTracks().forEach(track => {
     peerConnection.addTrack(track, window.localStream);
@@ -559,25 +557,24 @@
     connection.invoke("JoinUserGroup", userId);
     }
 
-
-
     connection.on("IncomingCall", async function (callerId) {
 
     const aceptar = confirm("📞 Te están llamando...\n\n¿Aceptar llamada?");
 
     if (aceptar) {
     try {
-    c//onst stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    //window.localStream = stream;
+    // 🔥 Activar micrófono del receptor
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    window.localStream = stream;
 
-
-
+    // 🔥 Crear conexión con el audio ya listo
     createPeerConnection();
 
-    alert("🎤 Llamada conectada");
+    // 🔥 ESTO ES LO NUEVO — abrir ventana de llamada al receptor
+    const userId = new URLSearchParams(window.location.search).get("userId");
+    window.open(`/Message/Call?userId=${userId}`, "_blank", "width=500,height=650");
 
-    } 
-    catch (err) {
+    } catch (err) {
     alert("❌ " + err.message);
     console.error(err);
     }
@@ -587,6 +584,7 @@
 
     });
 
+   
 
     connection.on("ReceiveOffer", async function (offer) {
 
@@ -664,6 +662,10 @@
         }
 
     });
+
+
+
+
     connection.on("UserOffline", function (userId) {
 
         const otherUser = "@ViewBag.OtherUserId";
@@ -684,14 +686,11 @@
         console.log("SignalR desconectado, reconectando...");
         setTimeout(() => connection.start(), 2000);
     });
+  
     connection.on("ReceiveMessage", function (senderId, receiverId, senderName, message) {
 
-    // 🔥 SOLO mostrar si este chat es el actual
     const currentChatUserId = localStorage.getItem("currentChatUserId");
-
-    if (receiverId != currentChatUserId && senderId != currentChatUserId) {
-    return;
-    }
+    if (receiverId != currentChatUserId && senderId != currentChatUserId) return;
 
     const indicator = document.getElementById("typingIndicator");
     if (indicator) indicator.style.display = "none";
@@ -699,13 +698,16 @@
     const div = document.createElement("div");
     div.className = "chat-row";
 
-    const profileImage = "@ViewBag.OtherUserProfileImage";
+    // 🔥 tomar la imagen del ViewBag correctamente
+    const profileImage = "@(ViewBag.OtherUserProfileImage ?? "")";
     const firstLetter = senderName.charAt(0).toUpperCase();
 
     let avatarHTML = "";
 
-    if (profileImage && profileImage !== "") {
-    avatarHTML = `<img src="${profileImage}" class="chat-avatar" />`;
+    if (profileImage && profileImage.trim() !== "") {
+    avatarHTML = `<img src="${profileImage}" class="chat-avatar"
+    onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
+    <div class="chat-avatar avatar-letter-gray" style="display:none">${firstLetter}</div>`;
     } else {
     avatarHTML = `<div class="chat-avatar avatar-letter-gray">${firstLetter}</div>`;
     }
@@ -820,7 +822,7 @@
     mediaRecorder.stop();
     isRecording = false;
     return;
-    }
+    }<
 
     try {
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -840,6 +842,23 @@
     if (audioChunks.length === 0) {
     alert("No se grabó audio 😢");
     return;
+    }
+
+    // 🔥 función para detener el audio desde cualquier lado
+    function stopCallAudio() {
+    document.querySelectorAll("audio").forEach(a => {
+    a.pause();
+    a.srcObject = null;
+    a.remove();
+    });
+    if (window.localStream) {
+    window.localStream.getTracks().forEach(t => t.stop());
+    window.localStream = null;
+    }
+    if (window.peerConnection) {
+    window.peerConnection.close();
+    window.peerConnection = null;
+    }
     }
 
     const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
@@ -864,6 +883,8 @@
     console.error(err);
     }
     }
+
+
 
 
     async function sendAudio() {
@@ -934,6 +955,10 @@
 
     await connection.invoke("SendOffer", receiverId, JSON.stringify(offer));
 
+    // 🔥 abrir ventana de llamada
+    const userId = new URLSearchParams(window.location.search).get("userId");
+    window.open(`/Message/Call?userId=${userId}`, "_blank", "width=500,height=650");
+
     } catch (err) {
     alert("❌ Error al iniciar llamada");
     console.error(err);
@@ -942,17 +967,12 @@
 
     function reactToMessage(messageId, reaction) {
     fetch('/Message/React', {
-    method: 'POST<div class="chat-bubble me-bubble">
-    headers: {
-    'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-    messageId: messageId,
-    reaction: reaction
-    })
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ messageId: messageId, reaction: reaction })
     })
     .then(() => {
-    location.reload(); // 🔥 recarga para ver reacción
+    location.reload();
     })
     .catch(err => {
     console.error(err);

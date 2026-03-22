@@ -32,11 +32,29 @@ namespace HabitTrackerApp.Controllers
 
         public IActionResult Index()
         {
+            var myId = int.Parse(User.FindFirst("UserId").Value);
+
             var users = _context.Users
-     .Where(u => u.Role != "SuperAdmin") // ocultar propietario
-     .OrderByDescending(u => u.Role == "Admin")
-     .ThenBy(u => u.Username)
-     .ToList();
+                .Where(u => u.Role != "SuperAdmin")
+                .OrderByDescending(u => u.Role == "Admin")
+                .ThenBy(u => u.Username)
+                .ToList();
+
+            // 🔥 solicitudes ya enviadas por mí
+            var sentRequests = _context.FriendRequests
+                .Where(f => f.SenderId == myId && f.Status == "Pending")
+                .Select(f => f.ReceiverId)
+                .ToList();
+
+            // 🔥 amigos ya aceptados
+            var friends = _context.FriendRequests
+                .Where(f => (f.SenderId == myId || f.ReceiverId == myId) && f.Status == "Accepted")
+                .Select(f => f.SenderId == myId ? f.ReceiverId : f.SenderId)
+                .ToList();
+
+            ViewBag.SentRequests = sentRequests;
+            ViewBag.Friends = friends;
+
             return View(users);
         }
 

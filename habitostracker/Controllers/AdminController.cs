@@ -60,24 +60,34 @@ namespace HabitTrackerApp.Controllers
         {
             var users = _context.Users.ToList();
 
-
             // 📊 estadísticas
             ViewBag.TotalUsers = users.Count;
             ViewBag.BannedUsers = users.Count(u => u.IsBanned);
             ViewBag.DisabledUsers = users.Count(u => !u.IsActive);
-            ViewBag.ActiveUsers = users.Count(u => u.LastOnline != null &&
-                (DateTime.Now - u.LastOnline.Value).TotalSeconds < 60);
+            ViewBag.ActiveUsers = users.Count(u => u.LastOnline != null && (DateTime.Now - u.LastOnline.Value).TotalSeconds < 60);
 
-            // 🌍 Obtener país e ISP de cada IP
+            // 🌍 Obtener país e ISP (OPTIMIZADO 🔥)
+            var uniqueIps = users
+                .Where(u => !string.IsNullOrEmpty(u.LastIp))
+                .Select(u => u.LastIp)
+                .Distinct()
+                .Take(10) // 🔥 límite para evitar lentitud
+                .ToList();
+
             var ipInfo = new Dictionary<string, (string country, string city, string isp)>();
 
-            foreach (var user in users)
+            // 🔥 todas las llamadas en paralelo en vez de una por una
+            var tasks = uniqueIps.Select(async ip =>
             {
-                if (!string.IsNullOrEmpty(user.LastIp) && !ipInfo.ContainsKey(user.LastIp))
-                {
-                    var info = await GetIPInfo(user.LastIp);
-                    ipInfo[user.LastIp] = info;
-                }
+                var info = await GetIPInfo(ip);
+                return (ip, info);
+            });
+
+            var results = await Task.WhenAll(tasks);
+
+            foreach (var (ip, info) in results)
+            {
+                ipInfo[ip] = info;
             }
 
             ViewBag.IpInfo = ipInfo;
@@ -98,7 +108,6 @@ namespace HabitTrackerApp.Controllers
 
             return View(users);
         }
-
 
         [HttpPost]
         public async Task<IActionResult> ResetPassword(int userId)
@@ -811,6 +820,7 @@ namespace HabitTrackerApp.Controllers
             try
             {
                 using var client = new HttpClient();
+                client.Timeout = TimeSpan.FromSeconds(3); // 🔥 máximo 3 segundos
 
                 var json = await client.GetStringAsync($"http://ip-api.com/json/{ip}");
 
@@ -828,7 +838,7 @@ namespace HabitTrackerApp.Controllers
             }
         }
 
-       
+
         public async Task<IActionResult> DeleteUserPermanently(int id)
         {
             

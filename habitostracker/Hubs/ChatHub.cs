@@ -132,5 +132,11 @@ namespace HabitTrackerApp.Hubs
             await Clients.Group(receiverId)
                 .SendAsync("ReceiveIceCandidate", candidate);
         }
+
+        public async Task SendAnswer(string receiverId, string answer)
+        {
+            await Clients.Group(receiverId)
+                .SendAsync("ReceiveAnswer", answer);
+        }
     }
 }

@@ -88,12 +88,22 @@ body {
 }
 
 /* LOGO */
-.sidebar-logo{
-    font-weight:700;
-    font-size:18px;
-    padding:10px 14px;
-    margin-bottom:10px;
-    color:#111827;
+.sidebar-logo {
+    font-size: 1.3rem;
+    font-weight: 800;
+    margin-bottom: 25px;
+
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    color: white;
+
+    padding: 10px 12px;
+    border-radius: 10px;
+
+    background: linear-gradient(135deg,#2563eb,#4f46e5);
+    box-shadow: 0 4px 15px rgba(37,99,235,0.4);
 }
 
 /* LINKS */
@@ -280,13 +290,14 @@ body.bg-dark .modal-content {
     <div id="overlay"></div>
 
  
+<!-- 🔥 SIDEBAR -->
 <div class="sidebar" id="sidebar">
 
     <div class="sidebar-logo">
         🚀 HabitTracker
     </div>
 
-    <a class="sidebar-link active" asp-controller="Habit" asp-action="Index">
+    <a class="sidebar-link" asp-controller="Habit" asp-action="Index">
         <span>🏠</span> Inicio
     </a>
 
@@ -317,21 +328,95 @@ body.bg-dark .modal-content {
     <a class="sidebar-link" asp-controller="Post" asp-action="SavedPosts">
         <span>🔖</span> Guardados
     </a>
- 
-@if (User.IsInRole("Admin") || User.IsInRole("SuperAdmin"))
-{
-    <a class="sidebar-link"
-       asp-controller="Admin"
-       asp-action="Security">
-        <span>🚨</span> Centro de Seguridad
+
+    <a class="sidebar-link" asp-controller="Account" asp-action="Security">
+        <span>🔐</span> Seguridad
     </a>
 
-    <a class="sidebar-link"
-       asp-controller="Admin"
-       asp-action="Payments">
-        <span>💸</span> Pagos Premium
+    <a class="sidebar-link" asp-controller="Help" asp-action="Index">
+        <span>🆘</span> Mesa de ayuda
+    </a>
+    @if (User.IsInRole("SuperAdmin"))
+{
+    <a class="sidebar-link" asp-controller="Admin" asp-action="Index">
+        <span>🛡️</span> Centro de Seguridad
+    </a>
+
+    <a class="sidebar-link" asp-controller="Admin" asp-action="Payments">
+        <span>💰</span> Pagos Premium
     </a>
 }
+
+</div>
+
+<style>
+/* 🔥 OCULTO POR DEFECTO */
+.sidebar {
+    width: 240px;
+    height: 100vh;
+    background: linear-gradient(180deg, #0f172a, #1e293b);
+    padding: 20px 15px;
+    position: fixed;
+    left: -260px; /* 👈 escondido */
+    top: 0;
+    color: white;
+    display: flex;
+    flex-direction: column;
+    transition: 0.3s ease;
+    z-index: 9999;
+}
+
+/* 🔥 CUANDO SE ABRE */
+.sidebar.open {
+    left: 0;
+}
+
+/* resto igual */
+.sidebar-logo {
+    font-size: 1.3rem;
+    font-weight: 800;
+    margin-bottom: 25px;
+    text-align: center;
+}
+
+.sidebar-link {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 14px;
+    margin-bottom: 8px;
+    border-radius: 10px;
+    color: #cbd5f5;
+    text-decoration: none;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.sidebar-link span {
+    font-size: 1.2rem;
+}
+
+.sidebar-link:hover {
+    background: rgba(255,255,255,0.08);
+    color: white;
+    transform: translateX(5px);
+}
+
+.sidebar-link.active {
+    background: linear-gradient(135deg,#2563eb,#4f46e5);
+    color: white;
+    box-shadow: 0 4px 15px rgba(37,99,235,0.4);
+}
+</style>
+
+<script>
+// 🔥 BOTÓN DE LAS 3 RAYITAS
+function toggleSidebar(){
+    document.getElementById("sidebar").classList.toggle("open");
+}
+</script>
+
+ 
 
 </div>
     <div id="appNotification"
@@ -346,14 +431,40 @@ body.bg-dark .modal-content {
             z-index:9999;
             box-shadow:0 4px 10px rgba(0,0,0,0.2);">
     </div>
-    <!-- LOADER GLOBAL -->
+   <!-- LOADER GLOBAL -->
+<div id="globalLoader" style="
+    position:fixed; top:0; left:0;
+    width:100%; height:100%;
+    display:flex; flex-direction:column;
+    justify-content:center; align-items:center;
+    z-index:9999;
+    backdrop-filter: blur(6px);
+    background: rgba(0,0,0,0.1);
+    animation: fadeIn 0.3s ease;
+">
+    <img src="https://media.tenor.com/N5fU8iyU9F4AAAAj/shigure-ui-dance.gif"
+         style="width:180px;height:180px;
+                filter:drop-shadow(0 0 15px rgba(0,0,0,0.25));
+                animation: bounce 1.5s infinite;" />
 
-    <div id="globalLoader">
-        <div class="loader-circle"></div>
-        <div class="loader-text">Pajeros 😎</div>
-        <div class="loader-sub" id="loadingText">Cargando</div>
+    <span style="margin-top:10px;font-size:14px;opacity:0.9;animation: fadeText 1.5s infinite;">
+        Cargando...
+    </span>
+
+    <div style="width:200px;height:6px;background:rgba(255,255,255,0.2);
+                border-radius:10px;margin-top:10px;overflow:hidden;">
+        <div id="loaderBar" style="width:0%;height:100%;
+             background:linear-gradient(90deg,#4ade80,#22c55e);
+             transition:width 0.2s;"></div>
     </div>
+</div>
 
+<style>
+    @@keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
+    @@keyframes bounce { 0%,100% { transform:translateY(0); } 50% { transform:translateY(-10px); } }
+    @@keyframes fadeText { 0%,100% { opacity:0.4; } 50% { opacity:1; } }
+</style>
+</div>
     <!-- NAVBAR -->
     @if (User.Identity.IsAuthenticated && Context.Request.Query["blocked"] != "true")
     {
@@ -923,25 +1034,23 @@ body.bg-dark .modal-content {
         if (!isChatPage) {
 
              /* LINKS */
-              document.querySelectorAll("a").forEach(link => {
-    link.addEventListener("click", function(e){
+            document.querySelectorAll("a").forEach(link => {
+    link.addEventListener("click", function (e) {
 
-        if(link.hasAttribute("data-no-loader")){
+        // ❌ NO activar loader en páginas de mensajes/chat
+        if (window.location.pathname.toLowerCase().includes("/message")) {
             return;
         }
 
-        if(link.getAttribute("onclick") && link.getAttribute("onclick").includes("confirm")){
-            const confirmText = link.getAttribute("onclick").match(/confirm\('(.*)'\)/);
-            if(confirmText){
-                const confirmed = confirm(confirmText[1]);
-                if(!confirmed){
-                    e.preventDefault();
-                    return;
-                }
-            }
+        // ❌ tampoco en links especiales
+        if (link.hasAttribute("data-no-loader")) {
+            return;
         }
 
-        loader.style.display = "flex";
+        const loader = document.getElementById("globalLoader");
+        if (loader) {
+            loader.style.display = "flex";
+        }
     });
 });
 
@@ -1157,34 +1266,37 @@ const userId = '@(User.Identity.IsAuthenticated ? User.FindFirst("UserId")?.Valu
         connection.invoke("JoinUserGroup", userId);
     }
 
-    // 🔔 NOTIFICACIONES
-    console.log("🔔 Esperando notificaciones...");
     connection.on("ReceiveNotification", function (userId, message, username, userImage, link) {
+    const notif = document.getElementById("appNotification");
 
+    // 🔥 avatar con inicial si no hay foto
+    const firstLetter = username ? username.charAt(0).toUpperCase() : "?";
 
-        const notif = document.getElementById("appNotification");
+    let avatarHTML = "";
+    if (userImage && userImage.trim() !== "") {
+        avatarHTML = `<img src="${userImage}"
+                      style="width:35px;height:35px;border-radius:50%;object-fit:cover;"
+                      onerror="this.outerHTML='<div style=width:35px;height:35px;border-radius:50%;background:#2563eb;color:white;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:16px;>${firstLetter}</div>'" />`;
+    } else {
+        avatarHTML = `<div style="width:35px;height:35px;border-radius:50%;background:#2563eb;color:white;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:16px;">
+                        ${firstLetter}
+                      </div>`;
+    }
 
-        notif.innerHTML = `
-            <div style="display:flex;align-items:center;gap:10px;cursor:pointer;"
-                 onclick="window.location.href='${link}'">
-
-                <img src="${userImage && userImage !== '' ? userImage : '/images/default.png'}"
-                     style="width:35px;height:35px;border-radius:50%;" />
-
-                <div>
-                    <strong>${username}</strong><br/>
-                    <small>${message}</small>
-                </div>
+    notif.innerHTML = `
+        <div style="display:flex;align-items:center;gap:10px;cursor:pointer;"
+             onclick="window.location.href='${link}'">
+            ${avatarHTML}
+            <div>
+                <strong>${username}</strong><br/>
+                <small>${message}</small>
             </div>
-        `;
+        </div>
+    `;
 
-        notif.style.display = "block";
-
-        setTimeout(() => {
-            notif.style.display = "none";
-        }, 4000);
-    });
-
+    notif.style.display = "block";
+    setTimeout(() => { notif.style.display = "none"; }, 4000);
+});
     // 🟢 ONLINE
     connection.on("UserOnline", function (userId) {
         console.log("Usuario conectado:", userId);
@@ -1357,6 +1469,34 @@ function toggleSidebar(){
 </script>
 
 
+
+<script>
+    let progress = 0;
+    const bar = document.getElementById("loaderBar");
+
+    const interval = setInterval(() => {
+        if (progress < 90) {
+            progress += Math.random() * 10;
+            bar.style.width = progress + "%";
+        }
+    }, 200);
+
+    window.addEventListener("load", function () {
+        progress = 100;
+        bar.style.width = "100%";
+
+        setTimeout(() => {
+            const loader = document.getElementById("globalLoader");
+            loader.style.opacity = "0";
+
+            setTimeout(() => {
+                loader.style.display = "none";
+                clearInterval(interval);
+            }, 300);
+
+        }, 300);
+    });
+</script>
 
 </body>
 </html>

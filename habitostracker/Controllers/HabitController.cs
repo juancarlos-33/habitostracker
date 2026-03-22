@@ -100,6 +100,12 @@ namespace HabitTrackerApp.Controllers
         [ValidateAntiForgeryToken]
         public IActionResult Create(Habit habit)
         {
+            if (string.IsNullOrWhiteSpace(habit.Name))
+            {
+                TempData["Error"] = "⚠️ El nombre del hábito es obligatorio.";
+                return RedirectToAction("Create");
+            }
+
             var userId = GetUserId();
 
             var user = _context.Users.FirstOrDefault(u => u.Id == userId);

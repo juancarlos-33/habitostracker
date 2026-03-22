@@ -40,14 +40,15 @@ namespace HabitTrackerApp.Controllers
                 .Select(g => g.First())
                 .ToList();
 
+            // 🔥 cargar AMBOS usuarios
             foreach (var msg in conversations)
             {
                 msg.Sender = _context.Users.FirstOrDefault(u => u.Id == msg.SenderId);
+                msg.Receiver = _context.Users.FirstOrDefault(u => u.Id == msg.ReceiverId);
             }
 
             return View(conversations);
         }
-
         // =====================================
         // 💬 CHAT ENTRE USUARIOS
         // =====================================
@@ -244,6 +245,23 @@ namespace HabitTrackerApp.Controllers
             _context.SaveChanges();
 
             return Ok();
+        }
+
+        public async Task<IActionResult> Call(int userId)
+        {
+            var myId = int.Parse(User.FindFirst("UserId").Value);
+            var me = await _context.Users.FindAsync(myId);
+            var other = await _context.Users.FindAsync(userId);
+
+            if (other == null) return NotFound();
+
+            ViewBag.MyId = myId;
+            ViewBag.MyUsername = me?.Username;
+            ViewBag.MyImage = me?.ProfileImage;
+            ViewBag.OtherUsername = other.Username;
+            ViewBag.OtherImage = other.ProfileImage;
+
+            return View();
         }
 
         [HttpPost]

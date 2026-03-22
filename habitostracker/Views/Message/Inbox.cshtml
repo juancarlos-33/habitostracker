@@ -26,9 +26,10 @@
                 @foreach (var msg in Model)
                 {
                     var otherUserId = msg.SenderId == myId ? msg.ReceiverId : msg.SenderId;
-                    var username = msg.Sender?.Username ?? ("Usuario " + otherUserId);
+                    var otherUser = msg.SenderId == myId ? msg.Receiver : msg.Sender;
+                    var username = otherUser?.Username ?? ("Usuario " + otherUserId);
+                    var profileImage = otherUser?.ProfileImage;
                     var firstLetter = username?.Substring(0, 1).ToUpper();
-
                     <tr style="cursor:pointer"
                         onclick="window.location='/Message/Chat?userId=@otherUserId'">
 
@@ -37,10 +38,25 @@
                             <div class="d-flex align-items-center gap-3">
 
                                 <!-- FOTO O INICIAL -->
-                                <img src="/profiles/user_@(otherUserId).png"
-                                     onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
-                                     style="width:45px;height:45px;border-radius:50%;object-fit:cover;" />
-
+                                @if (!string.IsNullOrEmpty(profileImage))
+                                {
+                                    <img src="@profileImage"
+                                         style="width:45px;height:45px;border-radius:50%;object-fit:cover;"
+                                         onerror="this.style.display='none';this.nextElementSibling.style.display='flex';" />
+                                    <div style="width:45px;height:45px;border-radius:50%;background:#2563eb;
+                                        color:white;display:none;align-items:center;justify-content:center;
+                                        font-weight:bold;font-size:18px;">
+                                        @firstLetter
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div style="width:45px;height:45px;border-radius:50%;background:#2563eb;
+                                        color:white;display:flex;align-items:center;justify-content:center;
+                                        font-weight:bold;font-size:18px;">
+                                        @firstLetter
+                                    </div>
+                                }
                                 <div style="
                                             width:45px;
                                             height:45px;
@@ -60,8 +76,11 @@
                                     <div class="fw-bold">
                                         @username
                                     </div>
-
-                                    <div class="text-muted small">
+                                    <div class="text-muted small" style="
+                                        max-width: 300px;
+                                        white-space: nowrap;
+                                        overflow: hidden;
+                                        text-overflow: ellipsis;">
                                         @if (!string.IsNullOrEmpty(msg.Content) && msg.Content.EndsWith(".webm"))
                                         {
                                             <span>🎤 Audio</span>
@@ -71,7 +90,6 @@
                                             @msg.Content
                                         }
                                     </div>
-
                                 </div>
 
                             </div>

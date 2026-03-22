@@ -46,6 +46,88 @@ namespace HabitTrackerApp.Controllers
 
             return View();
         }
+
+        // ===== SEGURIDAD =====
+        [HttpGet]
+        public IActionResult Security()
+        {
+            var userIdClaim = User.FindFirst("UserId");
+            if (userIdClaim == null) return RedirectToAction("Login");
+
+            var userId = int.Parse(userIdClaim.Value);
+            var user = _context.Users.FirstOrDefault(u => u.Id == userId);
+            if (user == null) return RedirectToAction("Login");
+
+            return View(user);
+        }
+
+        // ===== ELIMINAR CUENTA =====
+        [HttpPost]
+        public async Task<IActionResult> DeleteAccount(string password)
+        {
+            // 🔥 validar que ingresó contraseña
+            if (string.IsNullOrWhiteSpace(password))
+            {
+                TempData["Error"] = "Por favor ingresa tu contraseña para confirmar.";
+                return RedirectToAction("Security");
+            }
+
+            var userId = int.Parse(User.FindFirst("UserId").Value);
+            var user = _context.Users.FirstOrDefault(u => u.Id == userId);
+
+            if (user == null) return NotFound();
+
+            // 🔥 contraseña incorrecta
+            if (!BCrypt.Net.BCrypt.Verify(password, user.PasswordHash))
+            {
+                TempData["Error"] = "Contraseña incorrecta. Intenta de nuevo.";
+                return RedirectToAction("Security");
+            }
+
+            // 🔥 eliminar datos del usuario
+            var habits = _context.Habits.Where(h => h.UserId == userId);
+            _context.Habits.RemoveRange(habits);
+
+            var messages = _context.Messages
+                .Where(m => m.SenderId == userId || m.ReceiverId == userId)
+                .ToList();
+
+            foreach (var msg in messages)
+            {
+                if (msg.SenderId == userId) msg.SenderId = null;
+                if (msg.ReceiverId == userId) msg.ReceiverId = null;
+            }
+
+            _context.Users.Remove(user);
+            await _context.SaveChangesAsync();
+
+            await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+
+            return RedirectToAction("Login");
+        }
+
+        [HttpPost]
+        public IActionResult VerifyPassword(string password)
+        {
+            if (string.IsNullOrWhiteSpace(password))
+                return Json(new { valid = false });
+
+            var userId = int.Parse(User.FindFirst("UserId").Value);
+            var user = _context.Users.FirstOrDefault(u => u.Id == userId);
+
+            if (user == null) return Json(new { valid = false });
+
+            var isValid = BCrypt.Net.BCrypt.Verify(password, user.PasswordHash);
+            return Json(new { valid = isValid });
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> LogoutAll()
+        {
+            await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+            return Ok();
+        }
+
         [HttpGet]
         public IActionResult CheckIfUserExists()
         {
@@ -615,6 +697,9 @@ namespace HabitTrackerApp.Controllers
 
             return RedirectToAction("Login");
         }
+
+
+
 
         // =====================================================
         // 🔑 MÉTODO LOGIN
