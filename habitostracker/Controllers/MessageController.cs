@@ -55,7 +55,6 @@ namespace HabitTrackerApp.Controllers
         public async Task<IActionResult> Chat(int userId)
         {
             var userIdClaim = User.FindFirst("UserId");
-
             if (userIdClaim == null)
             {
                 return RedirectToAction("Login", "Account");
@@ -72,7 +71,6 @@ namespace HabitTrackerApp.Controllers
             {
                 msg.IsRead = true;
 
-                // 🔔 avisar al emisor que el mensaje fue visto
                 await _hubContext.Clients
                     .Group(msg.SenderId.ToString())
                     .SendAsync("MessageSeen", msg.Id);
@@ -80,23 +78,30 @@ namespace HabitTrackerApp.Controllers
 
             _context.SaveChanges();
 
-            // 🔔 actualizar mensajes si el chat ya está abierto
             await _hubContext.Clients
                 .Group(userId.ToString())
                 .SendAsync("ForceSeenUpdate");
 
             // 🔹 CARGAR CONVERSACIÓN
             var messages = _context.Messages
-                .Where(m =>
-                    (m.SenderId == myId && m.ReceiverId == userId) ||
-                    (m.SenderId == userId && m.ReceiverId == myId))
+                .Where(m => (m.SenderId == myId && m.ReceiverId == userId) ||
+                            (m.SenderId == userId && m.ReceiverId == myId))
                 .Include(m => m.Sender)
                 .OrderBy(m => m.SentAt)
                 .ToList();
 
             ViewBag.OtherUserId = userId;
 
-            var otherUser = _context.Users.FirstOrDefault(u => u.Id == userId);
+            // 🔥 🔥 CAMBIO AQUÍ (IMPORTANTE)
+            var otherUser = _context.Users
+                .Where(u => u.Id == userId)
+                .Select(u => new
+                {
+                    u.Username,
+                    u.ProfileImage,
+                    u.LastOnline
+                })
+                .FirstOrDefault();
 
             ViewBag.OtherUsername = otherUser?.Username ?? "Usuario";
             ViewBag.OtherLastOnline = otherUser?.LastOnline;
@@ -104,7 +109,6 @@ namespace HabitTrackerApp.Controllers
 
             return View(messages);
         }
-
         // =====================================
         // ✉️ ENVIAR MENSAJE
         // =====================================
@@ -306,18 +310,29 @@ namespace HabitTrackerApp.Controllers
         }
 
         [HttpPost]
-        public IActionResult React(int messageId, string reaction)
+        public async Task<IActionResult> React([FromBody] ReactRequest request)
         {
-            var message = _context.Messages.FirstOrDefault(m => m.Id == messageId);
+            var message = _context.Messages.FirstOrDefault(m => m.Id == request.MessageId);
 
             if (message == null)
                 return NotFound();
 
-            message.Reaction = reaction;
-
+            message.Reaction = request.Reaction;
             _context.SaveChanges();
 
+            var myId = int.Parse(User.FindFirst("UserId").Value);
+            var receiverId = message.SenderId == myId ? message.ReceiverId : message.SenderId;
+
+            await _hubContext.Clients.Group(receiverId.ToString())
+                .SendAsync("ReceiveReaction", request.MessageId, request.Reaction);
+
             return Ok();
+        }
+
+        public class ReactRequest
+        {
+            public int MessageId { get; set; }
+            public string Reaction { get; set; } = "";
         }
     }
 }

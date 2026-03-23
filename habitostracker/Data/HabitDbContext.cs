@@ -41,6 +41,13 @@ namespace HabitTrackerApp.Data
         {
             base.OnModelCreating(modelBuilder);
 
+            modelBuilder.Entity<Follow>()
+    .HasOne(f => f.Following)
+    .WithMany()
+    .HasForeignKey(f => f.FollowingId)
+    .OnDelete(DeleteBehavior.Restrict);
+
+
             // 🔥 MESSAGE
             modelBuilder.Entity<Message>()
                 .HasOne(m => m.Sender)

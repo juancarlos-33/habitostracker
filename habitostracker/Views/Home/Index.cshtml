@@ -1,8 +1,32 @@
-﻿@{
-    ViewData["Title"] = "Home Page";
+﻿
+
+@{
+    ViewData["Title"] = "Inicio";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
-</div>
+@if (ViewBag.NeedsBio == true)
+{
+    <div style="
+        position:fixed;top:0;left:0;width:100%;height:100%;
+        background:rgba(0,0,0,0.6);z-index:99999;
+        display:flex;align-items:center;justify-content:center;">
+        <div style="
+            background:white;border-radius:16px;
+            padding:2rem;max-width:450px;width:90%;
+            box-shadow:0 20px 60px rgba(0,0,0,0.3);">
+            <h4 class="fw-bold mb-2">👋 ¡Bienvenido!</h4>
+            <p class="text-muted mb-3">Antes de continuar, cuéntanos un poco sobre ti.</p>
+            <form asp-controller="Account" asp-action="SaveBio" method="post">
+                @Html.AntiForgeryToken()
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Cuéntanos sobre ti</label>
+                    <textarea name="bio" class="form-control" rows="4"
+                              placeholder="Escribe algo sobre ti..." required></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary w-100 rounded-pill">
+                    💾 Guardar y continuar
+                </button>
+            </form>
+        </div>
+    </div>
+}

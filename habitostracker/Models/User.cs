@@ -53,6 +53,7 @@ namespace HabitTrackerApp.Models
 
         public bool IsBanned { get; set; } = false;
 
+        public string? Bio { get; set; }
         public bool IsActive { get; set; } = true;
 
         public string? LastIp { get; set; }

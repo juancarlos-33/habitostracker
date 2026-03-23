@@ -370,6 +370,7 @@ namespace HabitTrackerApp.Controllers
                 Username = model.Username,
                 Email = model.Email,
                 Gender = model.Gender,
+                Bio = model.Bio,
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword(model.Password),
                 CreatedAt = DateTime.Now,
                 Role = "User",
@@ -401,6 +402,21 @@ namespace HabitTrackerApp.Controllers
 
             return View(model);
         }
+
+        [HttpPost]
+        public IActionResult SaveBio(string bio)
+        {
+            var userId = int.Parse(User.FindFirst("UserId").Value);
+            var user = _context.Users.FirstOrDefault(u => u.Id == userId);
+
+            if (user == null) return NotFound();
+
+            user.Bio = bio;
+            _context.SaveChanges();
+
+            return RedirectToAction("Index", "Home");
+        }
+
 
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -523,27 +539,27 @@ namespace HabitTrackerApp.Controllers
             if (id == null || id == myId)
             {
                 var me = _context.Users.FirstOrDefault(u => u.Id == myId);
-
-                if (me == null)
-                    return RedirectToAction("Login", "Account");
+                if (me == null) return RedirectToAction("Login", "Account");
 
                 if (me.PendingEmail != null)
                     TempData["PendingEmail"] = me.PendingEmail;
+
+                // 🔥 AGREGA ESTO (SEGUIDORES / SIGUIENDO)
+                ViewBag.Followers = _context.Follows.Count(f => f.FollowingId == myId);
+                ViewBag.Following = _context.Follows.Count(f => f.FollowerId == myId);
 
                 return View("~/Views/Account/Profile.cshtml", me); // 🟢 editable
             }
 
             // 🔥 SI ES OTRO USUARIO
             var user = _context.Users.FirstOrDefault(u => u.Id == id);
+            if (user == null) return NotFound();
 
             // 🔥 seguidores
             ViewBag.FollowersCount = _context.Follows.Count(f => f.FollowingId == user.Id);
 
             // 🔥 siguiendo
             ViewBag.FollowingCount = _context.Follows.Count(f => f.FollowerId == user.Id);
-
-            if (user == null)
-                return NotFound();
 
             return View("~/Views/User/Profile.cshtml", user); // 🔵 SOLO VISUAL
         }
@@ -567,6 +583,7 @@ namespace HabitTrackerApp.Controllers
             bool emailChanged = user.Email != updatedUser.Email;
 
             user.FullName = updatedUser.FullName;
+            user.Bio = updatedUser.Bio;
 
             if (croppedImage == "REMOVE")
             {
@@ -619,18 +636,7 @@ namespace HabitTrackerApp.Controllers
                 user.ProfileImage = "/profiles/" + fileName;
             }
 
-            if (emailChanged)
-            {
-                user.PendingEmail = updatedUser.Email;
-
-                await SendConfirmationCode(user);
-
-                _context.SaveChanges();
-
-                TempData["ResetEmail"] = user.PendingEmail;
-
-                return RedirectToAction("ConfirmEmail");
-            }
+          
 
             _context.SaveChanges();
 

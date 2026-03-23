@@ -52,6 +52,8 @@ overflow:hidden;
 }
 
 
+
+
 @@keyframes glowPulse{
 
     0%{
@@ -726,4 +728,13 @@ draw();
 if (window.history.replaceState) {
     window.history.replaceState(null, null, window.location.href);
 }
+
+
+// 🔥 Loader al hacer login
+document.querySelector("form").addEventListener("submit", function() {
+    const loader = document.createElement("div");
+    loader.style.cssText = "position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:99999;display:flex;align-items:center;justify-content:center;";
+    loader.innerHTML = '<img src="/images/hola.jpeg" style="width:80px;border-radius:50%;animation:spin 1s linear infinite;" />';
+    document.body.appendChild(loader);
+});
 </script>

@@ -78,6 +78,33 @@ else
 
         <label class="form-label">Foto de perfil</label>
 
+        <div class="d-flex justify-content-center gap-5 mt-4 mb-3">
+
+            <!-- 🔥 SEGUIDORES / SIGUIENDO -->
+ 
+
+            <div class="d-flex justify-content-center gap-5 mt-4 mb-3">
+
+                <div class="text-center"
+                     style="cursor:pointer"
+                     onclick="if(@ViewBag.Followers > 0) openModal('followers')">
+
+                    <div class="fw-bold fs-5">@ViewBag.Followers</div>
+                    <small class="text-muted">Seguidores</small>
+                </div>
+
+                <div class="text-center"
+                     style="cursor:pointer"
+                     onclick="if(@ViewBag.Following > 0) openModal('following')">
+
+                    <div class="fw-bold fs-5">@ViewBag.Following</div>
+                    <small class="text-muted">Siguiendo</small>
+                </div>
+
+            </div>
+
+        </div>
+
         <input type="file"
                id="imageInput"
                name="profilePhoto"
@@ -85,6 +112,8 @@ else
                accept="image/*" />
 
     </div>
+
+   
 
     <!-- ======================= -->
     <!-- RECORTE DE IMAGEN -->
@@ -128,17 +157,28 @@ else
 
     <div class="mb-3">
 
-        <label class="form-label">Correo electrónico</label>
+       
+        <div class="mb-3">
+            <label class="form-label">Correo electrónico</label>
+            <input asp-for="Email" class="form-control" disabled />
+        </div>
 
-        <input asp-for="Email"
-               class="form-control" />
+        <div class="mb-3">
+            <label class="form-label">Cuéntanos sobre ti</label>
+            <textarea asp-for="Bio" class="form-control" rows="3" placeholder="Escribe algo sobre ti..."></textarea>
+        </div>
+
+     
 
     </div>
 
     <div class="mb-3">
 
         <label class="form-label">Miembro desde</label>
+        <input class="form-control" value="@Model.CreatedAt?.ToString("dd/MM/yyyy")" disabled />
 
+        <br>
+        <br>
 
     <button type="submit"
             class="btn btn-primary rounded-pill px-4">
@@ -152,11 +192,71 @@ else
 </form>
 
 
-<a href="/Account/ChangePassword"
-   class="btn btn-danger rounded-pill px-4 mt-3">
-    🔐 Cambiar contraseña
-</a>
+    <!-- 🔥 MODAL SEGUIDORES -->
+   <div id="followModal" class="follow-modal" style="display:none;">
+        <div class="follow-content">
+            <div class="follow-header">
+                <span id="modalTitle">Usuarios</span>
+                <span class="close-btn" onclick="closeModal()">✖</span>
+            </div>
+            <div id="followList"></div>
+        </div>
+    </div>
 
+
+
+    <style>
+
+        .follow-modal {
+            display: none;
+            position: fixed;
+            z-index: 9999;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .follow-content {
+    background: white;
+    width: 350px;
+    max-height: 70vh;
+    overflow-y: auto;
+    border-radius: 15px;
+    padding: 15px;
+
+    animation: fadeIn 0.2s ease;
+        }
+
+
+@@keyframes fadeIn {
+    from {
+        transform: scale(0.9);
+        opacity: 0;
+    }
+    to {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+.follow-header {
+   
+    justify-content: space-between;
+    align-items: center;
+    font-weight: 600;
+    margin-bottom: 10px;
+}
+
+.close-btn {
+    cursor: pointer;
+    font-size: 18px;
+}
+
+    </style>
 
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.js"></script>
@@ -292,3 +392,30 @@ else
     });
 
 </script>
+
+    <script>
+        function openModal(type){
+        const modal = document.getElementById("followModal");
+        const list = document.getElementById("followList");
+        const title = document.getElementById("modalTitle");
+
+       modal.style.display = "flex";
+        list.innerHTML = "Cargando...";
+
+        if(type === "followers"){
+        title.innerText = "Seguidores";
+        fetch(`/User/GetFollowers?userId=@Model.Id`)
+        .then(r => r.text())
+        .then(data => list.innerHTML = data);
+        }else{
+        title.innerText = "Siguiendo";
+        fetch(`/User/GetFollowing?userId=@Model.Id`)
+        .then(r => r.text())
+        .then(data => list.innerHTML = data);
+        }
+        }
+
+        function closeModal(){
+        document.getElementById("followModal").style.display = "none";
+        }
+    </script>

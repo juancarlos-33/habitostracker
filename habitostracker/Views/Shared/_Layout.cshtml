@@ -435,7 +435,7 @@ function toggleSidebar(){
 <div id="globalLoader" style="
     position:fixed; top:0; left:0;
     width:100%; height:100%;
-    display:flex; flex-direction:column;
+    display:none; flex-direction:column;
     justify-content:center; align-items:center;
     z-index:9999;
     backdrop-filter: blur(6px);
@@ -1021,151 +1021,86 @@ function toggleSidebar(){
             },4000);
         }
 
+        // 🔥 Desactivar loader en el chat
+
     </script>
 
+   
     <script>
+const loader = document.getElementById("globalLoader");
+const isChatPage = window.location.pathname.toLowerCase().includes("/message");
 
-        const loader = document.getElementById("globalLoader");
+if (!isChatPage) {
 
-                /* ❌ NO activar loader en páginas de chat */
-
-        const isChatPage = window.location.pathname.toLowerCase().includes("/message/chat");
-
-        if (!isChatPage) {
-
-             /* LINKS */
-            document.querySelectorAll("a").forEach(link => {
-    link.addEventListener("click", function (e) {
-
-        // ❌ NO activar loader en páginas de mensajes/chat
-        if (window.location.pathname.toLowerCase().includes("/message")) {
-            return;
-        }
-
-        // ❌ tampoco en links especiales
-        if (link.hasAttribute("data-no-loader")) {
-            return;
-        }
-
-        const loader = document.getElementById("globalLoader");
-        if (loader) {
-            loader.style.display = "flex";
-        }
-    });
-});
-
-            /* BOTONES */
-            document.querySelectorAll("button").forEach(btn=>{
-                btn.addEventListener("click",function(){
-
-                    const form = btn.closest("form");
-
-                    if(form && !form.checkValidity()){
-                        return;
-                    }
-
-                    if(
-                        !btn.hasAttribute("data-bs-toggle") &&
-                        !btn.hasAttribute("data-bs-dismiss") &&
-                        !btn.hasAttribute("data-no-loader")
-                    ){
-                        loader.style.display="flex";
-                    }
-
-                });
-            });
-
-        
-
-      
-
-            /* BOTONES */
-            document.querySelectorAll("button").forEach(btn=>{
-                btn.addEventListener("click",function(){
-                    if(
-                        !btn.hasAttribute("data-bs-toggle") &&
-                        !btn.hasAttribute("data-bs-dismiss") &&
-                        !btn.hasAttribute("data-no-loader")
-                    ){
-                        loader.style.display="flex";
-                    }
-                });
-            });
-
-            /* FORMULARIOS */
-            document.querySelectorAll("form").forEach(form=>{
-                form.addEventListener("submit",function(){
-                    if(!form.hasAttribute("data-no-loader")){
-                        loader.style.display="flex";
-                    }
-                });
-            });
-
-        }
-        /* ANIMACIÓN DE CARGANDO */
-
-        let dots=0;
-
-        setInterval(function(){
-
-        const text=document.getElementById("loadingText");
-
-        if(!text) return;
-
-        dots++;
-
-        if(dots>3){
-        dots=0;
-        }
-
-        text.innerText="Cargando"+".".repeat(dots);
-
-        },500);
-
-        /* DARK MODE */
-
-        const body=document.getElementById("appBody");
-        const navbar=document.querySelector(".navbar");
-
-        if(localStorage.getItem("darkMode")==="enabled"){
-        enableDarkMode();
-        }
-
-        function toggleDarkMode(){
-        if(body.classList.contains("bg-dark")){
-        disableDarkMode();
-        }else{
-        enableDarkMode();
-        }
-        }
-
-        function enableDarkMode(){
-        body.classList.remove("bg-light","text-dark");
-        body.classList.add("bg-dark","text-light");
-        navbar.classList.remove("navbar-light","bg-white");
-        navbar.classList.add("navbar-dark","bg-dark");
-        localStorage.setItem("darkMode","enabled");
-        }
-
-        function disableDarkMode(){
-        body.classList.remove("bg-dark","text-light");
-        body.classList.add("bg-light","text-dark");
-        navbar.classList.remove("navbar-dark","bg-dark");
-        navbar.classList.add("navbar-light","bg-white");
-        localStorage.setItem("darkMode","disabled");
-        }
-
-        window.addEventListener("pageshow",function(event){
-        if(event.persisted){
-        window.location.reload();
-        }
+    document.querySelectorAll("a").forEach(link => {
+        link.addEventListener("click", function(e) {
+            if (link.hasAttribute("data-no-loader")) return;
+            if (loader) loader.style.display = "flex";
         });
-        
+    });
 
+    document.querySelectorAll("button").forEach(btn => {
+        btn.addEventListener("click", function() {
+            const form = btn.closest("form");
+            if (form && !form.checkValidity()) return;
+            if (!btn.hasAttribute("data-bs-toggle") &&
+                !btn.hasAttribute("data-bs-dismiss") &&
+                !btn.hasAttribute("data-no-loader")) {
+                loader.style.display = "flex";
+            }
+        });
+    });
+
+    document.querySelectorAll("form").forEach(form => {
+        form.addEventListener("submit", function() {
+            if (!form.hasAttribute("data-no-loader")) {
+                loader.style.display = "flex";
+            }
+        });
+    });
+
+}
+
+let dots = 0;
+setInterval(function() {
+    const text = document.getElementById("loadingText");
+    if (!text) return;
+    dots++;
+    if (dots > 3) dots = 0;
+    text.innerText = "Cargando" + ".".repeat(dots);
+}, 500);
+
+const body = document.getElementById("appBody");
+const navbar = document.querySelector(".navbar");
+if (localStorage.getItem("darkMode") === "enabled") { enableDarkMode(); }
+
+function toggleDarkMode() {
+    if (body.classList.contains("bg-dark")) { disableDarkMode(); } else { enableDarkMode(); }
+}
+
+function enableDarkMode() {
+    body.classList.remove("bg-light","text-dark");
+    body.classList.add("bg-dark","text-light");
+    navbar.classList.remove("navbar-light","bg-white");
+    navbar.classList.add("navbar-dark","bg-dark");
+    localStorage.setItem("darkMode","enabled");
+}
+
+function disableDarkMode() {
+    body.classList.remove("bg-dark","text-light");
+    body.classList.add("bg-light","text-dark");
+    navbar.classList.remove("navbar-dark","bg-dark");
+    navbar.classList.add("navbar-light","bg-white");
+    localStorage.setItem("darkMode","disabled");
+}
+
+window.addEventListener("pageshow", function(event) {
+    if (event.persisted) { window.location.reload(); }
+});
+</script>
        
 
-    </script>
-
+    
     
 
     <script>
@@ -1492,9 +1427,9 @@ function toggleSidebar(){
             setTimeout(() => {
                 loader.style.display = "none";
                 clearInterval(interval);
-            }, 300);
+            }, 1600);
 
-        }, 300);
+        }, 1600);
     });
 </script>
 

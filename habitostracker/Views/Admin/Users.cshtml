@@ -211,7 +211,7 @@
                                            asp-action="ReactivateUser"
                                            asp-route-id="@user.Id"
                                            class="btn btn-sm btn-outline-success rounded-pill"
-                                           data-no-loader="true"
+                                          
                                            onclick="return confirm('¿Reactivar este usuario?')">
                                         🔓 Reactivar
                                     </a>
@@ -222,7 +222,7 @@
                                            asp-action="UnbanUser"
                                            asp-route-id="@user.Id"
                                            class="btn btn-sm btn-outline-success rounded-pill"
-                                           data-no-loader="true"
+                                           
                                            onclick="return confirm('¿Desbanear este usuario?')">
                                         🔓 Desbanear
                                     </a>
@@ -235,7 +235,7 @@
                                         {
                                             <button type="button"
                                                     class="btn btn-sm btn-outline-danger rounded-pill"
-                                                    data-no-loader="true"
+                                                   
                                                     onclick="confirmDelete(@user.Id)">
                                                 🔒 Desactivar
                                             </button>
@@ -247,7 +247,7 @@
                                                    asp-action="BanUser"
                                                    asp-route-id="@user.Id"
                                                    class="btn btn-sm btn-outline-warning rounded-pill"
-                                                   data-no-loader="true"
+                                                  
                                                    onclick="return confirm('¿Seguro que quieres banear este usuario?');">
                                                 🚫 Banear
                                             </a>
@@ -259,7 +259,7 @@
                                                    asp-action="DeleteUserPermanently"
                                                    asp-route-id="@user.Id"
                                                    class="btn btn-sm btn-outline-dark rounded-pill"
-                                                   data-no-loader="true"
+                                                 
                                                    onclick="return confirm('¿Eliminar este usuario permanentemente?')">
                                                 💀 Eliminar
                                             </a>
@@ -272,7 +272,7 @@
                                         {
                                             <a href="#"
                                                    class="btn btn-sm btn-outline-secondary rounded-pill"
-                                                   data-no-loader="true"
+                                                  
                                                    onclick="event.preventDefault(); confirmRemoveAdmin(@user.Id);">
                                                 Quitar Admin
                                             </a>
@@ -283,7 +283,7 @@
                                                    asp-action="MakeAdmin"
                                                    asp-route-id="@user.Id"
                                                    class="btn btn-sm btn-outline-primary rounded-pill"
-                                                   data-no-loader="true"
+                                             
                                                    onclick="return confirm('¿Seguro que quieres convertir a este usuario en administrador?');">
                                                 Hacer Admin
                                             </a>
@@ -367,7 +367,7 @@
                                         <input type="hidden" name="ip" value="@user.LastIp" />
 
                                         <button class="btn btn-success btn-sm"
-                                                data-no-loader="true"
+                                             
                                                 onclick="return confirm('¿Desbloquear esta IP?')">
                                             🔓
                                         </button>
@@ -384,7 +384,7 @@
                                         <input type="hidden" name="ip" value="@user.LastIp" />
 
                                         <button class="btn btn-danger btn-sm"
-                                                data-no-loader="true"
+                                              
                                                 onclick="return confirm('¿Bloquear esta IP?')">
                                             🚫
                                         </button>

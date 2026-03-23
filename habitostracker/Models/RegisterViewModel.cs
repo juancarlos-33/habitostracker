@@ -17,5 +17,6 @@ namespace HabitTrackerApp.Models
 
         [Required(ErrorMessage = "Selecciona un género.")]
         public string Gender { get; set; }
+        public string? Bio { get; set; }
     }
 }

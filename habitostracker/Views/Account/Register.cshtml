@@ -44,6 +44,12 @@
                 <span asp-validation-for="Gender" class="text-danger"></span>
             </div>
 
+            <div class="mb-3">
+                <label class="form-label">Cuéntanos sobre ti</label>
+                <textarea asp-for="Bio" class="form-control" rows="3" placeholder="Escribe algo sobre ti..."></textarea>
+                <span class="text-muted" style="font-size:0.8rem;">Opcional</span>
+            </div>
+
             <button type="submit" class="btn btn-primary w-100 rounded-pill">
                 Registrarme
             </button>

@@ -82,6 +82,9 @@ namespace HabitTrackerApp.Controllers
             ViewBag.Following = _context.Follows
                 .Count(f => f.FollowerId == id);
 
+
+         
+
             return View(user);
         }
 
@@ -369,6 +372,84 @@ namespace HabitTrackerApp.Controllers
             return RedirectToAction("Index");
         }
 
+
+        [HttpGet]
+        public IActionResult GetFollowers(int userId)
+        {
+            var myId = int.Parse(User.FindFirst("UserId").Value);
+
+            var followers = _context.Follows
+                .Where(f => f.FollowingId == userId && f.FollowerId != myId) // 🔥 NO TE INCLUYE
+                .Select(f => f.Follower)
+                .ToList();
+
+            if (!followers.Any())
+                return Content("<p style='text-align:center;'>Sin seguidores</p>");
+
+            var html = "";
+
+            foreach (var user in followers)
+            {
+                var img = !string.IsNullOrEmpty(user.ProfileImage)
+                    ? $"<img src='{user.ProfileImage}' style='width:35px;height:35px;border-radius:50%;object-fit:cover;margin-right:8px;' />"
+                    : $"<div style='width:35px;height:35px;border-radius:50%;background:#2563eb;color:white;display:flex;align-items:center;justify-content:center;margin-right:8px;'>{user.Username[0]}</div>";
+
+                html += $@"
+        <div style='display:flex;align-items:center;gap:8px;padding:8px;border-radius:8px;cursor:pointer;'
+             onclick=""window.location='/User/Profile/{user.Id}'"">
+
+            {img}
+
+            <div>
+                <div style='font-weight:600'>{user.Username}</div>
+                <div style='font-size:12px;color:gray'>{user.FullName ?? ""}</div>
+            </div>
+
+        </div>";
+            }
+
+            return Content(html, "text/html");
+        }
+
+        [HttpGet]
+        public IActionResult GetFollowing(int userId)
+        {
+            var myId = int.Parse(User.FindFirst("UserId").Value);
+
+            var following = _context.Follows
+                .Where(f => f.FollowerId == userId && f.FollowingId != myId) // 🔥 NO TE INCLUYE
+                .Select(f => f.Following)
+                .ToList();
+
+            if (!following.Any())
+                return Content("<p style='text-align:center;'>No sigue a nadie</p>");
+
+            var html = "";
+
+            foreach (var user in following)
+            {
+                var img = !string.IsNullOrEmpty(user.ProfileImage)
+                    ? $"<img src='{user.ProfileImage}' style='width:35px;height:35px;border-radius:50%;object-fit:cover;margin-right:8px;' />"
+                    : $"<div style='width:35px;height:35px;border-radius:50%;background:#2563eb;color:white;display:flex;align-items:center;justify-content:center;margin-right:8px;'>{user.Username[0]}</div>";
+
+                html += $@"
+        <div style='display:flex;align-items:center;gap:8px;padding:8px;border-radius:8px;cursor:pointer;'
+             onclick=""window.location='/User/Profile/{user.Id}'"">
+
+            {img}
+
+            <div>
+                <div style='font-weight:600'>{user.Username}</div>
+                <div style='font-size:12px;color:gray'>{user.FullName ?? ""}</div>
+            </div>
+
+        </div>";
+            }
+
+            return Content(html, "text/html");
+        }
+
+
         // =====================================
         // 🏆 RANKING DE AMIGOS
         // =====================================
@@ -404,6 +485,9 @@ namespace HabitTrackerApp.Controllers
 
             return View(ranking);
         }
+
+
+
 
         [HttpGet]
 public IActionResult GetOnlineUsers()

@@ -22,26 +22,16 @@
     <div class="d-flex align-items-center gap-2">
 
         <!-- 🔥 FOTO / INICIAL -->
-        <a asp-controller="Account" asp-action="Profile" asp-route-id="@ViewBag.OtherUserId">
-            @if (!string.IsNullOrEmpty(ViewBag.OtherUserImage))
+        <a asp-controller="User" asp-action="Profile" asp-route-id="@ViewBag.OtherUserId">
+            @if (!string.IsNullOrEmpty(ViewBag.OtherUserProfileImage))
             {
-                <img src="@ViewBag.OtherUserImage"
-                     style="width:40px;height:40px;border-radius:50%;object-fit:cover;" />
+                <img src="@ViewBag.OtherUserProfileImage"
+                     style="width:35px;height:35px;border-radius:50%;object-fit:cover;" />
             }
             else
             {
-                <div style="
-                    width:40px;
-                    height:40px;
-                    border-radius:50%;
-                    background:#2563eb;
-                    color:white;
-                    display:flex;
-                    align-items:center;
-                    justify-content:center;
-                    font-weight:bold;
-                    font-size:18px;">
-                    @(ViewBag.OtherUsername?.Substring(0, 1).ToUpper() ?? "?")
+                <div style="width:35px;height:35px;border-radius:50%;background:#2563eb;color:white;display:flex;align-items:center;justify-content:center;">
+                    @ViewBag.OtherUsername.Substring(0, 1).ToUpper()
                 </div>
             }
         </a>
@@ -92,7 +82,7 @@
 {
     if (msg.SenderId == myId)
     {
-        <div class="d-flex justify-content-end mb-2">
+            <div class="d-flex justify-content-end mb-2 msg-wrap">
             <div class="chat-row me" style="display:flex; align-items:flex-end;">
                 <div class="me-2 text-end">
 
@@ -142,17 +132,21 @@
 
                     </div>
 
-                        <div>
-                            <button onclick="reactToMessage(@msg.Id, '🔥')">🔥</button>
-                            <button onclick="reactToMessage(@msg.Id, '❤️')">❤️</button>
-                            <button onclick="reactToMessage(@msg.Id, '😂')">😂</button>
+                        <div class="reaction-btns">
+                            <button type="button" onclick="reactToMessage(@msg.Id, '🔥')">🔥</button>
+                            <button type="button" onclick="reactToMessage(@msg.Id, '❤️')">❤️</button>
+                            <button type="button" onclick="reactToMessage(@msg.Id, '😂')">😂</button>
+                            <button type="button" onclick="reactToMessage(@msg.Id, '👍')">👍</button>
+                            <button type="button" onclick="reactToMessage(@msg.Id, '😮')">😮</button>
                         </div>
 
                         @if (!string.IsNullOrEmpty(msg.Reaction))
                         {
-                            <div style="margin-top:5px; font-size:18px;">
-                                @msg.Reaction
-                            </div>
+                            <div class="reaction-display" id="reaction-@msg.Id">@msg.Reaction</div>
+                        }
+                        else
+                        {
+                            <div class="reaction-display" id="reaction-@msg.Id" style="display:none;"></div>
                         }
 
                     @if (msg.IsRead)
@@ -181,7 +175,7 @@
     }
     else
     {
-        <div class="d-flex justify-content-start mb-2">
+            <div class="d-flex justify-content-start mb-2 msg-wrap">
             <div class="chat-row d-flex align-items-end">
 
                 @if (!string.IsNullOrEmpty(msg.Sender?.ProfileImage))
@@ -237,11 +231,22 @@
                 </div>
             </div>
 
-                <div>
-                    <button onclick="reactToMessage(@msg.Id, '🔥')">🔥</button>
-                    <button onclick="reactToMessage(@msg.Id, '❤️')">❤️</button>
-                    <button onclick="reactToMessage(@msg.Id, '😂')">😂</button>
+                <div class="reaction-btns">
+                    <button type="button" onclick="reactToMessage(@msg.Id, '🔥')">🔥</button>
+                    <button type="button" onclick="reactToMessage(@msg.Id, '❤️')">❤️</button>
+                    <button type="button" onclick="reactToMessage(@msg.Id, '😂')">😂</button>
+                    <button type="button" onclick="reactToMessage(@msg.Id, '👍')">👍</button>
+                    <button type="button" onclick="reactToMessage(@msg.Id, '😮')">😮</button>
                 </div>
+
+                @if (!string.IsNullOrEmpty(msg.Reaction))
+                {
+                    <div class="reaction-display" id="reaction-@msg.Id">@msg.Reaction</div>
+                }
+                else
+                {
+                    <div class="reaction-display" id="reaction-@msg.Id" style="display:none;"></div>
+                }
         </div>
     }
 }
@@ -445,6 +450,34 @@
         border-bottom-right-radius: 5px;
     }
 
+    .reaction-btns {
+        display: none;
+        background: white;
+        border-radius: 20px;
+        padding: 4px 8px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+        gap: 2px;
+    }
+
+        .reaction-btns button {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            padding: 2px 4px;
+            border-radius: 8px;
+            transition: transform 0.15s;
+        }
+
+            .reaction-btns button:hover {
+                transform: scale(1.3);
+            }
+
+    .msg-wrap:hover .reaction-btns {
+        display: flex;
+    }
+
+
     /* MENSAJES DEL OTRO */
     .other-bubble {
         background: #e5e7eb;
@@ -468,6 +501,11 @@
         margin-top: 5px;
         max-width: 200px;
         border-radius: 10px;
+    }
+
+    .reaction-display {
+        font-size: 18px;
+        margin-top: 2px;
     }
 </style>
 
@@ -546,12 +584,16 @@
        const chatBox = document.getElementById("chatBox");
     chatBox.scrollTop = chatBox.scrollHeight;
 
-    const connection = new signalR.HubConnectionBuilder()
-        .withUrl("/chatHub")
-        .build();
 
+    var connection = new signalR.HubConnectionBuilder()
+    .withUrl("/chatHub")
+    .build();
+
+ 
     connection.start().then(async function () {
     const userId = '@User.FindFirst("UserId")?.Value';
+
+ 
 
     if (userId) {
     connection.invoke("JoinUserGroup", userId);
@@ -696,7 +738,7 @@
     if (indicator) indicator.style.display = "none";
 
     const div = document.createElement("div");
-    div.className = "chat-row";
+    div.className = "chat-row msg-wrap";
 
     // 🔥 tomar la imagen del ViewBag correctamente
     const profileImage = "@(ViewBag.OtherUserProfileImage ?? "")";
@@ -792,16 +834,45 @@
 
     });
 
+    connection.on("ReceiveReaction", function(messageId, reaction) {
+    var el = document.getElementById("reaction-" + messageId);
+    if (el) {
+    el.innerText = reaction;
+    el.style.display = "block";
+    }
+    }); 
+
     /* 🔥 ENVÍO SIN RECARGAR */
 
   
-
+    function reactToMessage(messageId, reaction) {
+    fetch('/Message/React', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ messageId: messageId, reaction: reaction })
+    })
+    .then(function() {
+    var el = document.getElementById("reaction-" + messageId);
+    if (el) {
+    el.innerText = reaction;
+    el.style.display = "block";
+    }
+    })
+    .catch(function(err) {
+    console.error(err);
+    });
+    }
 
 
 
 </script>
 
 <script>
+
+    var mediaRecorder = null;
+    var audioChunks = [];
+    var isRecording = false;
+
     function addEmoji(emoji) {
     const input = document.querySelector("#messageInput");
 
@@ -822,7 +893,7 @@
     mediaRecorder.stop();
     isRecording = false;
     return;
-    }<
+    }
 
     try {
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -965,19 +1036,6 @@
     }
     }
 
-    function reactToMessage(messageId, reaction) {
-    fetch('/Message/React', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ messageId: messageId, reaction: reaction })
-    })
-    .then(() => {
-    location.reload();
-    })
-    .catch(err => {
-    console.error(err);
-    alert("Error al reaccionar 😢");
-    });
-    }
+ 
 
 </script>

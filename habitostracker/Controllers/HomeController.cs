@@ -15,6 +15,18 @@ namespace habitostracker.Controllers
 
         public IActionResult Index()
         {
+            if (User.Identity != null && User.Identity.IsAuthenticated)
+            {
+                var userId = int.Parse(User.FindFirst("UserId").Value);
+                using (var db = HttpContext.RequestServices.GetService<HabitTrackerApp.Data.HabitDbContext>())
+                {
+                    var user = db.Users.FirstOrDefault(u => u.Id == userId);
+                    if (user != null && string.IsNullOrWhiteSpace(user.Bio))
+                    {
+                        ViewBag.NeedsBio = true;
+                    }
+                }
+            }
             return View();
         }
 
