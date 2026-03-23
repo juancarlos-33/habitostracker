@@ -12,8 +12,19 @@
 
         <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
 
-        <form asp-action="Register" method="post">
+        <form asp-action="Register" method="post" enctype="multipart/form-data">
             @Html.AntiForgeryToken()
+
+            <div class="mb-3 text-center">
+                <label class="form-label">Foto de perfil (opcional)</label>
+
+                <input type="file" name="profilePhoto" id="imageInput"
+                       class="form-control" accept="image/*" />
+
+                <!-- PREVIEW -->
+                <img id="previewImage"
+                     style="width:100px;height:100px;border-radius:50%;object-fit:cover;margin-top:10px;display:none;" />
+            </div>
 
             <div class="mb-3">
                 <label class="form-label">Usuario</label>
@@ -45,10 +56,18 @@
             </div>
 
             <div class="mb-3">
+                <label class="form-label">Nombre completo</label>
+                <input asp-for="FullName" class="form-control" />
+                <span asp-validation-for="FullName" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
                 <label class="form-label">Cuéntanos sobre ti</label>
                 <textarea asp-for="Bio" class="form-control" rows="3" placeholder="Escribe algo sobre ti..."></textarea>
-                <span class="text-muted" style="font-size:0.8rem;">Opcional</span>
+                <span asp-validation-for="Bio" class="text-danger"></span>
             </div>
+
+
 
             <button type="submit" class="btn btn-primary w-100 rounded-pill">
                 Registrarme
@@ -65,3 +84,17 @@
     </div>
 </div>
 
+<script>
+    document.getElementById("imageInput").addEventListener("change", function(e){
+        const file = e.target.files[0];
+        if(!file) return;
+
+        const reader = new FileReader();
+        reader.onload = function(event){
+            const img = document.getElementById("previewImage");
+            img.src = event.target.result;
+            img.style.display = "block";
+        };
+        reader.readAsDataURL(file);
+    });
+</script>

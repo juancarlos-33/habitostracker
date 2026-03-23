@@ -163,7 +163,7 @@ namespace HabitTrackerApp.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Login(LoginViewModel login)
+        public async Task<IActionResult> Login(LoginViewModel login, double? Latitude, double? Longitude)
         {
             if (!ModelState.IsValid)
                 return View(login);
@@ -238,21 +238,40 @@ namespace HabitTrackerApp.Controllers
                 ip = HttpContext.Connection.RemoteIpAddress?.ToString();
             }
 
-
-
-
             user.LastIp = ip;
 
-            if (user.LastIp != ip)
+            // 🔥 Si el usuario autorizó GPS usar esas coordenadas
+            if (Latitude != null && Longitude != null)
             {
-                var info = await GetIPInfo(ip);
-
-                user.Country = info.country;
-                user.City = info.city;
-                user.ISP = info.isp;
+                user.Latitude = Latitude;
+                user.Longitude = Longitude;
             }
-            _context.SaveChanges();
 
+            // 🔥 Si no, usar la IP
+            try
+            {
+                using var httpClient = new HttpClient();
+                httpClient.Timeout = TimeSpan.FromSeconds(5);
+                var geoJson = await httpClient.GetStringAsync($"https://ipwho.is/{ip}");
+                var geoDoc = System.Text.Json.JsonDocument.Parse(geoJson);
+                var geoRoot = geoDoc.RootElement;
+
+                if (geoRoot.GetProperty("success").GetBoolean())
+                {
+                    user.Country = geoRoot.GetProperty("country").GetString();
+                    user.City = geoRoot.GetProperty("city").GetString();
+
+                    // Solo usar IP para coordenadas si no hay GPS
+                    if (Latitude == null || Longitude == null)
+                    {
+                        user.Latitude = geoRoot.GetProperty("latitude").GetDouble();
+                        user.Longitude = geoRoot.GetProperty("longitude").GetDouble();
+                    }
+                }
+            }
+            catch { }
+
+            _context.SaveChanges();
             if (!user.EmailConfirmed)
             {
                 TempData["UnconfirmedEmail"] = user.Email;
@@ -347,8 +366,7 @@ namespace HabitTrackerApp.Controllers
         }
 
         [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Register(RegisterViewModel model)
+        public async Task<IActionResult> Register(RegisterViewModel model, IFormFile profilePhoto)
         {
             if (!ModelState.IsValid)
                 return View(model);
@@ -365,16 +383,39 @@ namespace HabitTrackerApp.Controllers
                 return View(model);
             }
 
+            string imagePath = null;
+
+            // 🔥 GUARDAR FOTO (OPCIONAL)
+            if (profilePhoto != null && profilePhoto.Length > 0)
+            {
+                var folder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/images/profiles");
+
+                if (!Directory.Exists(folder))
+                    Directory.CreateDirectory(folder);
+
+                var fileName = Guid.NewGuid().ToString() + Path.GetExtension(profilePhoto.FileName);
+                var filePath = Path.Combine(folder, fileName);
+
+                using (var stream = new FileStream(filePath, FileMode.Create))
+                {
+                    await profilePhoto.CopyToAsync(stream);
+                }
+
+                imagePath = "/images/profiles/" + fileName;
+            }
+
             var newUser = new User
             {
                 Username = model.Username,
                 Email = model.Email,
                 Gender = model.Gender,
                 Bio = model.Bio,
+                FullName = model.FullName,
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword(model.Password),
                 CreatedAt = DateTime.Now,
                 Role = "User",
-                EmailConfirmed = false
+                EmailConfirmed = false,
+                ProfileImage = imagePath // 🔥 AQUÍ SE GUARDA
             };
 
             _context.Users.Add(newUser);
@@ -539,10 +580,13 @@ namespace HabitTrackerApp.Controllers
             if (id == null || id == myId)
             {
                 var me = _context.Users.FirstOrDefault(u => u.Id == myId);
-                if (me == null) return RedirectToAction("Login", "Account");
+                if (me != null && me.PendingEmail != null)
+                {
+                    me.PendingEmail = null;
+                    _context.SaveChanges();
+                }
 
-                if (me.PendingEmail != null)
-                    TempData["PendingEmail"] = me.PendingEmail;
+
 
                 // 🔥 AGREGA ESTO (SEGUIDORES / SIGUIENDO)
                 ViewBag.Followers = _context.Follows.Count(f => f.FollowingId == myId);

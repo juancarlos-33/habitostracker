@@ -1427,11 +1427,42 @@ function toggleSidebar(){
             setTimeout(() => {
                 loader.style.display = "none";
                 clearInterval(interval);
-            }, 1600);
+            }, 1400);
 
-        }, 1600);
+        }, 1400);
     });
 </script>
+
+
+<div id="loader" style="
+    display:none;
+    position:fixed;
+    z-index:99999;
+    top:0;
+    left:0;
+    width:100%;
+    height:100%;
+    background:rgba(0,0,0,0.4);
+    justify-content:center;
+    align-items:center;
+">
+    <div style="
+        width:50px;
+        height:50px;
+        border:5px solid #fff;
+        border-top:5px solid #2563eb;
+        border-radius:50%;
+        animation:spin 1s linear infinite;
+    "></div>
+</div>
+
+<style>
+@@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+</style>
+
 
 </body>
 </html>

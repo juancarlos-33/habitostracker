@@ -1,4 +1,17 @@
-﻿// Please see documentation at https://learn.microsoft.com/aspnet/core/client-side/bundling-and-minification
-// for details on configuring this project to bundle and minify static web assets.
+﻿document.addEventListener("DOMContentLoaded", function () {
 
-// Write your JavaScript code.
+    const loader = document.getElementById("loader");
+
+    // 🔥 Mostrar loader al enviar formularios
+    document.querySelectorAll("form:not([data-no-loader])").forEach(form => {
+        form.addEventListener("submit", function () {
+            if (loader) loader.style.display = "flex";
+        });
+    });
+
+    // 🔥 Ocultar loader cuando la página carga
+    window.addEventListener("load", function () {
+        if (loader) loader.style.display = "none";
+    });
+
+});

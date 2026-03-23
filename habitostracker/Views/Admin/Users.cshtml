@@ -123,9 +123,9 @@
     </thead>
 
         <tbody>
-@{
-    var ipInfo = ViewBag.IpInfo as Dictionary<string, (string country, string city, string isp)>;
-}
+            @{
+                var ipInfo = ViewBag.IpInfo as Dictionary<string, (string country, string region, string city, string isp)>;
+            }
 
         @if (TempData["NewPassword"] != null)
         {
@@ -339,18 +339,20 @@
                                 {
                                     <br />
 
-                                    <small class="text-muted">
-                                        🌍 @ipInfo[user.LastIp].country <br />
-                                        🏙 @ipInfo[user.LastIp].city <br />
-                                        📍 @user.Municipality <br />
-                                        🧭 @user.Latitude , @user.Longitude <br />
-                                        📡 @ipInfo[user.LastIp].isp <br />
-
-                                        <a target="_blank"
-                                               href="https://www.google.com/maps?q=@user.Latitude,@user.Longitude">
-                                            🗺 Ver en mapa
-                                        </a>
-                                    </small>
+                                        <small class="text-muted">
+                                            🌍 @ipInfo[user.LastIp].country <br />
+                                            🗺 @ipInfo[user.LastIp].region <br />
+                                            🏙 @ipInfo[user.LastIp].city <br />
+                                            📡 @ipInfo[user.LastIp].isp <br />
+                                            @if (user.Latitude != null && user.Longitude != null)
+                                            {
+                                                <a target="_blank"
+                                                       href="https://maps.google.com/?q=@(user.Latitude.Value.ToString("F6", System.Globalization.CultureInfo.InvariantCulture)),@(user.Longitude.Value.ToString("F6", System.Globalization.CultureInfo.InvariantCulture))"
+                                                       class="text-primary">
+                                                    📍 Ver en mapa
+                                                </a>
+                                            }
+                                        </small>
                                 }
 
                             </span>

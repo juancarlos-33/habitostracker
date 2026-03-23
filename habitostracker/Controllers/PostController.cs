@@ -152,6 +152,22 @@ namespace HabitTrackerApp.Controllers
                 .OrderByDescending(p => p.CreatedAt)
                 .ToList();
 
+            // 🔥 contar comentarios por publicación
+            var commentCounts = _context.PostComments
+                .Where(c => posts.Select(p => p.Id).Contains(c.PostId))
+                .GroupBy(c => c.PostId)
+                .ToDictionary(g => g.Key, g => g.Count());
+
+            ViewBag.CommentCounts = commentCounts;
+
+            // 🔥 likes del usuario
+            var myLikes = _context.PostLikes
+                .Where(l => l.UserId == userId)
+                .Select(l => l.PostId)
+                .ToList();
+
+            ViewBag.MyLikes = myLikes;
+
             return View(posts);
         }
 

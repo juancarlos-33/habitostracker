@@ -175,7 +175,7 @@ namespace HabitTrackerApp.Controllers
         // =====================================
         // 👥 ENVIAR SOLICITUD DE AMISTAD
         [HttpPost]
-        public IActionResult SendFriendRequest(int receiverId)
+        public async Task<IActionResult> SendFriendRequest(int receiverId)
         {
             var senderId = int.Parse(User.FindFirst("UserId").Value);
 
@@ -227,8 +227,15 @@ namespace HabitTrackerApp.Controllers
             _context.Notifications.Add(notification);
 
             // 🔔 notificación en tiempo real
-            _hubContext.Clients.User(receiverId.ToString())
-                .SendAsync("ReceiveNotification", username + " te envió una solicitud de amistad");
+            await _hubContext.Clients.Group(receiverId.ToString())
+     .SendAsync(
+         "ReceiveNotification",
+         senderId,
+         username + " te envió una solicitud de amistad",
+         username,
+         sender?.ProfileImage ?? "",
+         "/User/FriendRequests"
+     );
 
             _context.SaveChanges();
 
@@ -321,16 +328,14 @@ namespace HabitTrackerApp.Controllers
 
         //PARA SEGUIR
         [HttpPost]
-        public IActionResult Follow(int userId)
+        public async Task<IActionResult> Follow(int userId)
         {
             var myId = int.Parse(User.FindFirst("UserId").Value);
 
             var targetUser = _context.Users.FirstOrDefault(u => u.Id == userId);
 
             if (targetUser != null && targetUser.Role == "SuperAdmin")
-            {
                 return RedirectToAction("Index");
-            }
 
             if (myId == userId)
                 return RedirectToAction("Index");
@@ -348,10 +353,37 @@ namespace HabitTrackerApp.Controllers
                 };
 
                 _context.Follows.Add(follow);
+
+                // 🔔 notificación
+                var sender = _context.Users.FirstOrDefault(u => u.Id == myId);
+
+                _context.Notifications.Add(new Notification
+                {
+                    UserId = userId,
+                    FromUserId = myId,
+                    FromUsername = sender?.Username ?? "",
+                    FromUserImage = sender?.ProfileImage ?? "",
+                    Message = sender?.Username + " empezó a seguirte",
+                    Link = "/User/Profile/" + myId,
+                    IsRead = false,
+                    CreatedAt = DateTime.Now
+                });
+
                 _context.SaveChanges();
+
+                // 🔥 notificación en tiempo real
+                await _hubContext.Clients.Group(userId.ToString())
+                    .SendAsync(
+                        "ReceiveNotification",
+                        myId,
+                        sender?.Username + " empezó a seguirte",
+                        sender?.Username ?? "",
+                        sender?.ProfileImage ?? "",
+                        "/User/Profile/" + myId
+                    );
             }
 
-            return RedirectToAction("Index");
+            return RedirectToAction("Profile", new { id = userId });
         }
 
         //DEJAR DE SEGUIR 

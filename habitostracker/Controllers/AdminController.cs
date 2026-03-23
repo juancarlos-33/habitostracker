@@ -74,22 +74,14 @@ namespace HabitTrackerApp.Controllers
                 .Take(10) // 🔥 límite para evitar lentitud
                 .ToList();
 
-            var ipInfo = new Dictionary<string, (string country, string city, string isp)>();
+            var ipInfo = new Dictionary<string, (string country, string region, string city, string isp)>();
 
             // 🔥 todas las llamadas en paralelo en vez de una por una
-            var tasks = uniqueIps.Select(async ip =>
+            foreach (var ip in uniqueIps)
             {
                 var info = await GetIPInfo(ip);
-                return (ip, info);
-            });
-
-            var results = await Task.WhenAll(tasks);
-
-            foreach (var (ip, info) in results)
-            {
                 ipInfo[ip] = info;
             }
-
             ViewBag.IpInfo = ipInfo;
 
             // 🚫 IPs bloqueadas
@@ -815,26 +807,36 @@ namespace HabitTrackerApp.Controllers
 
         }
 
-        private async Task<(string country, string city, string isp)> GetIPInfo(string ip)
+        private async Task<(string country, string region, string city, string isp)> GetIPInfo(string ip)
         {
             try
             {
+                if (string.IsNullOrEmpty(ip) || ip == "::1" || ip == "127.0.0.1")
+                    return ("Local", "Local", "Local", "Local");
+
                 using var client = new HttpClient();
-                client.Timeout = TimeSpan.FromSeconds(3); // 🔥 máximo 3 segundos
+                client.Timeout = TimeSpan.FromSeconds(5);
 
-                var json = await client.GetStringAsync($"http://ip-api.com/json/{ip}");
+                var json = await client.GetStringAsync($"https://ipwho.is/{ip}");
 
-                dynamic data = Newtonsoft.Json.JsonConvert.DeserializeObject(json);
+                var doc = System.Text.Json.JsonDocument.Parse(json);
+                var root = doc.RootElement;
 
-                string country = data.country ?? "Desconocido";
-                string city = data.city ?? "Desconocido";
-                string isp = data.isp ?? "Desconocido";
+                if (!root.GetProperty("success").GetBoolean())
+                    return ("Desconocido", "Desconocido", "Desconocido", "Desconocido");
 
-                return (country, city, isp);
+                string country = root.GetProperty("country").GetString() ?? "Desconocido";
+                string region = root.GetProperty("region").GetString() ?? "Desconocido";
+                string city = root.GetProperty("city").GetString() ?? "Desconocido";
+                string isp = root.TryGetProperty("connection", out var conn)
+                    ? conn.GetProperty("isp").GetString() ?? "Desconocido"
+                    : "Desconocido";
+
+                return (country, region, city, isp);
             }
             catch
             {
-                return ("Desconocido", "Desconocido", "Desconocido");
+                return ("Desconocido", "Desconocido", "Desconocido", "Desconocido");
             }
         }
 

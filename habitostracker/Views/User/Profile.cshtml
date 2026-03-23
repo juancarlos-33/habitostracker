@@ -4,6 +4,11 @@
     var myId = int.Parse(User.FindFirst("UserId").Value);
     var db = Context.RequestServices.GetService<HabitTrackerApp.Data.HabitDbContext>();
     var isFollowing = db.Follows.Any(f => f.FollowerId == myId && f.FollowingId == Model.Id);
+    var friendStatus = db.FriendRequests
+    .Where(f => (f.SenderId == myId && f.ReceiverId == Model.Id) ||
+                (f.SenderId == Model.Id && f.ReceiverId == myId))
+    .Select(f => f.Status)
+    .FirstOrDefault();
 }
 
 <div class="container mt-4">
@@ -81,10 +86,21 @@
                 }
             }
 
-            <form asp-action="SendFriendRequest" method="post">
-                <input type="hidden" name="receiverId" value="@Model.Id" />
-                <button class="btn-add">Agregar</button>
-            </form>
+            @if (friendStatus == "Accepted")
+            {
+                <button class="btn-add" style="background:#6b7280;" disabled>✅ Ya son amigos</button>
+            }
+            else if (friendStatus == "Pending")
+            {
+                <button class="btn-add" style="background:#f59e0b;" disabled>⏳ Solicitud enviada</button>
+            }
+            else
+            {
+                <form asp-action="SendFriendRequest" method="post">
+                    <input type="hidden" name="receiverId" value="@Model.Id" />
+                    <button class="btn-add">Agregar</button>
+                </form>
+            }
 
             <a asp-controller="Message" asp-action="Chat" asp-route-userId="@Model.Id" class="btn-message">
                 Mensaje

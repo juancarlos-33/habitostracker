@@ -457,7 +457,7 @@ Reenviar código de confirmación
 }
 
 
-<form asp-action="Login" method="post">
+<form asp-action="Login" method="post" id="loginForm">
 
 @Html.AntiForgeryToken()
 
@@ -494,9 +494,12 @@ class="text-decoration-none small text-danger">
 </div>
 
 
-<button type="submit"
-class="btn btn-login neon-btn w-100 shadow-sm mt-2">
-Entrar 👀
+<input type="hidden" id="latInput" name="Latitude" />
+<input type="hidden" id="lonInput" name="Longitude" />
+
+<button type="button" class="btn btn-login neon-btn w-100 shadow-sm mt-2"
+        onclick="tryGetLocation()">
+    Entrar 👀
 </button>
 
 
@@ -738,3 +741,41 @@ document.querySelector("form").addEventListener("submit", function() {
     document.body.appendChild(loader);
 });
 </script>
+
+<script>
+document.addEventListener("keydown", function(e) {
+    if (e.key === "Enter") {
+        e.preventDefault();
+        tryGetLocation();
+    }
+});
+
+function tryGetLocation() {
+    const loader = document.createElement("div");
+    loader.style.cssText = "position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);z-index:99999;display:flex;align-items:center;justify-content:center;flex-direction:column;";
+    loader.innerHTML = '<img src="/images/hola.jpeg" style="width:100px;border-radius:50%;animation:loginSpin 1s linear infinite;" /><p style="color:white;margin-top:15px;font-weight:600;font-size:18px;">Entrando...</p>';
+    document.body.appendChild(loader);
+
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+            function(pos) {
+                document.getElementById("latInput").value = pos.coords.latitude;
+                document.getElementById("lonInput").value = pos.coords.longitude;
+                document.getElementById("loginForm").submit();
+            },
+            function(err) {
+                document.getElementById("loginForm").submit();
+            },
+            { timeout: 5000 }
+        );
+    } else {
+        document.getElementById("loginForm").submit();
+    }
+}
+</script>
+
+<style>
+@@keyframes loginSpin {
+    from { transform: rotate(0deg); }
+}
+</style>

@@ -63,7 +63,7 @@
                 </div>
 
                 <div class="post-time">
-                    @post.CreatedAt.ToString("dd MMM yyyy HH:mm")
+                    @post.CreatedAt.ToString("dd MMM yyyy hh:mm tt")
                 </div>
 
             </div>
@@ -150,8 +150,10 @@
             var db = Context.RequestServices.GetService<HabitTrackerApp.Data.HabitDbContext>();
 
             var comments = db.PostComments
-            .Where(c => c.PostId == post.Id)
-            .ToList();
+     .Where(c => c.PostId == post.Id)
+     .OrderBy(c => c.Id)
+     .Take(1)
+     .ToList();
         }       @foreach (var comment in comments)
         {
             <div id="comment-@comment.Id" style="margin-top:10px;">
