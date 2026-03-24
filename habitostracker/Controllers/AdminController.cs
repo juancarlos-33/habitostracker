@@ -459,6 +459,11 @@ namespace HabitTrackerApp.Controllers
 
         public IActionResult Payments()
         {
+            // 🔒 solo SuperAdmin
+            var myId = int.Parse(User.FindFirst("UserId").Value);
+            var me = _context.Users.FirstOrDefault(u => u.Id == myId);
+            if (me?.Role != "SuperAdmin") return Forbid();
+
             var payments = _context.Payments
                 .Include(p => p.User)
                 .OrderByDescending(p => p.CreatedAt)
@@ -888,6 +893,22 @@ namespace HabitTrackerApp.Controllers
             };
 
             _context.AdminLogs.Add(log);
+
+
+            // 🔥 eliminar follows
+            var follows = _context.Follows
+                .Where(f => f.FollowerId == id || f.FollowingId == id);
+            _context.Follows.RemoveRange(follows);
+
+            // 🔥 eliminar solicitudes de amistad
+            var friendRequests = _context.FriendRequests
+                .Where(f => f.SenderId == id || f.ReceiverId == id);
+            _context.FriendRequests.RemoveRange(friendRequests);
+
+            // 🔥 eliminar notificaciones
+            var notifications = _context.Notifications
+                .Where(n => n.UserId == id || n.FromUserId == id);
+            _context.Notifications.RemoveRange(notifications);
 
             // 🔥 eliminar hábitos del usuario
             var habits = _context.Habits.Where(h => h.UserId == user.Id);

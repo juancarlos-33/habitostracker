@@ -4,7 +4,10 @@
 
 @if (Model.Count == 0)
 {
-    <p>No tienes publicaciones guardadas.</p>
+    <div class="text-center mt-5">
+        <div style="font-size:3rem;">🔖</div>
+        <h5 class="text-muted mt-3">No tienes publicaciones guardadas</h5>
+    </div>
 }
 
 @foreach (var post in Model)
@@ -12,12 +15,7 @@
     <div class="post-card">
 
         <div class="post-header">
-
-            <a asp-controller="User"
-                   asp-action="Profile"
-                   asp-route-id="@post.UserId"
-                   class="post-avatar-link">
-
+            <a asp-controller="User" asp-action="Profile" asp-route-id="@post.UserId" class="post-avatar-link">
                 @if (!string.IsNullOrEmpty(post.User?.ProfileImage))
                 {
                     <img src="@post.User.ProfileImage" class="post-avatar" />
@@ -28,33 +26,100 @@
                         @post.DisplayUsername.Substring(0, 1).ToUpper()
                     </div>
                 }
-
             </a>
-
             <div>
-
-                <div class="post-username">
-                    @post.DisplayUsername
-                </div>
-
-                <div class="post-time">
-                    @post.CreatedAt.ToString("dd MMM yyyy HH:mm")
-                </div>
-
+                <div class="post-username">@post.DisplayUsername</div>
+                <div class="post-time">@post.CreatedAt.ToString("dd MMM yyyy hh:mm tt")</div>
             </div>
-
         </div>
 
-        <p class="post-description">
-            @post.Description
-        </p>
+        <p class="post-description">@post.Description</p>
 
         @if (!string.IsNullOrEmpty(post.ImagePath))
         {
-            <img src="@post.ImagePath"
-                 class="post-image"
-                 style="max-width:100%;" />
+            <div class="post-image-container">
+                <img src="@post.ImagePath" class="post-image" />
+            </div>
         }
+
+        <div class="post-actions">
+            <a asp-controller="Post" asp-action="Comments" asp-route-postId="@post.Id" class="comment-btn">
+                💬 Ver comentarios
+            </a>
+        </div>
 
     </div>
 }
+
+<style>
+    .post-card {
+        background: white;
+        border-radius: 16px;
+        padding: 16px;
+        margin-bottom: 22px;
+        box-shadow: 0 8px 25px rgba(0,0,0,0.08);
+        transition: 0.2s ease;
+        max-width: 700px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    .post-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 12px 30px rgba(0,0,0,0.12);
+    }
+
+    .post-header {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 8px;
+    }
+
+    .post-avatar {
+        width: 38px;
+        height: 38px;
+        border-radius: 50%;
+        object-fit: cover;
+    }
+
+    .post-avatar-placeholder {
+        width: 38px;
+        height: 38px;
+        border-radius: 50%;
+        background: #2563eb;
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+    }
+
+    .post-avatar-link { text-decoration: none; }
+    .post-username { font-weight: 600; font-size: 15px; }
+    .post-time { font-size: 12px; color: #777; }
+    .post-description { margin-top: 8px; font-size: 15px; }
+
+    .post-image-container { margin-top: 10px; }
+
+    .post-image {
+        width: 100%;
+        max-height: 600px;
+        object-fit: contain;
+        border-radius: 14px;
+        background: #f1f5f9;
+    }
+
+    .post-actions {
+        margin-top: 12px;
+    }
+
+    .comment-btn {
+        font-size: 14px;
+        text-decoration: none;
+        color: #2563eb;
+        font-weight: 500;
+    }
+
+    .comment-btn:hover { text-decoration: underline; }
+</style>

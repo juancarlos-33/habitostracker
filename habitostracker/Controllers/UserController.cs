@@ -121,9 +121,17 @@ namespace HabitTrackerApp.Controllers
             }
 
             // guardar en BD
-            user.PaymentProofImage = "/uploads/payments/" + fileName;
-            user.PaymentApproved = false;
+            var payment = new Payment
+            {
+                UserId = userId,
+                Screenshot = "/uploads/payments/" + fileName,
+                CreatedAt = DateTime.Now,
+                IsApproved = false,
+                IsRejected = false
+            };
 
+
+            _context.Payments.Add(payment);
             _context.SaveChanges();
 
             TempData["Success"] = "Comprobante enviado. Espera aprobación del admin 😎";
@@ -143,6 +151,8 @@ namespace HabitTrackerApp.Controllers
             }
 
             // 📁 guardar imagen
+            var folder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/payments");
+            if (!Directory.Exists(folder)) Directory.CreateDirectory(folder);
             var fileName = Guid.NewGuid().ToString() + Path.GetExtension(screenshot.FileName);
             var path = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/payments", fileName);
 

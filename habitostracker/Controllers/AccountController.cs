@@ -368,6 +368,8 @@ namespace HabitTrackerApp.Controllers
         [HttpPost]
         public async Task<IActionResult> Register(RegisterViewModel model, IFormFile profilePhoto)
         {
+            ModelState.Remove("profilePhoto");
+
             if (!ModelState.IsValid)
                 return View(model);
 

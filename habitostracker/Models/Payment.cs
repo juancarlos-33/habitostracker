@@ -10,6 +10,7 @@
 
         public string Screenshot { get; set; }
 
+
         public bool IsRejected { get; set; } = false;
         public string? AdminNote { get; set; }
 
