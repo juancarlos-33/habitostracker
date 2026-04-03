@@ -53,10 +53,12 @@ namespace HabitTrackerApp
                 options.ExpireTimeSpan = TimeSpan.FromHours(1);
               
             })
+
+
             .AddGoogle(options =>
             {
-                options.ClientId = "925090636409-e30mdaq9daptvjsh6l2r3jgq320q1g19.apps.googleusercontent.com";
-                options.ClientSecret = "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";
+               options.ClientId = builder.Configuration["Google:ClientId"];
+options.ClientSecret = builder.Configuration["Google:ClientSecret"];
             })
             .AddJwtBearer(JwtBearerDefaults.AuthenticationScheme, options =>
             {
