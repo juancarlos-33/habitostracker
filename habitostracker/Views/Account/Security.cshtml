@@ -72,9 +72,19 @@
               onsubmit="return validarEliminar()">
             @Html.AntiForgeryToken()
 
-            <input id="deletePassword" name="password" type="password"
-                   placeholder="Tu contraseña" class="sec-input"
-                   oninput="limpiarError()" />
+            @if (Model.IsGoogleAccount)
+            {
+                <input id="confirmDelete" name="confirmText" type="text"
+                       placeholder="Escribe ELIMINAR"
+                       class="sec-input" />
+            }
+            else
+            {
+                <input id="deletePassword" name="password" type="password"
+                       placeholder="Tu contraseña"
+                       class="sec-input"
+                       oninput="limpiarError()" />
+            }
 
             <div id="deleteError" class="sec-alert-error" style="display:none;"></div>
 

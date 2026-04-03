@@ -115,6 +115,16 @@ namespace HabitTrackerApp.Controllers
         [HttpPost]
         public async Task<IActionResult> Send(int receiverId, string content, IFormFile file)
         {
+            // 🔒 OBTENER USUARIO ACTUAL
+            var currentUser = GetCurrentUser();
+
+            // 🚫 BLOQUEAR INVITADOS
+            if (currentUser.Role == "Guest")
+            {
+                TempData["Error"] = "✨ Debes crear una cuenta para enviar mensajes y desbloquear todas las funciones.";
+                return RedirectToAction("Chat", new { userId = receiverId });
+            }
+
             var senderId = int.Parse(User.FindFirst("UserId").Value);
             var senderName = User.Identity?.Name ?? "Usuario";
 
@@ -168,8 +178,6 @@ namespace HabitTrackerApp.Controllers
             // 🔔 GUARDAR NOTIFICACIÓN
             _context.Notifications.Add(new Notification
             {
-
-
                 UserId = receiverId,
                 FromUserId = senderId,
                 Message = "💬 Nuevo mensaje de " + senderName,
@@ -183,26 +191,15 @@ namespace HabitTrackerApp.Controllers
             });
 
             await _context.SaveChangesAsync();
+
             await _hubContext.Clients.Group(receiverId.ToString())
-    .SendAsync(
-        "ReceiveMessage",
-        senderId,
-        receiverId,
-        senderName,
-        content ?? ""
-    );
+                .SendAsync("ReceiveMessage", senderId, receiverId, senderName, content ?? "");
 
-
-
-            // 🔥 🔥 🔥 AQUÍ ESTÁ LA CLAVE (ENVÍO CORRECTO)
-
-            // 🔥 obtener usuario
             var sender = _context.Users.FirstOrDefault(u => u.Id == senderId);
 
-            // 🔥 enviar por GRUPO (principal)
             await _hubContext.Clients.Group(receiverId.ToString())
                 .SendAsync(
-                   "ReceiveNotification",
+                    "ReceiveNotification",
                     senderId,
                     "💬 Nuevo mensaje",
                     senderName,
@@ -210,10 +207,9 @@ namespace HabitTrackerApp.Controllers
                     "/Message/Chat?userId=" + senderId
                 );
 
-            // 🔥 respaldo por USER (doble seguridad)
             await _hubContext.Clients.User(receiverId.ToString())
                 .SendAsync(
-                   "ReceiveNotification",
+                    "ReceiveNotification",
                     senderId,
                     "💬 Nuevo mensaje",
                     senderName,
@@ -221,8 +217,12 @@ namespace HabitTrackerApp.Controllers
                     "/Message/Chat?userId=" + senderId
                 );
 
-
             return RedirectToAction("Chat", new { userId = receiverId });
+        }
+        private User GetCurrentUser()
+        {
+            var username = User.Identity.Name;
+            return _context.Users.FirstOrDefault(u => u.Username == username);
         }
 
         // =====================================

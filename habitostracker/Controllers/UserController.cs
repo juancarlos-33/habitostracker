@@ -35,8 +35,8 @@ namespace HabitTrackerApp.Controllers
             var myId = int.Parse(User.FindFirst("UserId").Value);
 
             var users = _context.Users
-                .Where(u => u.Role != "SuperAdmin")
-                .OrderByDescending(u => u.Role == "Admin")
+      .Where(u => u.Role != "SuperAdmin" && u.Role != "Guest")
+                  .OrderByDescending(u => u.Role == "Admin")
                 .ThenBy(u => u.Username)
                 .ToList();
 
@@ -188,21 +188,25 @@ namespace HabitTrackerApp.Controllers
         public async Task<IActionResult> SendFriendRequest(int receiverId)
         {
             var senderId = int.Parse(User.FindFirst("UserId").Value);
+            var currentUser = _context.Users.FirstOrDefault(u => u.Id == senderId);
+
+            // 🚫 BLOQUEAR INVITADOS
+            if (currentUser.Role == "Guest")
+            {
+                TempData["Error"] = "✨ Debes crear una cuenta para enviar solicitudes de amistad.";
+                return RedirectToAction("Profile", new { id = receiverId });
+            }
 
             var receiver = _context.Users.FirstOrDefault(u => u.Id == receiverId);
 
             if (receiver != null && receiver.Role == "SuperAdmin")
-            {
                 return RedirectToAction("Index");
-            }
 
             var username = User.Identity.Name;
 
-            // ❌ evitar enviarse solicitud a sí mismo
             if (senderId == receiverId)
                 return RedirectToAction("Profile", new { id = receiverId });
 
-            // ❌ evitar solicitudes duplicadas
             var exists = _context.FriendRequests
                 .Any(r => r.SenderId == senderId && r.ReceiverId == receiverId);
 
@@ -218,10 +222,8 @@ namespace HabitTrackerApp.Controllers
 
             _context.FriendRequests.Add(request);
 
-            // 🔎 obtener info del usuario que envía la solicitud
             var sender = _context.Users.FirstOrDefault(u => u.Id == senderId);
 
-            // 🔔 crear notificación
             var notification = new Notification
             {
                 UserId = receiverId,
@@ -236,16 +238,15 @@ namespace HabitTrackerApp.Controllers
 
             _context.Notifications.Add(notification);
 
-            // 🔔 notificación en tiempo real
             await _hubContext.Clients.Group(receiverId.ToString())
-     .SendAsync(
-         "ReceiveNotification",
-         senderId,
-         username + " te envió una solicitud de amistad",
-         username,
-         sender?.ProfileImage ?? "",
-         "/User/FriendRequests"
-     );
+                .SendAsync(
+                    "ReceiveNotification",
+                    senderId,
+                    username + " te envió una solicitud de amistad",
+                    username,
+                    sender?.ProfileImage ?? "",
+                    "/User/FriendRequests"
+                );
 
             _context.SaveChanges();
 
@@ -340,56 +341,62 @@ namespace HabitTrackerApp.Controllers
         [HttpPost]
         public async Task<IActionResult> Follow(int userId)
         {
-            var myId = int.Parse(User.FindFirst("UserId").Value);
+            var currentUserId = int.Parse(User.FindFirst("UserId").Value);
+            var currentUser = _context.Users.FirstOrDefault(u => u.Id == currentUserId);
+
+            // 🚫 BLOQUEAR INVITADOS
+            if (currentUser.Role == "Guest")
+            {
+                TempData["Error"] = "✨ Debes crear una cuenta para seguir usuarios.";
+                return RedirectToAction("Profile", new { id = userId });
+            }
 
             var targetUser = _context.Users.FirstOrDefault(u => u.Id == userId);
 
             if (targetUser != null && targetUser.Role == "SuperAdmin")
                 return RedirectToAction("Index");
 
-            if (myId == userId)
+            if (currentUserId == userId)
                 return RedirectToAction("Index");
 
             var alreadyFollowing = _context.Follows
-                .FirstOrDefault(f => f.FollowerId == myId && f.FollowingId == userId);
+                .FirstOrDefault(f => f.FollowerId == currentUserId && f.FollowingId == userId);
 
             if (alreadyFollowing == null)
             {
                 var follow = new Follow
                 {
-                    FollowerId = myId,
+                    FollowerId = currentUserId,
                     FollowingId = userId,
                     CreatedAt = DateTime.Now
                 };
 
                 _context.Follows.Add(follow);
 
-                // 🔔 notificación
-                var sender = _context.Users.FirstOrDefault(u => u.Id == myId);
+                var sender = _context.Users.FirstOrDefault(u => u.Id == currentUserId);
 
                 _context.Notifications.Add(new Notification
                 {
                     UserId = userId,
-                    FromUserId = myId,
+                    FromUserId = currentUserId,
                     FromUsername = sender?.Username ?? "",
                     FromUserImage = sender?.ProfileImage ?? "",
                     Message = sender?.Username + " empezó a seguirte",
-                    Link = "/User/Profile/" + myId,
+                    Link = "/User/Profile/" + currentUserId,
                     IsRead = false,
                     CreatedAt = DateTime.Now
                 });
 
                 _context.SaveChanges();
 
-                // 🔥 notificación en tiempo real
                 await _hubContext.Clients.Group(userId.ToString())
                     .SendAsync(
                         "ReceiveNotification",
-                        myId,
+                        currentUserId,
                         sender?.Username + " empezó a seguirte",
                         sender?.Username ?? "",
                         sender?.ProfileImage ?? "",
-                        "/User/Profile/" + myId
+                        "/User/Profile/" + currentUserId
                     );
             }
 

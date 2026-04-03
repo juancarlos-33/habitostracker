@@ -5,20 +5,43 @@
 
 <div class="help-container">
 
-    @if (TempData["Success"] != null)
-    {
-        <div class="help-success">
-            <img src="/images/hola.jpeg" />
-            <p>@TempData["Success"]</p>
-        </div>
-    }
+@if (TempData["Success"] != null)
+{
+    var success = TempData["Success"];
+    TempData.Remove("Success");
 
-    @if (TempData["Error"] != null)
-    {
-        <div class="help-error">
-            <p>@TempData["Error"]</p>
+    <div class="help-success text-center">
+
+        <img src="~/images/otra.jpeg"
+             style="width:70px;height:70px;border-radius:50%;
+             object-fit:cover;margin-bottom:10px;
+             box-shadow:0 0 15px rgba(255,255,255,0.3);" />
+
+        <div style="color:#000 !important;">
+            @success
         </div>
-    }
+
+    </div>
+}
+else if (TempData["Error"] != null)
+{
+    var error = TempData["Error"];
+    TempData.Remove("Error");
+
+    <div class="help-error text-center">
+
+        <img src="~/images/otra.jpeg"
+             style="width:70px;height:70px;border-radius:50%;
+             object-fit:cover;margin-bottom:10px;
+             box-shadow:0 0 15px rgba(255,255,255,0.2);" />
+
+        <div style="color:inherit;">
+            @error
+        </div>
+
+    </div>
+}
+    
 
     <!-- FOTO FUNDADORES -->
     <div class="help-card text-center">
@@ -161,20 +184,63 @@
         margin-bottom: 10px;
     }
 
+
+
     .help-success {
         background: #ecfdf5;
         border: 1px solid #10b981;
         padding: 15px;
         border-radius: 12px;
         text-align: center;
-        margin-bottom: 20px;
+        color: #000 !important; /* 🔥 SIEMPRE NEGRO */
     }
 
+    .help-success span {
+    color: #000 !important;
+}
         .help-success img {
             width: 60px;
             border-radius: 10px;
             margin-bottom: 10px;
         }
+
+    body.dark-mode .help-success {
+        background: linear-gradient(135deg, #064e3b, #022c22);
+        color: #d1fae5;
+    }
+
+    /* 🌞 MODO CLARO */
+.help-error {
+    background: #fef2f2;
+    border: 1px solid #dc2626;
+    padding: 15px;
+    border-radius: 12px;
+    margin-bottom: 15px;
+    color: #7f1d1d; /* 🔥 rojo oscuro visible */
+}
+
+/* 🌙 MODO OSCURO */
+body.dark .help-error {
+    background: #1e1b1b;
+    border: 1px solid #ef4444;
+    color: #ffffff; /* 🔥 blanco visible */
+}
+    /* 🌙 MODO OSCURO */
+body.dark .help-success {
+    background: #1e293b; /* oscuro elegante */
+    border: 1px solid #334155;
+    color: #fff;
+}
+
+background: #ecfdf5; /* claro */
+
+
+
+    body.dark-mode .help-success {
+        background: #064e3b; /* verde oscuro */
+        border: 1px solid #10b981;
+        color: #d1fae5; /* 🔥 TEXTO CLARO */
+    }
 
     .help-error {
         background: #fef2f2;

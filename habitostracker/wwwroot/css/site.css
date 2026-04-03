@@ -17,6 +17,53 @@ html {
   min-height: 100%;
 }
 
+/* 🔥 BLOQUEAR CURSOR EN TODA LA APP */
+body {
+    user-select: none;
+}
+
+/* 🔥 PERMITIR ESCRIBIR SOLO AQUÍ */
+input,
+textarea {
+    user-select: text;
+}
+.comment-reply-btn {
+    cursor: pointer;
+}
+.reply-like-btn,
+.comment-like-btn {
+    cursor: pointer;
+    font-size: 16px;
+    transition: transform 0.1s ease;
+}
+
+    .reply-like-btn:hover,
+    .comment-like-btn:hover {
+        transform: scale(1.2);
+    }
+
+.reply-reply-btn {
+    cursor: pointer;
+    color: #aaa;
+    font-size: 14px;
+    transition: color 0.2s ease;
+}
+
+    .reply-reply-btn:hover {
+        color: #fff;
+    }
+.reply-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 5px;
+}
+
+.like-btn,
+.reply-like-btn {
+    cursor: pointer;
+}
+
 body {
   margin-bottom: 60px;
 }

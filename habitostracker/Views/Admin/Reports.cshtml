@@ -2,8 +2,31 @@
 
 <h2 class="mb-4">🚩 Publicaciones reportadas</h2>
 
-<table class="table table-bordered">
+<style>
+    .high-reports {
+        background: rgba(255, 0, 0, 0.1);
+    }
 
+    .avatar {
+        width: 35px;
+        height: 35px;
+        border-radius: 50%;
+        object-fit: cover;
+    }
+
+    .avatar-initial {
+        width: 35px;
+        height: 35px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: bold;
+    }
+</style>
+
+<table class="table table-bordered align-middle">
     <thead>
         <tr>
             <th>Post</th>
@@ -15,33 +38,74 @@
     </thead>
 
     <tbody>
-
         @foreach (var report in Model)
         {
-            <tr>
+            var count = Model.Count(r => r.PostId == report.PostId);
 
-                <td>@report.PostId</td>
+            <tr class="@(count > 2 ? "high-reports" : "")">
 
-                <td>@report.ReportedByUserId</td>
+                <!-- 📝 USUARIO DEL POST -->
+                <td>
+                    <div class="d-flex align-items-center gap-2">
+
+                        @if (!string.IsNullOrEmpty(report.Post?.User?.ProfileImage))
+                        {
+                            <img src="@report.Post.User.ProfileImage" class="avatar" />
+                        }
+                        else
+                        {
+                            <div class="avatar-initial" style="background:#3b82f6;">
+                                @report.Post?.User?.Username.Substring(0, 1).ToUpper()
+                            </div>
+                        }
+
+                        <div>
+                            <span>@report.Post?.User?.Username</span><br />
+                            <span class="badge bg-danger">
+                                @count reportes
+                            </span>
+                        </div>
+                    </div>
+                </td>
+
+                <!-- 👤 QUIEN REPORTA -->
+                <td>
+                    <div class="d-flex align-items-center gap-2">
+
+                        @if (!string.IsNullOrEmpty(report.ReportedByUser?.ProfileImage))
+                        {
+                            <img src="@report.ReportedByUser.ProfileImage" class="avatar" />
+                        }
+                        else
+                        {
+                            <div class="avatar-initial" style="background:#10b981;">
+                                @report.ReportedByUser?.Username.Substring(0, 1).ToUpper()
+                            </div>
+                        }
+
+                        <span>@report.ReportedByUser?.Username</span>
+                    </div>
+                </td>
 
                 <td>@report.Reason</td>
 
                 <td>@report.CreatedAt.ToString("dd/MM/yyyy HH:mm")</td>
 
+                <!-- ⚙️ ACCIONES -->
                 <td>
-
-                    <a asp-controller="Post"
-                       asp-action="Delete"
-                       asp-route-id="@report.PostId"
-                       class="btn btn-danger btn-sm">
-                        🗑 Eliminar Post
+                    <a asp-controller="Post" asp-action="Details" asp-route-id="@report.PostId"
+                           class="btn btn-primary btn-sm me-1">
+                        👀 Ver
                     </a>
 
+                    <a asp-controller="Post" asp-action="Delete" asp-route-id="@report.PostId"
+                           class="btn btn-danger btn-sm"
+                           onclick="return confirm('¿Seguro que quieres eliminar este post?')">
+                        🗑 Eliminar
+                    </a>
                 </td>
 
             </tr>
         }
-
     </tbody>
-
 </table>

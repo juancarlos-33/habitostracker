@@ -20,6 +20,8 @@ namespace HabitTrackerApp.Hubs
             _onlineUsers = onlineUsers;
         }
 
+
+
         public async Task KickBlockedIP(string ip)
         {
             await Clients.All.SendAsync("IPBlocked", ip);

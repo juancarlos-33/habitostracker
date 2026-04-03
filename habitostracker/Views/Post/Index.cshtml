@@ -101,17 +101,34 @@
             </div>
         }
 
-       @if (!string.IsNullOrEmpty(post.ImagePath))
-{
     
 
     <div class="post-actions">
 
-        <span class="like-btn"
-                      data-liked="@(myLikes.Contains(post.Id) ? "true" : "false")"
-              onclick="toggleLike(@post.Id, this)">
-            @(myLikes.Contains(post.Id) ? "❤️" : "🤍")
-        </span>
+        <div class="post-like-section">
+
+                <div class="post-like-section">
+
+                    <span class="like-btn"
+                          data-id="@post.Id"
+                          data-liked="@(myLikes.Contains(post.Id) ? "true" : "false")"
+                          onclick="toggleLike(@post.Id, this)"
+                          style="cursor:pointer;">
+
+                        @(myLikes.Contains(post.Id) ? "❤️" : "🤍")
+
+                    </span>
+
+                    <span id="post-like-count-@post.Id">
+                        @(ViewBag.PostLikes != null && ViewBag.PostLikes.ContainsKey(post.Id)
+                            ? ViewBag.PostLikes[post.Id]
+                            : 0)
+                    </span>
+
+                </div>
+
+  
+</div>
 
         <a asp-controller="Post"
            asp-action="Comments"
@@ -143,7 +160,7 @@
                 </span>
 
             </div>
-        }
+        
 
         <!-- RESPUESTAS A COMENTARIOS (hilos) -->
         @{
@@ -345,6 +362,24 @@
         font-weight: 600;
     }
 
+    /* 🔥 PUBLICACIONES EN MODO OSCURO */
+    body.bg-dark .post-card {
+        background-color: #1e1e1e !important;
+        color: #fff !important;
+        border: 1px solid #333 !important;
+        border-radius: 12px;
+    }
+
+        /* 🔥 TODO el contenido dentro */
+        body.bg-dark .post-card * {
+            color: #fff !important;
+        }
+
+        /* 🔥 fecha (más suave) */
+        body.bg-dark .post-card small {
+            color: #aaa !important;
+        }
+
     /* USER */
 
     .post-username {
@@ -541,47 +576,49 @@
 
 <script>
 
-        function revealSensitive(btn){
-
+    function revealSensitive(btn){
         const container = btn.closest(".sensitive-container");
-
         const img = container.querySelector("img");
-
         img.style.filter = "none";
 
         const warning = container.querySelector(".sensitive-warning");
-
         warning.style.display = "none";
-
-
     }
 
+
+    // 🔥 LIKE CORREGIDO (POST)
     function toggleLike(postId, element){
 
-        const liked = element.getAttribute("data-liked");
+        fetch('/Post/ToggleLike?postId=' + postId, {
+            method: 'POST'
+        })
+        .then(res => res.json())
+        .then(data => {
 
-        if(liked === "true"){
-            element.innerHTML = "🤍";
-            element.setAttribute("data-liked","false");
-        }else{
-            element.innerHTML = "❤️";
-            element.setAttribute("data-liked","true");
-        }
+            // ❤️ actualizar icono
+            if (data.liked) {
+                element.innerHTML = "❤️";
+                element.setAttribute("data-liked","true");
+            } else {
+                element.innerHTML = "🤍";
+                element.setAttribute("data-liked","false");
+            }
 
-        fetch("/Post/LikePost",{
-            method:"POST",
-            headers:{
-                "Content-Type":"application/json"
-            },
-            body: JSON.stringify({
-                postId: postId
-            })
+            // 🔥 actualizar contador
+            const countEl = document.getElementById("post-like-count-" + postId);
+            if(countEl){
+                countEl.innerText = data.count;
+            }
+
+        })
+        .catch(err => {
+            console.error("Error en like:", err);
         });
-
     }
-    
-           function savePost(postId){
 
+
+    // 🔖 GUARDAR POST
+    function savePost(postId){
         fetch("/Post/SavePost",{
             method:"POST",
             headers:{
@@ -592,9 +629,10 @@
         .then(()=>{
             alert("Publicación guardada 🔖");
         });
-
     }
 
+
+    // 💥 DOBLE TAP CORAZÓN GRANDE (TAMBIÉN ARREGLADO)
     function bigHeart(postId, element){
 
         const heart = document.createElement("div");
@@ -607,35 +645,41 @@
             heart.remove();
         },800);
 
-        fetch("/Post/LikePost",{
-            method:"POST",
-            headers:{
-                "Content-Type":"application/json"
-            },
-            body: JSON.stringify({
-                postId: postId
-            })
-        });
+        // 🔥 también usa backend real
+        fetch('/Post/ToggleLike?postId=' + postId, {
+            method: 'POST'
+        })
+        .then(res => res.json())
+        .then(data => {
 
+            const likeBtn = element.closest(".post-card").querySelector(".like-btn");
+
+            if (likeBtn) {
+                likeBtn.innerHTML = data.liked ? "❤️" : "🤍";
+            }
+
+            const countEl = document.getElementById("post-like-count-" + postId);
+            if(countEl){
+                countEl.innerText = data.count;
+            }
+
+        });
     }
 
-    
 
-           function hidePostActions(img){
-
+    // 🔒 OCULTAR CONTENIDO
+    function hidePostActions(img){
         img.style.display = "none";
 
         const placeholder = img.nextElementSibling;
         placeholder.style.display = "flex";
 
         const card = img.closest(".post-card");
-
         const actions = card.querySelector(".post-actions");
 
         if(actions){
             actions.style.display = "none";
         }
-
     }
 
 </script>

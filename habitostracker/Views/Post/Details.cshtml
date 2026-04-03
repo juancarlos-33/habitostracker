@@ -1,0 +1,48 @@
+﻿@model HabitTrackerApp.Models.Post
+
+<h2 class="mb-3">📸 Publicación</h2>
+
+<div class="card p-3 shadow-sm">
+
+    <!-- 👤 USUARIO -->
+    <div class="d-flex align-items-center gap-2 mb-3">
+        @if (!string.IsNullOrEmpty(Model.User?.ProfileImage))
+        {
+            <img src="@Model.User.ProfileImage"
+                 style="width:45px;height:45px;border-radius:50%;object-fit:cover;" />
+        }
+        else
+        {
+            <div style="width:45px;height:45px;border-radius:50%;background:#3b82f6;color:white;display:flex;align-items:center;justify-content:center;font-weight:bold;">
+                @Model.User?.Username.Substring(0, 1).ToUpper()
+            </div>
+        }
+
+        <div>
+            <b>@Model.DisplayUsername</b><br />
+            <small class="text-muted">@Model.CreatedAt.ToString("dd/MM/yyyy HH:mm")</small>
+        </div>
+    </div>
+
+    <!-- 📝 TEXTO -->
+    @if (!string.IsNullOrEmpty(Model.Description))
+    {
+        <p style="font-size:16px;">@Model.Description</p>
+    }
+
+    <!-- 🖼 IMAGEN -->
+    @if (!string.IsNullOrEmpty(Model.ImagePath))
+    {
+        <img src="@Model.ImagePath"
+             style="max-width:100%;border-radius:10px;margin-top:10px;" />
+    }
+
+    <!-- ⚠️ CONTENIDO SENSIBLE -->
+    @if (Model.IsSensitive)
+    {
+        <div class="mt-2 text-warning">
+            ⚠️ Contenido sensible
+        </div>
+    }
+
+</div>

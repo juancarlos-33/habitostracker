@@ -12,6 +12,6 @@ namespace HabitTrackerApp.Models
 
         public string Response { get; set; }
 
-        public DateTime CreatedAt { get; set; }
+        public DateTime CreatedAt { get; set; } = DateTime.Now;
     }
 }

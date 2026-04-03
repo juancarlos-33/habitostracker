@@ -14,8 +14,36 @@ public class ConnectionBlockMiddleware
     public async Task Invoke(HttpContext context, HabitDbContext db)
     {
         var user = context.User;
+        var path = context.Request.Path.Value.ToLower();
 
-        // 🔎 verificar usuario autenticado
+        // 🔥 RUTAS PERMITIDAS
+        if (path.Contains("/account/login") ||
+            path.Contains("/account/register") ||
+            path.Contains("/signin-google") ||
+            path.Contains("/home/connectionblocked") ||
+            path.Contains("/css") ||
+            path.Contains("/js") ||
+            path.Contains("/lib"))
+        {
+            await _next(context);
+            return;
+        }
+
+        // 🔎 IP REAL NORMALIZADA (ngrok fix)
+        var ip = context.Connection.RemoteIpAddress?.ToString();
+
+        if (!string.IsNullOrEmpty(ip))
+        {
+            if (ip.Contains("::ffff:"))
+                ip = ip.Replace("::ffff:", "");
+
+            if (ip == "::1")
+                ip = "127.0.0.1";
+        }
+
+        Console.WriteLine("🌐 IP FINAL: " + ip);
+
+        // 🔎 VALIDAR USUARIO (🔥 PRIORIDAD REAL)
         if (user.Identity != null && user.Identity.IsAuthenticated)
         {
             var userIdClaim = user.FindFirst("UserId");
@@ -23,8 +51,17 @@ public class ConnectionBlockMiddleware
             if (userIdClaim != null)
             {
                 var userId = int.Parse(userIdClaim.Value);
-
                 var dbUser = db.Users.FirstOrDefault(u => u.Id == userId);
+
+                // 🚫 BLOQUEO POR USUARIO (🔥 ESTE MANDA)
+                if (dbUser != null && dbUser.IsIpBlocked)
+                {
+                    Console.WriteLine("🚫 BLOQUEADO POR USUARIO: " + userId);
+
+                    await context.SignOutAsync("Cookies");
+                    context.Response.Redirect("/Account/Login?ipblocked=true");
+                    return;
+                }
 
                 // 🚫 CUENTA ELIMINADA
                 if (dbUser == null)
@@ -33,7 +70,8 @@ public class ConnectionBlockMiddleware
                     context.Response.Redirect("/Account/Login?deleted=true");
                     return;
                 }
-                // 🚫 USUARIO BANEADO
+
+                // 🚫 BANEADO
                 if (dbUser.IsBanned)
                 {
                     await context.SignOutAsync("Cookies");
@@ -41,82 +79,44 @@ public class ConnectionBlockMiddleware
                     return;
                 }
 
-                // ⚠ USUARIO DESACTIVADO
+                // 🚫 DESACTIVADO
                 if (!dbUser.IsActive)
                 {
                     await context.SignOutAsync("Cookies");
                     context.Response.Redirect("/Account/Login?deactivated=true");
                     return;
                 }
+
+                // 🔥 GUARDAR IP (solo info)
+                if (dbUser.LastIp != ip)
+                {
+                    dbUser.LastIp = ip;
+                    db.SaveChanges();
+                }
             }
         }
 
-        // 🔎 obtener IP real
-        var ip = context.Request.Headers["X-Forwarded-For"].FirstOrDefault();
-
-        if (!string.IsNullOrEmpty(ip))
-        {
-            ip = ip.Split(',').First().Trim();
-        }
-        else
-        {
-            ip = context.Connection.RemoteIpAddress?.ToString();
-        }
-
-        var path = context.Request.Path.Value;
-
-        // 🛡 permitir siempre al SuperAdmin
-        if (user.Identity != null && user.Identity.IsAuthenticated && user.IsInRole("SuperAdmin"))
+        // 🛡 SUPERADMIN
+        if (user.Identity != null &&
+            user.Identity.IsAuthenticated &&
+            user.IsInRole("SuperAdmin"))
         {
             await _next(context);
             return;
         }
 
-        // 🚫 IP bloqueada
-        var blockedIp = db.BlockedIPs.FirstOrDefault(x => x.IpAddress == ip);
-
-        if (blockedIp != null)
-        {
-            if (!path.Contains("/Account/Login"))
-            {
-                context.Response.Redirect("/Account/Login?ipblocked=true");
-                return;
-            }
-        }
-
+        // 🚫 BLOQUEO GLOBAL
         var block = db.ConnectionBlocks.FirstOrDefault();
 
-        // permitir login y registro
-        if (path.Contains("/Account/Login") || path.Contains("/Account/Register"))
+        if (block != null && block.IsBlocked)
         {
-            await _next(context);
-            return;
-        }
-
-        // permitir página de bloqueo
-        if (path.Contains("/Home/ConnectionBlocked"))
-        {
-            await _next(context);
-            return;
-        }
-
-        // desbloqueo automático si entra SuperAdmin
-        if (user.Identity != null && user.Identity.IsAuthenticated && user.IsInRole("SuperAdmin"))
-        {
-            if (block != null && block.IsBlocked)
+            if (user.Identity != null && user.Identity.IsAuthenticated)
             {
-                block.IsBlocked = false;
-                db.SaveChanges();
+                context.Response.Redirect("/Home/ConnectionBlocked");
+                return;
             }
 
             await _next(context);
-            return;
-        }
-
-        // 🚫 bloqueo global
-        if (block != null && block.IsBlocked)
-        {
-            context.Response.Redirect("/Home/ConnectionBlocked");
             return;
         }
 

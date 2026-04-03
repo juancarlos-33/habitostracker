@@ -13,7 +13,7 @@
 
 <div class="container mt-4">
 
-    <div class="profile-card text-center">
+    <div class="profile-card text-center bg-white text-dark">
 
         <h3 class="mb-3">Perfil de @Model.Username</h3>
 
@@ -96,7 +96,7 @@
             }
             else
             {
-                <form asp-action="SendFriendRequest" method="post">
+                <form asp-action="SendFriendRequest" method="post" class="guest-block-form">
                     <input type="hidden" name="receiverId" value="@Model.Id" />
                     <button class="btn-add">Agregar</button>
                 </form>
@@ -135,6 +135,7 @@
         box-shadow: 0 8px 25px rgba(0,0,0,0.08);
     }
 
+   
     /* FOTO */
     .profile-img-container {
         display: flex;
@@ -147,6 +148,18 @@
         border-radius: 50%;
         object-fit: cover;
     }
+
+    /* 🔥 PERFIL EN MODO OSCURO */
+    body.bg-dark .profile-card {
+        background-color: #1e1e1e !important;
+        color: #fff !important;
+    }
+
+        /* 🔥 TODO el contenido */
+        body.bg-dark .profile-card * {
+            color: #fff !important;
+        }
+
 
     .profile-placeholder {
         background: linear-gradient(135deg,#ff416c,#ff4b2b);

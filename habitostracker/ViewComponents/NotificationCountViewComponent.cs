@@ -18,12 +18,20 @@ namespace HabitTrackerApp.ViewComponents
         {
             int unread = 0;
 
-            if (User.Identity.IsAuthenticated)
+            try
             {
-                var userId = int.Parse(HttpContext.User.FindFirst("UserId").Value);
-                unread = _context.Notifications
-                    .Where(n => n.UserId == userId && !n.IsRead)
-                    .Count();
+                if (User.Identity.IsAuthenticated && HttpContext.User.FindFirst("UserId") != null)
+                {
+                    var userId = int.Parse(HttpContext.User.FindFirst("UserId").Value);
+
+                    unread = _context.Notifications
+                        .Where(n => n.UserId == userId && !n.IsRead)
+                        .Count();
+                }
+            }
+            catch
+            {
+                unread = 0; // 🔥 evita que crashee
             }
 
             return View(unread);

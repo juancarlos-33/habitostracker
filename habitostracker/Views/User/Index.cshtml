@@ -20,7 +20,7 @@
             if (user.Id != myId)
             {
 
-                <div class="user-card" id="user-@user.Id" data-username="@user.Username.ToLower()">
+              <div class="user-card" id="user-@user.Id" data-username="@user.Username.ToLower()">
 
                     <!-- AVATAR -->
                     <div class="user-avatar">
@@ -58,10 +58,9 @@
                     <!-- BOTONES -->
                     <div class="user-actions">
 
-                        <a href="/User/Profile/@user.Id"
-                               class="btn btn-primary btn-sm">
-                            👁 Ver perfil
-                        </a>
+         <a href="/User/Profile/@user.Id" class="btn btn-primary btn-sm guest-block">
+    👁 Ver perfil
+</a>
                         
                         
                         
@@ -85,11 +84,12 @@ else if (sentList.Contains(user.Id))
 }
 else
 {
-    <button type="button" class="btn btn-outline-success btn-sm add-friend-btn"
-            data-user="@user.Id" data-no-loader="true"
-            onclick="sendFriendRequest(this)">
-        ➕ Agregar
-    </button>
+   <button type="button" class="btn btn-outline-success btn-sm add-friend-btn guest-block"
+        data-user="@user.Id"
+        data-no-loader="true"
+        onclick="sendFriendRequest(this)">
+    ➕ Agregar
+</button>
 }
 
                     </div>
@@ -111,6 +111,25 @@ else
         padding: 10px;
     }
 
+    /* 🔥 MODO OSCURO PARA CARDS */
+body.bg-dark .user-card {
+    background-color: #1e1e1e !important;
+    color: #fff !important;
+}
+body.bg-dark .user-card {
+    background-color: #121212 !important;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+}
+
+/* 🔥 TODO el texto dentro */
+body.bg-dark .user-card * {
+    color: #fff !important;
+}
+
+/* 🔥 bordes más suaves */
+body.bg-dark .user-card {
+    border: 1px solid #333 !important;
+}
     .status-dot {
         width: 10px;
         height: 10px;
@@ -228,6 +247,10 @@ else
     margin-left:6px;
 }
 
+
+.guest-block {
+    cursor: pointer;
+}
     .user-actions {
         margin-top: 14px;
         display: flex;
@@ -242,6 +265,14 @@ else
         .add-friend-btn:hover {
             transform: scale(1.1);
         }
+
+        .bg-dark .user-card {
+    color: #fff !important;
+}
+
+.bg-dark .user-card * {
+    color: #fff !important;
+}
 </style>
 
 
@@ -373,8 +404,17 @@ connectionGlobal.on("UserOffline", function(userId){
     });
 
 
+
+
+
     // enviar solicitud
     function sendFriendRequest(btn){
+
+        if (typeof isGuest !== "undefined" && isGuest) {
+    var modal = new bootstrap.Modal(document.getElementById('guestModal'));
+    modal.show();
+    return;
+}
 
         event.preventDefault();
 

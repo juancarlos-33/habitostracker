@@ -10,6 +10,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Text;
+using Microsoft.AspNetCore.Authentication.Google;
+using Microsoft.AspNetCore.HttpOverrides;
 
 namespace HabitTrackerApp
 {
@@ -18,50 +20,43 @@ namespace HabitTrackerApp
         public static void Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
+            builder.Services.AddSession();
 
             // 🔥 Base de datos
             builder.Services.AddDbContext<HabitDbContext>(options =>
                 options.UseSqlServer(
                     builder.Configuration.GetConnectionString("DefaultConnection")));
 
-            // 🔥 Registrar filtro de baneo
+            // 🔥 Filtro
             builder.Services.AddScoped<CheckBannedFilter>();
 
-            // 🔥 MVC + filtro global
             builder.Services.AddControllersWithViews(options =>
             {
                 options.Filters.Add<CheckBannedFilter>();
+
+                options.Filters.Add<CheckGuestFilter>();
             });
+        
 
-            builder.Services.AddSignalR();
-
-
-            builder.Services.AddSingleton<OnlineUsersService>();
-
-
-
-            builder.Services.AddSingleton<IUserIdProvider, HabitTrackerApp.Hubs.CustomUserIdProvider>();
-
-            builder.Services.AddSingleton<Microsoft.AspNetCore.SignalR.IUserIdProvider, HabitTrackerApp.UserIdProvider>();
-
-            // 🔥 Registrar EmailService
-            builder.Services.AddScoped<EmailService>();
-
-            // 🔥 Memoria para sesiones
-            builder.Services.AddDistributedMemoryCache();
-
-            // 🔐 Autenticación híbrida (Cookies + JWT)
+            // 🔐 AUTENTICACIÓN
             builder.Services.AddAuthentication(options =>
             {
                 options.DefaultAuthenticateScheme = "Cookies";
                 options.DefaultChallengeScheme = "Cookies";
+                options.DefaultSignInScheme = "Cookies";
             })
             .AddCookie("Cookies", options =>
             {
+                options.AccessDeniedPath = "/Account/Login";
                 options.LoginPath = "/Account/Login";
-                options.SlidingExpiration = false;
+                options.SlidingExpiration = true;
                 options.ExpireTimeSpan = TimeSpan.FromHours(1);
-                options.SessionStore = new MemoryCacheTicketStore();
+              
+            })
+            .AddGoogle(options =>
+            {
+                options.ClientId = "925090636409-e30mdaq9daptvjsh6l2r3jgq320q1g19.apps.googleusercontent.com";
+                options.ClientSecret = "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";
             })
             .AddJwtBearer(JwtBearerDefaults.AuthenticationScheme, options =>
             {
@@ -71,7 +66,6 @@ namespace HabitTrackerApp
                     ValidateAudience = true,
                     ValidateLifetime = true,
                     ValidateIssuerSigningKey = true,
-
                     ValidIssuer = builder.Configuration["Jwt:Issuer"],
                     ValidAudience = builder.Configuration["Jwt:Audience"],
                     IssuerSigningKey = new SymmetricSecurityKey(
@@ -79,15 +73,23 @@ namespace HabitTrackerApp
                 };
             });
 
+            // 🔥 SignalR
+            builder.Services.AddSignalR();
+            builder.Services.AddSingleton<OnlineUsersService>();
+            builder.Services.AddSingleton<IUserIdProvider, HabitTrackerApp.Hubs.CustomUserIdProvider>();
+            builder.Services.AddSingleton<Microsoft.AspNetCore.SignalR.IUserIdProvider, HabitTrackerApp.UserIdProvider>();
+
+            // 🔥 Email
+            builder.Services.AddScoped<EmailService>();
+
+            // 🔥 Memoria
+            builder.Services.AddDistributedMemoryCache();
+
             // 🔥 Swagger
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen(options =>
             {
-                options.SwaggerDoc("v1", new OpenApiInfo
-                {
-                    Title = "HabitTracker API",
-                    Version = "v1"
-                });
+                options.SwaggerDoc("v1", new OpenApiInfo { Title = "HabitTracker API", Version = "v1" });
 
                 options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
                 {
@@ -116,6 +118,7 @@ namespace HabitTrackerApp
             });
 
             var app = builder.Build();
+            app.UseSession();
 
             if (app.Environment.IsDevelopment())
             {
@@ -131,25 +134,37 @@ namespace HabitTrackerApp
 
             app.UseHttpsRedirection();
             app.UseStaticFiles();
+            app.UseForwardedHeaders(new ForwardedHeadersOptions
+            {
+                ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto,
+
+                KnownNetworks = { },
+                KnownProxies = { }
+            });
 
             app.UseRouting();
 
             app.UseAuthentication();
+
             app.UseMiddleware<ConnectionBlockMiddleware>();
+
             app.UseAuthorization();
+
+            // 🔥 BLOQUEO USUARIO
             app.Use(async (context, next) =>
             {
                 if (context.User.Identity != null && context.User.Identity.IsAuthenticated)
                 {
-                    var userId = context.User.FindFirst("UserId")?.Value;
+                    var userIdClaim = context.User.FindFirst("UserId");
 
-                    if (userId != null)
+                    if (userIdClaim != null)
                     {
+                        var userId = int.Parse(userIdClaim.Value);
+
                         using (var scope = context.RequestServices.CreateScope())
                         {
                             var db = scope.ServiceProvider.GetRequiredService<HabitDbContext>();
-
-                            var user = db.Users.FirstOrDefault(u => u.Id == int.Parse(userId));
+                            var user = db.Users.FirstOrDefault(u => u.Id == userId);
 
                             if (user != null && (!user.IsActive || user.IsBanned))
                             {
@@ -164,23 +179,28 @@ namespace HabitTrackerApp
                 await next();
             });
 
+            // 🔥 NOTIFICACIONES
             app.Use(async (context, next) =>
             {
                 if (context.User.Identity != null && context.User.Identity.IsAuthenticated)
                 {
                     var db = context.RequestServices.GetRequiredService<HabitTrackerApp.Data.HabitDbContext>();
 
-                    var userId = int.Parse(context.User.FindFirst("UserId").Value);
+                    var userIdClaim = context.User.FindFirst("UserId");
 
-                    var count = db.Notifications
-                        .Count(n => n.UserId == userId && !n.IsRead);
+                    if (userIdClaim != null)
+                    {
+                        var userId = int.Parse(userIdClaim.Value);
 
-                    context.Items["NewNotifications"] = count;
+                        var count = db.Notifications
+                            .Count(n => n.UserId == userId && !n.IsRead);
+
+                        context.Items["NewNotifications"] = count;
+                    }
                 }
 
                 await next();
             });
-
 
             app.MapControllerRoute(
                 name: "default",

@@ -1,82 +1,586 @@
-﻿@model List<HabitTrackerApp.Models.PostComment>
+﻿@if (TempData["Error"] != null)
+{
+    <div class="alert alert-warning text-center">
+        @TempData["Error"]
+    </div>
+}
+
+@model List<HabitTrackerApp.Models.PostComment>
 
 <h3 class="mb-4">💬 Comentarios</h3>
 
-<form asp-action="AddComment" method="post" enctype="multipart/form-data">
-
+<!-- FORMULARIO -->
+<form asp-action="AddComment" method="post" enctype="multipart/form-data" class="comment-form">
     <input type="hidden" name="postId" value="@ViewBag.PostId" />
 
     <input type="file" name="image" class="form-control mt-2" accept="image/*" />
 
     <div class="mb-3">
-        <textarea name="comment"
-                  class="form-control"
-                  placeholder="Escribe un comentario..."
-                  required></textarea>
+        <textarea name="comment" class="form-control comment-input" placeholder="Escribe un comentario..." required></textarea>
     </div>
 
-    <button class="btn btn-primary">
-        Comentar
-    </button>
-
+    <button class="btn btn-primary w-100">💬 Comentar</button>
 </form>
 
 <hr />
 
-@foreach (var c in Model)
-{
-    <div class="mb-3 p-3 border rounded">
+<div class="comments-container">
 
-        <div class="d-flex justify-content-between">
+    @foreach (var c in Model)
+    {
+        <div class="comment-card">
 
-            <div>
+            <!-- HEADER -->
+            <div class="comment-header">
 
-                <strong>@c.Username</strong>
+                @if (!string.IsNullOrEmpty(c.ProfileImage))
+                {
+                    @if (c.UserId == 29)
+                    {
+                        <img src="@c.ProfileImage" class="comment-avatar" />
+                    }
+                    else
+                    {
+                        <a asp-controller="Profile" asp-action="UserProfile" asp-route-userId="@c.UserId">
+                            <img src="@c.ProfileImage" class="comment-avatar" />
+                        </a>
+                    }
+                }
+                else
+                {
+                    <div class="comment-avatar-placeholder">
+                        @c.Username.Substring(0, 1).ToUpper()
+                    </div>
+                }
 
-                <br />
-
-                <small class="text-muted">
-                    @c.CreatedAt.ToString("dd/MM/yyyy HH:mm")
-                </small>
+                <div class="comment-info">
+                    @if (c.UserId == 29)
+                    {
+                        <div class="comment-username">
+                            @c.Username
+                        </div>
+                    }
+                    else
+                    {
+                        <a asp-controller="Profile" asp-action="UserProfile" asp-route-userId="@c.UserId"
+                               class="comment-username"
+                               style="text-decoration:none;">
+                            @c.Username
+                        </a>
+                    }
+                    <div class="comment-time">
+                        @c.CreatedAt.ToString("dd MMM yyyy • HH:mm")
+                    </div>
+                </div>
 
             </div>
 
-            @if (c.UserId == int.Parse(User.FindFirst("UserId").Value))
+            <!-- TEXTO -->
+            <div class="comment-text">@c.Comment</div>
+
+            @if (!string.IsNullOrEmpty(c.ImagePath))
             {
-                <div>
+                <img src="@c.ImagePath" class="comment-image" />
+            }
 
-                    <a asp-controller="Post"
-                       asp-action="EditComment"
-                       asp-route-id="@c.Id"
-                       class="text-primary me-2"
-                       style="text-decoration:none;"
-                       title="Editar comentario">
-                        ✏️
-                    </a>
+            @{
+                var replies = Context.RequestServices
+                    .GetService<HabitTrackerApp.Data.HabitDbContext>()
+                    .CommentReplies
+                    .Where(r => r.CommentId == c.Id)
+                    .OrderBy(r => r.CreatedAt)
+                    .ToList();
 
-                    <a asp-controller="Post"
-                       asp-action="DeleteComment"
-                       asp-route-id="@c.Id"
-                       class="text-danger"
-                       style="font-size:18px;"
-                       onclick="return confirm('¿Eliminar este comentario?')">
-                        🗑
-                    </a>
+                var parentReplies = replies.Where(x => x.ParentReplyId == null).ToList();
+            }
 
+            <!-- ACCIONES -->
+            <div class="reply-actions">
+
+                <span class="comment-like-btn" data-id="@c.Id" onclick="toggleCommentLike(this)">
+                    @(ViewBag.MyCommentLikes != null && ((List<int>)ViewBag.MyCommentLikes).Contains(c.Id) ? "❤️" : "🤍")
+                </span>
+
+                <span id="like-count-@c.Id">
+                    @(ViewBag.CommentLikes != null && ViewBag.CommentLikes.ContainsKey(c.Id)
+                        ? ViewBag.CommentLikes[c.Id]
+                        : 0)
+                </span>
+
+                <span class="reply-reply-btn" onclick="toggleReplyBox(@c.Id)">
+                    💬 Responder
+                </span>
+
+            </div>
+
+            <!-- FORM -->
+            <form asp-controller="Post" asp-action="ReplyComment" method="post"
+                  id="replyBox-@c.Id"
+                  style="display:none; margin-top:8px;">
+
+                <input type="hidden" name="commentId" value="@c.Id" />
+
+                <input type="text" name="text"
+                       placeholder="Responder..."
+                       style="width:70%; padding:5px; border-radius:8px;" />
+
+                <button type="submit">Enviar</button>
+            </form>
+
+            <!-- 🔥 RESPUESTAS -->
+            @foreach (var parent in parentReplies)
+            {
+                var children = replies.Where(x => x.ParentReplyId == parent.Id).ToList();
+
+                <div class="reply-box">
+
+                    @if (!string.IsNullOrEmpty(parent.ProfileImage))
+                    {
+                        <img src="@parent.ProfileImage" class="reply-avatar" />
+                    }
+                    else
+                    {
+                        <div class="reply-avatar-placeholder">
+                            @parent.Username.Substring(0, 1).ToUpper()
+                        </div>
+                    }
+
+                    <div style="width:100%;">
+
+                        <div class="reply-username">
+                          @if (parent.UserId == 29)
+{
+    <strong>@parent.Username</strong>
+}
+else
+{
+                                <a asp-controller="Profile" asp-action="UserProfile" asp-route-id="@parent.UserId"
+       style="text-decoration:none; font-weight:bold;">
+        @parent.Username
+    </a>
+}
+                        </div>
+
+                        <div class="reply-text">@parent.Text</div>
+
+                        <div class="reply-actions">
+
+                            <span class="reply-like-btn"
+                                  data-id="@parent.Id"
+                                  onclick="toggleReplyLike(this)">
+                                @(ViewBag.MyReplyLikes != null && ((List<int>)ViewBag.MyReplyLikes).Contains(parent.Id) ? "❤️" : "🤍")
+                            </span>
+
+                        <span id="reply-like-count-@parent.Id">
+    @(ViewBag.ReplyLikes != null && ViewBag.ReplyLikes.ContainsKey(parent.Id)
+        ? ViewBag.ReplyLikes[parent.Id]
+        : 0)
+</span>
+
+                            <span class="reply-reply-btn" onclick="toggleReplyToReply(@parent.Id)">
+                                ↩️ Responder
+                            </span>
+                            <form asp-controller="Post" asp-action="ReplyComment" method="post"
+                                  id="replyToReplyBox-@parent.Id"
+                                  style="display:none; margin-top:5px;">
+
+                                <input type="hidden" name="commentId" value="@c.Id" />
+                                <input type="hidden" name="parentReplyId" value="@parent.Id" />
+
+                                <input type="text" name="text" placeholder="Responder..."
+                                       style="width:70%; padding:5px; border-radius:8px;" />
+
+                                <button type="submit">Enviar</button>
+                            </form>
+                        </div>
+
+                        <!-- VER RESPUESTAS -->
+                        @if (children.Count > 0)
+                        {
+                           <div class="view-replies-btn" onclick="toggleReplies(@parent.Id, this)">
+    Ver respuestas (@children.Count)
+</div>
+                        }
+
+                        <!-- HIJOS -->
+                        <div id="replies-@parent.Id" style="display:none;">
+
+                            @foreach (var child in children)
+                            {
+                                <div class="reply-box">
+
+                                    @if (!string.IsNullOrEmpty(child.ProfileImage))
+                                    {
+                                        <img src="@child.ProfileImage" class="reply-avatar" />
+                                    }
+                                    else
+                                    {
+                                        <div class="reply-avatar-placeholder">
+                                            @child.Username.Substring(0, 1).ToUpper()
+                                        </div>
+                                    }
+
+                                    <div style="width:100%;">
+
+                                        <div class="reply-username">
+                                            <strong>@child.Username</strong>
+                                            <span style="color:#aaa;"> → @parent.Username</span>
+                                        </div>
+
+                                        <div class="reply-text">@child.Text</div>
+
+                                        <div class="reply-actions">
+
+                                            <span class="reply-like-btn"
+                                                  data-id="@child.Id"
+                                                  onclick="toggleReplyLike(this)">
+                                                @(ViewBag.MyReplyLikes != null && ((List<int>)ViewBag.MyReplyLikes).Contains(child.Id) ? "❤️" : "🤍")
+                                            </span>
+
+                                            <span>
+                                                @(ViewBag.ReplyLikes != null && ViewBag.ReplyLikes.ContainsKey(child.Id)
+                                                    ? ViewBag.ReplyLikes[child.Id]
+                                                    : 0)
+                                            </span>
+
+                                        </div>
+
+                                    </div>
+                                </div>
+                            }
+
+                        </div>
+
+                    </div>
                 </div>
             }
 
         </div>
+    }
+</div>
 
-        <p class="mt-2 mb-2">
-            @c.Comment
-        </p>
 
-        @if (!string.IsNullOrEmpty(c.ImagePath))
-        {
-            <img src="@c.ImagePath"
-                 style="max-width:250px;border-radius:10px;margin-top:8px;" />
+<style>
+
+    /* 🌐 CONTENEDOR */
+    .comments-container {
+        max-width: 600px;
+        margin: auto;
+    }
+
+    /* 🔥 TARJETA BASE (CLARO) */
+    .comment-card {
+        border-radius: 15px;
+        padding: 15px;
+        margin-bottom: 15px;
+        box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        background-color: white;
+        color: #111;
+    }
+
+    /* 🌙 MODO OSCURO */
+    body.dark-mode .comment-card {
+        background-color: #1c1c1c;
+        color: white;
+    }
+
+    /* 🌞 MODO CLARO */
+    body.light-mode .comment-card {
+        background-color: white;
+        color: #111;
+    }
+
+    /* 🔥 TODO HEREDA COLOR */
+    .comment-card * {
+        color: inherit !important;
+    }
+
+    /* HEADER */
+    .comment-header {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    /* AVATAR */
+    .comment-avatar,
+    .reply-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        object-fit: cover;
+    }
+
+    .comment-avatar-placeholder,
+    .reply-avatar-placeholder {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: #2563eb;
+        color: white !important;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+    }
+
+    /* INFO */
+    .comment-info {
+        flex: 1;
+    }
+
+    .comment-username {
+        font-weight: bold;
+    }
+
+    .comment-time {
+        font-size: 12px;
+        opacity: 0.7;
+    }
+
+    /* TEXTO */
+    .comment-text,
+    .reply-text {
+        margin-left: 50px;
+        margin-top: 5px;
+        line-height: 1.4;
+    }
+
+    /* IMAGEN */
+    .comment-image {
+        margin-left: 50px;
+        margin-top: 10px;
+        max-width: 100%;
+        border-radius: 10px;
+    }
+
+    /* RESPUESTAS */
+    .reply-box {
+        display: flex;
+        gap: 10px;
+        margin-top: 10px;
+        margin-left: 50px;
+        transition: transform 0.15s ease;
+    }
+
+        .reply-box:hover {
+            transform: translateX(3px);
         }
 
-    </div>
+    /* USERNAME */
+    .reply-username {
+        font-weight: bold;
+        font-size: 14px;
+    }
+
+    /* ACCIONES */
+    .reply-actions {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-top: 5px;
+        margin-left: 50px;
+    }
+
+    /* BOTONES */
+    .reply-like-btn,
+    .comment-like-btn {
+        cursor: pointer;
+        font-size: 16px;
+        transition: transform 0.1s ease;
+    }
+
+        .reply-like-btn:hover,
+        .comment-like-btn:hover {
+            transform: scale(1.2);
+        }
+
+        .reply-like-btn:active,
+        .comment-like-btn:active {
+            transform: scale(1.3);
+        }
+
+    /* RESPONDER */
+    .reply-reply-btn {
+        cursor: pointer;
+        font-size: 14px;
+        opacity: 0.7;
+    }
+
+
+
+        .reply-reply-btn:hover {
+            opacity: 1;
+        }
+
+    /* VER RESPUESTAS */
+    .view-replies-btn {
+        margin-left: 50px;
+        font-size: 13px;
+        opacity: 0.7;
+        cursor: pointer;
+        margin-top: 5px;
+    }
+
+        .view-replies-btn:hover {
+            opacity: 1;
+        }
+
+    /* SCROLL SUAVE */
+    html {
+        scroll-behavior: smooth;
+    }
+
+</style>
+
+    <script>
+
+        async function toggleReplyLike(el) {
+    const id = el.getAttribute("data-id");
+
+    const res = await fetch(`/Post/ToggleReplyLike?id=${id}`, {
+        method: "POST"
+    });
+
+    const data = await res.json();
+
+    // ❤️ cambiar icono
+    el.innerText = data.liked ? "❤️" : "🤍";
+
+    // 🔢 actualizar contador
+    document.getElementById("reply-like-count-" + id).innerText = data.count;
+
+    // 🔥 animación
+    el.style.transform = "scale(1.3)";
+    setTimeout(() => el.style.transform = "scale(1)", 150);
 }
+            function toggleCommentLike(el) {
+
+                const commentId = el.getAttribute("data-id");
+
+                fetch('/Post/ToggleCommentLike?commentId=' + commentId, {
+                    method: 'POST'
+                })
+                .then(res => res.json())
+                .then(data => {
+
+                    const countEl = document.getElementById("like-count-" + commentId);
+
+                    // 🔥 usar datos reales del servidor
+                    countEl.innerText = data.count;
+
+                    if (data.liked) {
+                        el.innerText = "❤️";
+                    } else {
+                        el.innerText = "🤍";
+                    }
+
+                })
+                .catch(err => {
+                    console.error("Error:", err);
+                });
+            }
+    </script>
+    <script>
+              function toggleReplies(id) {
+        var el = document.getElementById("replies-" + id);
+
+        if (el.style.display === "none") {
+            el.style.display = "block";
+            el.style.opacity = 0;
+
+            let op = 0;
+            let interval = setInterval(() => {
+                op += 0.1;
+                el.style.opacity = op;
+
+                if (op >= 1) clearInterval(interval);
+            }, 20);
+
+        } else {
+            el.style.display = "none";
+        }
+    }
+
+        function animateLike(el) {
+        el.style.transform = "scale(1.4)";
+        setTimeout(() => {
+            el.style.transform = "scale(1)";
+        }, 150);
+    }
+        function toggleReplies(id, btn) {
+        var el = document.getElementById("replies-" + id);
+
+        if (el.style.display === "none") {
+            el.style.display = "block";
+            el.style.opacity = 0;
+
+            btn.innerText = "Ocultar respuestas";
+
+            let op = 0;
+            let interval = setInterval(() => {
+                op += 0.1;
+                el.style.opacity = op;
+
+                if (op >= 1) clearInterval(interval);
+            }, 20);
+
+        } else {
+            el.style.display = "none";
+            btn.innerText = "Ver respuestas";
+        }
+    }
+
+    let lastTap = 0;
+
+function handleDoubleTap(el) {
+    const now = new Date().getTime();
+
+    if (now - lastTap < 300) {
+        toggleReplyLike(el);
+    }
+
+    lastTap = now;
+}
+            function toggleReplyBox(id) {
+                const box = document.getElementById("replyBox-" + id);
+
+                if (box.style.display === "none") {
+                    box.style.display = "block";
+                } else {
+                    box.style.display = "none";
+                }
+            }
+                        function toggleReplyToReply(id) {
+                const box = document.getElementById("replyToReplyBox-" + id);
+                box.style.display = box.style.display === "none" ? "block" : "none";
+            }
+    </script>
+
+
+
+    <script>
+            function toggleReplyLike(el) {
+                const replyId = el.getAttribute("data-id");
+
+                fetch('/Post/ToggleReplyLike?replyId=' + replyId, {
+                    method: 'POST'
+                })
+                .then(res => res.json()) // 🔥 ahora esperamos respuesta real
+                .then(data => {
+
+                    const countEl = document.getElementById("reply-like-count-" + replyId);
+
+                    // 🔥 usar valor REAL del servidor
+                    countEl.innerText = data.count;
+
+                    // 🔥 estado real
+                    if (data.liked) {
+                        el.innerText = "❤️";
+                    } else {
+                        el.innerText = "🤍";
+                    }
+
+                });
+            }
+    </script>

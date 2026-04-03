@@ -138,6 +138,13 @@ else
                value="@Model.Username"
                disabled />
 
+               @if (Model.IsGoogleAccount)
+{
+    <div class="alert alert-info mt-2">
+        🔵 Cuenta creada con Google
+    </div>
+}
+
     </div>
 
     <div class="mb-3">
@@ -215,16 +222,50 @@ else
             align-items: center;
         }
 
-        .follow-content {
-    background: white;
-    width: 350px;
-    max-height: 70vh;
-    overflow-y: auto;
-    border-radius: 15px;
-    padding: 15px;
+   .follow-content {
+    background: #fff;
+    color: #000;
+    border-radius: 12px;
+    padding: 10px;
+}
+.follow-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px;
+    border-radius: 8px;
+    cursor: pointer;
+    background: transparent;
+    color: #000;
+}
 
-    animation: fadeIn 0.2s ease;
-        }
+.follow-item span,
+.follow-item div {
+    color: inherit;
+}
+
+.follow-modal {
+    background: rgba(0,0,0,0.6);
+}
+
+body.dark-mode .follow-item {
+    color: #e5e7eb;
+}
+
+body.dark-mode .follow-item:hover {
+    background: #1f2937;
+}
+
+/* hover */
+.follow-item:hover {
+    background: #f3f4f6;
+}
+
+
+body.dark-mode .follow-content {
+    background: #111827; /* 🔥 oscuro real */
+    color: #e5e7eb;
+}
 
 
 @@keyframes fadeIn {

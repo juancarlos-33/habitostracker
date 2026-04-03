@@ -15,6 +15,8 @@ namespace HabitTrackerApp.Data
 
         public DbSet<Habit> Habits { get; set; }
 
+        public DbSet<BlockedIP> BlockedIPs { get; set; }
+
         public DbSet<HabitComment> HabitComments { get; set; }
         public DbSet<Feedback> Feedbacks { get; set; }
         public DbSet<Post> Posts { get; set; }
@@ -25,7 +27,10 @@ namespace HabitTrackerApp.Data
         public DbSet<CommentReply> CommentReplies { get; set; }
         public DbSet<Notification> Notifications { get; set; }
         public DbSet<PostComment> PostComments { get; set; }
-        public DbSet<BlockedIP> BlockedIPs { get; set; }
+        public DbSet<BlockedIP> BlockedIP { get; set; }
+        public DbSet<AdminAccessCode> AdminAccessCodes { get; set; }
+        public DbSet<CommentLike> CommentLikes { get; set; }
+        public DbSet<CommentReplyLike> CommentReplyLikes { get; set; }
         public DbSet<SupportMessage> SupportMessages { get; set; }
         public DbSet<PostReport> PostReports { get; set; }
         public DbSet<FriendRequest> FriendRequests { get; set; }

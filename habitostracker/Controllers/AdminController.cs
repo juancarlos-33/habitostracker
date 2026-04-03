@@ -2,6 +2,7 @@
 using HabitTrackerApp.Hubs;
 using HabitTrackerApp.Models;
 using HabitTrackerApp.Services;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Diagnostics;
@@ -56,9 +57,50 @@ namespace HabitTrackerApp.Controllers
 
             return View(messages);
         }
+
+        [HttpPost]
+        public IActionResult GenerateAccessCode()
+        {
+            var userId = int.Parse(User.FindFirst("UserId").Value);
+
+            // 🔒 SOLO SUPERADMIN
+            if (!User.IsInRole("SuperAdmin"))
+            {
+                return Unauthorized();
+            }
+
+            var random = new Random();
+            var code = random.Next(10000, 99999).ToString(); // 5 dígitos
+
+            var accessCode = new AdminAccessCode
+            {
+                Code = code,
+                CreatedByUserId = userId,
+                IsUsed = false,
+                CreatedAt = DateTime.Now
+            };
+
+            _context.AdminAccessCodes.Add(accessCode);
+            _context.SaveChanges();
+
+            TempData["GeneratedCode"] = code;
+
+            return RedirectToAction("Users");
+        }
         public async Task<IActionResult> Users()
         {
-            var users = _context.Users.ToList();
+            var currentUserId = int.Parse(User.FindFirst("UserId").Value);
+
+            var users = _context.Users
+                .AsEnumerable() // 🔥 necesario para lógica personalizada
+                .OrderBy(u =>
+                    u.Id == currentUserId ? 0 : // 🥇 usuario actual primero
+                    u.Role == "SuperAdmin" ? 1 : // 👑 super admin
+                    u.Role == "Admin" ? 2 : // 🛡 admins
+                    3 // 👥 usuarios normales
+                )
+                .ThenBy(u => u.Username) // 🔥 orden alfabético
+                .ToList();
 
             // 📊 estadísticas
             ViewBag.TotalUsers = users.Count;
@@ -71,17 +113,17 @@ namespace HabitTrackerApp.Controllers
                 .Where(u => !string.IsNullOrEmpty(u.LastIp))
                 .Select(u => u.LastIp)
                 .Distinct()
-                .Take(10) // 🔥 límite para evitar lentitud
+                .Take(10)
                 .ToList();
 
             var ipInfo = new Dictionary<string, (string country, string region, string city, string isp)>();
 
-            // 🔥 todas las llamadas en paralelo en vez de una por una
             foreach (var ip in uniqueIps)
             {
                 var info = await GetIPInfo(ip);
                 ipInfo[ip] = info;
             }
+
             ViewBag.IpInfo = ipInfo;
 
             // 🚫 IPs bloqueadas
@@ -552,15 +594,20 @@ namespace HabitTrackerApp.Controllers
 
             // 🔔 avisar al usuario que su rol cambió
             await _hubContext.Clients.User(id.ToString())
-                .SendAsync("ForceLogout", "Ahora eres Admin bro. Inicia sesión nuevamente.");
+                .SendAsync("ForceLogout", "Ahora eres Administrador(@). Inicia sesión nuevamente.");
 
             return RedirectToAction("Users");
         }
         public IActionResult Reports()
         {
             var reports = _context.PostReports
-                .OrderByDescending(r => r.CreatedAt)
-                .ToList();
+      .Include(r => r.ReportedByUser)
+      .Include(r => r.Post)
+          .ThenInclude(p => p.User)
+      .ToList()
+      .GroupBy(r => r.PostId)
+      .Select(g => g.First())
+      .ToList();
 
             return View(reports);
         }
@@ -648,7 +695,7 @@ namespace HabitTrackerApp.Controllers
 
             // 🔔 avisar al usuario que perdió admin
             await _hubContext.Clients.User(id.ToString())
-                .SendAsync("ForceLogout", "Ya no eres Admin bro. Inicia sesión nuevamente.");
+                .SendAsync("ForceLogout", "Ya no eres Administrador(@). Inicia sesión nuevamente.");
 
             return RedirectToAction("Users");
         }
@@ -693,7 +740,7 @@ namespace HabitTrackerApp.Controllers
                 block = new ConnectionBlock
                 {
                     IsBlocked = true,
-                    Message = "Esta conexión fue bloqueada por el propietario",
+                    Message = "Acceso denegado. Esta conexión fue bloqueada",
                     UpdatedAt = DateTime.Now
                 };
 
@@ -712,11 +759,33 @@ namespace HabitTrackerApp.Controllers
             {
                 await _hubContext.Clients.All.SendAsync(
                     "ConnectionBlocked",
-                    "⚠ Esta conexión fue bloqueada por el propietario"
+                    "⚠ Acceso denegado. Esta conexión fue bloqueada"
                 );
             }
 
             return RedirectToAction("Index");
+        }
+
+        [HttpPost]
+        public IActionResult ValidateAccessCode([FromBody] AccessCodeRequest request)
+        {
+            var code = _context.AdminAccessCodes
+                .FirstOrDefault(c => c.Code == request.Code && !c.IsUsed);
+
+            if (code == null)
+            {
+                return Json(new { success = false }); // 🔥 IMPORTANTE
+            }
+
+            code.IsUsed = true;
+            _context.SaveChanges();
+
+            return Json(new { success = true });
+        }
+
+        public class AccessCodeRequest
+        {
+            public string Code { get; set; }
         }
 
         public IActionResult Security()
@@ -727,11 +796,15 @@ namespace HabitTrackerApp.Controllers
 
             return View(activities);
         }
-
         [HttpPost]
         public async Task<IActionResult> BlockIP(string ip)
         {
+            // 🔥 PROTECCIÓN TOTAL
             if (string.IsNullOrEmpty(ip))
+                return RedirectToAction("Users");
+
+            // 🔥 SOLO permitir si viene del botón
+            if (!Request.Headers["Referer"].ToString().Contains("/Admin/Users"))
                 return RedirectToAction("Users");
 
             var exists = _context.BlockedIPs.FirstOrDefault(x => x.IpAddress == ip);
@@ -747,16 +820,25 @@ namespace HabitTrackerApp.Controllers
                 _context.BlockedIPs.Add(blocked);
                 _context.SaveChanges();
 
-                // 🔎 buscar usuarios con esa IP
+                Console.WriteLine("🔥 IP BLOQUEADA MANUALMENTE: " + ip);
+
                 var users = _context.Users
                     .Where(u => u.LastIp == ip)
                     .ToList();
 
-                // 🚨 aviso en tiempo real
+                // 🔥 NUEVO: BLOQUEAR USUARIO TAMBIÉN
+                foreach (var u in users)
+                {
+                    u.IsIpBlocked = true;
+                }
+
+                _context.SaveChanges(); // 🔥 IMPORTANTE
+
+                // 🚨 expulsar en tiempo real
                 foreach (var user in users)
                 {
                     await _hubContext.Clients.User(user.Id.ToString())
-                        .SendAsync("IPBlockedNow", "Tu dirección IP ha sido bloqueada");
+                        .SendAsync("ForceLogout", "Acceso denegado. Esta conexión fue bloqueada.");
                 }
             }
 
@@ -774,6 +856,14 @@ namespace HabitTrackerApp.Controllers
             if (blocked != null)
             {
                 _context.BlockedIPs.Remove(blocked);
+
+                // 🔥 resetear IsIpBlocked a los usuarios con esa IP
+                var users = _context.Users.Where(u => u.LastIp == ip).ToList();
+                foreach (var u in users)
+                {
+                    u.IsIpBlocked = false;
+                }
+
                 _context.SaveChanges();
             }
 
@@ -943,5 +1033,12 @@ namespace HabitTrackerApp.Controllers
 
             return RedirectToAction("Users");
         }
+
+        public async Task<IActionResult> Logout()
+        {
+            await HttpContext.SignOutAsync("Cookies");
+            return RedirectToAction("Login", "Account");
+        }
+
     }
 }

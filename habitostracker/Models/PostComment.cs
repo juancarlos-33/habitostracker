@@ -12,6 +12,8 @@ namespace HabitTrackerApp.Models
 
         public string Username { get; set; }
 
+        public string ProfileImage { get; set; }
+
         public string Comment { get; set; }
 
         public DateTime CreatedAt { get; set; }

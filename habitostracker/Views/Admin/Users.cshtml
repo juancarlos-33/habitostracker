@@ -1,7 +1,14 @@
-﻿@model List<HabitTrackerApp.Models.User>
+﻿@inject HabitTrackerApp.Data.HabitDbContext _context
+@model List<HabitTrackerApp.Models.User>
+
+    <form id="antiForgeryForm" style="display:none;">
+    @Html.AntiForgeryToken()
+</form>
 
 @{
     var myId = int.Parse(User.FindFirst("UserId").Value);
+
+    var me = _context.Users.FirstOrDefault(u => u.Id == myId);
 
     var activeNow = Model.Count(u =>
         u.IsActive &&
@@ -24,8 +31,7 @@
     bool isBlocked = block != null && block.IsBlocked;
 }
 
-@if (User.IsInRole("SuperAdmin"))
-{
+
     <div class="mb-4">
 
         @if (isBlocked)
@@ -49,20 +55,31 @@
 
                 <span>🟢 Conexión activa</span>
 
-                <form asp-controller="Admin" asp-action="ToggleConnectionBlock" method="post">
-                    <button class="btn btn-danger"
-                    onclick="return confirm('¿Seguro que deseas bloquear la conexión?')">
+                @if (me.Role == "SuperAdmin")
+                {
+                    <form asp-controller="Admin" asp-action="ToggleConnectionBlock" method="post">
+                        <button class="btn btn-danger"
+                                onclick="return confirm('¿Seguro que deseas bloquear la conexión?')">
+                            🔒 Bloquear conexión global
+                        </button>
+                    </form>
+                }
+                else if (me.Role == "Admin")
+                {
+                    <button type="button"
+                            class="btn btn-danger"
+                            onclick="pedirCodigoAdmin()">
                         🔒 Bloquear conexión global
                     </button>
-                </form>
-
+                }
             </div>
+           
         }
 
     </div>
 
 
-}
+
 
 
 <a asp-controller="Admin"
@@ -104,6 +121,29 @@
 </div>
 
 
+@if (User.IsInRole("SuperAdmin"))
+{
+    <form asp-controller="Admin" asp-action="GenerateAccessCode" method="post">
+        <button type="submit" class="btn btn-warning mb-3">
+            🔑 Generar código de autorización
+        </button>
+    </form>
+}
+
+@if (TempData["GeneratedCode"] != null)
+{
+    <div class="alert alert-success text-center">
+        Código generado: <strong>@TempData["GeneratedCode"]</strong> 🔐
+    </div>
+}
+
+<input type="text"
+       id="searchUser"
+       class="form-control mb-3"
+       placeholder="🔍 Buscar usuario..." />
+
+
+
 
 <div class="table-responsive">
     <table class="table table-bordered table-hover">
@@ -139,7 +179,7 @@
             var blockedIps = ViewBag.BlockedIps as List<string> ?? new List<string>();
             bool isBlockedIp = user.LastIp != null && blockedIps.Contains(user.LastIp);
 
-            <tr>
+                <tr class="user-row">
 
                 <td>
                     @if (!string.IsNullOrEmpty(user.ProfileImage))
@@ -154,42 +194,47 @@
                         </div>
                     }
                 </td>
+                    <td class="username">
+                        @user.Username
+                        @if (user.Role == "SuperAdmin")
+                        {
+                            <span class="badge bg-warning text-dark ms-1">👑 SUPER ADMIN</span>
+                        }
+                        else if (user.Role == "Admin")
+                        {
+                            <span class="badge bg-info text-dark ms-1">Admin</span>
+                        }
+                    </td>
 
-                <td>
-                    @user.Username
+                    <td>
+                        @if (user.Role == "SuperAdmin")
+                        {
+                            <span class="text-muted">🔒 Privado</span>
+                        }
+                        else
+                        {
+                            @user.Email
+                        }
+                    </td>
 
-                    @if (user.Role == "SuperAdmin")
-                    {
-                        <span class="badge bg-warning text-dark ms-1">👑 SUPER ADMIN</span>
-                    }
-                    else if (user.Role == "Admin")
-                    {
-                        <span class="badge bg-info text-dark ms-1">Admin</span>
-                    }
-                </td>
-
-                <td>@user.Email</td>
-
-                <td id="status-@user.Id">
-
-                    @if (user.IsBanned)
-                    {
-                        <span class="badge bg-danger">Baneado</span>
-                    }
-                    else if (!user.IsActive)
-                    {
-                        <span class="badge bg-warning text-dark">Desactivado</span>
-                    }
-                    else if (user.LastOnline != null && (DateTime.Now - user.LastOnline.Value).TotalSeconds < 60)
-                    {
-                        <span class="badge bg-success">Activo</span>
-                    }
-                    else
-                    {
-                        <span class="badge bg-secondary">Inactivo</span>
-                    }
-
-                </td>
+                    <td id="status-@user.Id">
+                        @if (user.IsBanned)
+                        {
+                            <span class="badge bg-danger">Baneado</span>
+                        }
+                        else if (!user.IsActive)
+                        {
+                            <span class="badge bg-warning text-dark">Desactivado</span>
+                        }
+                        else if (user.LastOnline != null && (DateTime.Now - user.LastOnline.Value).TotalSeconds < 60)
+                        {
+                            <span class="badge bg-success">Activo</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-secondary">Inactivo</span>
+                        }
+                    </td>
 
                     <!-- ACCIONES -->
                     <td>
@@ -231,7 +276,7 @@
                                 {
                                     @if (user.Id != int.Parse(User.FindFirst("UserId").Value))
                                     {
-                                        @if (User.IsInRole("SuperAdmin") || user.Role == "User")
+                                       @if (User.IsInRole("SuperAdmin") || user.Role != "SuperAdmin")
                                         {
                                             <button type="button"
                                                     class="btn btn-sm btn-outline-danger rounded-pill"
@@ -241,7 +286,7 @@
                                             </button>
                                         }
 
-                                        @if (User.IsInRole("SuperAdmin") || user.Role == "User")
+                                        @if (User.IsInRole("SuperAdmin") || user.Role != "SuperAdmin")
                                         {
                                             <a asp-controller="Admin"
                                                    asp-action="BanUser"
@@ -255,12 +300,11 @@
 
                                         @if (User.IsInRole("SuperAdmin"))
                                         {
-                                            <a asp-controller="Admin"
-                                                   asp-action="DeleteUserPermanently"
+                                            <a asp-controller="Admin" asp-action="DeleteUserPermanently"
                                                    asp-route-id="@user.Id"
-                                                   class="btn btn-sm btn-outline-dark rounded-pill"
-                                                 
+                                                   class="btn btn-sm rounded-pill btn-delete"
                                                    onclick="return confirm('¿Eliminar este usuario permanentemente?')">
+
                                                 💀 Eliminar
                                             </a>
                                         }
@@ -313,37 +357,38 @@
                     </td>
                        
 
+
+
                 
 
                 <!-- IP + PAIS + BLOQUEO -->
                 <td style="min-width:220px">
 
-                    @if (!string.IsNullOrEmpty(user.LastIp))
-                    {
+                        @if (user.Role == "SuperAdmin")
+                        {
+                            <span class="text-muted">—</span>
+                        }
+                        else
+                        {
+                            @user.LastIp
+                        }
                         <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
 
                             <span style="font-size:13px;line-height:1.2">
-
-                                @user.LastIp
-
-                                @if (ViewBag.MultiAccounts != null && ViewBag.MultiAccounts.ContainsKey(user.LastIp))
-                                {
-                                    <br />
-
-                                    <span style="color:#ef4444;font-size:12px;font-weight:600;">
-                                        ⚠ @ViewBag.MultiAccounts[user.LastIp] cuentas desde esta IP
-                                    </span>
-                                }
-
-                                @if (ipInfo != null && ipInfo.ContainsKey(user.LastIp))
-                                {
-                                    <br />
-
+                                 
+                                
+                                @if (user.Role != "SuperAdmin"
+                                && !string.IsNullOrEmpty(user.LastIp)
+                                && ipInfo != null
+                                && ipInfo.ContainsKey(user.LastIp))
+                                    {
+                                        <br />
                                         <small class="text-muted">
                                             🌍 @ipInfo[user.LastIp].country <br />
                                             🗺 @ipInfo[user.LastIp].region <br />
                                             🏙 @ipInfo[user.LastIp].city <br />
                                             📡 @ipInfo[user.LastIp].isp <br />
+
                                             @if (user.Latitude != null && user.Longitude != null)
                                             {
                                                 <a target="_blank"
@@ -353,8 +398,17 @@
                                                 </a>
                                             }
                                         </small>
-                                }
-
+                                    }
+                                    
+                                    
+                                    
+                                    
+                                    @if (user.Role == "SuperAdmin")
+                                    {
+                                        <br />
+                                        <small class="text-muted">—</small>
+                                    }
+                               
                             </span>
 
                             @if (User.IsInRole("SuperAdmin") && user.Id != myId)
@@ -362,15 +416,15 @@
                                 if (isBlockedIp)
                                 {
                                     <form asp-controller="Admin"
-                                          asp-action="UnblockIP"
-                                          method="post"
-                                          style="margin:0">
+                                    asp-action="UnblockIP"
+                                    method="post"
+                                    style="margin:0">
 
                                         <input type="hidden" name="ip" value="@user.LastIp" />
 
                                         <button class="btn btn-success btn-sm"
-                                             
-                                                onclick="return confirm('¿Desbloquear esta IP?')">
+
+                                        onclick="return confirm('¿Desbloquear esta IP?')">
                                             🔓
                                         </button>
 
@@ -378,46 +432,60 @@
                                 }
                                 else
                                 {
-                                    <form asp-controller="Admin"
-                                          asp-action="BlockIP"
-                                          method="post"
-                                          style="margin:0">
+                                   <form asp-controller="Admin" asp-action="BlockIP" method="post" style="margin:0"
+      onsubmit="return confirm('¿Bloquear esta IP?')">
+    
+    <input type="hidden" name="ip" value="@user.LastIp" />
 
-                                        <input type="hidden" name="ip" value="@user.LastIp" />
-
-                                        <button class="btn btn-danger btn-sm"
-                                              
-                                                onclick="return confirm('¿Bloquear esta IP?')">
-                                            🚫
-                                        </button>
-
-                                    </form>
+    <button type="submit" class="btn btn-danger btn-sm">
+        🚫
+    </button>
+</form>
                                 }
                             }
 
                         </div>
-                    }
-                    else
-                    {
-                        <span class="text-muted">—</span>
-                    }
+                    
+                    
+                   
 
                 </td>
 
-                <!-- SISTEMA -->
-                <td>
-                    @(string.IsNullOrEmpty(user.OperatingSystem) ? "—" : user.OperatingSystem)
-                </td>
+                    <!-- SISTEMA -->
+                    <td>
+                        @if (user.Role == "SuperAdmin")
+                        {
+                            <span class="text-muted">—</span>
+                        }
+                        else
+                        {
+                            @(string.IsNullOrEmpty(user.OperatingSystem) ? "—" : user.OperatingSystem)
+                        }
+                    </td>
 
-                <!-- DISPOSITIVO -->
-                <td>
-                    @(string.IsNullOrEmpty(user.Device) ? "—" : user.Device)
-                </td>
+                    <!-- DISPOSITIVO -->
+                    <td>
+                        @if (user.Role == "SuperAdmin")
+                        {
+                            <span class="text-muted">—</span>
+                        }
+                        else
+                        {
+                            @(string.IsNullOrEmpty(user.Device) ? "—" : user.Device)
+                        }
+                    </td>
 
-                <!-- NAVEGADOR -->
-                <td>
-                    @(string.IsNullOrEmpty(user.Browser) ? "—" : user.Browser)
-                </td>
+                    <!-- NAVEGADOR -->
+                    <td>
+                        @if (user.Role == "SuperAdmin")
+                        {
+                            <span class="text-muted">—</span>
+                        }
+                        else
+                        {
+                            @(string.IsNullOrEmpty(user.Browser) ? "—" : user.Browser)
+                        }
+                    </td>
 
             </tr>
             
@@ -544,4 +612,184 @@
 
     });
 
+    connection.on("ForceLogout", function (message) {
+    alert(message);
+    window.location.href = "/Account/Login";
+    });
+
 </script>
+<script>
+    function filterUsers() {
+    const input = document.getElementById("searchUser").value.toLowerCase();
+    const rows = document.querySelectorAll(".user-row");
+
+    rows.forEach(row => {
+    const username = row.querySelector(".username").innerText.toLowerCase();
+
+    if (username.includes(input)) {
+    row.style.display = "";
+    } else {
+    row.style.display = "none";
+    }
+    });
+    }
+
+    // 🔥 activar mientras escribe
+    document.getElementById("searchUser").addEventListener("keyup", filterUsers);
+</script>
+<script>
+function pedirCodigoAdmin() {
+    document.getElementById("codeModal").style.display = "flex";
+}
+
+function cerrarModal() {
+    const modal = document.getElementById("codeModal");
+
+    modal.style.display = "none";
+
+    document.getElementById("codeInput").value = "";
+    document.getElementById("codeError").innerText = "";
+}
+
+function validarCodigo() {
+
+    let codigo = document.getElementById("codeInput").value.replace(/\D/g, '');
+    let error = document.getElementById("codeError");
+
+    // ❌ vacío
+    if (codigo === "") {
+        error.innerText = "Debes escribir un código";
+        return;
+    }
+
+    // 🔐 TOKEN ANTIFORGERY
+    const token = document.querySelector('#antiForgeryForm input[name="__RequestVerificationToken"]').value;
+
+    fetch('/Admin/ValidateAccessCode', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'RequestVerificationToken': token
+        },
+        body: JSON.stringify({ code: codigo })
+    })
+    .then(res => res.json())
+    .then(data => {
+
+        if (!data.success) {
+            error.innerText = "❌ Código incorrecto o ya utilizado";
+            return;
+        }
+
+        cerrarModal();
+
+        if (confirm("¿Seguro que deseas bloquear la conexión global?")) {
+
+            fetch('/Admin/ToggleConnectionBlock', {
+                method: 'POST',
+                headers: {
+                    'RequestVerificationToken': token
+                }
+            })
+            .then(() => location.reload());
+
+        }
+
+    })
+    .catch(err => {
+        console.error("ERROR:", err);
+        error.innerText = "⚠️ Error al validar el código";
+    });
+}
+</script>
+<style>
+    /* 🔥 BOTÓN ELIMINAR */
+    .btn-delete {
+    border: 1px solid #dc3545;
+    color: #dc3545;
+    background: transparent;
+    }
+    .code-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.6);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+}
+
+.code-box {
+    background: #1f2937;
+    padding: 20px;
+    border-radius: 15px;
+    width: 300px;
+    text-align: center;
+    color: white;
+}
+
+.code-box input {
+    width: 100%;
+    padding: 8px;
+    border-radius: 8px;
+    border: none;
+    margin-top: 10px;
+}
+
+.code-error {
+    color: #ff4d4d;
+    font-size: 13px;
+    margin-top: 5px;
+}
+
+.code-actions {
+    margin-top: 10px;
+    display: flex;
+    justify-content: space-between;
+}
+
+    .btn-delete:hover {
+    background: #dc3545;
+    color: white;
+    box-shadow: 0 0 10px rgba(220, 53, 69, 0.6);
+    }
+
+    /* 🌙 MODO OSCURO */
+    body.dark-mode .btn-delete {
+    border: 1px solid #ff4d4d;
+    color: #ff4d4d;
+    }
+
+    body.dark-mode .btn-delete:hover {
+    background: #ff4d4d;
+    color: white;
+    }
+</style>
+
+<div id="codeModal" class="code-modal">
+    <div class="code-box">
+
+        <h5>⚠️ Autorización requerida</h5>
+         <p>Necesitas autorización para hacer esto.</p>
+        <p>Ingresa el código de 5 dígitos</p>
+
+       <input type="text"
+       id="codeInput"
+       maxlength="5"
+       inputmode="numeric"
+       placeholder="Código..."
+       oninput="this.value = this.value.replace(/\D/g, '')" />
+
+        <div id="codeError" class="code-error"></div>
+
+        <div class="code-actions">
+            <button onclick="validarCodigo()">Aceptar</button>
+            <button onclick="cerrarModal()">Cancelar</button>
+        </div>
+
+    </div>
+</div>
+

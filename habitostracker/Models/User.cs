@@ -17,6 +17,8 @@ namespace HabitTrackerApp.Models
 
         public int FailedLoginAttempts { get; set; }
 
+        public bool IsIpBlocked { get; set; } = false;
+
         public DateTime? LockoutEnd { get; set; }
 
         // 🔐 Rol 
@@ -46,8 +48,11 @@ namespace HabitTrackerApp.Models
         // ⚥ Género
         [Required(ErrorMessage = "Debe seleccionar un género.")]
         public string Gender { get; set; }
-
+        public bool IsGoogleAccount { get; set; }
         public string? ProfileImage { get; set; }
+
+        public string? ProfilePicture { get; set; }
+        public string? Name { get; set; }
 
         public DateTime? LastOnline { get; set; }
 
