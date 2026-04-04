@@ -24,8 +24,7 @@ namespace HabitTrackerApp
 
             // 🔥 Base de datos
             builder.Services.AddDbContext<HabitDbContext>(options =>
-                options.UseSqlServer(
-                    builder.Configuration.GetConnectionString("DefaultConnection")));
+               options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
             // 🔥 Filtro
             builder.Services.AddScoped<CheckBannedFilter>();
