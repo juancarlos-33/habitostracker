@@ -12,6 +12,7 @@ using Microsoft.OpenApi.Models;
 using System.Text;
 using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.HttpOverrides;
+using Npgsql.EntityFrameworkCore.PostgreSQL;
 
 namespace HabitTrackerApp
 {
