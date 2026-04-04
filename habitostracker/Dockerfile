@@ -1,11 +1,14 @@
 ﻿FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /app
 
+COPY habitostracker/*.csproj ./habitostracker/
+WORKDIR /app/habitostracker
+RUN dotnet restore
+
+WORKDIR /app
 COPY . .
 
-WORKDIR /app/habitostracker   👈 IMPORTANTE
-
-RUN dotnet restore
+WORKDIR /app/habitostracker
 RUN dotnet publish -c Release -o out
 
 FROM mcr.microsoft.com/dotnet/aspnet:8.0
