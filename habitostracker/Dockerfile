@@ -1,18 +1,14 @@
 ﻿FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /app
 
-COPY habitostracker/*.csproj ./habitostracker/
-WORKDIR /app/habitostracker
-RUN dotnet restore
-
-WORKDIR /app
 COPY . .
 
-WORKDIR /app/habitostracker
+RUN dotnet restore
 RUN dotnet publish -c Release -o out
 
 FROM mcr.microsoft.com/dotnet/aspnet:8.0
 WORKDIR /app
-COPY --from=build /app/habitostracker/out .
+
+COPY --from=build /app/out .
 
 ENTRYPOINT ["dotnet", "habitostracker.dll"]
