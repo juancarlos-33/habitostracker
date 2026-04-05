@@ -210,6 +210,13 @@ options.ClientSecret = builder.Configuration["Google:ClientSecret"];
 
             app.MapHub<HabitTrackerApp.Hubs.ChatHub>("/chatHub");
 
+            // 🔥 Auto-migración al arrancar
+            using (var scope = app.Services.CreateScope())
+            {
+                var db = scope.ServiceProvider.GetRequiredService<HabitDbContext>();
+                db.Database.Migrate();
+            }
+
             app.Run();
         }
     }
