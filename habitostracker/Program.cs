@@ -19,7 +19,7 @@ namespace HabitTrackerApp
 {
     public class Program
     {
-        public static void Main(string[] args)
+        public static async Task Main(string[] args)
         {
             AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
             var builder = WebApplication.CreateBuilder(args);
@@ -224,11 +224,13 @@ options.ClientSecret = builder.Configuration["Google:ClientSecret"];
             using (var scope = app.Services.CreateScope())
             {
                 var db = scope.ServiceProvider.GetRequiredService<HabitDbContext>();
-                if (app.Environment.IsProduction())
-                {
-                    db.Database.Migrate();
-                }
+                db.Database.Migrate();
+
+                var cloudinary = scope.ServiceProvider.GetRequiredService<CloudinaryService>();
+                var env = scope.ServiceProvider.GetRequiredService<IWebHostEnvironment>();
+                await MigrateImagesToCloudinary.Run(db, cloudinary, env);
             }
+        
 
             app.Run();
         }
