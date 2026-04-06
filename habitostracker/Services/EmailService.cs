@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Configuration;
-using System.Net;
-using System.Net.Mail;
+using System.Net.Http;
+using System.Text;
+using System.Text.Json;
 
 namespace HabitTrackerApp.Services
 {
@@ -15,31 +16,25 @@ namespace HabitTrackerApp.Services
 
         public async Task SendEmailAsync(string toEmail, string subject, string body)
         {
-            var smtpSettings = _configuration.GetSection("SmtpSettings");
+            var apiKey = _configuration["Resend:ApiKey"] ?? _configuration["Resend__ApiKey"];
 
-            var smtpClient = new SmtpClient(smtpSettings["Server"])
+            using var client = new HttpClient();
+            client.DefaultRequestHeaders.Add("Authorization", $"Bearer {apiKey}");
+
+            var payload = new
             {
-                Port = 465,
-                Credentials = new NetworkCredential(
-                    smtpSettings["Username"],
-                    smtpSettings["Password"]
-                ),
-                EnableSsl = true
+                from = "HabitTracker <onboarding@resend.dev>",
+                to = new[] { toEmail },
+                subject = subject,
+                html = body
             };
 
-            var mailMessage = new MailMessage
-            {
-                From = new MailAddress(
-                    smtpSettings["SenderEmail"],
-                    smtpSettings["SenderName"]
-                ),
-                Subject = subject,
-                Body = body,
-                IsBodyHtml = true
-            };
-
-            mailMessage.To.Add(toEmail);
-            await smtpClient.SendMailAsync(mailMessage);
+            var json = JsonSerializer.Serialize(payload);
+            var content = new StringContent(json, Encoding.UTF8, "application/json");
+            var response = await client.PostAsync("https://api.resend.com/emails", content);
+            Console.WriteLine($"📧 Resend status: {response.StatusCode}");
+            var responseBody = await response.Content.ReadAsStringAsync();
+            Console.WriteLine($"📧 Resend response: {responseBody}");
         }
     }
 }
