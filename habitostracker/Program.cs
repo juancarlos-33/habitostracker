@@ -225,12 +225,8 @@ options.ClientSecret = builder.Configuration["Google:ClientSecret"];
             {
                 var db = scope.ServiceProvider.GetRequiredService<HabitDbContext>();
                 db.Database.Migrate();
-
-                var cloudinary = scope.ServiceProvider.GetRequiredService<CloudinaryService>();
-                var env = scope.ServiceProvider.GetRequiredService<IWebHostEnvironment>();
-                await MigrateImagesToCloudinary.Run(db, cloudinary, env);
             }
-        
+
 
             app.Run();
         }
