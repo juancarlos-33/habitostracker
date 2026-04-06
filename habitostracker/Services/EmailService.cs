@@ -16,7 +16,8 @@ namespace HabitTrackerApp.Services
 
         public async Task SendEmailAsync(string toEmail, string subject, string body)
         {
-            var apiKey = _configuration["Resend:ApiKey"];
+            var apiKey = _configuration["Resend:ApiKey"] ?? _configuration["Resend__ApiKey"];
+            Console.WriteLine($"🔑 Resend ApiKey: {(string.IsNullOrEmpty(apiKey) ? "VACÍA" : "OK")}");
 
             using var client = new HttpClient();
             client.DefaultRequestHeaders.Add("Authorization", $"Bearer {apiKey}");
