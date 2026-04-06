@@ -4,15 +4,16 @@ using HabitTrackerApp.Hubs;
 using HabitTrackerApp.Services;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
-using System.Text;
-using Microsoft.AspNetCore.Authentication.Google;
-using Microsoft.AspNetCore.HttpOverrides;
 using Npgsql.EntityFrameworkCore.PostgreSQL;
+using System.Text;
 
 namespace HabitTrackerApp
 {
@@ -26,7 +27,13 @@ namespace HabitTrackerApp
 
             // 🔥 Base de datos
             builder.Services.AddDbContext<HabitDbContext>(options =>
-               options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+            {
+                var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+                if (builder.Environment.IsProduction())
+                    options.UseNpgsql(connectionString);
+                else
+                    options.UseSqlServer(connectionString);
+            });
 
             // 🔥 Filtro
             builder.Services.AddScoped<CheckBannedFilter>();
@@ -119,6 +126,8 @@ options.ClientSecret = builder.Configuration["Google:ClientSecret"];
                     }
                 });
             });
+
+            builder.Services.AddScoped<CloudinaryService>();
 
             var app = builder.Build();
             app.UseSession();
@@ -215,7 +224,10 @@ options.ClientSecret = builder.Configuration["Google:ClientSecret"];
             using (var scope = app.Services.CreateScope())
             {
                 var db = scope.ServiceProvider.GetRequiredService<HabitDbContext>();
-                db.Database.Migrate();
+                if (app.Environment.IsProduction())
+                {
+                    db.Database.Migrate();
+                }
             }
 
             app.Run();

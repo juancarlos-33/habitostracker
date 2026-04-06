@@ -12,18 +12,17 @@ namespace HabitTrackerApp.Controllers
     public class PostController : Controller
     {
         private readonly HabitDbContext _context;
-
         private readonly IHubContext<ChatHub> _hubContext;
-
         private readonly IWebHostEnvironment _environment;
+        private readonly CloudinaryService _cloudinaryService;
 
-        public PostController(HabitDbContext context, IWebHostEnvironment environment, IHubContext<ChatHub> hubContext)
+        public PostController(HabitDbContext context, IWebHostEnvironment environment, IHubContext<ChatHub> hubContext, CloudinaryService cloudinaryService)
         {
             _context = context;
             _environment = environment;
             _hubContext = hubContext;
+            _cloudinaryService = cloudinaryService;
         }
-
         public IActionResult DeleteComment(int id)
         {
             var userId = int.Parse(User.FindFirst("UserId").Value);
@@ -292,24 +291,7 @@ namespace HabitTrackerApp.Controllers
                     }
                 }
 
-                var fileName = Guid.NewGuid().ToString() + Path.GetExtension(image.FileName);
-
-                var folderPath = Path.Combine(_environment.WebRootPath, "posts");
-
-                // 🔹 seguridad: crear carpeta si no existe
-                if (!Directory.Exists(folderPath))
-                {
-                    Directory.CreateDirectory(folderPath);
-                }
-
-                var path = Path.Combine(folderPath, fileName);
-
-                using (var stream = new FileStream(path, FileMode.Create))
-                {
-                    await image.CopyToAsync(stream);
-                }
-
-                imagePath = "/posts/" + fileName;
+                imagePath = await _cloudinaryService.UploadImageAsync(image);
             }
 
             var post = new Post
@@ -483,22 +465,7 @@ namespace HabitTrackerApp.Controllers
             // 📷 GUARDAR IMAGEN
             if (image != null && image.Length > 0)
             {
-                var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/comments");
-
-                if (!Directory.Exists(uploadsFolder))
-                {
-                    Directory.CreateDirectory(uploadsFolder);
-                }
-
-                var fileName = Guid.NewGuid().ToString() + Path.GetExtension(image.FileName);
-                var filePath = Path.Combine(uploadsFolder, fileName);
-
-                using (var stream = new FileStream(filePath, FileMode.Create))
-                {
-                    await image.CopyToAsync(stream);
-                }
-
-                imagePath = "/comments/" + fileName;
+                imagePath = await _cloudinaryService.UploadImageAsync(image);
             }
 
             // 🔥 CREAR COMENTARIO (AQUÍ ESTÁ EL FIX)
