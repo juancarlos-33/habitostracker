@@ -407,7 +407,7 @@ namespace HabitTrackerApp.Controllers
         <p><b>— Equipo HabitTracker 🚀</b></p>
     </div>";
 
-            await SendEmail(user.Email, subject, message);
+            await _emailService.SendEmailAsync(user.Email, subject, message);
         }
 
         private async Task SendEmail(string toEmail, string subject, string htmlMessage)
@@ -626,29 +626,36 @@ namespace HabitTrackerApp.Controllers
             var subject = "🎉 Bienvenido a HabitTracker";
 
             var message = $@"
-    <div style='font-family:Arial;padding:20px'>
-        <h2>Bienvenido {user.Username} 🚀</h2>
+<div style='font-family:Arial;padding:20px'>
+    <h2>Bienvenido {user.Username} 🚀</h2>
 
-        <p>Tu cuenta ha sido creada correctamente.</p>
+    <p>Tu cuenta ha sido creada correctamente.</p>
 
-        <p>Ahora puedes empezar a construir hábitos increíbles 🔥</p>
+    <p>Ahora puedes empezar a construir hábitos increíbles 🔥 y también interactuar con otras personas para compartir tus experiencias 💬</p>
 
-        <ul>
-            <li>📈 Mejora cada día</li>
-            <li>💪 Sé constante</li>
-            <li>🔥 Mantén tu racha</li>
-        </ul>
+    <ul>
+        <li>📈 Mejora cada día</li>
+        <li>💪 Sé constante</li>
+        <li>🔥 Mantén tu racha</li>
+  <li>🤝 Conecta con otros usuarios</li>
+    </ul>
 
-        <p><b>Pequeños hábitos → grandes resultados</b></p>
+    <p><b>Pequeños hábitos → grandes resultados</b></p>
 
-        <hr/>
+    <hr/>
 
-        <p style='font-size:12px;color:gray'>
-            — Equipo HabitTracker 💙
-        </p>
-    </div>";
+    <p style='font-size:12px;color:gray'>
+        Recuerda que estamos en desarrollo 🚧, aún nos falta mucho por mejorar.
+    </p>
 
-            await SendEmail(user.Email, subject, message);
+<img src='https://res.cloudinary.com/dzrjag7ia/image/upload/v1775499059/AA_v1wrtu.jpg' style='width:200px;margin-top:10px'/>
+
+    <p style='font-size:12px;color:gray'>
+        — Equipo HabitTracker 💙
+    </p>
+</div>";
+
+            await _emailService.SendEmailAsync(user.Email, subject, message);
         }
 
         // =====================================================
@@ -1413,6 +1420,7 @@ namespace HabitTrackerApp.Controllers
 
                 _context.Users.Add(user);
                 _context.SaveChanges();
+                _ = SendWelcomeEmail(user);
             }
 
             await SignInUser(user);
