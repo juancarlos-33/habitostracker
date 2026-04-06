@@ -132,6 +132,8 @@ namespace HabitTrackerApp.Controllers
             return RedirectToAction("Comments", new { postId = comment.PostId });
         }
 
+
+
         public IActionResult Index()
         {
             var userId = int.Parse(User.FindFirst("UserId").Value);
