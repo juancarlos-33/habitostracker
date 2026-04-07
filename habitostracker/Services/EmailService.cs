@@ -1,7 +1,6 @@
 ﻿using Microsoft.Extensions.Configuration;
-using System.Net.Http;
-using System.Text;
-using System.Text.Json;
+using System.Net;
+using System.Net.Mail;
 
 namespace HabitTrackerApp.Services
 {
@@ -16,25 +15,31 @@ namespace HabitTrackerApp.Services
 
         public async Task SendEmailAsync(string toEmail, string subject, string body)
         {
-            var apiKey = _configuration["Resend:ApiKey"] ?? _configuration["Resend__ApiKey"];
+            var smtpSettings = _configuration.GetSection("SmtpSettings");
 
-            using var client = new HttpClient();
-            client.DefaultRequestHeaders.Add("Authorization", $"Bearer {apiKey}");
-
-            var payload = new
+            var smtpClient = new SmtpClient(smtpSettings["Server"])
             {
-                from = "HabitTracker <onboarding@resend.dev>",
-                to = new[] { toEmail },
-                subject = subject,
-                html = body
+                Port = int.Parse(smtpSettings["Port"]),
+                Credentials = new NetworkCredential(
+                    smtpSettings["Username"],
+                    smtpSettings["Password"]
+                ),
+                EnableSsl = true
             };
 
-            var json = JsonSerializer.Serialize(payload);
-            var content = new StringContent(json, Encoding.UTF8, "application/json");
-            var response = await client.PostAsync("https://api.resend.com/emails", content);
-            Console.WriteLine($"📧 Resend status: {response.StatusCode}");
-            var responseBody = await response.Content.ReadAsStringAsync();
-            Console.WriteLine($"📧 Resend response: {responseBody}");
+            var mailMessage = new MailMessage
+            {
+                From = new MailAddress(
+                    smtpSettings["SenderEmail"],
+                    smtpSettings["SenderName"]
+                ),
+                Subject = subject,
+                Body = body,
+                IsBodyHtml = true
+            };
+
+            mailMessage.To.Add(toEmail);
+            await smtpClient.SendMailAsync(mailMessage);
         }
     }
 }
