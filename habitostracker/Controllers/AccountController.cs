@@ -523,6 +523,7 @@ namespace HabitTrackerApp.Controllers
             return View(model);
         }
 
+
         [HttpPost]
         [ValidateAntiForgeryToken]
         public IActionResult ConfirmEmail(ConfirmEmailViewModel model)
@@ -547,16 +548,11 @@ namespace HabitTrackerApp.Controllers
 
             if (fromRegister)
             {
-                var registerData = TempData["RegisterData"]?.ToString();
-                if (registerData != null)
-                {
-                    var newUser = System.Text.Json.JsonSerializer.Deserialize<User>(registerData);
-                    newUser.EmailConfirmed = true;
-                    newUser.ResetCode = null;
-                    _context.Users.Add(newUser);
-                    _context.SaveChanges();
-                    _ = SendWelcomeEmail(newUser);
-                }
+                user.EmailConfirmed = true;
+                user.IsActive = true;
+                user.ResetCode = null;
+                _context.SaveChanges();
+                _ = SendWelcomeEmail(user);
             }
             else if (fromReset)
             {
@@ -575,7 +571,6 @@ namespace HabitTrackerApp.Controllers
             TempData["Success"] = "Cuenta confirmada correctamente.";
             return RedirectToAction("Login");
         }
-
 
         [HttpPost]
         public IActionResult SaveBio(string bio)
@@ -660,9 +655,9 @@ namespace HabitTrackerApp.Controllers
                 ProfileImage = imagePath
             };
 
-            // ❗ NO GUARDAMOS AÚN (esperamos confirmación)
-            //_context.Users.Add(newUser);
-            //_context.SaveChanges();
+            newUser.IsActive = false;
+            _context.Users.Add(newUser);
+            _context.SaveChanges();
 
             // 🔥 ENVÍO DE CÓDIGO
             await SendConfirmationCode(newUser);
