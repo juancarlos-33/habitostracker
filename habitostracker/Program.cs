@@ -131,7 +131,7 @@ options.ClientSecret = builder.Configuration["Google:ClientSecret"];
             builder.Services.AddScoped<CloudinaryService>();
 
             builder.Services.AddDataProtection()
-    .PersistKeysToFileSystem(new DirectoryInfo("/tmp/dataprotection-keys"));
+     .SetApplicationName("habitostracker");
 
             var app = builder.Build();
             app.UseSession();
