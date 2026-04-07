@@ -676,34 +676,63 @@ namespace HabitTrackerApp.Controllers
             var subject = "🎉 Bienvenido a HabitTracker";
 
             var message = $@"
-<div style='font-family:Arial;padding:20px'>
-    <h2>Bienvenido {user.Username} 🚀</h2>
+<!DOCTYPE html>
+<html>
+<body style='margin:0;padding:0;background-color:#f4f6f9;font-family:Arial,sans-serif;'>
+  <table width='100%' cellpadding='0' cellspacing='0' style='background-color:#f4f6f9;padding:30px 0;'>
+    <tr>
+      <td align='center'>
+        <table width='580' cellpadding='0' cellspacing='0' style='background-color:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.08);'>
+          
+          <!-- HEADER -->
+          <tr>
+            <td style='background:linear-gradient(135deg,#2563eb,#7c3aed);padding:35px;text-align:center;'>
+              <h1 style='color:white;margin:0;font-size:28px;'>🚀 HabitTracker</h1>
+              <p style='color:rgba(255,255,255,0.85);margin:8px 0 0;font-size:15px;'>Construye hábitos. Transforma tu vida.</p>
+            </td>
+          </tr>
 
-    <p>Tu cuenta ha sido creada correctamente.</p>
+          <!-- BODY -->
+          <tr>
+            <td style='padding:35px;'>
+              <h2 style='color:#111827;margin-top:0;'>¡Bienvenido, {user.Username}! 🎉</h2>
+              <p style='color:#4b5563;font-size:15px;line-height:1.6;'>Tu cuenta ha sido creada correctamente. Ahora puedes empezar a construir hábitos increíbles y conectar con otras personas.</p>
 
-    <p>Ahora puedes empezar a construir hábitos increíbles 🔥 y también interactuar con otras personas para compartir tus experiencias 💬</p>
+              <table width='100%' cellpadding='0' cellspacing='0' style='margin:20px 0;'>
+                <tr>
+                  <td style='background:#f0f9ff;border-left:4px solid #2563eb;border-radius:8px;padding:15px;'>
+                    <p style='margin:6px 0;color:#1e40af;font-size:14px;'>📈 Mejora cada día</p>
+                    <p style='margin:6px 0;color:#1e40af;font-size:14px;'>💪 Sé constante</p>
+                    <p style='margin:6px 0;color:#1e40af;font-size:14px;'>🔥 Mantén tu racha</p>
+                    <p style='margin:6px 0;color:#1e40af;font-size:14px;'>🤝 Conecta con otros usuarios</p>
+                  </td>
+                </tr>
+              </table>
 
-    <ul>
-        <li>📈 Mejora cada día</li>
-        <li>💪 Sé constante</li>
-        <li>🔥 Mantén tu racha</li>
-  <li>🤝 Conecta con otros usuarios</li>
-    </ul>
+              <p style='color:#111827;font-weight:bold;font-size:16px;text-align:center;'>Pequeños hábitos → grandes resultados</p>
 
-    <p><b>Pequeños hábitos → grandes resultados</b></p>
+              <hr style='border:none;border-top:1px solid #e5e7eb;margin:25px 0;'/>
 
-    <hr/>
+              <!-- IMAGEN CENTRADA -->
+              <div style='text-align:center;margin:20px 0;'>
+                <img src='https://res.cloudinary.com/dzrjag7ia/image/upload/v1775499059/AA_v1wrtu.jpg' style='width:180px;border-radius:12px;'/>
+              </div>
 
-    <p style='font-size:12px;color:gray'>
-        Recuerda que estamos en desarrollo 🚧, aún nos falta mucho por mejorar.
-    </p>
+              <hr style='border:none;border-top:1px solid #e5e7eb;margin:25px 0;'/>
 
-<img src='https://res.cloudinary.com/dzrjag7ia/image/upload/v1775499059/AA_v1wrtu.jpg' style='width:200px;margin-top:10px'/>
+              <p style='color:#9ca3af;font-size:12px;text-align:center;margin:0;'>
+                Recuerda que estamos en desarrollo 🚧, aún nos falta mucho por mejorar.<br/>
+                — Equipo HabitTracker 💙
+              </p>
+            </td>
+          </tr>
 
-    <p style='font-size:12px;color:gray'>
-        — Equipo HabitTracker 💙
-    </p>
-</div>";
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>";
 
             await _emailService.SendEmailAsync(user.Email, subject, message);
         }
