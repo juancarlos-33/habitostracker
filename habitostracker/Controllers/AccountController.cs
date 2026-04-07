@@ -711,14 +711,10 @@ namespace HabitTrackerApp.Controllers
 
               <p style='color:#111827;font-weight:bold;font-size:16px;text-align:center;'>Pequeños hábitos → grandes resultados</p>
 
-              <hr style='border:none;border-top:1px solid #e5e7eb;margin:25px 0;'/>
-
               <!-- IMAGEN CENTRADA -->
               <div style='text-align:center;margin:20px 0;'>
                 <img src='https://res.cloudinary.com/dzrjag7ia/image/upload/v1775499059/AA_v1wrtu.jpg' style='width:180px;border-radius:12px;'/>
               </div>
-
-              <hr style='border:none;border-top:1px solid #e5e7eb;margin:25px 0;'/>
 
               <p style='color:#9ca3af;font-size:12px;text-align:center;margin:0;'>
                 Recuerda que estamos en desarrollo 🚧, aún nos falta mucho por mejorar.<br/>
