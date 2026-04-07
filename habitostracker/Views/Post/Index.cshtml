@@ -668,18 +668,10 @@
 
 
     // 🔒 OCULTAR CONTENIDO
-    function hidePostActions(img){
+      function hidePostActions(img){
         img.style.display = "none";
-
         const placeholder = img.nextElementSibling;
-        placeholder.style.display = "flex";
-
-        const card = img.closest(".post-card");
-        const actions = card.querySelector(".post-actions");
-
-        if(actions){
-            actions.style.display = "none";
-        }
+        placeholder.style.display = "none";
     }
 
 </script>
