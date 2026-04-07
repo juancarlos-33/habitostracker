@@ -19,7 +19,7 @@ namespace HabitTrackerApp.Services
 
             var smtpClient = new SmtpClient(smtpSettings["Server"])
             {
-                Port = int.Parse(smtpSettings["Port"]),
+                Port = 465,
                 Credentials = new NetworkCredential(
                     smtpSettings["Username"],
                     smtpSettings["Password"]
