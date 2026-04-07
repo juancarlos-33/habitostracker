@@ -522,6 +522,61 @@ namespace HabitTrackerApp.Controllers
 
             return View(model);
         }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult ConfirmEmail(ConfirmEmailViewModel model)
+        {
+            var email = TempData.Peek("ResetEmail")?.ToString();
+            var fromRegister = TempData.Peek("FromRegister") as bool? ?? false;
+            var fromReset = TempData.Peek("FromReset") as bool? ?? false;
+
+            var user = _context.Users.FirstOrDefault(u => u.Email == email || u.PendingEmail == email);
+
+            if (user == null)
+            {
+                ModelState.AddModelError("", "Usuario no encontrado.");
+                return View(model);
+            }
+
+            if (user.ResetCode != model.Code || user.ResetCodeExpiry < DateTime.Now)
+            {
+                ModelState.AddModelError("", "Código inválido o expirado.");
+                return View(model);
+            }
+
+            if (fromRegister)
+            {
+                var registerData = TempData["RegisterData"]?.ToString();
+                if (registerData != null)
+                {
+                    var newUser = System.Text.Json.JsonSerializer.Deserialize<User>(registerData);
+                    newUser.EmailConfirmed = true;
+                    newUser.ResetCode = null;
+                    _context.Users.Add(newUser);
+                    _context.SaveChanges();
+                    _ = SendWelcomeEmail(newUser);
+                }
+            }
+            else if (fromReset)
+            {
+                TempData["VerifiedEmail"] = email;
+                return RedirectToAction("NewPassword");
+            }
+            else
+            {
+                user.EmailConfirmed = true;
+                user.Email = user.PendingEmail ?? user.Email;
+                user.PendingEmail = null;
+                user.ResetCode = null;
+                _context.SaveChanges();
+            }
+
+            TempData["Success"] = "Cuenta confirmada correctamente.";
+            return RedirectToAction("Login");
+        }
+
+
         [HttpPost]
         public IActionResult SaveBio(string bio)
         {
