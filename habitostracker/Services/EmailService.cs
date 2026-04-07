@@ -16,7 +16,8 @@ namespace HabitTrackerApp.Services
 
         public async Task SendEmailAsync(string toEmail, string subject, string body)
         {
-            var apiKey = _configuration["Brevo__ApiKey"];
+            var apiKey = _configuration["Brevo:ApiKey"] ?? _configuration["Brevo__ApiKey"];
+            Console.WriteLine($"🔑 Brevo key: {(string.IsNullOrEmpty(apiKey) ? "VACÍA" : "OK")}");
 
             using var client = new HttpClient();
             client.DefaultRequestHeaders.Add("api-key", apiKey);
