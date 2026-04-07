@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Configuration;
-using System.Net;
-using System.Net.Mail;
+using System.Net.Http;
+using System.Text;
+using System.Text.Json;
 
 namespace HabitTrackerApp.Services
 {
@@ -15,31 +16,24 @@ namespace HabitTrackerApp.Services
 
         public async Task SendEmailAsync(string toEmail, string subject, string body)
         {
-            var smtpSettings = _configuration.GetSection("SmtpSettings");
+            var apiKey = _configuration["Brevo__ApiKey"];
 
-            var smtpClient = new SmtpClient(smtpSettings["Server"])
+            using var client = new HttpClient();
+            client.DefaultRequestHeaders.Add("api-key", apiKey);
+
+            var payload = new
             {
-                Port = 465,
-                Credentials = new NetworkCredential(
-                    smtpSettings["Username"],
-                    smtpSettings["Password"]
-                ),
-                EnableSsl = true
+                sender = new { name = "HabitTracker", email = "noreplyhabittrackert@gmail.com" },
+                to = new[] { new { email = toEmail } },
+                subject = subject,
+                htmlContent = body
             };
 
-            var mailMessage = new MailMessage
-            {
-                From = new MailAddress(
-                    smtpSettings["SenderEmail"],
-                    smtpSettings["SenderName"]
-                ),
-                Subject = subject,
-                Body = body,
-                IsBodyHtml = true
-            };
-
-            mailMessage.To.Add(toEmail);
-            await smtpClient.SendMailAsync(mailMessage);
+            var json = JsonSerializer.Serialize(payload);
+            var content = new StringContent(json, Encoding.UTF8, "application/json");
+            var response = await client.PostAsync("https://api.brevo.com/v3/smtp/email", content);
+            var responseBody = await response.Content.ReadAsStringAsync();
+            Console.WriteLine($"📧 Brevo status: {response.StatusCode} - {responseBody}");
         }
     }
 }
