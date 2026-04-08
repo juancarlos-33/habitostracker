@@ -1251,18 +1251,24 @@ namespace HabitTrackerApp.Controllers
                     IsGoogleAccount = true,
                     Role = "User"
                 };
-
                 _context.Users.Add(user);
                 _context.SaveChanges();
-
-                
+            }
+            else
+            {
+                // 🔥 Si existe pero no estaba marcado como Google, actualizarlo
+                if (!user.IsGoogleAccount)
+                {
+                    user.IsGoogleAccount = true;
+                    _context.SaveChanges();
+                }
             }
 
             // 🟢 ACTUALIZAR ÚLTIMA VEZ ONLINE
             user.LastOnline = DateTime.Now;
 
             // 🟢 IP
-          
+
             // 🟢 DEVICE INFO
             var userAgent = HttpContext.Request.Headers["User-Agent"].ToString();
             user.Device = GetDevice(userAgent);
@@ -1465,11 +1471,13 @@ namespace HabitTrackerApp.Controllers
                     currentUser.Bio = currentUser.Bio ?? "Registrado con Google";
                     currentUser.IsActive = true;
 
+
+
                     _context.SaveChanges();
 
                     await SignInUser(currentUser);
 
-                    return RedirectToAction("Index", "Habit");
+                    return RedirectToAction("CompleteProfile", "Account");
                 }
             }
 
