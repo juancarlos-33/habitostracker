@@ -82,6 +82,7 @@
 
     <!-- ACCIONES RÁPIDAS -->
     <div class="quick-actions">
+    <button class="quick-btn" style="background:#f3f4f6;color:#374151;border:1px solid #e5e7eb;" onclick="showAll()">👥 Todos los usuarios</button>
         <a asp-controller="Admin" asp-action="Reports" class="quick-btn reports">
             🚩 Publicaciones reportadas
         </a>
@@ -660,8 +661,8 @@ function filterByStatus(status) {
         } else if (status === 'inactive') {
             row.style.display = text.includes('desactivado') ? "" : "none";
         } else if (status === 'active') {
-            row.style.display = text.includes('activo') ? "" : "none";
-        }
+    row.style.display = (text.includes('activo') && !text.includes('desactivado') && !text.includes('inactivo')) ? "" : "none";
+}
     });
 }
 
