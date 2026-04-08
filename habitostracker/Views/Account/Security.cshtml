@@ -279,11 +279,25 @@
         // 🔥 guardar passwordValida en window para acceder desde validarEliminar
         window.getPasswordValida = () => passwordValida;
     });
-
-    function validarEliminar() {
-        const pwd = document.getElementById("deletePassword").value;
+        function validarEliminar() {
+        const pwdInput = document.getElementById("deletePassword");
+        const confirmInput = document.getElementById("confirmDelete");
         const error = document.getElementById("deleteError");
 
+        if (confirmInput) {
+            const val = confirmInput.value.trim().toUpperCase();
+            if (val !== "ELIMINAR") {
+                error.style.display = "block";
+                error.style.background = "#fef2f2";
+                error.style.borderColor = "#fecaca";
+                error.style.color = "#b91c1c";
+                error.innerText = "⚠️ Debes escribir ELIMINAR para confirmar.";
+                return false;
+            }
+            return confirm("¿Estás seguro? Tu cuenta se eliminará para siempre.");
+        }
+
+        const pwd = pwdInput.value;
         if (!pwd || pwd.trim() === "") {
             error.style.display = "block";
             error.style.background = "#fef2f2";
