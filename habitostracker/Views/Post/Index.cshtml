@@ -1,802 +1,573 @@
 ﻿@model List<HabitTrackerApp.Models.Post>
 
-
 @{
     var myLikes = ViewBag.MyLikes as List<int> ?? new List<int>();
     var commentCounts = ViewBag.CommentCounts as Dictionary<int, int> ?? new Dictionary<int, int>();
 }
 
-<h2 class="mb-4">🔥 Publicaciones</h2>
+<div class="feed-header">
+    <h2 class="feed-title">🔥 Publicaciones</h2>
+    <a asp-controller="Post" asp-action="Create" class="new-post-btn">
+        <span>+</span> Nueva publicación
+    </a>
+</div>
 
-<a asp-controller="Post"
-   asp-action="Create"
-   class="btn btn-primary mb-4">
-    📸 Nueva publicación
-</a>
+<div class="feed-container">
+    @foreach (var post in Model)
+    {
+        <article class="post-card">
 
-
-
-@foreach (var post in Model)
-{
-    <div class="post-card">
-
-        <div class="post-header">
-
-            @if (post.User != null)
-            {
-                <a asp-controller="User"
-                       asp-action="Profile"
-                       asp-route-id="@post.UserId"
-                       class="post-avatar-link">
-
-                    @if (!string.IsNullOrEmpty(post.User.ProfileImage))
+            <!-- HEADER -->
+            <div class="post-header">
+                <div class="post-header-left">
+                    @if (post.User != null)
                     {
-                        <img src="@post.User.ProfileImage" class="post-avatar" />
+                        <a asp-controller="User" asp-action="Profile" asp-route-id="@post.UserId" class="avatar-link">
+                            @if (!string.IsNullOrEmpty(post.User.ProfileImage))
+                            {
+                                <img src="@post.User.ProfileImage" class="post-avatar" />
+                            }
+                            else
+                            {
+                                <div class="post-avatar-placeholder">@post.DisplayUsername.Substring(0, 1).ToUpper()</div>
+                            }
+                        </a>
                     }
                     else
                     {
-                        <div class="post-avatar-placeholder">
-                            @post.DisplayUsername.Substring(0, 1).ToUpper()
+                        <div class="post-avatar-placeholder">👤</div>
+                    }
+
+                    <div class="post-meta">
+                        <div class="post-username">
+                            @post.DisplayUsername
+                            @if (post.UserId == 29)
+                            {
+                                <span class="owner-badge">👑 Propietario</span>
+                            }
+                        </div>
+                        <div class="post-time">@post.CreatedAt.ToString("dd MMM yyyy · hh:mm tt")</div>
+                    </div>
+                </div>
+
+                @if (post.UserId == int.Parse(User.FindFirst("UserId").Value))
+                {
+                    <a asp-controller="Post" asp-action="Delete" asp-route-id="@post.Id"
+                       class="delete-btn" data-no-loader="true"
+                       onclick="return confirm('¿Eliminar esta publicación?')">🗑</a>
+                }
+            </div>
+
+            <!-- DESCRIPCIÓN -->
+            @if (!string.IsNullOrEmpty(post.Description))
+            {
+                <p class="post-description">@post.Description</p>
+            }
+
+            <!-- IMAGEN -->
+            @if (!string.IsNullOrEmpty(post.ImagePath))
+            {
+                <div class="post-image-wrap">
+                    <img src="@post.ImagePath" class="post-image" onerror="this.parentElement.style.display='none'" />
+                </div>
+            }
+
+            <!-- DIVIDER -->
+            <div class="post-divider"></div>
+
+            <!-- ACCIONES -->
+            <div class="post-actions">
+                <button class="action-btn like-btn @(myLikes.Contains(post.Id) ? "liked" : "")"
+                        onclick="toggleLike(@post.Id, this)">
+                    <span class="action-icon">@(myLikes.Contains(post.Id) ? "❤️" : "🤍")</span>
+                    <span class="action-count" id="post-like-count-@post.Id">
+                        @(ViewBag.PostLikes != null && ((Dictionary<int,int>)ViewBag.PostLikes).ContainsKey(post.Id) ? ((Dictionary<int,int>)ViewBag.PostLikes)[post.Id] : 0)
+                    </span>
+                </button>
+
+                <a asp-controller="Post" asp-action="Comments" asp-route-postId="@post.Id" class="action-btn">
+                    <span class="action-icon">💬</span>
+                    <span class="action-count">@(commentCounts.ContainsKey(post.Id) ? commentCounts[post.Id] : 0)</span>
+                </a>
+
+                <button class="action-btn" onclick="openShare(@post.Id)">
+                    <span class="action-icon">↪️</span>
+                </button>
+
+                <button class="action-btn" onclick="savePost(@post.Id)">
+                    <span class="action-icon">🔖</span>
+                </button>
+
+                <a asp-controller="Post" asp-action="Report" asp-route-postId="@post.Id" class="action-btn report-btn">
+                    <span class="action-icon">🚩</span>
+                </a>
+            </div>
+
+            <!-- COMENTARIO PREVIEW -->
+            @{
+                var db = Context.RequestServices.GetService<HabitTrackerApp.Data.HabitDbContext>();
+                var comments = db.PostComments
+                    .Where(c => c.PostId == post.Id)
+                    .OrderBy(c => c.Id)
+                    .Take(1)
+                    .ToList();
+            }
+
+            @foreach (var comment in comments)
+            {
+                <div class="comment-preview">
+                    <span class="comment-author">@(comment.Username ?? "Cuenta eliminada")</span>
+                    <span class="comment-text">@comment.Comment</span>
+                    <span class="comment-reply-link" onclick="toggleReplyBox(@comment.Id)">Responder</span>
+
+                    <form asp-controller="Post" asp-action="ReplyComment" method="post"
+                          id="replyBox-@comment.Id" class="reply-form">
+                        <input type="hidden" name="commentId" value="@comment.Id" />
+                        <input type="text" name="text" placeholder="Escribe una respuesta..." class="reply-input" />
+                        <button type="submit" class="reply-submit">Enviar</button>
+                    </form>
+
+                    @{
+                        var replies = db.CommentReplies.Where(r => r.CommentId == comment.Id).ToList();
+                    }
+                    @foreach (var reply in replies)
+                    {
+                        <div class="reply-item">
+                            <span class="comment-author">@(reply.Username ?? "Cuenta eliminada")</span>
+                            <span class="comment-text">@reply.Text</span>
+                            @if (reply.UserId == int.Parse(User.FindFirst("UserId").Value))
+                            {
+                                <a asp-controller="Post" asp-action="EditReply" asp-route-id="@reply.Id" class="reply-action">✏️</a>
+                                <a asp-controller="Post" asp-action="DeleteReply" asp-route-id="@reply.Id" class="reply-action" onclick="return confirm('¿Eliminar esta respuesta?')">🗑</a>
+                            }
                         </div>
                     }
-
-                </a>
-            }
-            else
-            {
-                <div class="post-avatar-placeholder">
-                    👤
                 </div>
             }
 
-            <div>
-
-                <div class="post-username">
-
-                    @post.DisplayUsername
-
-                    @if (post.UserId == 29)
-                    {
-                        <span class="owner-badge">👑 Propietario</span>
-                    }
-
-                </div>
-
-                <div class="post-time">
-                    @post.CreatedAt.ToString("dd MMM yyyy hh:mm tt")
-                </div>
-
-            </div>
-
-            @if (post.UserId == int.Parse(User.FindFirst("UserId").Value))
-            {
-                <a asp-controller="Post"
-                       asp-action="Delete"
-                       asp-route-id="@post.Id"
-                       class="delete-post"
-                       data-no-loader="true"
-                       onclick="return confirm('¿Eliminar esta publicación?')">
-                    🗑
-                </a>
-            }
-
-        </div>
-
-        <p class="post-description">@post.Description</p>
-
-        @if (!string.IsNullOrEmpty(post.ImagePath))
-        {
-            <div class="post-image-container">
-
-
-                <img src="@post.ImagePath"
-                class="post-image"
-                onerror="hidePostActions(this)" />
-
-
-                <div class="post-image-placeholder post-no-image" style="display:none;">
-                    📷 Imagen no disponible
-                </div>
-
-            </div>
-        }
-
-    
-
-    <div class="post-actions">
-
-        <div class="post-like-section">
-
-                <div class="post-like-section">
-
-                    <span class="like-btn"
-                          data-id="@post.Id"
-                          data-liked="@(myLikes.Contains(post.Id) ? "true" : "false")"
-                          onclick="toggleLike(@post.Id, this)"
-                          style="cursor:pointer;">
-
-                        @(myLikes.Contains(post.Id) ? "❤️" : "🤍")
-
-                    </span>
-
-                    <span id="post-like-count-@post.Id">
-                        @(ViewBag.PostLikes != null && ViewBag.PostLikes.ContainsKey(post.Id)
-                            ? ViewBag.PostLikes[post.Id]
-                            : 0)
-                    </span>
-
-                </div>
-
-  
+        </article>
+    }
 </div>
 
-        <a asp-controller="Post"
-           asp-action="Comments"
-           asp-route-postId="@post.Id"
-           class="comment-btn">
+<!-- SHARE MENU -->
+<div id="shareOverlay" class="share-overlay" onclick="closeShare()"></div>
+<div id="shareMenu" class="share-menu">
+    <div class="share-title">Compartir publicación</div>
+    <div class="share-option" onclick="shareWhatsApp()">📱 WhatsApp</div>
+    <div class="share-option" onclick="shareTelegram()">✈️ Telegram</div>
+    <div class="share-option" onclick="shareFacebook()">📘 Facebook</div>
+    <div class="share-option" onclick="copyLink()">📋 Copiar link</div>
+    <div class="share-option cancel" onclick="closeShare()">✕ Cancelar</div>
+</div>
 
-            💬
-            <span>
-                @(commentCounts.ContainsKey(post.Id) ? commentCounts[post.Id] : 0)
-            </span>
-
-        </a>
-
-                <span class="share-btn"
-                      onclick="openShare(@post.Id)">
-                    ↪
-                </span>
-
-                <a asp-controller="Post"
-                   asp-action="Report"
-                   asp-route-postId="@post.Id"
-                   class="report-btn">
-                    🚩 Reportar
-                </a>
-
-                <span class="save-btn"
-                      onclick="savePost(@post.Id)">
-                    🔖 Guardar
-                </span>
-
-            </div>
-        
-
-        <!-- RESPUESTAS A COMENTARIOS (hilos) -->
-        @{
-            var db = Context.RequestServices.GetService<HabitTrackerApp.Data.HabitDbContext>();
-
-            var comments = db.PostComments
-     .Where(c => c.PostId == post.Id)
-     .OrderBy(c => c.Id)
-     .Take(1)
-     .ToList();
-        }       @foreach (var comment in comments)
-        {
-            <div id="comment-@comment.Id" style="margin-top:10px;">
-                <b>@(comment.Username ?? "Cuenta eliminada")</b> @comment.Comment
-
-                <div style="margin-left:40px;margin-top:5px;">
-                    <span style="font-size:12px;color:#6c757d;cursor:pointer;"
-                          onclick="toggleReplyBox(@comment.Id)">
-                        Responder
-                    </span>
-
-                    <form asp-controller="Post" asp-action="ReplyComment"
-                          method="post"
-                          id="replyBox-@comment.Id"
-                          style="display:none;margin-top:5px;">
-
-                        <input type="hidden" name="commentId" value="@comment.Id" />
-                        <input type="text" name="text"
-                               placeholder="Escribe una respuesta..."
-                               style="width:200px;font-size:12px;margin-right:5px;" />
-
-                        <button type="submit"
-                                style="font-size:12px;padding:2px 8px;">
-                            Enviar
-                        </button>
-                    </form>
-                </div>
-
-                @{
-                    var replies = db.CommentReplies
-                        .Where(r => r.CommentId == comment.Id)
-                        .ToList();
-                }
-
-                @foreach (var reply in replies)
-                {
-                    <div style="margin-left:40px;font-size:14px;margin-top:5px;display:flex;justify-content:space-between;">
-                        <div>
-                            <b>@(reply.Username ?? "Cuenta eliminada")</b> @reply.Text
-                        </div>
-
-                        @if (reply.UserId == int.Parse(User.FindFirst("UserId").Value))
-                        {
-                            <div>
-                                <a asp-controller="Post"
-                                       asp-action="EditReply"
-                                       asp-route-id="@reply.Id"
-                                       class="text-primary"
-                                       title="Editar respuesta"
-                                       style="text-decoration:none;margin-right:5px;">
-                                    ✏️
-                                </a>
-
-                                <a asp-controller="Post"
-                                       asp-action="DeleteReply"
-                                       asp-route-id="@reply.Id"
-                                       class="text-danger"
-                                       onclick="return confirm('¿Eliminar esta respuesta?')">
-                                    🗑
-                                </a>
-                            </div>
-                        }
-                    </div>
-                }
-            </div>
-        }
-
-    </div>
-
-}
+<div id="copyAlert" class="copy-alert">↪ Link copiado</div>
 
 <style>
-
-    .delete-post {
-        font-size: 20px;
-        color: #dc3545;
-        text-decoration: none;
-        margin-left: 8px;
-        transition: 0.2s;
-        cursor: pointer;
-    }
-
-    .share-btn{
-    font-size:22px;
-    cursor:pointer;
-    transition:0.2s;
+/* ===== FEED ===== */
+.feed-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
 }
 
-    .save-btn {
-        cursor: pointer;
-    }
-
-.share-btn:hover{
-    transform:scale(1.2);
+.feed-title {
+    font-size: 22px;
+    font-weight: 700;
+    margin: 0;
 }
 
-        .delete-post:hover {
-            color: #a71d2a;
-            transform: scale(1.2);
-        }
-
-    .post-avatar-link {
-        text-decoration: none;
-    }
-
-    .username-link {
-        text-decoration: none;
-        color: #111;
-        font-weight: 600;
-    }
-
-        .username-link:hover {
-            text-decoration: underline;
-        }
-
-    /* CONTENIDO SENSIBLE */
-
-    .blurred-image {
-        filter: none;
-    }
-
-  .sensitive-container .post-image {
-    filter: blur(20px);
+.new-post-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #2563eb;
+    color: white;
+    padding: 10px 18px;
+    border-radius: 50px;
+    font-size: 14px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: 0.2s;
+    box-shadow: 0 4px 12px rgba(37,99,235,0.3);
 }
 
-    .sensitive-warning {
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%,-50%);
-        background: rgba(0,0,0,0.7);
-        color: white;
-        padding: 15px;
-        border-radius: 10px;
-        text-align: center;
-    }
+.new-post-btn:hover {
+    background: #1d4ed8;
+    transform: translateY(-1px);
+    color: white;
+}
 
-    /* TARJETA POST */
+.feed-container {
+    max-width: 620px;
+    margin: 0 auto;
+}
 
-    .post-card {
-        background: white;
-        border-radius: 16px;
-        padding: 16px;
-        margin-bottom: 22px;
-        box-shadow: 0 8px 25px rgba(0,0,0,0.08);
-        transition: 0.2s ease;
-    }
+/* ===== CARD ===== */
+.post-card {
+    background: white;
+    border-radius: 20px;
+    padding: 18px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    border: 1px solid rgba(0,0,0,0.05);
+    transition: box-shadow 0.2s;
+}
 
-        .post-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 12px 30px rgba(0,0,0,0.12);
-        }
+.post-card:hover {
+    box-shadow: 0 6px 24px rgba(0,0,0,0.1);
+}
 
-    /* HEADER */
+/* ===== HEADER ===== */
+.post-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+}
 
-    .post-header {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        margin-bottom: 8px;
-    }
+.post-header-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
 
-    .post-avatar {
-        width: 38px;
-        height: 38px;
-        border-radius: 50%;
-        object-fit: cover;
-    }
+.avatar-link { text-decoration: none; }
 
-    .post-avatar-placeholder {
-        width: 38px;
-        height: 38px;
-        border-radius: 50%;
-        background: #2563eb;
-        color: white;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-weight: bold;
-    }
+.post-avatar {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #e5e7eb;
+}
 
-    .owner-badge {
-        background: #facc15;
-        color: #111;
-        font-size: 11px;
-        padding: 3px 7px;
-        border-radius: 8px;
-        margin-left: 6px;
-        font-weight: 600;
-    }
+.post-avatar-placeholder {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #2563eb, #7c3aed);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 16px;
+}
 
-    /* 🔥 PUBLICACIONES EN MODO OSCURO */
-    body.bg-dark .post-card {
-        background-color: #1e1e1e !important;
-        color: #fff !important;
-        border: 1px solid #333 !important;
-        border-radius: 12px;
-    }
+.post-meta { display: flex; flex-direction: column; }
 
-        /* 🔥 TODO el contenido dentro */
-        body.bg-dark .post-card * {
-            color: #fff !important;
-        }
+.post-username {
+    font-weight: 700;
+    font-size: 15px;
+    color: #111827;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
 
-        /* 🔥 fecha (más suave) */
-        body.bg-dark .post-card small {
-            color: #aaa !important;
-        }
+.post-time {
+    font-size: 12px;
+    color: #9ca3af;
+    margin-top: 2px;
+}
 
-    /* USER */
+.owner-badge {
+    background: linear-gradient(135deg, #fbbf24, #f59e0b);
+    color: #111;
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-weight: 700;
+}
 
-    .post-username {
-        font-weight: 600;
-        font-size: 15px;
-    }
+.delete-btn {
+    font-size: 18px;
+    color: #ef4444;
+    text-decoration: none;
+    opacity: 0.7;
+    transition: 0.2s;
+    padding: 4px 8px;
+    border-radius: 8px;
+}
 
-    .post-time {
-        font-size: 12px;
-        color: #777;
-    }
+.delete-btn:hover {
+    opacity: 1;
+    background: #fef2f2;
+}
 
-    /* TEXTO */
+/* ===== CONTENIDO ===== */
+.post-description {
+    font-size: 15px;
+    color: #374151;
+    line-height: 1.6;
+    margin: 0 0 12px;
+}
 
-    .post-description {
-        margin-top: 8px;
-        font-size: 15px;
-    }
+.post-image-wrap {
+    border-radius: 14px;
+    overflow: hidden;
+    margin-bottom: 12px;
+}
 
-    /* IMAGEN */
+.post-image {
+    width: 100%;
+    max-height: 500px;
+    object-fit: cover;
+    display: block;
+}
 
-    .post-image-container {
-        position: relative;
-        overflow: hidden;
-    }
+/* ===== DIVIDER ===== */
+.post-divider {
+    height: 1px;
+    background: #f3f4f6;
+    margin: 10px 0;
+}
 
-    .copy-alert {
-        position: fixed;
-        bottom: 40px;
-        left: 50%;
-        transform: translateX(-50%);
-        background: #111;
-        color: white;
-        padding: 10px 20px;
-        border-radius: 20px;
-        font-size: 14px;
-        opacity: 0;
-        transition: 0.3s;
-        pointer-events: none;
-    }
+/* ===== ACCIONES ===== */
+.post-actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
 
-        .copy-alert.show {
-            opacity: 1;
-        }
+.action-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 7px 12px;
+    border-radius: 50px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    font-size: 14px;
+    color: #6b7280;
+    text-decoration: none;
+    transition: 0.15s;
+    font-weight: 500;
+}
 
-    .post-image {
-        width: 100%;
-        max-height: 600px;
-        object-fit: contain;
-        border-radius: 14px;
-        margin-top: 10px;
-        background: #f1f5f9;
-    }
+.action-btn:hover {
+    background: #f3f4f6;
+    color: #111;
+}
 
-    .post-image-placeholder {
-        width: 100%;
-        height: 250px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background: #f1f5f9;
-        border-radius: 12px;
-        color: #64748b;
-        font-weight: 600;
-    }
+.action-btn.liked .action-icon { transform: scale(1.15); }
 
-    /* ACCIONES */
+.action-icon { font-size: 18px; }
+.action-count { font-size: 13px; font-weight: 600; }
 
-    .post-actions {
-        display: flex;
-        align-items: center;
-        gap: 18px;
-        margin-top: 10px;
-    }
+.report-btn:hover { background: #fef2f2; color: #ef4444; }
 
-    .like-btn {
-        font-size: 24px;
-        cursor: pointer;
-        transition: 0.2s;
-        user-select: none;
-    }
+/* ===== COMENTARIOS ===== */
+.comment-preview {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid #f3f4f6;
+    font-size: 14px;
+    color: #374151;
+}
 
-        .like-btn:hover {
-            transform: scale(1.2);
-        }
+.comment-author {
+    font-weight: 700;
+    margin-right: 5px;
+    color: #111827;
+}
 
-    .comment-btn {
-        font-size: 22px;
-        text-decoration: none;
-        color: black;
-        transition: 0.2s;
-        cursor: pointer;
-    }
+.comment-text { color: #4b5563; }
 
-        .comment-btn:hover {
-            transform: scale(1.2);
-        }
+.comment-reply-link {
+    margin-left: 8px;
+    font-size: 12px;
+    color: #9ca3af;
+    cursor: pointer;
+    font-weight: 600;
+}
 
-        .comment-btn span {
-            font-size: 14px;
-            margin-left: 4px;
-            color: #555;
-        }
+.comment-reply-link:hover { color: #2563eb; }
 
-    /* CORAZONES */
+.reply-form {
+    display: none;
+    margin-top: 8px;
+    display: none;
+    gap: 6px;
+    align-items: center;
+}
 
-    .heart {
-        position: absolute;
-        color: red;
-        font-size: 20px;
-        animation: floatUp 1.5s ease forwards;
-    }
+.reply-input {
+    flex: 1;
+    padding: 7px 12px;
+    border-radius: 50px;
+    border: 1px solid #e5e7eb;
+    font-size: 13px;
+    outline: none;
+}
 
-    .big-heart {
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%,-50%) scale(0);
-        font-size: 90px;
-        color: white;
-        opacity: 0.9;
-        animation: bigHeartAnim 0.8s ease forwards;
-    }
+.reply-input:focus { border-color: #2563eb; }
 
-    @@keyframes floatUp {
-        0% {
-            transform: translateY(0) scale(1);
-            opacity: 1;
-        }
+.reply-submit {
+    padding: 7px 14px;
+    background: #2563eb;
+    color: white;
+    border: none;
+    border-radius: 50px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    width: auto;
+}
 
-        100% {
-            transform: translateY(-120px) scale(1.5);
-            opacity: 0;
-        }
-    }
+.reply-item {
+    margin-left: 20px;
+    margin-top: 6px;
+    font-size: 13px;
+    color: #6b7280;
+}
 
-    @@keyframes bigHeartAnim {
-        0% {
-            transform: translate(-50%,-50%) scale(0);
-            opacity: 0;
-        }
+.reply-action {
+    margin-left: 6px;
+    text-decoration: none;
+    font-size: 12px;
+}
 
-        50% {
-            transform: translate(-50%,-50%) scale(1.2);
-            opacity: 1;
-        }
+/* ===== SHARE MENU ===== */
+.share-overlay {
+    position: fixed; top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(0,0,0,0.4);
+    display: none; z-index: 9998;
+}
 
-        100% {
-            transform: translate(-50%,-50%) scale(1);
-            opacity: 0;
-        }
-    }
+.share-menu {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    background: white;
+    border-radius: 24px 24px 0 0;
+    padding: 20px;
+    display: none;
+    z-index: 9999;
+    box-shadow: 0 -10px 40px rgba(0,0,0,0.15);
+}
 
-    .share-menu {
-        position: fixed;
-        bottom: 120px;
-        left: 50%;
-        transform: translateX(-50%);
-        background: #ffffff !important;
-        border-radius: 12px;
-        box-shadow: 0 10px 25px rgba(0,0,0,0.25);
-        display: none;
-        padding: 8px;
-        z-index: 9999;
-        min-width: 200px;
-    }
+.share-title {
+    font-weight: 700;
+    font-size: 16px;
+    margin-bottom: 14px;
+    color: #111;
+    text-align: center;
+}
 
-        .share-menu div {
-            padding: 10px 16px;
-            cursor: pointer;
-            border-radius: 8px;
-            color: #111 !important;
-            background: #ffffff !important;
-            font-weight: 500;
-        }
+.share-option {
+    padding: 14px 16px;
+    border-radius: 12px;
+    cursor: pointer;
+    font-weight: 500;
+    color: #374151;
+    transition: 0.15s;
+}
 
-            .share-menu div:hover {
-                background: #eeeeee !important;
-                color: #111 !important;
-            }
+.share-option:hover { background: #f3f4f6; }
+.share-option.cancel { color: #ef4444; margin-top: 6px; }
 
-    .share-overlay {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0,0,0,0.4);
-        display: none;
-        z-index: 9998;
-    }
+/* ===== COPY ALERT ===== */
+.copy-alert {
+    position: fixed; bottom: 40px; left: 50%;
+    transform: translateX(-50%);
+    background: #111; color: white;
+    padding: 10px 22px; border-radius: 50px;
+    font-size: 14px; opacity: 0;
+    transition: 0.3s; pointer-events: none;
+    z-index: 99999;
+}
+
+.copy-alert.show { opacity: 1; }
+
+/* ===== DARK MODE ===== */
+body.bg-dark .post-card {
+    background: #1e1e2e !important;
+    border-color: #2d2d3d !important;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.3) !important;
+}
+
+body.bg-dark .post-username,
+body.bg-dark .feed-title { color: #f1f5f9 !important; }
+
+body.bg-dark .post-description { color: #cbd5e1 !important; }
+body.bg-dark .post-time { color: #64748b !important; }
+body.bg-dark .post-divider { background: #2d2d3d !important; }
+body.bg-dark .action-btn { color: #94a3b8 !important; }
+body.bg-dark .action-btn:hover { background: #2d2d3d !important; color: #f1f5f9 !important; }
+body.bg-dark .comment-preview { border-color: #2d2d3d !important; }
+body.bg-dark .comment-author { color: #f1f5f9 !important; }
+body.bg-dark .comment-text { color: #94a3b8 !important; }
+body.bg-dark .reply-input { background: #2d2d3d; border-color: #3d3d4d; color: white; }
+body.bg-dark .share-menu { background: #1e1e2e; }
+body.bg-dark .share-title { color: #f1f5f9; }
+body.bg-dark .share-option { color: #cbd5e1; }
+body.bg-dark .share-option:hover { background: #2d2d3d; }
 </style>
 
-
 <script>
-
-    function revealSensitive(btn){
-        const container = btn.closest(".sensitive-container");
-        const img = container.querySelector("img");
-        img.style.filter = "none";
-
-        const warning = container.querySelector(".sensitive-warning");
-        warning.style.display = "none";
-    }
-
-
-    // 🔥 LIKE CORREGIDO (POST)
-    function toggleLike(postId, element){
-
-        fetch('/Post/ToggleLike?postId=' + postId, {
-            method: 'POST'
-        })
+function toggleLike(postId, element) {
+    fetch('/Post/ToggleLike?postId=' + postId, { method: 'POST' })
         .then(res => res.json())
         .then(data => {
-
-            // ❤️ actualizar icono
-            if (data.liked) {
-                element.innerHTML = "❤️";
-                element.setAttribute("data-liked","true");
-            } else {
-                element.innerHTML = "🤍";
-                element.setAttribute("data-liked","false");
-            }
-
-            // 🔥 actualizar contador
-            const countEl = document.getElementById("post-like-count-" + postId);
-            if(countEl){
-                countEl.innerText = data.count;
-            }
-
-        })
-        .catch(err => {
-            console.error("Error en like:", err);
+            const icon = element.querySelector('.action-icon');
+            const count = document.getElementById('post-like-count-' + postId);
+            icon.textContent = data.liked ? '❤️' : '🤍';
+            if (count) count.textContent = data.count;
+            element.classList.toggle('liked', data.liked);
         });
-    }
-
-
-    // 🔖 GUARDAR POST
-    function savePost(postId){
-        fetch("/Post/SavePost",{
-            method:"POST",
-            headers:{
-                "Content-Type":"application/json"
-            },
-            body: JSON.stringify(postId)
-        })
-        .then(()=>{
-            alert("Publicación guardada 🔖");
-        });
-    }
-
-
-    // 💥 DOBLE TAP CORAZÓN GRANDE (TAMBIÉN ARREGLADO)
-    function bigHeart(postId, element){
-
-        const heart = document.createElement("div");
-        heart.innerHTML = "❤️";
-        heart.classList.add("big-heart");
-
-        element.appendChild(heart);
-
-        setTimeout(()=>{
-            heart.remove();
-        },800);
-
-        // 🔥 también usa backend real
-        fetch('/Post/ToggleLike?postId=' + postId, {
-            method: 'POST'
-        })
-        .then(res => res.json())
-        .then(data => {
-
-            const likeBtn = element.closest(".post-card").querySelector(".like-btn");
-
-            if (likeBtn) {
-                likeBtn.innerHTML = data.liked ? "❤️" : "🤍";
-            }
-
-            const countEl = document.getElementById("post-like-count-" + postId);
-            if(countEl){
-                countEl.innerText = data.count;
-            }
-
-        });
-    }
-
-
-    // 🔒 OCULTAR CONTENIDO
-      function hidePostActions(img){
-        img.style.display = "none";
-        const placeholder = img.nextElementSibling;
-        placeholder.style.display = "none";
-    }
-
-</script>
-
-<script>
-
-    function toggleReplyBox(id)
-    {
-        const box = document.getElementById("replyBox-" + id);
-
-        if(box.style.display === "none")
-        {
-            box.style.display = "block";
-        }
-        else
-        {
-            box.style.display = "none";
-        }
-    }
-
-          function sharePost(postId){
-
-        const url = window.location.origin + "/Post/Comments?postId=" + postId;
-
-        navigator.clipboard.writeText(url);
-
-        const alertBox = document.getElementById("copyAlert");
-
-        alertBox.classList.add("show");
-
-        setTimeout(()=>{
-            alertBox.classList.remove("show");
-        },2000);
-
-    }
-
-
-</script>
-
-<div id="copyAlert" class="copy-alert">
-    ↪ Link copiado
-</div>
-
-<div id="shareOverlay" class="share-overlay" onclick="closeShare()"></div>
-
-<div id="shareMenu" class="share-menu">
-
-    <div onclick="shareWhatsApp()">📱 WhatsApp</div>
-
-    <div onclick="shareTelegram()">✈️ Telegram</div>
-
-    <div onclick="shareFacebook()">📘 Facebook</div>
-
-    <div onclick="copyLink()">📋 Copiar link</div>
-
-    <div onclick="closeShare()">❌ Cancelar</div>
-
-</div>
-
-
-
-<script>
-
-    let currentPost = null;
-
-    function openShare(postId){
-
-        currentPost = postId;
-
-        document.getElementById("shareMenu").style.display = "block";
-        document.getElementById("shareOverlay").style.display = "block";
-
-    }
-    
-
-
-
-    function shareWhatsApp(){
-
-        const url = window.location.origin + "/Post/Comments?postId=" + currentPost;
-
-        window.open("https://wa.me/?text=" + encodeURIComponent(url));
-
-    }
-
-    function shareTelegram(){
-
-        const url = window.location.origin + "/Post/Comments?postId=" + currentPost;
-
-        window.open("https://t.me/share/url?url=" + encodeURIComponent(url));
-
-    }
-
-        function closeShare(){
-
-        document.getElementById("shareMenu").style.display = "none";
-        document.getElementById("shareOverlay").style.display = "none";
-
-    }
-
-    function shareFacebook(){
-
-        const url = window.location.origin + "/Post/Comments?postId=" + currentPost;
-
-        window.open("https://www.facebook.com/sharer/sharer.php?u=" + encodeURIComponent(url));
-
-    }
-
-       function copyLink(){
-
-        const url = window.location.origin + "/Post/Comments?postId=" + currentPost;
-
-        navigator.clipboard.writeText(url);
-
-        document.getElementById("shareMenu").style.display = "none";
-        document.getElementById("shareOverlay").style.display = "none";
-
-        const alertBox = document.getElementById("copyAlert");
-
-        alertBox.classList.add("show");
-
-        setTimeout(()=>{
-            alertBox.classList.remove("show");
-        },2000);
-
-    }
-
+}
+
+function savePost(postId) {
+    fetch('/Post/SavePost', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(postId)
+    }).then(() => {
+        const alert = document.getElementById('copyAlert');
+        alert.textContent = '🔖 Publicación guardada';
+        alert.classList.add('show');
+        setTimeout(() => alert.classList.remove('show'), 2000);
+    });
+}
+
+function toggleReplyBox(id) {
+    const box = document.getElementById('replyBox-' + id);
+    box.style.display = box.style.display === 'flex' ? 'none' : 'flex';
+}
+
+let currentPost = null;
+function openShare(postId) {
+    currentPost = postId;
+    document.getElementById('shareMenu').style.display = 'block';
+    document.getElementById('shareOverlay').style.display = 'block';
+}
+
+function closeShare() {
+    document.getElementById('shareMenu').style.display = 'none';
+    document.getElementById('shareOverlay').style.display = 'none';
+}
+
+function shareWhatsApp() {
+    window.open('https://wa.me/?text=' + encodeURIComponent(window.location.origin + '/Post/Comments?postId=' + currentPost));
+}
+
+function shareTelegram() {
+    window.open('https://t.me/share/url?url=' + encodeURIComponent(window.location.origin + '/Post/Comments?postId=' + currentPost));
+}
+
+function shareFacebook() {
+    window.open('https://www.facebook.com/sharer/sharer.php?u=' + encodeURIComponent(window.location.origin + '/Post/Comments?postId=' + currentPost));
+}
+
+function copyLink() {
+    navigator.clipboard.writeText(window.location.origin + '/Post/Comments?postId=' + currentPost);
+    closeShare();
+    const alert = document.getElementById('copyAlert');
+    alert.textContent = '↪ Link copiado';
+    alert.classList.add('show');
+    setTimeout(() => alert.classList.remove('show'), 2000);
+}
 </script>
