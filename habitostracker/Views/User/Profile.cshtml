@@ -136,18 +136,14 @@
 {
     <img src="@post.ImagePath" class="post-tile-img" onerror="this.style.display='none'" />
 }
-@if (string.IsNullOrEmpty(post.ImagePath) || string.IsNullOrEmpty(post.Description))
+@if (!string.IsNullOrEmpty(post.ImagePath))
 {
-    <div class="post-tile-text">
-        <span>📝</span>
-        <p>@(post.Description?.Length > 60 ? post.Description.Substring(0, 60) + "..." : post.Description ?? "Sin descripción")</p>
-        <small>@post.CreatedAt.ToString("dd MMM yyyy")</small>
-    </div>
+    <img src="@post.ImagePath" class="post-tile-img" onerror="this.style.display='none'" />
 }
-else
-{
-    <div class="post-tile-date">@post.CreatedAt.ToString("dd MMM · hh:mm tt")</div>
-}
+<div class="post-tile-info">
+    <p class="post-tile-desc">@(post.Description?.Length > 50 ? post.Description.Substring(0, 50) + "..." : post.Description ?? "")</p>
+    <small class="post-tile-date2">@post.CreatedAt.ToString("dd MMM yyyy · hh:mm tt")</small>
+</div>
                         <div class="post-tile-overlay">
                             <span>💬 Ver post</span>
                         </div>
@@ -329,6 +325,36 @@ else
     font-weight: 500;
 }
 
+.post-tile-info {
+    padding: 8px 10px;
+    background: white;
+}
+
+.post-tile-desc {
+    font-size: 12px;
+    color: #374151;
+    margin: 0 0 2px;
+    line-height: 1.4;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+}
+
+.post-tile-date2 {
+    font-size: 10px;
+    color: #9ca3af;
+}
+
+.post-tile {
+    aspect-ratio: unset;
+}
+
+body.bg-dark .post-tile-info { background: #2d2d3d !important; }
+body.bg-dark .post-tile-desc { color: #cbd5e1 !important; }
+
+
+
 .stat-item:hover .stat-num { color: #2563eb; }
 .stat-num { font-size: 20px; font-weight: 800; color: #111827; }
 .stat-label { font-size: 11px; color: #9ca3af; font-weight: 600; text-transform: uppercase; }
@@ -364,7 +390,7 @@ else
 .posts-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 4px;
+    gap: 12px;
 }
 
 @@media (max-width: 600px) {
