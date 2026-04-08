@@ -385,18 +385,28 @@
                         <a asp-controller="Admin" asp-action="UnbanUser" asp-route-id="@user.Id"
                            class="action-btn success" onclick="return confirm('¿Desbanear?')">🔓 Desbanear</a>
                     }
-                    else
-                    {
-                        <button class="action-btn danger" onclick="confirmDelete(@user.Id)">🔒 Desactivar</button>
-                        <a asp-controller="Admin" asp-action="BanUser" asp-route-id="@user.Id"
-                           class="action-btn warning" onclick="return confirm('¿Banear?')">🚫 Banear</a>
-                        @if (User.IsInRole("SuperAdmin"))
-                        {
-                            <a asp-controller="Admin" asp-action="DeleteUserPermanently" asp-route-id="@user.Id"
-                               class="action-btn delete" onclick="return confirm('¿Eliminar?')">💀</a>
-                        }
-                    }
-                    @if (User.IsInRole("SuperAdmin") && user.Id != myId)
+                   else
+{
+    <button class="action-btn danger" onclick="confirmDelete(@user.Id)">🔒 Desactivar</button>
+    <a asp-controller="Admin" asp-action="BanUser" asp-route-id="@user.Id"
+       class="action-btn warning" onclick="return confirm('¿Banear?')">🚫 Banear</a>
+    @if (User.IsInRole("SuperAdmin"))
+    {
+        <a asp-controller="Admin" asp-action="DeleteUserPermanently" asp-route-id="@user.Id"
+           class="action-btn delete" onclick="return confirm('¿Eliminar?')">💀</a>
+        @if (user.Role == "Admin")
+        {
+            <a href="#" class="action-btn secondary"
+               onclick="event.preventDefault(); confirmRemoveAdmin(@user.Id)">Quitar Admin</a>
+        }
+        else
+        {
+            <a asp-controller="Admin" asp-action="MakeAdmin" asp-route-id="@user.Id"
+               class="action-btn primary" onclick="return confirm('¿Hacer Admin?')">Hacer Admin</a>
+        }
+    }
+}
+@if (User.IsInRole("SuperAdmin") && user.Id != myId)
                     {
                         <form asp-controller="Admin" asp-action="ResetPassword" method="post" style="display:inline">
                             <input type="hidden" name="userId" value="@user.Id" />

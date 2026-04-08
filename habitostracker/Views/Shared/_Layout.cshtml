@@ -1563,7 +1563,10 @@ function disableDarkMode() {
 }
 
 window.addEventListener("pageshow", function(event) {
-    if (event.persisted) { window.location.reload(); }
+    if (event.persisted) {
+        const loader = document.getElementById("globalLoader");
+        if (loader) loader.style.display = "none";
+    }
 });
 </script>
        
