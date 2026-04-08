@@ -1,19 +1,210 @@
 ﻿@{
-    ViewData["Title"] = "Completar perfil";
+    ViewData["Title"] = "Completa tu perfil";
+    Layout = "_LayoutLogin";
 }
 
-<h3 class="mb-4">Completa tu perfil 🔥</h3>
+<div class="complete-wrapper">
 
-<form method="post">
-    <div class="mb-3">
-        <label>Nombre de usuario</label>
-        <input name="username" class="form-control" required />
+    <div class="complete-card">
+
+        <div class="complete-header">
+            <div class="complete-logo">🚀</div>
+            <h2 class="complete-title">¡Bienvenido a HabitTracker!</h2>
+            <p class="complete-subtitle">Cuéntanos un poco sobre ti para personalizar tu experiencia</p>
+        </div>
+
+        <form asp-action="CompleteProfile" method="post">
+            @Html.AntiForgeryToken()
+
+            <!-- GÉNERO -->
+            <div class="field-group">
+                <label class="field-label">¿Cuál es tu género? <span class="required">*</span></label>
+                <div class="gender-options">
+                    <label class="gender-card" id="male-card">
+                        <input type="radio" name="gender" value="Masculino" required />
+                        <span class="gender-icon">👨</span>
+                        <span class="gender-text">Masculino</span>
+                    </label>
+                    <label class="gender-card" id="female-card">
+                        <input type="radio" name="gender" value="Femenino" required />
+                        <span class="gender-icon">👩</span>
+                        <span class="gender-text">Femenino</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- BIO -->
+            <div class="field-group">
+                <label class="field-label">Cuéntanos sobre ti <span class="required">*</span></label>
+                <textarea name="bio" class="bio-input" placeholder="Escribe algo sobre ti... ¿qué hábitos quieres construir? ¿qué te motiva?" required minlength="10" maxlength="300"></textarea>
+                <div class="char-count"><span id="charCount">0</span>/300</div>
+            </div>
+
+            <button type="submit" class="complete-btn">Continuar →</button>
+
+        </form>
+
     </div>
 
-    <div class="mb-3">
-        <label>Contraseña</label>
-        <input type="password" name="password" class="form-control" required />
-    </div>
+</div>
 
-    <button class="btn btn-primary">Guardar</button>
-</form>
+<style>
+.complete-wrapper {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    background: radial-gradient(circle at 20% 20%, #1e293b, #020617);
+}
+
+.complete-card {
+    background: rgba(255,255,255,0.06);
+    backdrop-filter: blur(25px);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 24px;
+    padding: 40px;
+    width: 100%;
+    max-width: 480px;
+    box-shadow: 0 30px 80px rgba(0,0,0,0.5);
+}
+
+.complete-header { text-align: center; margin-bottom: 32px; }
+
+.complete-logo {
+    font-size: 48px;
+    margin-bottom: 12px;
+    animation: bounce 1s ease;
+}
+
+@@keyframes bounce {
+    0% { transform: translateY(-20px); opacity: 0; }
+    60% { transform: translateY(6px); }
+    100% { transform: translateY(0); opacity: 1; }
+}
+
+.complete-title {
+    font-size: 22px;
+    font-weight: 800;
+    color: white;
+    margin: 0 0 8px;
+}
+
+.complete-subtitle {
+    font-size: 14px;
+    color: rgba(255,255,255,0.6);
+    margin: 0;
+    line-height: 1.5;
+}
+
+.field-group { margin-bottom: 24px; }
+
+.field-label {
+    display: block;
+    font-size: 14px;
+    font-weight: 600;
+    color: rgba(255,255,255,0.85);
+    margin-bottom: 12px;
+}
+
+.required { color: #f87171; }
+
+.gender-options {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+.gender-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 20px;
+    border-radius: 16px;
+    border: 2px solid rgba(255,255,255,0.1);
+    background: rgba(255,255,255,0.05);
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.gender-card input[type="radio"] { display: none; }
+
+.gender-card:hover {
+    border-color: rgba(99,102,241,0.5);
+    background: rgba(99,102,241,0.1);
+}
+
+.gender-card.selected {
+    border-color: #6366f1;
+    background: rgba(99,102,241,0.2);
+    box-shadow: 0 0 20px rgba(99,102,241,0.3);
+}
+
+.gender-icon { font-size: 32px; }
+.gender-text { font-size: 14px; font-weight: 600; color: white; }
+
+.bio-input {
+    width: 100%;
+    padding: 14px 16px;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 14px;
+    color: white;
+    font-size: 14px;
+    resize: vertical;
+    min-height: 100px;
+    outline: none;
+    transition: 0.2s;
+    box-sizing: border-box;
+    line-height: 1.5;
+}
+
+.bio-input::placeholder { color: rgba(255,255,255,0.35); }
+.bio-input:focus { border-color: #6366f1; background: rgba(255,255,255,0.12); }
+
+.char-count {
+    text-align: right;
+    font-size: 12px;
+    color: rgba(255,255,255,0.4);
+    margin-top: 6px;
+}
+
+.complete-btn {
+    width: 100%;
+    padding: 15px;
+    background: linear-gradient(135deg, #6366f1, #2563eb);
+    color: white;
+    border: none;
+    border-radius: 14px;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: 0.2s;
+    box-shadow: 0 4px 20px rgba(99,102,241,0.4);
+}
+
+.complete-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(99,102,241,0.5);
+}
+</style>
+
+<script>
+// Selección visual de género
+document.querySelectorAll('.gender-card').forEach(card => {
+    card.addEventListener('click', function() {
+        document.querySelectorAll('.gender-card').forEach(c => c.classList.remove('selected'));
+        this.classList.add('selected');
+        this.querySelector('input[type="radio"]').checked = true;
+    });
+});
+
+// Contador de caracteres
+const bioInput = document.querySelector('.bio-input');
+const charCount = document.getElementById('charCount');
+bioInput.addEventListener('input', function() {
+    charCount.textContent = this.value.length;
+});
+</script>

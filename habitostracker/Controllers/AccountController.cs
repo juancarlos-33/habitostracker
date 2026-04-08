@@ -675,6 +675,7 @@ namespace HabitTrackerApp.Controllers
         {
             var subject = "🎉 Bienvenido a HabitTracker";
 
+            var saludo = user.Gender?.ToLower() == "femenino" ? "Bienvenida" : "Bienvenido";
             var message = $@"
 <!DOCTYPE html>
 <html>
@@ -695,7 +696,7 @@ namespace HabitTrackerApp.Controllers
           <!-- BODY -->
           <tr>
             <td style='padding:35px;'>
-              <h2 style='color:#111827;margin-top:0;'>¡Bienvenido, {user.Username}! 🎉</h2>
+              <h2 style='color:#111827;margin-top:0;'>¡{saludo}, {user.Username}! 🎉</h2>
               <p style='color:#4b5563;font-size:15px;line-height:1.6;'>Tu cuenta ha sido creada correctamente. Ahora puedes empezar a construir hábitos increíbles y conectar con otras personas.</p>
 
               <table width='100%' cellpadding='0' cellspacing='0' style='margin:20px 0;'>
@@ -1254,7 +1255,7 @@ namespace HabitTrackerApp.Controllers
                 _context.Users.Add(user);
                 _context.SaveChanges();
 
-                _ = SendWelcomeEmail(user);
+                
             }
 
             // 🟢 ACTUALIZAR ÚLTIMA VEZ ONLINE
@@ -1495,7 +1496,7 @@ namespace HabitTrackerApp.Controllers
 
                 _context.Users.Add(user);
                 _context.SaveChanges();
-                _ = SendWelcomeEmail(user);
+                
             }
 
             // 🔥 Obtener foto de Google si no tiene ProfileImage
@@ -1601,7 +1602,29 @@ namespace HabitTrackerApp.Controllers
             return View();
         }
 
-       
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CompleteProfile(string gender, string bio)
+        {
+            var userIdClaim = User.FindFirst("UserId");
+            if (userIdClaim == null) return RedirectToAction("Login");
+
+            var userId = int.Parse(userIdClaim.Value);
+            var user = _context.Users.FirstOrDefault(u => u.Id == userId);
+            if (user == null) return RedirectToAction("Login");
+
+            user.Gender = gender;
+            user.Bio = bio;
+            _context.SaveChanges();
+
+            _ = SendWelcomeEmail(user);
+
+            await RefreshUserSession(user);
+
+            return RedirectToAction("Index", "Habit");
+        }
+
+
         private string GetOS(string userAgent)
         {
             if (userAgent.Contains("Android")) return "Android";
