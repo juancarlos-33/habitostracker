@@ -23,10 +23,8 @@
         <div class="cover-gradient"></div>
     </div>
 
-    <div class="profile-main">
-
-        <!-- AVATAR -->
-        <div class="profile-avatar-wrap">
+ <div class="profile-main">
+    <div class="profile-avatar-wrap" style="margin-top:-60px;">
             @if (!string.IsNullOrEmpty(Model.ProfileImage))
             {
                 <img src="@Model.ProfileImage" class="profile-avatar" />
@@ -99,13 +97,13 @@
 
             <!-- STATS -->
             <div class="profile-stats">
-                <div class="stat-item" onclick="if(@ViewBag.FollowersCount > 0) openModal('followers')">
-                    <span class="stat-num">@ViewBag.FollowersCount</span>
+                <div class="stat-item" onclick="if(@ViewBag.Followers > 0) openModal('followers')">
+                  <span class="stat-num">@ViewBag.Followers</span>
                     <span class="stat-label">Seguidores</span>
                 </div>
                 <div class="stat-divider"></div>
-                <div class="stat-item" onclick="if(@ViewBag.FollowingCount > 0) openModal('following')">
-                    <span class="stat-num">@ViewBag.FollowingCount</span>
+                <div class="stat-item"onclick="if(@ViewBag.Following > 0) openModal('following')" >
+              <span class="stat-num">@ViewBag.Following</span>
                     <span class="stat-label">Siguiendo</span>
                 </div>
                 <div class="stat-divider"></div>
@@ -136,7 +134,7 @@
                     <a href="/Post/Comments?postId=@post.Id" class="post-tile">
                         @if (!string.IsNullOrEmpty(post.ImagePath))
                         {
-                            <img src="@post.ImagePath" class="post-tile-img" onerror="this.parentElement.classList.add('no-img')" />
+                           <img src="@post.ImagePath" class="post-tile-img" onerror="this.parentElement.style.display='none'" />
                         }
                         else
                         {
