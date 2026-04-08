@@ -458,10 +458,8 @@ function toggleCommentLike(el) {
     fetch('/Post/ToggleCommentLike?commentId=' + commentId, { method: 'POST' })
         .then(res => res.json())
         .then(data => {
-            document.getElementById("like-count-" + commentId).innerText = data.count;
-            el.querySelector("span") ? null : null;
-            const spans = el.querySelectorAll("span");
-            el.childNodes[0].textContent = data.liked ? "❤️" : "🤍";
+            const iconNode = el.firstChild;
+            iconNode.textContent = data.liked ? "❤️" : "🤍";
             document.getElementById("like-count-" + commentId).innerText = data.count;
             el.style.transform = "scale(1.2)";
             setTimeout(() => el.style.transform = "scale(1)", 150);
@@ -472,7 +470,7 @@ async function toggleReplyLike(el) {
     const id = el.getAttribute("data-id");
     const res = await fetch(`/Post/ToggleReplyLike?id=${id}`, { method: "POST" });
     const data = await res.json();
-    el.childNodes[0].textContent = data.liked ? "❤️" : "🤍";
+    el.firstChild.textContent = data.liked ? "❤️" : "🤍";
     document.getElementById("reply-like-count-" + id).innerText = data.count;
     el.style.transform = "scale(1.3)";
     setTimeout(() => el.style.transform = "scale(1)", 150);
