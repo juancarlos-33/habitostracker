@@ -52,7 +52,14 @@
                     }
 
                     <div class="comment-meta">
-                        <span class="comment-username">@c.Username</span>
+                       @if (c.UserId == 29)
+{
+    <a href="/User" class="comment-username" style="text-decoration:none;">@c.Username</a>
+}
+else
+{
+    <a href="/User/Profile/@c.UserId" class="comment-username" style="text-decoration:none;">@c.Username</a>
+}
                         <span class="comment-time">@c.CreatedAt.ToString("dd MMM yyyy · HH:mm")</span>
                     </div>
                 </div>
@@ -78,8 +85,8 @@
                 </div>
 
                 <!-- FORM RESPONDER -->
-                <div id="replyBox-@c.Id" class="reply-form" style="display:none;">
-                    <form asp-controller="Post" asp-action="ReplyComment" method="post">
+            <div id="replyBox-@c.Id" class="reply-form" style="display:none;">
+    <form asp-controller="Post" asp-action="ReplyComment" method="post" data-no-loader="true">
                         <input type="hidden" name="commentId" value="@c.Id" />
                         <input type="text" name="text" placeholder="Escribe tu respuesta..." class="reply-input" />
                         <button type="submit" class="reply-submit">Enviar</button>
@@ -103,7 +110,14 @@
 
                         <div class="reply-content">
                             <div class="reply-header">
-                                <span class="reply-username">@parent.Username</span>
+                                @if (parent.UserId == 29)
+{
+    <a href="/User" class="reply-username" style="text-decoration:none;">@parent.Username</a>
+}
+else
+{
+    <a href="/User/Profile/@parent.UserId" class="reply-username" style="text-decoration:none;">@parent.Username</a>
+}
                                 <span class="reply-time">@parent.CreatedAt.ToString("dd MMM · HH:mm")</span>
                             </div>
                             <p class="reply-text">@parent.Text</p>
@@ -118,8 +132,8 @@
                                 <button class="action-reply" onclick="toggleReplyToReply(@parent.Id)">↩️ Responder</button>
                             </div>
 
-                            <div id="replyToReplyBox-@parent.Id" class="reply-form" style="display:none;">
-                                <form asp-controller="Post" asp-action="ReplyComment" method="post">
+                          <div id="replyBox-@c.Id" class="reply-form" style="display:none;">
+    <form asp-controller="Post" asp-action="ReplyComment" method="post" data-no-loader="true">
                                     <input type="hidden" name="commentId" value="@c.Id" />
                                     <input type="hidden" name="parentReplyId" value="@parent.Id" />
                                     <input type="text" name="text" placeholder="Responder..." class="reply-input" />
