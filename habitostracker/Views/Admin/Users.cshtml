@@ -57,28 +57,28 @@
     </div>
 
     <!-- KPIs -->
-    <div class="kpi-grid">
-        <div class="kpi-card">
-            <div class="kpi-icon">👥</div>
-            <div class="kpi-value">@Model.Count</div>
-            <div class="kpi-label">Usuarios</div>
-        </div>
-        <div class="kpi-card">
-            <div class="kpi-icon">🚫</div>
-            <div class="kpi-value danger">@Model.Count(u => u.IsBanned)</div>
-            <div class="kpi-label">Baneados</div>
-        </div>
-        <div class="kpi-card">
-            <div class="kpi-icon">⚠️</div>
-            <div class="kpi-value warning">@Model.Count(u => !u.IsActive)</div>
-            <div class="kpi-label">Desactivados</div>
-        </div>
-        <div class="kpi-card">
-            <div class="kpi-icon">✅</div>
-            <div class="kpi-value success" id="activeUsers">@activeNow</div>
-            <div class="kpi-label">Activos ahora</div>
-        </div>
+   <div class="kpi-grid">
+    <div class="kpi-card">
+        <div class="kpi-icon">👥</div>
+        <div class="kpi-value">@Model.Count</div>
+        <div class="kpi-label">Usuarios</div>
     </div>
+    <div class="kpi-card kpi-clickable" onclick="filterByStatus('banned')">
+        <div class="kpi-icon">🚫</div>
+        <div class="kpi-value danger">@Model.Count(u => u.IsBanned)</div>
+        <div class="kpi-label">Baneados</div>
+    </div>
+    <div class="kpi-card kpi-clickable" onclick="filterByStatus('inactive')">
+        <div class="kpi-icon">⚠️</div>
+        <div class="kpi-value warning">@Model.Count(u => !u.IsActive)</div>
+        <div class="kpi-label">Desactivados</div>
+    </div>
+    <div class="kpi-card kpi-clickable" onclick="filterByStatus('active')">
+        <div class="kpi-icon">✅</div>
+        <div class="kpi-value success" id="activeUsers">@activeNow</div>
+        <div class="kpi-label">Activos ahora</div>
+    </div>
+</div>
 
     <!-- ACCIONES RÁPIDAS -->
     <div class="quick-actions">
@@ -139,17 +139,28 @@
 
                         <tr class="user-row" data-username="@user.Username.ToLower()">
                             <td>
-                                <div class="user-cell">
-                                    @if (!string.IsNullOrEmpty(user.ProfileImage))
-                                    {
-                                        <img src="@user.ProfileImage" class="user-thumb" />
-                                    }
-                                    else
-                                    {
-                                        <div class="user-thumb-letter">@user.Username.Substring(0, 1).ToUpper()</div>
-                                    }
-                                    <div>
-                                        <div class="user-name-cell">@user.Username</div>
+                               <div class="user-cell">
+    @if (user.Role == "SuperAdmin")
+    {
+        @if (!string.IsNullOrEmpty(user.ProfileImage))
+        { <img src="@user.ProfileImage" class="user-thumb" /> }
+        else
+        { <div class="user-thumb-letter">@user.Username.Substring(0, 1).ToUpper()</div> }
+    }
+    else
+    {
+        <a href="/User/Profile/@user.Id" style="text-decoration:none;">
+            @if (!string.IsNullOrEmpty(user.ProfileImage))
+            { <img src="@user.ProfileImage" class="user-thumb" /> }
+            else
+            { <div class="user-thumb-letter">@user.Username.Substring(0, 1).ToUpper()</div> }
+        </a>
+    }
+    <div>
+        @if (user.Role == "SuperAdmin")
+        { <div class="user-name-cell">@user.Username</div> }
+        else
+        { <a href="/User/Profile/@user.Id" class="user-name-cell" style="text-decoration:none;color:inherit;">@user.Username</a> }
                                         @if (user.Role == "SuperAdmin")
                                         { <span class="role-tag owner">👑 SuperAdmin</span> }
                                         else if (user.Role == "Admin")
@@ -280,93 +291,103 @@
         </div>
 
         <!-- MOBILE CARDS -->
-        <div class="mobile-cards">
-            @foreach (var user in Model)
-            {
-                var blockedIps = ViewBag.BlockedIps as List<string> ?? new List<string>();
-                bool isBlockedIp = user.LastIp != null && blockedIps.Contains(user.LastIp);
+       <div class="mobile-cards">
+    @foreach (var user in Model)
+    {
+        var blockedIps = ViewBag.BlockedIps as List<string> ?? new List<string>();
+        bool isBlockedIp = user.LastIp != null && blockedIps.Contains(user.LastIp);
 
-                <div class="mobile-card user-row" data-username="@user.Username.ToLower()">
-                    <div class="mobile-card-top">
-                        <div class="user-cell">
-                            @if (!string.IsNullOrEmpty(user.ProfileImage))
-                            {
-                                <img src="@user.ProfileImage" class="user-thumb" />
-                            }
-                            else
-                            {
-                                <div class="user-thumb-letter">@user.Username.Substring(0, 1).ToUpper()</div>
-                            }
-                            <div>
-                                <div class="user-name-cell">@user.Username</div>
-                                @if (user.Role == "SuperAdmin")
-                                { <span class="role-tag owner">👑 SuperAdmin</span> }
-                                else if (user.Role == "Admin")
-                                { <span class="role-tag admin">Admin</span> }
-                            </div>
-                        </div>
-                        <div id="status-mob-@user.Id">
-                            @if (user.IsBanned)
-                            { <span class="status-tag banned">Baneado</span> }
-                            else if (!user.IsActive)
-                            { <span class="status-tag inactive">Desactivado</span> }
-                            else if (user.LastOnline != null && (DateTime.Now - user.LastOnline.Value).TotalSeconds < 60)
-                            { <span class="status-tag active">Activo</span> }
-                            else
-                            { <span class="status-tag offline">Inactivo</span> }
-                        </div>
-                    </div>
-
-                    @if (user.Role != "SuperAdmin")
+        <div class="mobile-card user-row" data-username="@user.Username.ToLower()">
+            <div class="mobile-card-top">
+                <div class="user-cell">
+                    @if (user.Role == "SuperAdmin")
                     {
-                        <div class="mobile-info">
-                            <span>📧 @user.Email</span>
-                            <span>🌐 @(user.LastIp ?? "—")</span>
-                            <span>💻 @(user.Device ?? "—") · @(user.Browser ?? "—")</span>
-                        </div>
-                    }
-
-                    <div class="actions-cell">
-                        @if (user.Role == "SuperAdmin")
-                        { <span class="role-tag owner">Propietario</span> }
-                        else if (user.Id == myId)
-                        { <span class="role-tag me">Tu cuenta</span> }
+                        @if (!string.IsNullOrEmpty(user.ProfileImage))
+                        { <img src="@user.ProfileImage" class="user-thumb" /> }
                         else
-                        {
-                            if (!user.IsActive)
-                            {
-                                <a asp-controller="Admin" asp-action="ReactivateUser" asp-route-id="@user.Id"
-                                   class="action-btn success" onclick="return confirm('¿Reactivar?')">🔓 Reactivar</a>
-                            }
-                            else if (user.IsBanned)
-                            {
-                                <a asp-controller="Admin" asp-action="UnbanUser" asp-route-id="@user.Id"
-                                   class="action-btn success" onclick="return confirm('¿Desbanear?')">🔓 Desbanear</a>
-                            }
+                        { <div class="user-thumb-letter">@user.Username.Substring(0, 1).ToUpper()</div> }
+                    }
+                    else
+                    {
+                        <a href="/User/Profile/@user.Id" style="text-decoration:none;">
+                            @if (!string.IsNullOrEmpty(user.ProfileImage))
+                            { <img src="@user.ProfileImage" class="user-thumb" /> }
                             else
-                            {
-                                <button class="action-btn danger" onclick="confirmDelete(@user.Id)">🔒 Desactivar</button>
-                                <a asp-controller="Admin" asp-action="BanUser" asp-route-id="@user.Id"
-                                   class="action-btn warning" onclick="return confirm('¿Banear?')">🚫 Banear</a>
-                                @if (User.IsInRole("SuperAdmin"))
-                                {
-                                    <a asp-controller="Admin" asp-action="DeleteUserPermanently" asp-route-id="@user.Id"
-                                       class="action-btn delete" onclick="return confirm('¿Eliminar?')">💀</a>
-                                }
-                            }
-                            @if (User.IsInRole("SuperAdmin") && user.Id != myId)
-                            {
-                                <form asp-controller="Admin" asp-action="ResetPassword" method="post" style="display:inline">
-                                    <input type="hidden" name="userId" value="@user.Id" />
-                                    <button class="action-btn warning" onclick="return confirm('¿Resetear?')">🔑</button>
-                                </form>
-                            }
-                        }
+                            { <div class="user-thumb-letter">@user.Username.Substring(0, 1).ToUpper()</div> }
+                        </a>
+                    }
+                    <div>
+                        @if (user.Role == "SuperAdmin")
+                        { <div class="user-name-cell">@user.Username</div> }
+                        else
+                        { <a href="/User/Profile/@user.Id" class="user-name-cell" style="text-decoration:none;color:inherit;">@user.Username</a> }
+
+                        @if (user.Role == "SuperAdmin")
+                        { <span class="role-tag owner">👑 SuperAdmin</span> }
+                        else if (user.Role == "Admin")
+                        { <span class="role-tag admin">Admin</span> }
                     </div>
                 </div>
+                <div id="status-mob-@user.Id">
+                    @if (user.IsBanned)
+                    { <span class="status-tag banned">Baneado</span> }
+                    else if (!user.IsActive)
+                    { <span class="status-tag inactive">Desactivado</span> }
+                    else if (user.LastOnline != null && (DateTime.Now - user.LastOnline.Value).TotalSeconds < 60)
+                    { <span class="status-tag active">Activo</span> }
+                    else
+                    { <span class="status-tag offline">Inactivo</span> }
+                </div>
+            </div>
+
+            @if (user.Role != "SuperAdmin")
+            {
+                <div class="mobile-info">
+                    <span>📧 @user.Email</span>
+                    <span>🌐 @(user.LastIp ?? "—")</span>
+                    <span>💻 @(user.Device ?? "—") · @(user.Browser ?? "—")</span>
+                </div>
             }
+
+            <div class="actions-cell">
+                @if (user.Role == "SuperAdmin")
+                { <span class="role-tag owner">Propietario</span> }
+                else if (user.Id == myId)
+                { <span class="role-tag me">Tu cuenta</span> }
+                else
+                {
+                    if (!user.IsActive)
+                    {
+                        <a asp-controller="Admin" asp-action="ReactivateUser" asp-route-id="@user.Id"
+                           class="action-btn success" onclick="return confirm('¿Reactivar?')">🔓 Reactivar</a>
+                    }
+                    else if (user.IsBanned)
+                    {
+                        <a asp-controller="Admin" asp-action="UnbanUser" asp-route-id="@user.Id"
+                           class="action-btn success" onclick="return confirm('¿Desbanear?')">🔓 Desbanear</a>
+                    }
+                    else
+                    {
+                        <button class="action-btn danger" onclick="confirmDelete(@user.Id)">🔒 Desactivar</button>
+                        <a asp-controller="Admin" asp-action="BanUser" asp-route-id="@user.Id"
+                           class="action-btn warning" onclick="return confirm('¿Banear?')">🚫 Banear</a>
+                        @if (User.IsInRole("SuperAdmin"))
+                        {
+                            <a asp-controller="Admin" asp-action="DeleteUserPermanently" asp-route-id="@user.Id"
+                               class="action-btn delete" onclick="return confirm('¿Eliminar?')">💀</a>
+                        }
+                    }
+                    @if (User.IsInRole("SuperAdmin") && user.Id != myId)
+                    {
+                        <form asp-controller="Admin" asp-action="ResetPassword" method="post" style="display:inline">
+                            <input type="hidden" name="userId" value="@user.Id" />
+                            <button class="action-btn warning" onclick="return confirm('¿Resetear?')">🔑</button>
+                        </form>
+                    }
+                }
+            </div>
         </div>
-    </div>
+    }
 </div>
 
 <style>
@@ -414,6 +435,8 @@
     padding: 10px 18px; border-radius: 10px; font-size: 13px;
     font-weight: 600; text-decoration: none; border: none; cursor: pointer; transition: 0.2s;
 }
+.kpi-clickable { cursor: pointer; }
+.kpi-clickable:hover { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(0,0,0,0.1); }
 .quick-btn.reports { background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; }
 .quick-btn.reports:hover { background: #dc2626; color: white; }
 .quick-btn.code { background: #fef3c7; color: #d97706; border: 1px solid #fde68a; }
@@ -625,6 +648,21 @@ function cerrarModal() {
     document.getElementById("codeModal").style.display = "none";
     document.getElementById("codeInput").value = "";
     document.getElementById("codeError").innerText = "";
+}
+
+function filterByStatus(status) {
+    document.querySelectorAll(".user-row").forEach(row => {
+        const statusCell = row.querySelector("[id^='status-']");
+        if (!statusCell) return;
+        const text = statusCell.innerText.toLowerCase();
+        if (status === 'banned') {
+            row.style.display = text.includes('baneado') ? "" : "none";
+        } else if (status === 'inactive') {
+            row.style.display = text.includes('desactivado') ? "" : "none";
+        } else if (status === 'active') {
+            row.style.display = text.includes('activo') ? "" : "none";
+        }
+    });
 }
 
 function validarCodigo() {
