@@ -24,7 +24,7 @@
     </div>
 
  <div class="profile-main">
-    <div class="profile-avatar-wrap" style="margin-top:-60px;">
+    <div class="profile-avatar-wrap">
             @if (!string.IsNullOrEmpty(Model.ProfileImage))
             {
                 <img src="@Model.ProfileImage" class="profile-avatar" />
@@ -136,10 +136,18 @@
 {
     <img src="@post.ImagePath" class="post-tile-img" onerror="this.style.display='none'" />
 }
-<div class="post-tile-text">
-    <p>@(post.Description?.Length > 80 ? post.Description.Substring(0, 80) + "..." : post.Description)</p>
-</div>
-<div class="post-tile-date">@post.CreatedAt.ToString("dd MMM · hh:mm tt")</div>
+@if (string.IsNullOrEmpty(post.ImagePath) || string.IsNullOrEmpty(post.Description))
+{
+    <div class="post-tile-text">
+        <span>📝</span>
+        <p>@(post.Description?.Length > 60 ? post.Description.Substring(0, 60) + "..." : post.Description ?? "Sin descripción")</p>
+        <small>@post.CreatedAt.ToString("dd MMM yyyy")</small>
+    </div>
+}
+else
+{
+    <div class="post-tile-date">@post.CreatedAt.ToString("dd MMM · hh:mm tt")</div>
+}
                         <div class="post-tile-overlay">
                             <span>💬 Ver post</span>
                         </div>
@@ -169,11 +177,7 @@
 
 /* COVER */
 .profile-cover {
-    height: 200px;
-    border-radius: 20px;
-    overflow: hidden;
-    margin-bottom: -60px;
-    position: relative;
+    display: none;
 }
 
 .cover-gradient {
@@ -391,11 +395,16 @@
     width: 100%;
     height: 100%;
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 12px;
-    background: linear-gradient(135deg, #f3f4f6, #e5e7eb);
+    padding: 14px;
+    background: linear-gradient(135deg, #eff6ff, #e0e7ff);
+    gap: 6px;
 }
+
+.post-tile-text span { font-size: 24px; }
+.post-tile-text small { font-size: 10px; color: #9ca3af; }
 
 .post-tile-text p {
     font-size: 13px;
