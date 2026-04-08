@@ -133,15 +133,13 @@
                 {
                     <a href="/Post/Comments?postId=@post.Id" class="post-tile">
                         @if (!string.IsNullOrEmpty(post.ImagePath))
-                        {
-                           <img src="@post.ImagePath" class="post-tile-img" onerror="this.parentElement.style.display='none'" />
-                        }
-                        else
-                        {
-                            <div class="post-tile-text">
-                                <p>@(post.Description?.Length > 80 ? post.Description.Substring(0, 80) + "..." : post.Description)</p>
-                            </div>
-                        }
+{
+    <img src="@post.ImagePath" class="post-tile-img" onerror="this.style.display='none'" />
+}
+<div class="post-tile-text">
+    <p>@(post.Description?.Length > 80 ? post.Description.Substring(0, 80) + "..." : post.Description)</p>
+</div>
+<div class="post-tile-date">@post.CreatedAt.ToString("dd MMM · hh:mm tt")</div>
                         <div class="post-tile-overlay">
                             <span>💬 Ver post</span>
                         </div>
@@ -181,9 +179,7 @@
 .cover-gradient {
     width: 100%;
     height: 100%;
-    background: linear-gradient(135deg, #2563eb, #7c3aed, #ec4899);
-    opacity: 0.6;
-
+    background: linear-gradient(135deg, #0f172a, #1e3a5f, #312e81);
 }
 
 /* MAIN */
@@ -315,6 +311,18 @@
     align-items: center;
     cursor: pointer;
     transition: 0.2s;
+}
+
+.post-tile-date {
+    position: absolute;
+    bottom: 6px;
+    right: 8px;
+    font-size: 10px;
+    color: white;
+    background: rgba(0,0,0,0.5);
+    padding: 2px 6px;
+    border-radius: 6px;
+    font-weight: 500;
 }
 
 .stat-item:hover .stat-num { color: #2563eb; }
