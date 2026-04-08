@@ -58,7 +58,7 @@
 }
 else
 {
-    <a href="/User/Profile/@c.UserId" class="comment-username" style="text-decoration:none;">@c.Username</a>
+    <a href="/User/Profile?id=@c.UserId" class="comment-username" style="text-decoration:none;">@c.Username</a>
 }
                         <span class="comment-time">@c.CreatedAt.ToString("dd MMM yyyy · HH:mm")</span>
                     </div>
@@ -123,7 +123,7 @@ else
 }
 else
 {
-    <a href="/User/Profile/@parent.UserId" class="reply-username" style="text-decoration:none;">@parent.Username</a>
+    <a href="/User/Profile?id=@parent.UserId" class="reply-username" style="text-decoration:none;">@parent.Username</a>
 }
                                 <span class="reply-time">@parent.CreatedAt.ToString("dd MMM · HH:mm")</span>
                             </div>
