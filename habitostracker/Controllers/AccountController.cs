@@ -1293,13 +1293,13 @@ namespace HabitTrackerApp.Controllers
 
             // 🔥 LOGIN CON CLAIMS (IMPORTANTE)
             var claims = new List<Claim>
-    {
-        new Claim("UserId", user.Id.ToString()),
-        new Claim(ClaimTypes.Name, user.Username),
-        new Claim(ClaimTypes.Email, user.Email),
-        new Claim(ClaimTypes.Role, user.Role ?? "User")
-    };
-
+{
+    new Claim("UserId", user.Id.ToString()),
+    new Claim(ClaimTypes.Name, user.Username),
+    new Claim(ClaimTypes.Email, user.Email),
+    new Claim(ClaimTypes.Role, user.Role ?? "User"),
+    new Claim("ProfileImage", user.ProfileImage ?? user.ProfilePicture ?? "")
+};
             var identity = new ClaimsIdentity(claims, "Cookies");
             var principal = new ClaimsPrincipal(identity);
 
