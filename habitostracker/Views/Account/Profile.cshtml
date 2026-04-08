@@ -4,453 +4,527 @@
     ViewData["Title"] = "Mi Perfil";
 }
 
-<link rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.css" />
-
-<h3 class="mb-4 fw-bold">👤 Mi Perfil</h3>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.css" />
 
 @if (TempData["Success"] != null)
 {
-    <div class="alert alert-success">
-        @TempData["Success"]
-    </div>
+    <div class="profile-alert">✅ @TempData["Success"]</div>
 }
 
+<div class="profile-wrapper">
 
-
-<div class="text-center mb-4">
-
-   @if (!string.IsNullOrEmpty(Model.ProfileImage))
-{
-    <img id="previewImage"
-         src="@Model.ProfileImage?v=@DateTime.Now.Ticks"
-         class="rounded-circle shadow"
-         style="width:120px;height:120px;object-fit:cover;" />
-}
-else
-{
-    <div id="previewLetter"
-         class="rounded-circle shadow d-flex align-items-center justify-content-center"
-         style="width:120px;height:120px;
-                background:linear-gradient(135deg,#2563eb,#7c3aed);
-                color:white;
-                font-size:40px;
-                font-weight:bold;
-                margin:auto;">
-
-        @Model.Username.Substring(0,1).ToUpper()
-
-    </div>
-}
-    
-
-</div>
-
-<button type="button"
-        id="removePhotoBtn"
-        data-no-loader
-        class="btn btn-outline-danger rounded-pill px-4 ms-2">
-    🗑️ Eliminar foto
-</button>
-
-
-<!-- ================================================= -->
-<!-- FORMULARIO DEL PERFIL -->
-<!-- ================================================= -->
-
-<form asp-controller="Account"
-      asp-action="Profile"
-      method="post"
-      enctype="multipart/form-data"
-      data-no-loader>
-
-    @Html.AntiForgeryToken()
-
-    <input type="hidden" id="croppedImageInput" name="croppedImage" />
-
-    <div class="mb-3">
-
-        <label class="form-label">Foto de perfil</label>
-
-        <div class="d-flex justify-content-center gap-5 mt-4 mb-3">
-
-            <!-- 🔥 SEGUIDORES / SIGUIENDO -->
- 
-
-            <div class="d-flex justify-content-center gap-5 mt-4 mb-3">
-
-                <div class="text-center"
-                     style="cursor:pointer"
-                     onclick="if(@ViewBag.Followers > 0) openModal('followers')">
-
-                    <div class="fw-bold fs-5">@ViewBag.Followers</div>
-                    <small class="text-muted">Seguidores</small>
+    <!-- COLUMNA IZQUIERDA -->
+    <div class="profile-left">
+        <div class="avatar-section">
+            @if (!string.IsNullOrEmpty(Model.ProfileImage))
+            {
+                <img id="previewImage" src="@Model.ProfileImage?v=@DateTime.Now.Ticks" class="profile-avatar" />
+            }
+            else
+            {
+                <div id="previewLetter" class="profile-avatar-letter">
+                    @Model.Username.Substring(0, 1).ToUpper()
                 </div>
-
-                <div class="text-center"
-                     style="cursor:pointer"
-                     onclick="if(@ViewBag.Following > 0) openModal('following')">
-
-                    <div class="fw-bold fs-5">@ViewBag.Following</div>
-                    <small class="text-muted">Siguiendo</small>
-                </div>
-
+            }
+            <div class="avatar-overlay" onclick="document.getElementById('imageInput').click()">
+                📷
             </div>
-
         </div>
 
-        <input type="file"
-               id="imageInput"
-               name="profilePhoto"
-               class="form-control"
-               accept="image/*" />
+        <h2 class="profile-name">@Model.Username</h2>
+        <p class="profile-bio-preview">@(string.IsNullOrEmpty(Model.Bio) ? "Sin biografía" : Model.Bio)</p>
 
-    </div>
-
-   
-
-    <!-- ======================= -->
-    <!-- RECORTE DE IMAGEN -->
-    <!-- ======================= -->
-
-    <div class="text-center">
-
-        <img id="cropImage"
-             style="max-width:300px; display:none; margin-top:20px;" />
-
-        <br>
-
-        <button type="button"
-                id="cropButton"
-                data-no-loader
-                class="btn btn-success mt-3"
-                style="display:none;">
-            Recortar imagen
-        </button>
-
-    </div>
-
-    <div class="mb-3 mt-4">
-
-        <label class="form-label">Usuario</label>
-
-        <input class="form-control"
-               value="@Model.Username"
-               disabled />
-
-               @if (Model.IsGoogleAccount)
-{
-    <div class="alert alert-info mt-2">
-        🔵 Cuenta creada con Google
-    </div>
-}
-
-    </div>
-
-    <div class="mb-3">
-
-        <label class="form-label">Nombre completo</label>
-
-        <input asp-for="FullName"
-               class="form-control" />
-
-    </div>
-
-    <div class="mb-3">
-
-       
-        <div class="mb-3">
-            <label class="form-label">Correo electrónico</label>
-            <input asp-for="Email" class="form-control" disabled />
-        </div>
-
-        <div class="mb-3">
-            <label class="form-label">Cuéntanos sobre ti</label>
-            <textarea asp-for="Bio" class="form-control" rows="3" placeholder="Escribe algo sobre ti..."></textarea>
-        </div>
-
-     
-
-    </div>
-
-    <div class="mb-3">
-
-        <label class="form-label">Miembro desde</label>
-        <input class="form-control" value="@Model.CreatedAt?.ToString("dd/MM/yyyy")" disabled />
-
-        <br>
-        <br>
-
-    <button type="submit"
-            class="btn btn-primary rounded-pill px-4">
-        💾 Guardar cambios
-    </button>
-
-    <!-- ============================== -->
-    <!-- NUEVO BOTÓN ELIMINAR FOTO -->
-    <!-- ============================== -->
-
-</form>
-
-
-    <!-- 🔥 MODAL SEGUIDORES -->
-   <div id="followModal" class="follow-modal" style="display:none;">
-        <div class="follow-content">
-            <div class="follow-header">
-                <span id="modalTitle">Usuarios</span>
-                <span class="close-btn" onclick="closeModal()">✖</span>
+        @if (Model.IsGoogleAccount)
+        {
+            <div class="google-badge">
+                <img src="https://developers.google.com/identity/images/g-logo.png" style="width:14px;" />
+                Cuenta de Google
             </div>
-            <div id="followList"></div>
-        </div>
-    </div>
-
-
-
-    <style>
-
-        .follow-modal {
-            display: none;
-            position: fixed;
-            z-index: 9999;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.5);
-            display: flex;
-            justify-content: center;
-            align-items: center;
         }
 
-   .follow-content {
-    background: #fff;
-    color: #000;
+        <div class="follow-stats">
+            <div class="follow-stat" onclick="if(@ViewBag.Followers > 0) openModal('followers')">
+                <span class="stat-num">@ViewBag.Followers</span>
+                <span class="stat-label">Seguidores</span>
+            </div>
+            <div class="follow-divider"></div>
+            <div class="follow-stat" onclick="if(@ViewBag.Following > 0) openModal('following')">
+                <span class="stat-num">@ViewBag.Following</span>
+                <span class="stat-label">Siguiendo</span>
+            </div>
+        </div>
+
+        <button type="button" id="removePhotoBtn" data-no-loader class="remove-photo-btn">
+            🗑️ Eliminar foto
+        </button>
+    </div>
+
+    <!-- COLUMNA DERECHA -->
+    <div class="profile-right">
+        <form asp-controller="Account" asp-action="Profile" method="post" enctype="multipart/form-data" data-no-loader>
+            @Html.AntiForgeryToken()
+            <input type="hidden" id="croppedImageInput" name="croppedImage" />
+
+            <div class="form-section">
+                <h4 class="section-title">Información personal</h4>
+
+                <div class="field-group">
+                    <label class="field-label">Usuario</label>
+                    <input class="field-input" value="@Model.Username" disabled />
+                </div>
+
+                <div class="field-group">
+                    <label class="field-label">Nombre completo</label>
+                    <input asp-for="FullName" class="field-input" placeholder="Tu nombre completo" />
+                </div>
+
+                <div class="field-group">
+                    <label class="field-label">Correo electrónico</label>
+                    <input asp-for="Email" class="field-input" disabled />
+                </div>
+
+                <div class="field-group">
+                    <label class="field-label">Biografía</label>
+                    <textarea asp-for="Bio" class="field-textarea" rows="3" placeholder="Cuéntanos sobre ti..."></textarea>
+                </div>
+
+                <div class="field-group">
+                    <label class="field-label">Miembro desde</label>
+                    <input class="field-input" value="@Model.CreatedAt?.ToString("dd/MM/yyyy")" disabled />
+                </div>
+
+                <!-- SUBIR FOTO -->
+                <div class="field-group">
+                    <label class="field-label">Cambiar foto de perfil</label>
+                    <input type="file" id="imageInput" name="profilePhoto" class="field-input" accept="image/*" />
+                </div>
+
+                <!-- CROPPER -->
+                <div class="cropper-section" id="cropperSection" style="display:none;">
+                    <img id="cropImage" style="max-width:100%;" />
+                    <button type="button" id="cropButton" data-no-loader class="crop-btn">✂️ Recortar imagen</button>
+                </div>
+            </div>
+
+            <button type="submit" class="save-btn">💾 Guardar cambios</button>
+        </form>
+    </div>
+</div>
+
+<!-- MODAL SEGUIDORES -->
+<div id="followModal" class="follow-modal" style="display:none;">
+    <div class="follow-content">
+        <div class="follow-header">
+            <span id="modalTitle">Usuarios</span>
+            <span class="close-btn" onclick="closeModal()">✖</span>
+        </div>
+        <div id="followList"></div>
+    </div>
+</div>
+
+<style>
+.profile-alert {
+    background: #dcfce7;
+    color: #16a34a;
+    padding: 12px 18px;
     border-radius: 12px;
-    padding: 10px;
+    margin-bottom: 20px;
+    font-weight: 500;
+    font-size: 14px;
 }
+
+.profile-wrapper {
+    display: grid;
+    grid-template-columns: 300px 1fr;
+    gap: 24px;
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+@@media (max-width: 768px) {
+    .profile-wrapper { grid-template-columns: 1fr; }
+}
+
+/* LEFT */
+.profile-left {
+    background: white;
+    border-radius: 24px;
+    padding: 32px 24px;
+    text-align: center;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.07);
+    border: 1px solid rgba(0,0,0,0.05);
+    height: fit-content;
+}
+
+.avatar-section {
+    position: relative;
+    width: 120px;
+    height: 120px;
+    margin: 0 auto 16px;
+}
+
+.profile-avatar {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 4px solid #e5e7eb;
+    display: block;
+}
+
+.profile-avatar-letter {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #2563eb, #7c3aed);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 42px;
+    font-weight: 800;
+    border: 4px solid #e5e7eb;
+}
+
+.avatar-overlay {
+    position: absolute;
+    bottom: 0; right: 0;
+    width: 36px; height: 36px;
+    background: #2563eb;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    cursor: pointer;
+    border: 3px solid white;
+    transition: 0.2s;
+}
+
+.avatar-overlay:hover { background: #1d4ed8; transform: scale(1.1); }
+
+.profile-name {
+    font-size: 20px;
+    font-weight: 800;
+    color: #111827;
+    margin: 0 0 6px;
+}
+
+.profile-bio-preview {
+    font-size: 13px;
+    color: #9ca3af;
+    margin-bottom: 14px;
+    line-height: 1.5;
+}
+
+.google-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #eff6ff;
+    color: #2563eb;
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    margin-bottom: 16px;
+}
+
+.follow-stats {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    margin: 16px 0;
+    padding: 16px;
+    background: #f9fafb;
+    border-radius: 14px;
+}
+
+.follow-stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.follow-stat:hover .stat-num { color: #2563eb; }
+
+.stat-num { font-size: 20px; font-weight: 800; color: #111827; }
+.stat-label { font-size: 11px; color: #9ca3af; font-weight: 600; text-transform: uppercase; }
+
+.follow-divider {
+    width: 1px; height: 30px;
+    background: #e5e7eb;
+}
+
+.remove-photo-btn {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #fecaca;
+    background: #fef2f2;
+    color: #dc2626;
+    border-radius: 12px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.2s;
+    margin-top: 8px;
+}
+
+.remove-photo-btn:hover { background: #fee2e2; }
+
+/* RIGHT */
+.profile-right {
+    background: white;
+    border-radius: 24px;
+    padding: 32px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.07);
+    border: 1px solid rgba(0,0,0,0.05);
+}
+
+.form-section { margin-bottom: 24px; }
+
+.section-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: #111827;
+    margin-bottom: 20px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #f3f4f6;
+}
+
+.field-group { margin-bottom: 16px; }
+
+.field-label {
+    display: block;
+    font-size: 12px;
+    font-weight: 700;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 6px;
+}
+
+.field-input {
+    width: 100%;
+    padding: 11px 14px;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    font-size: 14px;
+    color: #111827;
+    background: white;
+    transition: 0.2s;
+    box-sizing: border-box;
+}
+
+.field-input:focus {
+    outline: none;
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
+}
+
+.field-input:disabled { background: #f9fafb; color: #9ca3af; }
+
+.field-textarea {
+    width: 100%;
+    padding: 11px 14px;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    font-size: 14px;
+    color: #111827;
+    background: white;
+    transition: 0.2s;
+    resize: vertical;
+    box-sizing: border-box;
+}
+
+.field-textarea:focus {
+    outline: none;
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
+}
+
+.cropper-section {
+    margin-top: 12px;
+    text-align: center;
+}
+
+.crop-btn {
+    margin-top: 12px;
+    padding: 10px 20px;
+    background: #16a34a;
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.crop-btn:hover { background: #15803d; }
+
+.save-btn {
+    width: 100%;
+    padding: 14px;
+    background: linear-gradient(135deg, #2563eb, #7c3aed);
+    color: white;
+    border: none;
+    border-radius: 14px;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: 0.2s;
+    box-shadow: 0 4px 15px rgba(37,99,235,0.3);
+}
+
+.save-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(37,99,235,0.4); }
+
+/* MODAL */
+.follow-modal {
+    position: fixed; top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(0,0,0,0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+}
+
+.follow-content {
+    background: white;
+    border-radius: 20px;
+    padding: 24px;
+    width: 360px;
+    max-height: 500px;
+    overflow-y: auto;
+}
+
+.follow-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: 700;
+    font-size: 16px;
+    margin-bottom: 16px;
+    color: #111827;
+}
+
+.close-btn { cursor: pointer; font-size: 18px; color: #9ca3af; }
+.close-btn:hover { color: #111827; }
+
 .follow-item {
     display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 8px;
-    border-radius: 8px;
+    gap: 10px;
+    padding: 10px;
+    border-radius: 10px;
     cursor: pointer;
-    background: transparent;
-    color: #000;
+    transition: 0.15s;
 }
 
-.follow-item span,
-.follow-item div {
-    color: inherit;
+.follow-item:hover { background: #f3f4f6; }
+
+/* DARK MODE */
+body.bg-dark .profile-left,
+body.bg-dark .profile-right {
+    background: #1e1e2e !important;
+    border-color: #2d2d3d !important;
 }
 
-.follow-modal {
-    background: rgba(0,0,0,0.6);
+body.bg-dark .profile-name { color: #f1f5f9 !important; }
+body.bg-dark .section-title { color: #f1f5f9 !important; border-color: #2d2d3d !important; }
+body.bg-dark .field-label { color: #64748b !important; }
+body.bg-dark .field-input,
+body.bg-dark .field-textarea {
+    background: #2d2d3d !important;
+    border-color: #3d3d4d !important;
+    color: #f1f5f9 !important;
 }
 
-body.dark-mode .follow-item {
-    color: #e5e7eb;
-}
-
-body.dark-mode .follow-item:hover {
-    background: #1f2937;
-}
-
-/* hover */
-.follow-item:hover {
-    background: #f3f4f6;
-}
-
-
-body.dark-mode .follow-content {
-    background: #111827; /* 🔥 oscuro real */
-    color: #e5e7eb;
-}
-
-
-@@keyframes fadeIn {
-    from {
-        transform: scale(0.9);
-        opacity: 0;
-    }
-    to {
-        transform: scale(1);
-        opacity: 1;
-    }
-}
-.follow-header {
-   
-    justify-content: space-between;
-    align-items: center;
-    font-weight: 600;
-    margin-bottom: 10px;
-}
-
-.close-btn {
-    cursor: pointer;
-    font-size: 18px;
-}
-
-    </style>
-
+body.bg-dark .field-input:disabled { background: #252535 !important; color: #64748b !important; }
+body.bg-dark .follow-stats { background: #2d2d3d !important; }
+body.bg-dark .stat-num { color: #f1f5f9 !important; }
+body.bg-dark .follow-content { background: #1e1e2e !important; }
+body.bg-dark .follow-header { color: #f1f5f9 !important; }
+body.bg-dark .follow-item:hover { background: #2d2d3d !important; }
+body.bg-dark .profile-alert { background: #14532d; color: #86efac; }
+</style>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.js"></script>
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.js"></script>
-
 <script>
+let cropper;
+const input = document.getElementById("imageInput");
+const image = document.getElementById("cropImage");
+let preview = document.getElementById("previewImage");
+const hiddenInput = document.getElementById("croppedImageInput");
+const cropButton = document.getElementById("cropButton");
+const cropperSection = document.getElementById("cropperSection");
 
-    let cropper;
-
-    const input = document.getElementById("imageInput");
-    const image = document.getElementById("cropImage");
-    let preview = document.getElementById("previewImage");
-    const hiddenInput = document.getElementById("croppedImageInput");
-    const cropButton = document.getElementById("cropButton");
-
-    input.addEventListener("change", function(e){
-
+input.addEventListener("change", function(e) {
     const file = e.target.files[0];
-
-    if(!file) return;
-
+    if (!file) return;
     const reader = new FileReader();
-
-    reader.onload = function(event){
-
-    image.src = event.target.result;
-
-    image.style.display = "block";
-    cropButton.style.display = "inline-block";
-
-    if(cropper){
-    cropper.destroy();
-    }
-
-    cropper = new Cropper(image,{
-    aspectRatio:1,
-    viewMode:1,
-    autoCropArea:1,
-    zoomable:true,
-    movable:true,
-    zoomOnWheel:true
-    });
-
+    reader.onload = function(event) {
+        image.src = event.target.result;
+        cropperSection.style.display = "block";
+        if (cropper) cropper.destroy();
+        cropper = new Cropper(image, {
+            aspectRatio: 1, viewMode: 1,
+            autoCropArea: 1, zoomable: true
+        });
     };
-
     reader.readAsDataURL(file);
+});
 
-    });
-
-    cropButton.addEventListener("click", function(){
-
-    if(!cropper) return;
-
-    const canvas = cropper.getCroppedCanvas({
-    width:300,
-    height:300
-    });
-
+cropButton.addEventListener("click", function() {
+    if (!cropper) return;
+    const canvas = cropper.getCroppedCanvas({ width: 300, height: 300 });
     const base64 = canvas.toDataURL("image/png");
 
-        if(!preview){
-
+    if (!preview) {
         const letter = document.getElementById("previewLetter");
-        if(letter) letter.remove();
-
+        if (letter) letter.remove();
         const img = document.createElement("img");
-
-        img.id="previewImage";
-        img.className="rounded-circle shadow";
-        img.style.width="120px";
-        img.style.height="120px";
-        img.style.objectFit="cover";
-
-        document.querySelector(".text-center.mb-4").appendChild(img);
-
+        img.id = "previewImage";
+        img.className = "profile-avatar";
+        document.querySelector(".avatar-section").prepend(img);
         preview = img;
-
     }
 
     preview.src = base64;
-
     hiddenInput.value = base64;
-
-    const navbarAvatar = document.querySelector(".user-avatar-img");
-
-    if(navbarAvatar){
-    navbarAvatar.src = base64;
-    }
-
-    image.style.display = "none";
-    cropButton.style.display = "none";
-
+    cropperSection.style.display = "none";
     cropper.destroy();
     cropper = null;
+});
 
-    });
+document.getElementById("removePhotoBtn").addEventListener("click", function() {
+    hiddenInput.value = "REMOVE";
+    if (preview) preview.style.display = "none";
+    const oldLetter = document.getElementById("previewLetter");
+    if (oldLetter) return;
+    const letter = document.createElement("div");
+    letter.id = "previewLetter";
+    letter.className = "profile-avatar-letter";
+    letter.innerText = "@Model.Username.Substring(0, 1).ToUpper()";
+    document.querySelector(".avatar-section").prepend(letter);
+});
 
-    /* ================================= */
-    /* ELIMINAR FOTO (MEJORADO) */
-    /* ================================= */
+function openModal(type) {
+    const modal = document.getElementById("followModal");
+    const list = document.getElementById("followList");
+    const title = document.getElementById("modalTitle");
+    modal.style.display = "flex";
+    list.innerHTML = "Cargando...";
+    title.innerText = type === "followers" ? "Seguidores" : "Siguiendo";
+    fetch(`/User/${type === "followers" ? "GetFollowers" : "GetFollowing"}?userId=@Model.Id`)
+        .then(r => r.text())
+        .then(data => list.innerHTML = data);
+}
 
-    const removeBtn = document.getElementById("removePhotoBtn");
-
-    removeBtn.addEventListener("click", function(){
-
-        hiddenInput.value = "REMOVE";
-
-        preview.style.display="none";
-
-        const oldLetter=document.getElementById("previewLetter");
-
-        if(oldLetter) return;
-
-        const letter=document.createElement("div");
-
-        letter.id="previewLetter";
-
-        letter.className="rounded-circle shadow d-flex align-items-center justify-content-center";
-
-        letter.style.width="120px";
-        letter.style.height="120px";
-        letter.style.background="linear-gradient(135deg,#2563eb,#7c3aed)";
-        letter.style.color="white";
-        letter.style.fontSize="40px";
-        letter.style.fontWeight="bold";
-        letter.style.margin="auto";
-
-        letter.innerText="@Model.Username.Substring(0, 1).ToUpper()";
-
-        preview.parentElement.appendChild(letter);
-
-    });
-
+function closeModal() {
+    document.getElementById("followModal").style.display = "none";
+}
 </script>
-
-    <script>
-        function openModal(type){
-        const modal = document.getElementById("followModal");
-        const list = document.getElementById("followList");
-        const title = document.getElementById("modalTitle");
-
-       modal.style.display = "flex";
-        list.innerHTML = "Cargando...";
-
-        if(type === "followers"){
-        title.innerText = "Seguidores";
-        fetch(`/User/GetFollowers?userId=@Model.Id`)
-        .then(r => r.text())
-        .then(data => list.innerHTML = data);
-        }else{
-        title.innerText = "Siguiendo";
-        fetch(`/User/GetFollowing?userId=@Model.Id`)
-        .then(r => r.text())
-        .then(data => list.innerHTML = data);
-        }
-        }
-
-        function closeModal(){
-        document.getElementById("followModal").style.display = "none";
-        }
-    </script>
