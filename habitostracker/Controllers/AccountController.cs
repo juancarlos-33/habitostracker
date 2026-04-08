@@ -1312,7 +1312,7 @@ namespace HabitTrackerApp.Controllers
 
             await HttpContext.SignInAsync("Cookies", principal);
 
-           
+
             // 🔥 PERFIL INCOMPLETO - si no tiene género o bio configurados
             if (user.IsGoogleAccount && (string.IsNullOrEmpty(user.Gender) || user.Gender == "No especificado" || string.IsNullOrEmpty(user.Bio) || user.Bio == "Registrado con Google"))
             {
@@ -1321,6 +1321,7 @@ namespace HabitTrackerApp.Controllers
 
             return RedirectToAction("Index", "Habit");
 
+        }
 
             [HttpGet]
         public IActionResult GuestRegister()
