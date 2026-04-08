@@ -39,8 +39,15 @@
                     }
 
                     <div class="post-meta">
-                        <div class="post-username">
-                            @post.DisplayUsername
+                      <div class="post-username">
+    @if (post.UserId == 29)
+    {
+        <a href="/User" style="text-decoration:none;color:inherit;">@post.DisplayUsername</a>
+    }
+    else
+    {
+        <a href="/User/Profile/@post.UserId" style="text-decoration:none;color:inherit;">@post.DisplayUsername</a>
+    }
                             @if (post.UserId == 29)
                             {
                                 <span class="owner-badge">👑 Propietario</span>

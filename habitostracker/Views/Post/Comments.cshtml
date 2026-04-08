@@ -15,7 +15,7 @@
 
     <!-- FORMULARIO -->
     <div class="comment-form-card">
-        <form asp-action="AddComment" method="post" enctype="multipart/form-data">
+        <form asp-action="AddComment" method="post" enctype="multipart/form-data" data-no-loader="true">
             <input type="hidden" name="postId" value="@ViewBag.PostId" />
             <textarea name="comment" class="comment-textarea" placeholder="Escribe un comentario..." required></textarea>
             <div class="form-bottom">
