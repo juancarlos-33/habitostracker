@@ -10,10 +10,11 @@
         .Select(f => f.Status)
         .FirstOrDefault();
 
-    var userPosts = db.Posts
-        .Where(p => p.UserId == Model.Id)
-        .OrderByDescending(p => p.CreatedAt)
-        .ToList();
+   var userPosts = db.Posts
+    .Where(p => p.UserId == Model.Id && 
+               (p.ImagePath == null || p.ImagePath.StartsWith("http")))
+    .OrderByDescending(p => p.CreatedAt)
+    .ToList();
 }
 
 <!-- COVER + AVATAR -->
@@ -131,7 +132,7 @@
             <div class="posts-grid">
                 @foreach (var post in userPosts)
                 {
-                    <a href="/Post/Comments?postId=@post.Id" class="post-tile">
+                    <a href="/Post/Index#post-@post.Id" class="post-tile">
                         @if (!string.IsNullOrEmpty(post.ImagePath))
 {
     <img src="@post.ImagePath" class="post-tile-img" onerror="this.style.display='none'" />
