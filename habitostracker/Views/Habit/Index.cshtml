@@ -3,34 +3,23 @@
 
 @if (TempData["Error"] != null)
 {
-    <div class="alert alert-danger">
-        @TempData["Error"]
-    </div>
+    <div class="alert alert-danger">@TempData["Error"]</div>
 }
-
 @if (TempData["Success"] != null)
 {
-    <div class="alert alert-success">
-        @TempData["Success"]
-    </div>
+    <div class="alert alert-success">@TempData["Success"]</div>
 }
 
 @{
     var username = User.Identity?.Name ?? "";
     var user = _context.Users.FirstOrDefault(u => u.Username == username);
-
     var habits = Model;
 
     int totalHabits = habits.Count();
     int totalStreak = habits.Sum(h => h.StreakDays);
     int bestRecord = habits.Any() ? habits.Max(h => h.MaxStreak) : 0;
-
-    int completedToday = habits.Count(h =>
-        h.LastCheckDate == DateTime.Today && h.Completed);
-
-    int completionRate = totalHabits > 0
-        ? (int)((completedToday * 100.0) / totalHabits)
-        : 0;
+    int completedToday = habits.Count(h => h.LastCheckDate == DateTime.Today && h.Completed);
+    int completionRate = totalHabits > 0 ? (int)((completedToday * 100.0) / totalHabits) : 0;
 
     string welcomeMessage = "";
     string welcomeClass = "welcome-neutral";
@@ -38,19 +27,11 @@
     if (user != null)
     {
         if (user.Gender?.ToLower() == "masculino")
-        {
-            welcomeMessage = $"Bienvenido {user.Username}";
-            welcomeClass = "welcome-male";
-        }
+        { welcomeMessage = $"Bienvenido {user.Username}"; welcomeClass = "welcome-male"; }
         else if (user.Gender?.ToLower() == "femenino")
-        {
-            welcomeMessage = $"Bienvenida {user.Username}";
-            welcomeClass = "welcome-female";
-        }
+        { welcomeMessage = $"Bienvenida {user.Username}"; welcomeClass = "welcome-female"; }
         else
-        {
-            welcomeMessage = $"Bienvenido {user.Username}";
-        }
+        { welcomeMessage = $"Bienvenido {user.Username}"; }
     }
 
     ViewData["Title"] = "HabitTracker Pro";
@@ -60,211 +41,152 @@
         .Reverse()
         .ToList();
 
-    var dailyCompletion = last7Days
-      .Select(date => habits.Any(h => h.LastCheckDate.HasValue
-                                  && h.LastCheckDate.Value.Date == date.Date
-                                  && h.Completed) ? 1 : 0)
-      .ToList();
+    // 🔥 Porcentaje real por día
+    var dailyCompletion = last7Days.Select(date => {
+        if (!habits.Any()) return 0;
+        int completed = habits.Count(h => h.LastCheckDate.HasValue && h.LastCheckDate.Value.Date == date.Date && h.Completed);
+        int failed = habits.Count(h => h.LastCheckDate.HasValue && h.LastCheckDate.Value.Date == date.Date && !h.Completed);
+        int total = completed + failed;
+        return total > 0 ? (int)((completed * 100.0) / total) : 0;
+    }).ToList();
 }
 
 @if (user != null)
 {
     if (!user.IsPremium)
     {
-        <div class="alert alert-warning d-flex justify-content-between align-items-center">
+        <div class="plan-banner">
             <span>🚀 Estás en versión gratuita (máx 5 hábitos)</span>
-
-            <a asp-controller="User" asp-action="Pay" class="btn btn-dark btn-sm">
-                💳 Volverme Premium
-            </a>
+            <a asp-controller="User" asp-action="Pay" class="premium-btn">💳 Volverme Premium</a>
         </div>
     }
     else
     {
-        <div class="alert alert-success">
-            👑 Eres usuario PREMIUM — sin límites 🔥
-        </div>
+        <div class="plan-banner premium">👑 Eres usuario PREMIUM — sin límites 🔥</div>
     }
 }
 
-<div class="welcome-card @welcomeClass mb-4">
+<!-- WELCOME -->
+<div class="welcome-card @welcomeClass">
     <div class="welcome-content">
-        
         <div class="welcome-avatar">
-            @{
-                var profileImage = User.FindFirst("ProfileImage")?.Value;
-            }
-
+            @{var profileImage = User.FindFirst("ProfileImage")?.Value;}
             @if (!string.IsNullOrEmpty(profileImage))
-            {
-                <img src="@profileImage" alt="avatar" />
-            }
+            { <img src="@profileImage" alt="avatar" /> }
             else
-            {
-                @(username.Substring(0, 1).ToUpper())
-            }
+            { @(username.Substring(0, 1).ToUpper()) }
         </div>
-
         <div>
-            <h5 class="mb-1 fw-bold">@welcomeMessage</h5>
+            <h5>@welcomeMessage</h5>
             <small>Disciplina diaria. Resultados extraordinarios.</small>
         </div>
-
     </div>
 </div>
 
-<div class="container mt-5" style="max-width:1200px;">
-    <div class="text-center mb-4">
-        <h1 class="fw-bold display-5">🚀 HabitTracker Pro</h1>
-        <p class="opacity-75">Disciplina diaria. Resultados extraordinarios.</p>
+<!-- KPIs -->
+<div class="kpi-grid">
+    <div class="kpi-card">
+        <div class="kpi-icon">📋</div>
+        <div class="kpi-value">@totalHabits</div>
+        <div class="kpi-label">Hábitos</div>
+    </div>
+    <div class="kpi-card">
+        <div class="kpi-icon">🔥</div>
+        <div class="kpi-value streak">@totalStreak</div>
+        <div class="kpi-label">Racha Total</div>
+    </div>
+    <div class="kpi-card">
+        <div class="kpi-icon">⚡</div>
+        <div class="kpi-value today">@completionRate%</div>
+        <div class="kpi-label">Completado Hoy</div>
+    </div>
+    <div class="kpi-card">
+        <div class="kpi-icon">🏆</div>
+        <div class="kpi-value record">@bestRecord</div>
+        <div class="kpi-label">Mejor Récord</div>
     </div>
 </div>
-    <!-- KPIs -->
-    <div class="row text-center mb-4">
 
-        <div class="col-md-3 mb-3">
-            <div class="card border-0 shadow-sm rounded-4 p-4">
-                <h6 class="text-muted">Hábitos</h6>
-                <h3 class="fw-bold">@totalHabits</h3>
-            </div>
-        </div>
-
-        <div class="col-md-3 mb-3">
-            <div class="card border-0 shadow-sm rounded-4 p-4">
-                <h6 class="text-muted">Racha Total</h6>
-                <h3 class="fw-bold text-success">@totalStreak</h3>
-            </div>
-        </div>
-
-        <div class="col-md-3 mb-3">
-            <div class="card border-0 shadow-sm rounded-4 p-4">
-                <h6 class="text-muted">Hoy</h6>
-                <h3 class="fw-bold text-primary">@completionRate%</h3>
-            </div>
-        </div>
-
-        <div class="col-md-3 mb-3">
-            <div class="card border-0 shadow-sm rounded-4 p-4">
-                <h6 class="text-muted">Mejor Récord</h6>
-                <h3 class="fw-bold text-warning">@bestRecord</h3>
-            </div>
-        </div>
-
-    </div>
-
-    @if (user != null && user.IsPremium || Model.Count < 5)
+<!-- NUEVO HÁBITO -->
+<div class="action-row">
+    @if (user != null && (user.IsPremium || Model.Count < 5))
     {
-        <a asp-action="Create" class="btn btn-primary rounded-pill">
-            ➕ Nuevo hábito
-        </a>
+        <a asp-action="Create" class="new-habit-btn">➕ Nuevo hábito</a>
     }
     else
     {
-        <a asp-controller="User" asp-action="Pay"
-               class="btn btn-dark rounded-pill">
-            🔒 Hazte Premium
-        </a>
+        <a asp-controller="User" asp-action="Pay" class="new-habit-btn locked">🔒 Hazte Premium</a>
     }
+</div>
 
-    <!-- TABLA SIEMPRE VISIBLE -->
-    <div class="card shadow rounded-4 p-4 mb-4 border-0">
-
-        @if (Model.Count == 0)
+<!-- TABLA -->
+<div class="habits-card">
+    @if (Model.Count == 0)
+    {
+        <div class="empty-state">
+            <div class="empty-icon">🌱</div>
+            <p>Aún no tienes hábitos creados.</p>
+            <small>¡Empieza creando tu primer hábito!</small>
+        </div>
+    }
+    else
+    {
+        @if (user != null && !user.IsPremium && Model.Count >= 5)
         {
-            <div class="text-center text-muted mb-3">
-                Aún no tienes hábitos creados.
+            <div class="limit-alert">
+                🚫 Alcanzaste el límite de hábitos.
+                <a asp-controller="User" asp-action="Pay">Hazte premium 🔥</a>
             </div>
         }
 
-        <table class="table align-middle table-hover">
-            <thead class="text-uppercase small text-muted">
+        <table class="habits-table">
+            <thead>
                 <tr>
-                    <th>Hábito</th>
-                    <th>Estado</th>
-                    <th>Racha</th>
-                    <th>Récord</th>
-                    <th>Creado</th>
-                    <th class="text-center">Acciones</th>
+                    <th>HÁBITO</th>
+                    <th>ESTADO</th>
+                    <th>RACHA</th>
+                    <th>RÉCORD</th>
+                    <th>CREADO</th>
+                    <th class="text-center">ACCIONES</th>
                 </tr>
             </thead>
             <tbody>
-                @if (user != null && !user.IsPremium && Model.Count >= 5)
-                {
-                    <tr>
-                        <td colspan="6">
-                            <div class="alert alert-danger text-center mb-2">
-                                🚫 Alcanzaste el límite de hábitos.
-                                <a asp-controller="User" asp-action="Pay" class="fw-bold">
-                                    Hazte premium 🔥
-                                </a>
-                            </div>
-                        </td>
-                    </tr>
-                }
-
                 @foreach (var habit in Model)
                 {
                     <tr>
-                        <td class="fw-semibold">@habit.Name</td>
-
+                        <td class="habit-name">@habit.Name</td>
                         <td>
                             @if (habit.LastCheckDate == DateTime.Today && habit.Completed)
-                            {
-                                <span class="badge bg-success">✔ Hoy</span>
-                            }
+                            { <span class="status-badge success">✔ Completado</span> }
                             else if (habit.LastCheckDate == DateTime.Today && !habit.Completed)
-                            {
-                                <span class="badge bg-danger">✖ Hoy</span>
-                            }
+                            { <span class="status-badge danger">✖ Fallado</span> }
                             else
-                            {
-                                <span class="badge bg-secondary">Pendiente</span>
-                            }
+                            { <span class="status-badge pending">⏳ Pendiente</span> }
                         </td>
-
-                        <td class="fw-bold text-primary">@habit.StreakDays</td>
-
-                        <td class="fw-bold text-warning">@habit.MaxStreak</td>
-
-                        <td>
-                            <small class="text-muted">
-                                @habit.CreatedDate.ToString("dd MMM yyyy")
-                            </small>
-                        </td>
-
+                        <td class="streak-val">@habit.StreakDays 🔥</td>
+                        <td class="record-val">@habit.MaxStreak 🏆</td>
+                        <td class="date-val">@habit.CreatedDate.ToString("dd MMM yyyy")</td>
                         <td class="text-center">
-                            <a href="/Habit/Complete/@habit.Id" class="btn btn-sm btn-outline-success rounded-pill me-1">✔</a>
-                            <a href="/Habit/Fail/@habit.Id" class="btn btn-sm btn-outline-danger rounded-pill me-1">✖</a>
-                            <a asp-action="Edit" asp-route-id="@habit.Id" class="btn btn-sm btn-outline-warning rounded-pill me-1">✏</a>
-                            <a asp-action="Delete" asp-route-id="@habit.Id"
-                                   class="btn btn-sm btn-outline-secondary rounded-pill"
-                                   data-no-loader="true"
-                                   onclick="if(!confirm('¿Eliminar hábito?')) return false;">
-                                🗑
-                            </a>
+                            <div class="action-btns">
+                                <a href="/Habit/Complete/@habit.Id" class="hab-btn complete" title="Completar">✔</a>
+                                <a href="/Habit/Fail/@habit.Id" class="hab-btn fail" title="Fallar">✖</a>
+                                <a asp-action="Edit" asp-route-id="@habit.Id" class="hab-btn edit" title="Editar">✏</a>
+                                <a asp-action="Delete" asp-route-id="@habit.Id" class="hab-btn delete" data-no-loader="true"
+                                   onclick="if(!confirm('¿Eliminar hábito?')) return false;" title="Eliminar">🗑</a>
+                            </div>
                         </td>
                     </tr>
-                
-
-                    <!-- 💬 FILA DE COMENTARIOS -->
-                    <tr>
+                    <tr class="comment-row">
                         <td colspan="6">
-
-                            <!-- FORM -->
-                            <form asp-action="AddComment" method="post" class="mb-2">
+                            <form asp-action="AddComment" method="post" class="comment-form">
                                 <input type="hidden" name="habitId" value="@habit.Id" />
-
-                                <input type="text"
-                                       name="content"
-                                       class="form-control form-control-sm"
-                                       placeholder="💬 Escribe un comentario..." />
+                                <input type="text" name="content" class="comment-input" placeholder="💬 Escribe un comentario..." />
                             </form>
-
                             @if (habit.Comments != null && habit.Comments.Any())
                             {
                                 foreach (var c in habit.Comments.OrderByDescending(x => x.CreatedAt))
                                 {
-                                    <div style="font-size:13px; padding-left:5px;">
+                                    <div class="comment-item">
                                         <b>@c.User.Username:</b> @c.Content
                                     </div>
                                 }
@@ -274,111 +196,339 @@
                 }
             </tbody>
         </table>
-    </div>
+    }
+</div>
 
-    <!-- GRÁFICO SIEMPRE VISIBLE -->
-    <div class="card shadow rounded-4 p-4 border-0">
-        <h5 class="fw-bold mb-3">📈 Progreso últimos 7 días</h5>
-        <canvas id="habitChart"></canvas>
-    </div>
-
+<!-- GRÁFICO -->
+<div class="chart-card">
+    <h5 class="chart-title">📈 Progreso últimos 7 días</h5>
+    <canvas id="habitChart"></canvas>
 </div>
 
 @section Scripts {
     <script>
-        const labels=@Html.Raw(System.Text.Json.JsonSerializer.Serialize(last7Days.Select(d => d.ToString("dd/MM"))));
-        const data=@Html.Raw(System.Text.Json.JsonSerializer.Serialize(dailyCompletion));
+        const labels = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(last7Days.Select(d => d.ToString("dd/MM"))));
+        const data = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(dailyCompletion));
 
-        new Chart(document.getElementById('habitChart'),{
-            type:'line',
-            data:{
-                labels:labels,
-                datasets:[{
-                    data:data,
-                    borderWidth:3,
-                    tension:0.4,
-                    fill:true,
-                    backgroundColor:'rgba(99,102,241,0.1)',
-                    borderColor:'#6366f1'
+        const isDark = document.body.classList.contains('bg-dark');
+        const gridColor = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)';
+        const textColor = isDark ? '#94a3b8' : '#6b7280';
+
+        new Chart(document.getElementById('habitChart'), {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    data: data,
+                    borderWidth: 3,
+                    tension: 0.4,
+                    fill: true,
+                    pointRadius: 5,
+                    pointHoverRadius: 7,
+                    pointBackgroundColor: '#6366f1',
+                    backgroundColor: 'rgba(99,102,241,0.12)',
+                    borderColor: '#6366f1'
                 }]
             },
-            options:{
-                responsive:true,
-                plugins:{legend:{display:false}},
-                scales:{y:{beginAtZero:true,ticks:{precision:0}}}
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: ctx => ctx.parsed.y + '% completado'
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100,
+                        ticks: {
+                            color: textColor,
+                            callback: val => val + '%'
+                        },
+                        grid: { color: gridColor }
+                    },
+                    x: {
+                        ticks: { color: textColor },
+                        grid: { color: gridColor }
+                    }
+                }
             }
         });
     </script>
 }
 
 <style>
-    .welcome-card {
-        color: white;
-        padding: 22px 26px;
-        border-radius: 22px;
-        box-shadow: 0 20px 45px rgba(0,0,0,0.18);
-    }
+/* ===== PLAN BANNER ===== */
+.plan-banner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #fefce8;
+    border: 1px solid #fde68a;
+    color: #92400e;
+    padding: 12px 18px;
+    border-radius: 12px;
+    margin-bottom: 16px;
+    font-size: 14px;
+    font-weight: 500;
+}
 
+.plan-banner.premium {
+    background: #f0fdf4;
+    border-color: #86efac;
+    color: #166534;
+}
 
+.premium-btn {
+    background: #111;
+    color: white;
+    padding: 7px 14px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: 0.2s;
+}
 
-    .welcome-avatar {
-        width: 55px;
-        height: 55px;
-        border-radius: 50%;
-        overflow: hidden;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
+.premium-btn:hover { background: #333; color: white; }
 
-        .welcome-avatar img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
+/* ===== WELCOME ===== */
+.welcome-card {
+    color: white;
+    padding: 22px 26px;
+    border-radius: 20px;
+    margin-bottom: 24px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+}
 
-    .welcome-male {
-        background: linear-gradient(135deg, #2563eb, #1e3a8a);
-    }
+.welcome-content { display: flex; align-items: center; gap: 16px; }
 
-    .welcome-female {
-        background: linear-gradient(135deg, #ec4899, #9d174d);
-    }
+.welcome-avatar {
+    width: 52px; height: 52px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.25);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px; font-weight: bold;
+    overflow: hidden;
+}
 
-    .welcome-neutral {
-        background: linear-gradient(135deg, #6366f1, #7c3aed);
-    }
+.welcome-avatar img { width: 100%; height: 100%; object-fit: cover; }
 
-    .welcome-content {
-        display: flex;
-        align-items: center;
-        gap: 18px;
-    }
+.welcome-card h5 { margin: 0; font-weight: 700; font-size: 18px; }
+.welcome-card small { opacity: 0.85; font-size: 13px; }
 
-    .welcome-avatar {
-        width: 55px;
-        height: 55px;
-        border-radius: 50%;
-        background: rgba(255,255,255,0.25);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 22px;
-        font-weight: bold;
-    }
+.welcome-male { background: linear-gradient(135deg, #2563eb, #1e3a8a); }
+.welcome-female { background: linear-gradient(135deg, #ec4899, #9d174d); }
+.welcome-neutral { background: linear-gradient(135deg, #6366f1, #7c3aed); }
+
+/* ===== KPIs ===== */
+.kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+    margin-bottom: 24px;
+}
+
+@@media (max-width: 768px) {
+    .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+.kpi-card {
+    background: white;
+    border-radius: 16px;
+    padding: 20px;
+    text-align: center;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+    border: 1px solid rgba(0,0,0,0.04);
+    transition: 0.2s;
+}
+
+.kpi-card:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.1); }
+
+.kpi-icon { font-size: 24px; margin-bottom: 8px; }
+.kpi-value { font-size: 28px; font-weight: 800; color: #111827; margin-bottom: 4px; }
+.kpi-value.streak { color: #16a34a; }
+.kpi-value.today { color: #2563eb; }
+.kpi-value.record { color: #d97706; }
+.kpi-label { font-size: 12px; color: #9ca3af; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+
+/* ===== ACTION ROW ===== */
+.action-row { margin-bottom: 20px; }
+
+.new-habit-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #2563eb;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 50px;
+    font-weight: 600;
+    font-size: 14px;
+    text-decoration: none;
+    transition: 0.2s;
+    box-shadow: 0 4px 12px rgba(37,99,235,0.3);
+}
+
+.new-habit-btn:hover { background: #1d4ed8; transform: translateY(-1px); color: white; }
+.new-habit-btn.locked { background: #374151; box-shadow: none; }
+.new-habit-btn.locked:hover { background: #1f2937; }
+
+/* ===== HABITS TABLE ===== */
+.habits-card {
+    background: white;
+    border-radius: 20px;
+    padding: 24px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    border: 1px solid rgba(0,0,0,0.04);
+    overflow-x: auto;
+}
+
+.habits-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.habits-table thead th {
+    font-size: 11px;
+    font-weight: 700;
+    color: #9ca3af;
+    letter-spacing: 0.8px;
+    padding: 0 12px 14px;
+    border-bottom: 1px solid #f3f4f6;
+}
+
+.habits-table tbody tr:not(.comment-row):hover { background: #f9fafb; }
+
+.habits-table td {
+    padding: 14px 12px;
+    font-size: 14px;
+    border-bottom: 1px solid #f9fafb;
+    vertical-align: middle;
+}
+
+.habit-name { font-weight: 600; color: #111827; }
+.streak-val { color: #16a34a; font-weight: 700; }
+.record-val { color: #d97706; font-weight: 700; }
+.date-val { color: #9ca3af; font-size: 13px; }
+
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.status-badge.success { background: #dcfce7; color: #16a34a; }
+.status-badge.danger { background: #fee2e2; color: #dc2626; }
+.status-badge.pending { background: #f3f4f6; color: #6b7280; }
+
+.action-btns { display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; }
+
+.hab-btn {
+    padding: 5px 10px;
+    border-radius: 8px;
+    font-size: 13px;
+    text-decoration: none;
+    transition: 0.15s;
+    font-weight: 500;
+}
+
+.hab-btn.complete { background: #dcfce7; color: #16a34a; }
+.hab-btn.complete:hover { background: #16a34a; color: white; }
+.hab-btn.fail { background: #fee2e2; color: #dc2626; }
+.hab-btn.fail:hover { background: #dc2626; color: white; }
+.hab-btn.edit { background: #fef3c7; color: #d97706; }
+.hab-btn.edit:hover { background: #d97706; color: white; }
+.hab-btn.delete { background: #f3f4f6; color: #6b7280; }
+.hab-btn.delete:hover { background: #6b7280; color: white; }
+
+.comment-row td { padding: 8px 12px 14px; border-bottom: 1px solid #f3f4f6; }
+
+.comment-form { display: flex; gap: 8px; margin-bottom: 6px; }
+
+.comment-input {
+    flex: 1;
+    padding: 8px 14px;
+    border-radius: 50px;
+    border: 1px solid #e5e7eb;
+    font-size: 13px;
+    outline: none;
+    background: #f9fafb;
+}
+
+.comment-input:focus { border-color: #6366f1; background: white; }
+
+.comment-item {
+    font-size: 13px;
+    color: #4b5563;
+    padding: 3px 0;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 40px;
+    color: #9ca3af;
+}
+
+.empty-icon { font-size: 48px; margin-bottom: 12px; }
+.empty-state p { font-size: 16px; font-weight: 500; margin: 0; }
+.empty-state small { font-size: 13px; }
+
+.limit-alert {
+    background: #fee2e2;
+    color: #dc2626;
+    padding: 12px 16px;
+    border-radius: 10px;
+    margin-bottom: 14px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.limit-alert a { color: #dc2626; font-weight: 700; }
+
+/* ===== CHART ===== */
+.chart-card {
+    background: white;
+    border-radius: 20px;
+    padding: 24px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    border: 1px solid rgba(0,0,0,0.04);
+}
+
+.chart-title { font-weight: 700; font-size: 16px; margin-bottom: 16px; }
+
+/* ===== DARK MODE ===== */
+body.bg-dark .kpi-card,
+body.bg-dark .habits-card,
+body.bg-dark .chart-card {
+    background: #1e1e2e !important;
+    border-color: #2d2d3d !important;
+}
+
+body.bg-dark .kpi-value { color: #f1f5f9 !important; }
+body.bg-dark .kpi-label { color: #64748b !important; }
+body.bg-dark .habit-name { color: #f1f5f9 !important; }
+body.bg-dark .habits-table thead th { color: #64748b !important; border-color: #2d2d3d !important; }
+body.bg-dark .habits-table td { border-color: #2d2d3d !important; }
+body.bg-dark .habits-table tbody tr:not(.comment-row):hover { background: #2d2d3d !important; }
+body.bg-dark .date-val { color: #64748b !important; }
+body.bg-dark .comment-input { background: #2d2d3d; border-color: #3d3d4d; color: white; }
+body.bg-dark .comment-item { color: #94a3b8; }
+body.bg-dark .plan-banner { background: #2d2d1a; border-color: #4d4d1a; color: #fde68a; }
+body.bg-dark .chart-title { color: #f1f5f9; }
+body.bg-dark .empty-state { color: #64748b; }
 </style>
-
-
-
 
 <script>
     document.addEventListener("DOMContentLoaded", function () {
-
         history.pushState(null, null, location.href);
-
-        window.onpopstate = function () {
-            history.go(1);
-        };
-
+        window.onpopstate = function () { history.go(1); };
     });
 </script>
