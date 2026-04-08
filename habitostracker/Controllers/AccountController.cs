@@ -1312,17 +1312,17 @@ namespace HabitTrackerApp.Controllers
 
             await HttpContext.SignInAsync("Cookies", principal);
 
-            // 🔥 PERFIL INCOMPLETO
-            if (user.IsGoogleAccount && (string.IsNullOrEmpty(user.Username) || user.Username.Contains("@")))
+           
+            // 🔥 PERFIL INCOMPLETO - si no tiene género o bio configurados
+            if (user.IsGoogleAccount && (string.IsNullOrEmpty(user.Gender) || user.Gender == "No especificado" || string.IsNullOrEmpty(user.Bio) || user.Bio == "Registrado con Google"))
             {
-                return RedirectToAction("CompleteProfile");
+                return RedirectToAction("CompleteProfile", "Account");
             }
 
             return RedirectToAction("Index", "Habit");
-        }
 
 
-        [HttpGet]
+            [HttpGet]
         public IActionResult GuestRegister()
         {
             // 🔥 SI ES INVITADO (nuevo o viejo)
