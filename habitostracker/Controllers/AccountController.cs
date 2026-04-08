@@ -1473,6 +1473,7 @@ namespace HabitTrackerApp.Controllers
             }
 
             // 🔥 flujo normal (no invitado)
+            // 🔥 flujo normal (no invitado)
             var user = _context.Users.FirstOrDefault(u => u.Email == email);
 
             if (user == null)
@@ -1485,7 +1486,6 @@ namespace HabitTrackerApp.Controllers
                     Role = "User",
                     CreatedAt = DateTime.Now,
                     PasswordHash = BCrypt.Net.BCrypt.HashPassword(Guid.NewGuid().ToString()),
-
                     Gender = "No especificado",
                     FullName = name ?? "Usuario",
                     Bio = "Registrado con Google",
@@ -1496,6 +1496,14 @@ namespace HabitTrackerApp.Controllers
                 _context.Users.Add(user);
                 _context.SaveChanges();
                 _ = SendWelcomeEmail(user);
+            }
+
+            // 🔥 Obtener foto de Google si no tiene ProfileImage
+            var picture = claims?.FirstOrDefault(c => c.Type == "picture")?.Value;
+            if (string.IsNullOrEmpty(user.ProfileImage) && !string.IsNullOrEmpty(picture))
+            {
+                user.ProfilePicture = picture;
+                _context.SaveChanges();
             }
 
             await SignInUser(user);
