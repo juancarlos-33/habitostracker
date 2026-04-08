@@ -11,7 +11,10 @@
         .FirstOrDefault();
 
  var userPosts = db.Posts
-    .Where(p => p.UserId == Model.Id)
+    .Where(p => p.UserId == Model.Id && 
+        (p.ImagePath == null || 
+         p.ImagePath.StartsWith("http") || 
+         !string.IsNullOrEmpty(p.Description)))
     .OrderByDescending(p => p.CreatedAt)
     .ToList();
 }
@@ -131,16 +134,20 @@
             <div class="posts-grid">
                 @foreach (var post in userPosts)
                 {
-                    <a href="/Post/Index#post-@post.Id" class="post-tile">
-                        @if (!string.IsNullOrEmpty(post.ImagePath))
+                   @if (!string.IsNullOrEmpty(post.ImagePath) && !post.ImagePath.StartsWith("http") && string.IsNullOrEmpty(post.Description))
 {
-    <img src="@post.ImagePath" class="post-tile-img" onerror="this.style.display='none'" />
+    continue;
 }
-@if (!string.IsNullOrEmpty(post.ImagePath) && post.ImagePath.StartsWith("http"))
+<a href="/Post/Index#post-@post.Id" class="post-tile">
+   @if (!string.IsNullOrEmpty(post.ImagePath) && post.ImagePath.StartsWith("http"))
 {
     <img src="@post.ImagePath" class="post-tile-img" />
 }
-<div class="post-tile-info">
+else if (string.IsNullOrEmpty(post.ImagePath) || !post.ImagePath.StartsWith("http"))
+{
+    <div class="post-tile-noimg">📝</div>
+}
+    <div class="post-tile-info">
     <p class="post-tile-desc">@(post.Description?.Length > 50 ? post.Description.Substring(0, 50) + "..." : post.Description ?? "")</p>
     <small class="post-tile-date2">@post.CreatedAt.ToString("dd MMM yyyy · hh:mm tt")</small>
 </div>
@@ -440,6 +447,16 @@ body.bg-dark .post-tile-desc { color: #cbd5e1 !important; }
     line-height: 1.4;
 }
 
+
+.post-tile-noimg {
+    width: 100%;
+    height: 140px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 32px;
+    background: linear-gradient(135deg, #eff6ff, #e0e7ff);
+}
 .post-tile-overlay {
     position: absolute;
     inset: 0;
