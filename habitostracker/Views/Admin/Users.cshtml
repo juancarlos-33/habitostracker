@@ -63,17 +63,17 @@
         <div class="kpi-value">@Model.Count</div>
         <div class="kpi-label">Usuarios</div>
     </div>
-    <div class="kpi-card kpi-clickable" onclick="filterByStatus('banned')">
+<div class="kpi-card kpi-clickable" data-no-loader="true" onclick="filterByStatus('banned')">
         <div class="kpi-icon">🚫</div>
         <div class="kpi-value danger">@Model.Count(u => u.IsBanned)</div>
         <div class="kpi-label">Baneados</div>
     </div>
-    <div class="kpi-card kpi-clickable" onclick="filterByStatus('inactive')">
+<div class="kpi-card kpi-clickable" data-no-loader="true" onclick="filterByStatus('inactive')">
         <div class="kpi-icon">⚠️</div>
         <div class="kpi-value warning">@Model.Count(u => !u.IsActive)</div>
         <div class="kpi-label">Desactivados</div>
     </div>
-    <div class="kpi-card kpi-clickable" onclick="filterByStatus('active')">
+<div class="kpi-card kpi-clickable" data-no-loader="true" onclick="filterByStatus('active')">
         <div class="kpi-icon">✅</div>
         <div class="kpi-value success" id="activeUsers">@activeNow</div>
         <div class="kpi-label">Activos ahora</div>
@@ -82,7 +82,7 @@
 
     <!-- ACCIONES RÁPIDAS -->
     <div class="quick-actions">
-    <button class="quick-btn" style="background:#f3f4f6;color:#374151;border:1px solid #e5e7eb;" onclick="showAll()">👥 Todos los usuarios</button>
+    <button class="quick-btn" data-no-loader="true" style="background:#f3f4f6;color:#374151;border:1px solid #e5e7eb;" onclick="showAll()">👥 Todos los usuarios</button>
         <a asp-controller="Admin" asp-action="Reports" class="quick-btn reports">
             🚩 Publicaciones reportadas
         </a>
@@ -343,11 +343,19 @@
 
             @if (user.Role != "SuperAdmin")
             {
-                <div class="mobile-info">
-                    <span>📧 @user.Email</span>
-                    <span>🌐 @(user.LastIp ?? "—")</span>
-                    <span>💻 @(user.Device ?? "—") · @(user.Browser ?? "—")</span>
-                </div>
+               <div class="mobile-info">
+    <span>📧 @user.Email</span>
+    <span>🌐 @(user.LastIp ?? "—")</span>
+    <span>💻 @(user.Device ?? "—") · @(user.Browser ?? "—")</span>
+    @if (user.Latitude != null && user.Longitude != null)
+    {
+        <a target="_blank"
+           href="https://maps.google.com/?q=@(user.Latitude.Value.ToString("F6", System.Globalization.CultureInfo.InvariantCulture)),@(user.Longitude.Value.ToString("F6", System.Globalization.CultureInfo.InvariantCulture))"
+           style="color:#2563eb;font-weight:600;">
+            📍 Ver en mapa
+        </a>
+    }
+</div>
             }
 
             <div class="actions-cell">
@@ -649,6 +657,10 @@ function cerrarModal() {
     document.getElementById("codeModal").style.display = "none";
     document.getElementById("codeInput").value = "";
     document.getElementById("codeError").innerText = "";
+}
+
+function showAll() {
+    document.querySelectorAll(".user-row").forEach(row => row.style.display = "");
 }
 
 function filterByStatus(status) {

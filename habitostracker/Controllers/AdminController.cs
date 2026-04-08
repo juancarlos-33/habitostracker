@@ -36,6 +36,13 @@ namespace HabitTrackerApp.Controllers
             ViewBag.TotalHabits = totalHabits;
             ViewBag.TotalMessages = totalMessages;
 
+            var recentUsers = _context.Users
+                .Where(u => u.Role != "SuperAdmin" && u.Role != "Guest")
+                .OrderByDescending(u => u.CreatedAt)
+                .ToList();
+
+            ViewBag.RecentUsers = recentUsers;
+
             return View();
         }
 

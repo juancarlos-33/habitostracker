@@ -1837,23 +1837,21 @@ const userId = '@(User.Identity.IsAuthenticated ? User.FindFirst("UserId")?.Valu
     </script>
 
  <script>
-
 function toggleSidebar(){
     const sidebar = document.getElementById("sidebar");
-    const overlay = document.getElementById("overlay");
-
     sidebar.classList.toggle("show");
-    overlay.classList.toggle("show");
+    document.body.style.overflow = sidebar.classList.contains("show") ? "hidden" : "";
 }
 
 </script>
 
 <script>
 
-document.querySelectorAll(".sidebar a").forEach(link => {
+    document.querySelectorAll(".sidebar a").forEach(link => {
     link.addEventListener("click", () => {
         document.getElementById("sidebar").classList.remove("show");
         document.getElementById("overlay").classList.remove("show");
+        document.body.style.overflow = "";
     });
 });
 
@@ -1878,9 +1876,10 @@ document.addEventListener("click", function(e){
 
 <script>
 
-function toggleSidebar(){
+    function toggleSidebar(){
     const sidebar = document.getElementById("sidebar");
     sidebar.classList.toggle("show");
+    document.body.style.overflow = sidebar.classList.contains("show") ? "hidden" : "";
 }
 
 </script>

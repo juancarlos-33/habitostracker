@@ -177,6 +177,160 @@
 
 </div>
 
+@{
+    var recentUsers = ViewBag.RecentUsers as List<HabitTrackerApp.Models.User> ?? new List<HabitTrackerApp.Models.User>();
+}
+
+<div class="new-users-section">
+    <h4 class="new-users-title">🆕 Usuarios registrados</h4>
+    <p class="new-users-subtitle">Del más reciente al más antiguo</p>
+
+    <div class="new-users-grid">
+        @foreach (var user in recentUsers)
+        {
+            <a href="/User/Profile/@user.Id" class="new-user-card">
+                @if (!string.IsNullOrEmpty(user.ProfileImage))
+                {
+                    <img src="@user.ProfileImage" class="new-user-avatar" />
+                }
+                else
+                {
+                    <div class="new-user-letter">@user.Username.Substring(0, 1).ToUpper()</div>
+                }
+                <div class="new-user-info">
+                    <span class="new-user-name">@user.Username</span>
+                    <span class="new-user-date">
+                        @if (user.IsGoogleAccount)
+                        { <span class="google-tag">G</span> }
+                        @user.CreatedAt?.ToString("dd MMM yyyy")
+                    </span>
+                </div>
+            </a>
+        }
+    </div>
+</div>
+
+<style>
+.new-users-section {
+    margin-top: 32px;
+    background: white;
+    border-radius: 20px;
+    padding: 24px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    border: 1px solid rgba(0,0,0,0.04);
+}
+
+.new-users-title {
+    font-size: 18px;
+    font-weight: 800;
+    color: #111827;
+    margin: 0 0 4px;
+}
+
+.new-users-subtitle {
+    font-size: 13px;
+    color: #9ca3af;
+    margin: 0 0 20px;
+}
+
+.new-users-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 12px;
+}
+
+.new-user-card {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px;
+    border-radius: 14px;
+    border: 1px solid #f3f4f6;
+    text-decoration: none;
+    transition: 0.2s;
+    background: #f9fafb;
+}
+
+.new-user-card:hover {
+    background: #eff6ff;
+    border-color: #bfdbfe;
+    transform: translateY(-1px);
+}
+
+.new-user-avatar {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #e5e7eb;
+    flex-shrink: 0;
+}
+
+.new-user-letter {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #2563eb, #7c3aed);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 16px;
+    flex-shrink: 0;
+}
+
+.new-user-info {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.new-user-name {
+    font-size: 14px;
+    font-weight: 700;
+    color: #111827;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.new-user-date {
+    font-size: 11px;
+    color: #9ca3af;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.google-tag {
+    background: #4285f4;
+    color: white;
+    font-size: 9px;
+    font-weight: 800;
+    padding: 1px 5px;
+    border-radius: 4px;
+}
+
+/* DARK MODE */
+body.bg-dark .new-users-section {
+    background: #1e1e2e !important;
+    border-color: #2d2d3d !important;
+}
+
+body.bg-dark .new-users-title { color: #f1f5f9 !important; }
+body.bg-dark .new-user-card {
+    background: #2d2d3d !important;
+    border-color: #3d3d4d !important;
+}
+
+body.bg-dark .new-user-card:hover {
+    background: #1e3a5f !important;
+    border-color: #2563eb !important;
+}
+
+body.bg-dark .new-user-name { color: #f1f5f9 !important; }
+</style>
 
 @section Scripts{
 <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
