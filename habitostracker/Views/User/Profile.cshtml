@@ -10,9 +10,8 @@
         .Select(f => f.Status)
         .FirstOrDefault();
 
-   var userPosts = db.Posts
-    .Where(p => p.UserId == Model.Id && 
-               (p.ImagePath == null || p.ImagePath.StartsWith("http")))
+ var userPosts = db.Posts
+    .Where(p => p.UserId == Model.Id)
     .OrderByDescending(p => p.CreatedAt)
     .ToList();
 }
@@ -137,9 +136,9 @@
 {
     <img src="@post.ImagePath" class="post-tile-img" onerror="this.style.display='none'" />
 }
-@if (!string.IsNullOrEmpty(post.ImagePath))
+@if (!string.IsNullOrEmpty(post.ImagePath) && post.ImagePath.StartsWith("http"))
 {
-    <img src="@post.ImagePath" class="post-tile-img" onerror="this.style.display='none'" />
+    <img src="@post.ImagePath" class="post-tile-img" />
 }
 <div class="post-tile-info">
     <p class="post-tile-desc">@(post.Description?.Length > 50 ? post.Description.Substring(0, 50) + "..." : post.Description ?? "")</p>
