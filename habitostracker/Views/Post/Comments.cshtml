@@ -58,7 +58,7 @@
 }
 else
 {
-    <a href="/User/Profile?id=@c.UserId" class="comment-username" style="text-decoration:none;">@c.Username</a>
+    <a href="/User/Profile/@c.UserId" class="comment-username" style="text-decoration:none;">@c.Username</a>
 }
                         <span class="comment-time">@c.CreatedAt.ToString("dd MMM yyyy · HH:mm")</span>
                     </div>
@@ -106,14 +106,16 @@ else
                     var children = replies.Where(x => x.ParentReplyId == parent.Id).ToList();
 
                     <div class="reply-item">
-                        @if (!string.IsNullOrEmpty(parent.ProfileImage))
-                        {
-                            <img src="@parent.ProfileImage" class="reply-avatar" />
-                        }
-                        else
-                        {
-                            <div class="reply-avatar-letter">@parent.Username.Substring(0, 1).ToUpper()</div>
-                        }
+                       <a href="/User/Profile/@parent.UserId" style="text-decoration:none;">
+    @if (!string.IsNullOrEmpty(parent.ProfileImage))
+    {
+        <img src="@parent.ProfileImage" class="reply-avatar" />
+    }
+    else
+    {
+        <div class="reply-avatar-letter">@parent.Username.Substring(0, 1).ToUpper()</div>
+    }
+</a>
 
                         <div class="reply-content">
                             <div class="reply-header">
@@ -159,14 +161,16 @@ else
                                 @foreach (var child in children)
                                 {
                                     <div class="reply-item child">
-                                        @if (!string.IsNullOrEmpty(child.ProfileImage))
-                                        {
-                                            <img src="@child.ProfileImage" class="reply-avatar" />
-                                        }
-                                        else
-                                        {
-                                            <div class="reply-avatar-letter">@child.Username.Substring(0, 1).ToUpper()</div>
-                                        }
+                                       <a href="/User/Profile/@child.UserId" style="text-decoration:none;">
+    @if (!string.IsNullOrEmpty(child.ProfileImage))
+    {
+        <img src="@child.ProfileImage" class="reply-avatar" />
+    }
+    else
+    {
+        <div class="reply-avatar-letter">@child.Username.Substring(0, 1).ToUpper()</div>
+    }
+</a>
                                         <div class="reply-content">
                                             <div class="reply-header">
                                                 <span class="reply-username">@child.Username</span>
