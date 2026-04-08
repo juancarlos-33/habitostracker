@@ -994,7 +994,7 @@ namespace HabitTrackerApp.Controllers
     // 🔥 IMPORTANTE (para detectar Guest)
     new Claim(ClaimTypes.Role, user.Role ?? "User"),
 
-    new Claim("ProfileImage", user.ProfileImage ?? "")
+    new Claim("ProfileImage", user.ProfileImage ?? user.ProfilePicture ?? "")
 };
 
             var claimsIdentity = new ClaimsIdentity(
@@ -1014,7 +1014,7 @@ namespace HabitTrackerApp.Controllers
         new Claim(ClaimTypes.Name, user.Username),
         new Claim("UserId", user.Id.ToString()),
         new Claim(ClaimTypes.Role, user.Role ?? "User"),
-        new Claim("ProfileImage", user.ProfileImage ?? "")
+       new Claim("ProfileImage", user.ProfileImage ?? user.ProfilePicture ?? "")
     };
 
             var claimsIdentity = new ClaimsIdentity(
