@@ -39,23 +39,27 @@
     </div>
 
     <!-- CAMBIAR CONTRASEÑA -->
-    <button class="sec-toggle" onclick="toggleSection('pwd')">
-        🔑 Cambiar contraseña
-    </button>
+    <!-- CAMBIAR CONTRASEÑA -->
+    @if (!Model.IsGoogleAccount)
+    {
+        <button class="sec-toggle" onclick="toggleSection('pwd')">
+            🔑 Cambiar contraseña
+        </button>
 
-    <div id="section-pwd" class="sec-box">
-        <form asp-controller="Account" asp-action="ChangePassword" method="post">
-            @Html.AntiForgeryToken()
+        <div id="section-pwd" class="sec-box">
+            <form asp-controller="Account" asp-action="ChangePassword" method="post">
+                @Html.AntiForgeryToken()
 
-            <input name="CurrentPassword" type="password" placeholder="Contraseña actual" class="sec-input" />
-            <input name="NewPassword" type="password" placeholder="Nueva contraseña" class="sec-input" />
-            <input name="ConfirmPassword" type="password" placeholder="Confirmar contraseña" class="sec-input" />
+                <input name="CurrentPassword" type="password" placeholder="Contraseña actual" class="sec-input" />
+                <input name="NewPassword" type="password" placeholder="Nueva contraseña" class="sec-input" />
+                <input name="ConfirmPassword" type="password" placeholder="Confirmar contraseña" class="sec-input" />
 
-            <button type="submit" class="sec-btn-primary">
-                Actualizar contraseña
-            </button>
-        </form>
-    </div>
+                <button type="submit" class="sec-btn-primary">
+                    Actualizar contraseña
+                </button>
+            </form>
+        </div>
+    }
 
     <!-- ELIMINAR CUENTA -->
     <button class="sec-toggle danger" onclick="toggleSection('del')">
