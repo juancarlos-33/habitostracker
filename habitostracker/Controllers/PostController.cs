@@ -137,36 +137,52 @@ namespace HabitTrackerApp.Controllers
         public IActionResult Index()
         {
             var userId = int.Parse(User.FindFirst("UserId").Value);
-
             var currentUser = _context.Users.FirstOrDefault(u => u.Id == userId);
 
             if (currentUser == null)
-            {
                 return RedirectToAction("Login", "Account");
-            }
 
+            // 🔥 Posts con usuario incluido
             var posts = _context.Posts
                 .Include(p => p.User)
-                .Where(p => currentUser.Role == "Admin" || currentUser.Role == "SuperAdmin" || _context.PostReports.Count(r => r.PostId == p.Id) < 5)
+                .Where(p => currentUser.Role == "Admin" || currentUser.Role == "SuperAdmin" ||
+                       !_context.PostReports.Any(r => r.PostId == p.Id && _context.PostReports.Count(r2 => r2.PostId == p.Id) >= 5))
                 .OrderByDescending(p => p.CreatedAt)
                 .ToList();
 
-            // 🔥 CONTAR COMENTARIOS + RESPUESTAS
-            var commentCounts = posts.ToDictionary(
-                p => p.Id,
-                p =>
-                    _context.PostComments.Count(c => c.PostId == p.Id) +
-                    _context.CommentReplies.Count(r =>
-                        _context.PostComments
-                            .Where(c => c.PostId == p.Id)
-                            .Select(c => c.Id)
-                            .Contains(r.CommentId)
-                    )
-            );
+            var postIds = posts.Select(p => p.Id).ToList();
+
+            // 🔥 Comentarios en una sola query
+            var commentCounts = _context.PostComments
+                .Where(c => postIds.Contains(c.PostId))
+                .GroupBy(c => c.PostId)
+                .ToDictionary(g => g.Key, g => g.Count());
+
+            // 🔥 Replies en una sola query
+            var commentIds = _context.PostComments
+                .Where(c => postIds.Contains(c.PostId))
+                .Select(c => new { c.Id, c.PostId })
+                .ToList();
+
+            var replyCountsByComment = _context.CommentReplies
+                .Where(r => commentIds.Select(c => c.Id).Contains(r.CommentId))
+                .GroupBy(r => r.CommentId)
+                .ToDictionary(g => g.Key, g => g.Count());
+
+            // Sumar replies a comentarios
+            foreach (var postId in postIds)
+            {
+                var commentsOfPost = commentIds.Where(c => c.PostId == postId).Select(c => c.Id).ToList();
+                var replyCount = commentsOfPost.Sum(cId => replyCountsByComment.ContainsKey(cId) ? replyCountsByComment[cId] : 0);
+                if (commentCounts.ContainsKey(postId))
+                    commentCounts[postId] += replyCount;
+                else
+                    commentCounts[postId] = replyCount;
+            }
 
             ViewBag.CommentCounts = commentCounts;
 
-            // 🔥 LIKES DEL USUARIO
+            // 🔥 Likes del usuario
             var myLikes = _context.PostLikes
                 .Where(l => l.UserId == userId)
                 .Select(l => l.PostId)
@@ -174,9 +190,9 @@ namespace HabitTrackerApp.Controllers
 
             ViewBag.MyLikes = myLikes;
 
-            // 🔥 CONTADOR DE LIKES
+            // 🔥 Contador de likes
             var postLikes = _context.PostLikes
-                .Where(l => posts.Select(p => p.Id).Contains(l.PostId))
+                .Where(l => postIds.Contains(l.PostId))
                 .GroupBy(l => l.PostId)
                 .ToDictionary(g => g.Key, g => g.Count());
 

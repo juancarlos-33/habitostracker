@@ -104,46 +104,9 @@
             </div>
 
             <!-- COMENTARIO PREVIEW -->
-            @{
-                var db = Context.RequestServices.GetService<HabitTrackerApp.Data.HabitDbContext>();
-                var comments = db.PostComments
-                    .Where(c => c.PostId == post.Id)
-                    .OrderBy(c => c.Id)
-                    .Take(1)
-                    .ToList();
-            }
+           
 
-            @foreach (var comment in comments)
-            {
-                <div class="comment-preview">
-                    <span class="comment-author">@(comment.Username ?? "Cuenta eliminada")</span>
-                    <span class="comment-text">@comment.Comment</span>
-                    <span class="comment-reply-link" onclick="toggleReplyBox(@comment.Id)">Responder</span>
-
-                    <form asp-controller="Post" asp-action="ReplyComment" method="post"
-                          id="replyBox-@comment.Id" class="reply-form">
-                        <input type="hidden" name="commentId" value="@comment.Id" />
-                        <input type="text" name="text" placeholder="Escribe una respuesta..." class="reply-input" />
-                        <button type="submit" class="reply-submit">Enviar</button>
-                    </form>
-
-                    @{
-                        var replies = db.CommentReplies.Where(r => r.CommentId == comment.Id).ToList();
-                    }
-                    @foreach (var reply in replies)
-                    {
-                        <div class="reply-item">
-                            <span class="comment-author">@(reply.Username ?? "Cuenta eliminada")</span>
-                            <span class="comment-text">@reply.Text</span>
-                            @if (reply.UserId == int.Parse(User.FindFirst("UserId").Value))
-                            {
-                                <a asp-controller="Post" asp-action="EditReply" asp-route-id="@reply.Id" class="reply-action">✏️</a>
-                                <a asp-controller="Post" asp-action="DeleteReply" asp-route-id="@reply.Id" class="reply-action" onclick="return confirm('¿Eliminar esta respuesta?')">🗑</a>
-                            }
-                        </div>
-                    }
-                </div>
-            }
+          
 
         </article>
     }
