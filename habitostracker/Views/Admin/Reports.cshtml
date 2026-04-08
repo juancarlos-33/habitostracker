@@ -1,111 +1,278 @@
 ﻿@model List<HabitTrackerApp.Models.PostReport>
 
-<h2 class="mb-4">🚩 Publicaciones reportadas</h2>
+<div class="reports-page">
+
+    <div class="reports-header">
+        <h2 class="reports-title">🚩 Publicaciones reportadas</h2>
+        <p class="reports-subtitle">Gestiona el contenido reportado por la comunidad</p>
+    </div>
+
+    @if (!Model.Any())
+    {
+        <div class="empty-reports">
+            <div class="empty-icon">🛡️</div>
+            <h5>Todo tranquilo por aquí</h5>
+            <p>No hay publicaciones reportadas en este momento.</p>
+        </div>
+    }
+    else
+    {
+        <div class="reports-grid">
+            @foreach (var report in Model)
+            {
+                var count = Model.Count(r => r.PostId == report.PostId);
+
+                <div class="report-card @(count > 2 ? "danger" : "")">
+
+                    <div class="report-top">
+                        <div class="report-badge-wrap">
+                            <span class="report-count @(count > 2 ? "high" : "")">
+                                🚩 @count reporte@(count > 1 ? "s" : "")
+                            </span>
+                            @if (count > 2)
+                            {
+                                <span class="alert-badge">⚠️ Alta prioridad</span>
+                            }
+                        </div>
+                        <span class="report-date">@report.CreatedAt.ToString("dd MMM yyyy · HH:mm")</span>
+                    </div>
+
+                    <div class="report-body">
+
+                        <!-- DUEÑO DEL POST -->
+                        <div class="report-user-block">
+                            <span class="user-block-label">📝 Publicado por</span>
+                            <div class="report-user">
+                                @if (!string.IsNullOrEmpty(report.Post?.User?.ProfileImage))
+                                {
+                                    <img src="@report.Post.User.ProfileImage" class="report-avatar" />
+                                }
+                                else
+                                {
+                                    <div class="report-avatar-letter" style="background:#3b82f6;">
+                                        @report.Post?.User?.Username.Substring(0, 1).ToUpper()
+                                    </div>
+                                }
+                                <span class="report-username">@report.Post?.User?.Username</span>
+                            </div>
+                        </div>
+
+                        <!-- QUIEN REPORTA -->
+                        <div class="report-user-block">
+                            <span class="user-block-label">👤 Reportado por</span>
+                            <div class="report-user">
+                                @if (!string.IsNullOrEmpty(report.ReportedByUser?.ProfileImage))
+                                {
+                                    <img src="@report.ReportedByUser.ProfileImage" class="report-avatar" />
+                                }
+                                else
+                                {
+                                    <div class="report-avatar-letter" style="background:#10b981;">
+                                        @report.ReportedByUser?.Username.Substring(0, 1).ToUpper()
+                                    </div>
+                                }
+                                <span class="report-username">@report.ReportedByUser?.Username</span>
+                            </div>
+                        </div>
+
+                        <!-- MOTIVO -->
+                        <div class="report-reason">
+                            <span class="user-block-label">💬 Motivo</span>
+                            <p>@report.Reason</p>
+                        </div>
+
+                    </div>
+
+                    <div class="report-actions">
+                        <a asp-controller="Post" asp-action="Details" asp-route-id="@report.PostId"
+                           class="report-btn view">
+                            👀 Ver post
+                        </a>
+                        <a asp-controller="Post" asp-action="Delete" asp-route-id="@report.PostId"
+                           class="report-btn delete"
+                           onclick="return confirm('¿Seguro que quieres eliminar este post?')">
+                            🗑 Eliminar
+                        </a>
+                    </div>
+
+                </div>
+            }
+        </div>
+    }
+</div>
 
 <style>
-    .high-reports {
-        background: rgba(255, 0, 0, 0.1);
-    }
+.reports-page { max-width: 1000px; margin: 0 auto; }
 
-    .avatar {
-        width: 35px;
-        height: 35px;
-        border-radius: 50%;
-        object-fit: cover;
-    }
+.reports-header { margin-bottom: 28px; }
+.reports-title { font-size: 24px; font-weight: 800; color: #111827; margin: 0 0 4px; }
+.reports-subtitle { font-size: 14px; color: #9ca3af; margin: 0; }
 
-    .avatar-initial {
-        width: 35px;
-        height: 35px;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: white;
-        font-weight: bold;
-    }
+/* EMPTY */
+.empty-reports {
+    text-align: center;
+    padding: 60px 20px;
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    border: 1px solid rgba(0,0,0,0.04);
+}
+
+.empty-reports .empty-icon { font-size: 56px; margin-bottom: 16px; }
+.empty-reports h5 { font-size: 20px; font-weight: 700; color: #111827; margin-bottom: 8px; }
+.empty-reports p { font-size: 14px; color: #9ca3af; margin: 0; }
+
+/* GRID */
+.reports-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 16px;
+}
+
+/* CARD */
+.report-card {
+    background: white;
+    border-radius: 20px;
+    padding: 20px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    border: 1px solid rgba(0,0,0,0.04);
+    transition: 0.2s;
+}
+
+.report-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.1); }
+
+.report-card.danger {
+    border-color: #fecaca;
+    background: #fff5f5;
+}
+
+/* TOP */
+.report-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.report-badge-wrap { display: flex; flex-direction: column; gap: 4px; }
+
+.report-count {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 700;
+    background: #fef3c7;
+    color: #d97706;
+}
+
+.report-count.high { background: #fee2e2; color: #dc2626; }
+
+.alert-badge {
+    display: inline-flex;
+    padding: 3px 8px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    background: #dc2626;
+    color: white;
+    width: fit-content;
+}
+
+.report-date { font-size: 11px; color: #9ca3af; }
+
+/* BODY */
+.report-body { margin-bottom: 16px; display: flex; flex-direction: column; gap: 12px; }
+
+.report-user-block { display: flex; flex-direction: column; gap: 6px; }
+
+.user-block-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: #9ca3af;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.report-user { display: flex; align-items: center; gap: 8px; }
+
+.report-avatar {
+    width: 36px; height: 36px;
+    border-radius: 50%; object-fit: cover;
+    border: 2px solid #e5e7eb;
+}
+
+.report-avatar-letter {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    color: white;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 800; font-size: 14px;
+    border: 2px solid #e5e7eb;
+}
+
+.report-username { font-size: 14px; font-weight: 600; color: #111827; }
+
+.report-reason p {
+    font-size: 13px;
+    color: #4b5563;
+    margin: 4px 0 0;
+    background: #f9fafb;
+    padding: 10px 14px;
+    border-radius: 10px;
+    border-left: 3px solid #e5e7eb;
+    line-height: 1.5;
+}
+
+/* ACTIONS */
+.report-actions { display: flex; gap: 8px; }
+
+.report-btn {
+    flex: 1;
+    padding: 9px 12px;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 600;
+    text-align: center;
+    text-decoration: none;
+    transition: 0.2s;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.report-btn.view { background: #eff6ff; color: #2563eb; }
+.report-btn.view:hover { background: #2563eb; color: white; }
+.report-btn.delete { background: #fef2f2; color: #dc2626; }
+.report-btn.delete:hover { background: #dc2626; color: white; }
+
+/* DARK MODE */
+body.bg-dark .reports-title { color: #f1f5f9 !important; }
+
+body.bg-dark .empty-reports,
+body.bg-dark .report-card {
+    background: #1e1e2e !important;
+    border-color: #2d2d3d !important;
+}
+
+body.bg-dark .report-card.danger {
+    background: #2d1a1a !important;
+    border-color: #4c1d1d !important;
+}
+
+body.bg-dark .empty-reports h5 { color: #f1f5f9 !important; }
+body.bg-dark .report-username { color: #f1f5f9 !important; }
+body.bg-dark .report-reason p {
+    background: #2d2d3d !important;
+    color: #cbd5e1 !important;
+    border-left-color: #3d3d4d !important;
+}
+
+body.bg-dark .report-btn.view { background: #1e3a5f !important; color: #60a5fa !important; }
+body.bg-dark .report-btn.view:hover { background: #2563eb !important; color: white !important; }
+body.bg-dark .report-btn.delete { background: #4c1d1d !important; color: #f87171 !important; }
+body.bg-dark .report-btn.delete:hover { background: #dc2626 !important; color: white !important; }
 </style>
-
-<table class="table table-bordered align-middle">
-    <thead>
-        <tr>
-            <th>Post</th>
-            <th>Reportado por</th>
-            <th>Motivo</th>
-            <th>Fecha</th>
-            <th>Acciones</th>
-        </tr>
-    </thead>
-
-    <tbody>
-        @foreach (var report in Model)
-        {
-            var count = Model.Count(r => r.PostId == report.PostId);
-
-            <tr class="@(count > 2 ? "high-reports" : "")">
-
-                <!-- 📝 USUARIO DEL POST -->
-                <td>
-                    <div class="d-flex align-items-center gap-2">
-
-                        @if (!string.IsNullOrEmpty(report.Post?.User?.ProfileImage))
-                        {
-                            <img src="@report.Post.User.ProfileImage" class="avatar" />
-                        }
-                        else
-                        {
-                            <div class="avatar-initial" style="background:#3b82f6;">
-                                @report.Post?.User?.Username.Substring(0, 1).ToUpper()
-                            </div>
-                        }
-
-                        <div>
-                            <span>@report.Post?.User?.Username</span><br />
-                            <span class="badge bg-danger">
-                                @count reportes
-                            </span>
-                        </div>
-                    </div>
-                </td>
-
-                <!-- 👤 QUIEN REPORTA -->
-                <td>
-                    <div class="d-flex align-items-center gap-2">
-
-                        @if (!string.IsNullOrEmpty(report.ReportedByUser?.ProfileImage))
-                        {
-                            <img src="@report.ReportedByUser.ProfileImage" class="avatar" />
-                        }
-                        else
-                        {
-                            <div class="avatar-initial" style="background:#10b981;">
-                                @report.ReportedByUser?.Username.Substring(0, 1).ToUpper()
-                            </div>
-                        }
-
-                        <span>@report.ReportedByUser?.Username</span>
-                    </div>
-                </td>
-
-                <td>@report.Reason</td>
-
-                <td>@report.CreatedAt.ToString("dd/MM/yyyy HH:mm")</td>
-
-                <!-- ⚙️ ACCIONES -->
-                <td>
-                    <a asp-controller="Post" asp-action="Details" asp-route-id="@report.PostId"
-                           class="btn btn-primary btn-sm me-1">
-                        👀 Ver
-                    </a>
-
-                    <a asp-controller="Post" asp-action="Delete" asp-route-id="@report.PostId"
-                           class="btn btn-danger btn-sm"
-                           onclick="return confirm('¿Seguro que quieres eliminar este post?')">
-                        🗑 Eliminar
-                    </a>
-                </td>
-
-            </tr>
-        }
-    </tbody>
-</table>

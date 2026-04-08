@@ -84,8 +84,9 @@
 
             <!-- ACCIONES -->
             <div class="post-actions">
-                <button class="action-btn like-btn @(myLikes.Contains(post.Id) ? "liked" : "")"
-                        onclick="toggleLike(@post.Id, this)">
+              <button class="action-btn like-btn @(myLikes.Contains(post.Id) ? "liked" : "")"
+        data-no-loader="true"
+        onclick="toggleLike(@post.Id, this)">
                     <span class="action-icon">@(myLikes.Contains(post.Id) ? "❤️" : "🤍")</span>
                     <span class="action-count" id="post-like-count-@post.Id">
                         @(ViewBag.PostLikes != null && ((Dictionary<int,int>)ViewBag.PostLikes).ContainsKey(post.Id) ? ((Dictionary<int,int>)ViewBag.PostLikes)[post.Id] : 0)
@@ -97,11 +98,11 @@
                     <span class="action-count">@(commentCounts.ContainsKey(post.Id) ? commentCounts[post.Id] : 0)</span>
                 </a>
 
-                <button class="action-btn" onclick="openShare(@post.Id)">
+               <button class="action-btn" data-no-loader="true" onclick="openShare(@post.Id)">
                     <span class="action-icon">↪️</span>
                 </button>
 
-                <button class="action-btn" onclick="savePost(@post.Id)">
+               <button class="action-btn" data-no-loader="true" onclick="savePost(@post.Id)">
                     <span class="action-icon">🔖</span>
                 </button>
 

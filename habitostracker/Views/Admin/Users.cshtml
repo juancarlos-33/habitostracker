@@ -1,795 +1,648 @@
 ﻿@inject HabitTrackerApp.Data.HabitDbContext _context
 @model List<HabitTrackerApp.Models.User>
 
-    <form id="antiForgeryForm" style="display:none;">
+<form id="antiForgeryForm" style="display:none;">
     @Html.AntiForgeryToken()
 </form>
 
 @{
     var myId = int.Parse(User.FindFirst("UserId").Value);
-
     var me = _context.Users.FirstOrDefault(u => u.Id == myId);
-
     var activeNow = Model.Count(u =>
-        u.IsActive &&
-        !u.IsBanned &&
-        u.LastOnline != null &&
-        (DateTime.Now - u.LastOnline.Value).TotalSeconds < 60
-    );
-}
-
-
-
-<h2 class="mb-4">👥Usuarios registrados </h2>
-
-@{
+        u.IsActive && !u.IsBanned && u.LastOnline != null &&
+        (DateTime.Now - u.LastOnline.Value).TotalSeconds < 60);
     var block = Context.RequestServices
         .GetService<HabitTrackerApp.Data.HabitDbContext>()
-        .ConnectionBlocks
-        .FirstOrDefault();
-
+        .ConnectionBlocks.FirstOrDefault();
     bool isBlocked = block != null && block.IsBlocked;
+    var ipInfo = ViewBag.IpInfo as Dictionary<string, (string country, string region, string city, string isp)>;
 }
 
+<div class="admin-page">
 
-    <div class="mb-4">
+    <!-- HEADER -->
+    <div class="admin-header">
+        <h2 class="admin-title">🛡️ Panel de Administración</h2>
+        <p class="admin-subtitle">Gestiona usuarios, conexiones y seguridad del sistema</p>
+    </div>
 
+    <!-- CONEXIÓN -->
+    <div class="connection-banner @(isBlocked ? "blocked" : "active")">
+        <div class="connection-status">
+            <span class="status-dot @(isBlocked ? "red" : "green")"></span>
+            <span>@(isBlocked ? "🔴 Conexión bloqueada" : "🟢 Conexión activa")</span>
+        </div>
         @if (isBlocked)
         {
-            <div class="alert alert-danger d-flex justify-content-between align-items-center">
-
-                <span>🔴 Conexión bloqueada</span>
-
-                <form asp-controller="Admin" asp-action="ToggleConnectionBlock" method="post">
-                    <button class="btn btn-success"
-                    onclick="return confirm('¿Restaurar la conexión del sistema?')">
-                        🔓 Restaurar conexión global
-                    </button>
-                </form>
-
-            </div>
+            <form asp-controller="Admin" asp-action="ToggleConnectionBlock" method="post">
+                <button class="conn-btn restore" onclick="return confirm('¿Restaurar la conexión del sistema?')">
+                    🔓 Restaurar conexión
+                </button>
+            </form>
         }
-        else
+        else if (me.Role == "SuperAdmin")
         {
-            <div class="alert alert-success d-flex justify-content-between align-items-center">
-
-                <span>🟢 Conexión activa</span>
-
-                @if (me.Role == "SuperAdmin")
-                {
-                    <form asp-controller="Admin" asp-action="ToggleConnectionBlock" method="post">
-                        <button class="btn btn-danger"
-                                onclick="return confirm('¿Seguro que deseas bloquear la conexión?')">
-                            🔒 Bloquear conexión global
-                        </button>
-                    </form>
-                }
-                else if (me.Role == "Admin")
-                {
-                    <button type="button"
-                            class="btn btn-danger"
-                            onclick="pedirCodigoAdmin()">
-                        🔒 Bloquear conexión global
-                    </button>
-                }
-            </div>
-           
+            <form asp-controller="Admin" asp-action="ToggleConnectionBlock" method="post">
+                <button class="conn-btn block" onclick="return confirm('¿Bloquear la conexión global?')">
+                    🔒 Bloquear conexión
+                </button>
+            </form>
         }
-
-    </div>
-
-
-
-
-
-<a asp-controller="Admin"
-   asp-action="Reports"
-   class="btn btn-danger mb-3">
-    🚩 Ver publicaciones reportadas
-</a>
-
-<div class="row mb-4 text-center" style="max-width:900px;">
-
-    <div class="col-md-6 col-lg-3">
-        <div class="card shadow-sm border-0 rounded-4 p-3">
-            <h6 class="text-muted">Usuarios</h6>
-            <h3>@Model.Count</h3>
-        </div>
-    </div>
-
-    <div class="col-md-6 col-lg-3">
-        <div class="card shadow-sm border-0 rounded-4 p-3">
-            <h6 class="text-muted">Baneados</h6>
-            <h3 class="text-danger">@Model.Count(u => u.IsBanned)</h3>
-        </div>
-    </div>
-
-    <div class="col-md-6 col-lg-3">
-        <div class="card shadow-sm border-0 rounded-4 p-3">
-            <h6 class="text-muted">Desactivados</h6>
-            <h3 class="text-warning">@Model.Count(u => !u.IsActive)</h3>
-        </div>
-    </div>
-
-    <div class="col-md-6 col-lg-3">
-        <div class="card shadow-sm border-0 rounded-4 p-3">
-            <h6 class="text-muted">Activos ahora</h6>
-            <h3 class="text-success" id="activeUsers">@activeNow</h3>
-        </div>
-    </div>
-
-</div>
-
-
-@if (User.IsInRole("SuperAdmin"))
-{
-    <form asp-controller="Admin" asp-action="GenerateAccessCode" method="post">
-        <button type="submit" class="btn btn-warning mb-3">
-            🔑 Generar código de autorización
-        </button>
-    </form>
-}
-
-@if (TempData["GeneratedCode"] != null)
-{
-    <div class="alert alert-success text-center">
-        Código generado: <strong>@TempData["GeneratedCode"]</strong> 🔐
-    </div>
-}
-
-<input type="text"
-       id="searchUser"
-       class="form-control mb-3"
-       placeholder="🔍 Buscar usuario..." />
-
-
-
-
-<div class="table-responsive">
-    <table class="table table-bordered table-hover">
-
-    <thead class="table-dark">
-        <tr>
-            <th>Foto</th>
-            <th>Usuario</th>
-            <th>Email</th>
-            <th>Estado</th>
-            <th>Acciones</th>
-            <th>IP</th>
-            <th>Sistema</th>
-<th>Dispositivo</th>
-<th>Navegador</th>
-        </tr>
-    </thead>
-
-        <tbody>
-            @{
-                var ipInfo = ViewBag.IpInfo as Dictionary<string, (string country, string region, string city, string isp)>;
-            }
-
-        @if (TempData["NewPassword"] != null)
+        else if (me.Role == "Admin")
         {
-            <div class="alert alert-success">
-                Nueva contraseña generada: <b>@TempData["NewPassword"]</b>
-            </div>
+            <button class="conn-btn block" onclick="pedirCodigoAdmin()">
+                🔒 Bloquear conexión
+            </button>
         }
+    </div>
 
-        @foreach (var user in Model)
+    <!-- KPIs -->
+    <div class="kpi-grid">
+        <div class="kpi-card">
+            <div class="kpi-icon">👥</div>
+            <div class="kpi-value">@Model.Count</div>
+            <div class="kpi-label">Usuarios</div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-icon">🚫</div>
+            <div class="kpi-value danger">@Model.Count(u => u.IsBanned)</div>
+            <div class="kpi-label">Baneados</div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-icon">⚠️</div>
+            <div class="kpi-value warning">@Model.Count(u => !u.IsActive)</div>
+            <div class="kpi-label">Desactivados</div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-icon">✅</div>
+            <div class="kpi-value success" id="activeUsers">@activeNow</div>
+            <div class="kpi-label">Activos ahora</div>
+        </div>
+    </div>
+
+    <!-- ACCIONES RÁPIDAS -->
+    <div class="quick-actions">
+        <a asp-controller="Admin" asp-action="Reports" class="quick-btn reports">
+            🚩 Publicaciones reportadas
+        </a>
+        @if (User.IsInRole("SuperAdmin"))
         {
-            var blockedIps = ViewBag.BlockedIps as List<string> ?? new List<string>();
-            bool isBlockedIp = user.LastIp != null && blockedIps.Contains(user.LastIp);
+            <form asp-controller="Admin" asp-action="GenerateAccessCode" method="post" style="display:inline">
+                <button type="submit" class="quick-btn code">🔑 Generar código</button>
+            </form>
+        }
+    </div>
 
-                <tr class="user-row">
+    @if (TempData["GeneratedCode"] != null)
+    {
+        <div class="code-alert">
+            🔐 Código generado: <strong>@TempData["GeneratedCode"]</strong>
+        </div>
+    }
 
-                <td>
-                    @if (!string.IsNullOrEmpty(user.ProfileImage))
+    @if (TempData["NewPassword"] != null)
+    {
+        <div class="code-alert">
+            🔑 Nueva contraseña: <strong>@TempData["NewPassword"]</strong>
+        </div>
+    }
+
+    <!-- BUSCADOR -->
+    <div class="search-wrap">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="searchUser" placeholder="Buscar usuario..." class="search-input" />
+    </div>
+
+    <!-- TABLA DESKTOP / CARDS MOBILE -->
+    <div class="users-container">
+
+        <!-- DESKTOP TABLE -->
+        <div class="table-wrap">
+            <table class="users-table">
+                <thead>
+                    <tr>
+                        <th>Usuario</th>
+                        <th>Email</th>
+                        <th>Estado</th>
+                        <th>Acciones</th>
+                        <th>IP / Ubicación</th>
+                        <th>Sistema</th>
+                        <th>Dispositivo</th>
+                        <th>Navegador</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var user in Model)
                     {
-                        <img src="@user.ProfileImage" width="40" height="40" style="border-radius:50%" />
-                    }
-                    else
-                    {
-                        <div style="width:40px;height:40px;border-radius:50%;background:#2563eb;color:white;
-                            display:flex;align-items:center;justify-content:center;font-weight:bold;">
-                            @user.Username.Substring(0, 1).ToUpper()
-                        </div>
-                    }
-                </td>
-                    <td class="username">
-                        @user.Username
-                        @if (user.Role == "SuperAdmin")
-                        {
-                            <span class="badge bg-warning text-dark ms-1">👑 SUPER ADMIN</span>
-                        }
-                        else if (user.Role == "Admin")
-                        {
-                            <span class="badge bg-info text-dark ms-1">Admin</span>
-                        }
-                    </td>
+                        var blockedIps = ViewBag.BlockedIps as List<string> ?? new List<string>();
+                        bool isBlockedIp = user.LastIp != null && blockedIps.Contains(user.LastIp);
 
-                    <td>
-                        @if (user.Role == "SuperAdmin")
-                        {
-                            <span class="text-muted">🔒 Privado</span>
-                        }
-                        else
-                        {
-                            @user.Email
-                        }
-                    </td>
-
-                    <td id="status-@user.Id">
-                        @if (user.IsBanned)
-                        {
-                            <span class="badge bg-danger">Baneado</span>
-                        }
-                        else if (!user.IsActive)
-                        {
-                            <span class="badge bg-warning text-dark">Desactivado</span>
-                        }
-                        else if (user.LastOnline != null && (DateTime.Now - user.LastOnline.Value).TotalSeconds < 60)
-                        {
-                            <span class="badge bg-success">Activo</span>
-                        }
-                        else
-                        {
-                            <span class="badge bg-secondary">Inactivo</span>
-                        }
-                    </td>
-
-                    <!-- ACCIONES -->
-                    <td>
-                        <div class="d-flex flex-wrap gap-2">
-
-                            @if (user.Role == "SuperAdmin")
-                            {
-                                <span class="badge bg-dark">Propietario</span>
-                            }
-                            else if (user.Id == myId)
-                            {
-                                <span class="badge bg-secondary">Tu cuenta</span>
-                            }
-                            else
-                            {
-                                if (!user.IsActive)
-                                {
-                                    <a asp-controller="Admin"
-                                           asp-action="ReactivateUser"
-                                           asp-route-id="@user.Id"
-                                           class="btn btn-sm btn-outline-success rounded-pill"
-                                          
-                                           onclick="return confirm('¿Reactivar este usuario?')">
-                                        🔓 Reactivar
-                                    </a>
-                                }
-                                else if (user.IsBanned)
-                                {
-                                    <a asp-controller="Admin"
-                                           asp-action="UnbanUser"
-                                           asp-route-id="@user.Id"
-                                           class="btn btn-sm btn-outline-success rounded-pill"
-                                           
-                                           onclick="return confirm('¿Desbanear este usuario?')">
-                                        🔓 Desbanear
-                                    </a>
-                                }
-                                else
-                                {
-                                    @if (user.Id != int.Parse(User.FindFirst("UserId").Value))
+                        <tr class="user-row" data-username="@user.Username.ToLower()">
+                            <td>
+                                <div class="user-cell">
+                                    @if (!string.IsNullOrEmpty(user.ProfileImage))
                                     {
-                                       @if (User.IsInRole("SuperAdmin") || user.Role != "SuperAdmin")
-                                        {
-                                            <button type="button"
-                                                    class="btn btn-sm btn-outline-danger rounded-pill"
-                                                   
-                                                    onclick="confirmDelete(@user.Id)">
-                                                🔒 Desactivar
-                                            </button>
-                                        }
-
-                                        @if (User.IsInRole("SuperAdmin") || user.Role != "SuperAdmin")
-                                        {
-                                            <a asp-controller="Admin"
-                                                   asp-action="BanUser"
-                                                   asp-route-id="@user.Id"
-                                                   class="btn btn-sm btn-outline-warning rounded-pill"
-                                                  
-                                                   onclick="return confirm('¿Seguro que quieres banear este usuario?');">
-                                                🚫 Banear
-                                            </a>
-                                        }
-
-                                        @if (User.IsInRole("SuperAdmin"))
-                                        {
-                                            <a asp-controller="Admin" asp-action="DeleteUserPermanently"
-                                                   asp-route-id="@user.Id"
-                                                   class="btn btn-sm rounded-pill btn-delete"
-                                                   onclick="return confirm('¿Eliminar este usuario permanentemente?')">
-
-                                                💀 Eliminar
-                                            </a>
-                                        }
+                                        <img src="@user.ProfileImage" class="user-thumb" />
                                     }
-
-                                    @if (User.IsInRole("SuperAdmin"))
+                                    else
                                     {
-                                        if (user.Role == "Admin")
+                                        <div class="user-thumb-letter">@user.Username.Substring(0, 1).ToUpper()</div>
+                                    }
+                                    <div>
+                                        <div class="user-name-cell">@user.Username</div>
+                                        @if (user.Role == "SuperAdmin")
+                                        { <span class="role-tag owner">👑 SuperAdmin</span> }
+                                        else if (user.Role == "Admin")
+                                        { <span class="role-tag admin">Admin</span> }
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="email-cell">
+                                @if (user.Role == "SuperAdmin")
+                                { <span class="text-muted">🔒 Privado</span> }
+                                else
+                                { @user.Email }
+                            </td>
+                            <td id="status-@user.Id">
+                                @if (user.IsBanned)
+                                { <span class="status-tag banned">Baneado</span> }
+                                else if (!user.IsActive)
+                                { <span class="status-tag inactive">Desactivado</span> }
+                                else if (user.LastOnline != null && (DateTime.Now - user.LastOnline.Value).TotalSeconds < 60)
+                                { <span class="status-tag active">Activo</span> }
+                                else
+                                { <span class="status-tag offline">Inactivo</span> }
+                            </td>
+                            <td>
+                                <div class="actions-cell">
+                                    @if (user.Role == "SuperAdmin")
+                                    { <span class="role-tag owner">Propietario</span> }
+                                    else if (user.Id == myId)
+                                    { <span class="role-tag me">Tu cuenta</span> }
+                                    else
+                                    {
+                                        if (!user.IsActive)
                                         {
-                                            <a href="#"
-                                                   class="btn btn-sm btn-outline-secondary rounded-pill"
-                                                  
-                                                   onclick="event.preventDefault(); confirmRemoveAdmin(@user.Id);">
-                                                Quitar Admin
-                                            </a>
+                                            <a asp-controller="Admin" asp-action="ReactivateUser" asp-route-id="@user.Id"
+                                               class="action-btn success" onclick="return confirm('¿Reactivar?')">🔓 Reactivar</a>
+                                        }
+                                        else if (user.IsBanned)
+                                        {
+                                            <a asp-controller="Admin" asp-action="UnbanUser" asp-route-id="@user.Id"
+                                               class="action-btn success" onclick="return confirm('¿Desbanear?')">🔓 Desbanear</a>
                                         }
                                         else
                                         {
-                                            <a asp-controller="Admin"
-                                                   asp-action="MakeAdmin"
-                                                   asp-route-id="@user.Id"
-                                                   class="btn btn-sm btn-outline-primary rounded-pill"
-                                             
-                                                   onclick="return confirm('¿Seguro que quieres convertir a este usuario en administrador?');">
-                                                Hacer Admin
-                                            </a>
+                                            if (user.Id != myId)
+                                            {
+                                                <button class="action-btn danger" onclick="confirmDelete(@user.Id)">🔒 Desactivar</button>
+                                                <a asp-controller="Admin" asp-action="BanUser" asp-route-id="@user.Id"
+                                                   class="action-btn warning" onclick="return confirm('¿Banear?')">🚫 Banear</a>
+                                                @if (User.IsInRole("SuperAdmin"))
+                                                {
+                                                    <a asp-controller="Admin" asp-action="DeleteUserPermanently" asp-route-id="@user.Id"
+                                                       class="action-btn delete" onclick="return confirm('¿Eliminar permanentemente?')">💀 Eliminar</a>
+                                                }
+                                            }
+                                            @if (User.IsInRole("SuperAdmin"))
+                                            {
+                                                if (user.Role == "Admin")
+                                                {
+                                                    <a href="#" class="action-btn secondary"
+                                                       onclick="event.preventDefault(); confirmRemoveAdmin(@user.Id)">Quitar Admin</a>
+                                                }
+                                                else
+                                                {
+                                                    <a asp-controller="Admin" asp-action="MakeAdmin" asp-route-id="@user.Id"
+                                                       class="action-btn primary" onclick="return confirm('¿Hacer Admin?')">Hacer Admin</a>
+                                                }
+                                            }
+                                        }
+                                        @if (User.IsInRole("SuperAdmin") && user.Id != myId)
+                                        {
+                                            <form asp-controller="Admin" asp-action="ResetPassword" method="post" style="display:inline">
+                                                <input type="hidden" name="userId" value="@user.Id" />
+                                                <button class="action-btn warning" onclick="return confirm('¿Resetear contraseña?')">🔑 Reset</button>
+                                            </form>
                                         }
                                     }
-                                }
-
-                                @if (User.IsInRole("SuperAdmin") && user.Id != myId)
+                                </div>
+                            </td>
+                            <td class="ip-cell">
+                                @if (user.Role != "SuperAdmin")
                                 {
-                                    <form asp-controller="Admin"
-                                          asp-action="ResetPassword"
-                                          method="post"
-                                          style="display:inline">
-
-                                        <input type="hidden" name="userId" value="@user.Id" />
-
-                                        <button class="btn btn-sm btn-outline-warning rounded-pill"
-                                                onclick="return confirm('¿Resetear la contraseña de este usuario?');">
-                                            🔑 Reset
-                                        </button>
-
-                                    </form>
-                                }
-                            }
-
-                        </div>
-                    </td>
-                       
-
-
-
-                
-
-                <!-- IP + PAIS + BLOQUEO -->
-                <td style="min-width:220px">
-
-                        @if (user.Role == "SuperAdmin")
-                        {
-                            <span class="text-muted">—</span>
-                        }
-                        else
-                        {
-                            @user.LastIp
-                        }
-                        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
-
-                            <span style="font-size:13px;line-height:1.2">
-                                 
-                                
-                                @if (user.Role != "SuperAdmin"
-                                && !string.IsNullOrEmpty(user.LastIp)
-                                && ipInfo != null
-                                && ipInfo.ContainsKey(user.LastIp))
-                                    {
-                                        <br />
-                                        <small class="text-muted">
-                                            🌍 @ipInfo[user.LastIp].country <br />
-                                            🗺 @ipInfo[user.LastIp].region <br />
-                                            🏙 @ipInfo[user.LastIp].city <br />
-                                            📡 @ipInfo[user.LastIp].isp <br />
-
+                                    <div class="ip-info">
+                                        <span class="ip-addr">@user.LastIp</span>
+                                        @if (!string.IsNullOrEmpty(user.LastIp) && ipInfo != null && ipInfo.ContainsKey(user.LastIp))
+                                        {
+                                            <small>
+                                                🌍 @ipInfo[user.LastIp].country
+                                                🏙 @ipInfo[user.LastIp].city
+                                            </small>
                                             @if (user.Latitude != null && user.Longitude != null)
                                             {
-                                                <a target="_blank"
-                                                       href="https://maps.google.com/?q=@(user.Latitude.Value.ToString("F6", System.Globalization.CultureInfo.InvariantCulture)),@(user.Longitude.Value.ToString("F6", System.Globalization.CultureInfo.InvariantCulture))"
-                                                       class="text-primary">
-                                                    📍 Ver en mapa
+                                                <a target="_blank" class="map-link"
+                                                   href="https://maps.google.com/?q=@(user.Latitude.Value.ToString("F6", System.Globalization.CultureInfo.InvariantCulture)),@(user.Longitude.Value.ToString("F6", System.Globalization.CultureInfo.InvariantCulture))">
+                                                    📍 Ver mapa
                                                 </a>
                                             }
-                                        </small>
-                                    }
-                                    
-                                    
-                                    
-                                    
-                                    @if (user.Role == "SuperAdmin")
-                                    {
-                                        <br />
-                                        <small class="text-muted">—</small>
-                                    }
-                               
-                            </span>
-
-                            @if (User.IsInRole("SuperAdmin") && user.Id != myId)
-                            {
-                                if (isBlockedIp)
-                                {
-                                    <form asp-controller="Admin"
-                                    asp-action="UnblockIP"
-                                    method="post"
-                                    style="margin:0">
-
-                                        <input type="hidden" name="ip" value="@user.LastIp" />
-
-                                        <button class="btn btn-success btn-sm"
-
-                                        onclick="return confirm('¿Desbloquear esta IP?')">
-                                            🔓
-                                        </button>
-
-                                    </form>
+                                        }
+                                        @if (User.IsInRole("SuperAdmin") && user.Id != myId)
+                                        {
+                                            @if (isBlockedIp)
+                                            {
+                                                <form asp-controller="Admin" asp-action="UnblockIP" method="post" style="margin:0">
+                                                    <input type="hidden" name="ip" value="@user.LastIp" />
+                                                    <button class="ip-btn unblock" onclick="return confirm('¿Desbloquear IP?')">🔓</button>
+                                                </form>
+                                            }
+                                            else
+                                            {
+                                                <form asp-controller="Admin" asp-action="BlockIP" method="post" style="margin:0"
+                                                      onsubmit="return confirm('¿Bloquear IP?')">
+                                                    <input type="hidden" name="ip" value="@user.LastIp" />
+                                                    <button type="submit" class="ip-btn block">🚫</button>
+                                                </form>
+                                            }
+                                        }
+                                    </div>
                                 }
                                 else
-                                {
-                                   <form asp-controller="Admin" asp-action="BlockIP" method="post" style="margin:0"
-      onsubmit="return confirm('¿Bloquear esta IP?')">
-    
-    <input type="hidden" name="ip" value="@user.LastIp" />
+                                { <span class="text-muted">—</span> }
+                            </td>
+                            <td>@(user.Role == "SuperAdmin" ? "—" : (user.OperatingSystem ?? "—"))</td>
+                            <td>@(user.Role == "SuperAdmin" ? "—" : (user.Device ?? "—"))</td>
+                            <td>@(user.Role == "SuperAdmin" ? "—" : (user.Browser ?? "—"))</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
 
-    <button type="submit" class="btn btn-danger btn-sm">
-        🚫
-    </button>
-</form>
+        <!-- MOBILE CARDS -->
+        <div class="mobile-cards">
+            @foreach (var user in Model)
+            {
+                var blockedIps = ViewBag.BlockedIps as List<string> ?? new List<string>();
+                bool isBlockedIp = user.LastIp != null && blockedIps.Contains(user.LastIp);
+
+                <div class="mobile-card user-row" data-username="@user.Username.ToLower()">
+                    <div class="mobile-card-top">
+                        <div class="user-cell">
+                            @if (!string.IsNullOrEmpty(user.ProfileImage))
+                            {
+                                <img src="@user.ProfileImage" class="user-thumb" />
+                            }
+                            else
+                            {
+                                <div class="user-thumb-letter">@user.Username.Substring(0, 1).ToUpper()</div>
+                            }
+                            <div>
+                                <div class="user-name-cell">@user.Username</div>
+                                @if (user.Role == "SuperAdmin")
+                                { <span class="role-tag owner">👑 SuperAdmin</span> }
+                                else if (user.Role == "Admin")
+                                { <span class="role-tag admin">Admin</span> }
+                            </div>
+                        </div>
+                        <div id="status-mob-@user.Id">
+                            @if (user.IsBanned)
+                            { <span class="status-tag banned">Baneado</span> }
+                            else if (!user.IsActive)
+                            { <span class="status-tag inactive">Desactivado</span> }
+                            else if (user.LastOnline != null && (DateTime.Now - user.LastOnline.Value).TotalSeconds < 60)
+                            { <span class="status-tag active">Activo</span> }
+                            else
+                            { <span class="status-tag offline">Inactivo</span> }
+                        </div>
+                    </div>
+
+                    @if (user.Role != "SuperAdmin")
+                    {
+                        <div class="mobile-info">
+                            <span>📧 @user.Email</span>
+                            <span>🌐 @(user.LastIp ?? "—")</span>
+                            <span>💻 @(user.Device ?? "—") · @(user.Browser ?? "—")</span>
+                        </div>
+                    }
+
+                    <div class="actions-cell">
+                        @if (user.Role == "SuperAdmin")
+                        { <span class="role-tag owner">Propietario</span> }
+                        else if (user.Id == myId)
+                        { <span class="role-tag me">Tu cuenta</span> }
+                        else
+                        {
+                            if (!user.IsActive)
+                            {
+                                <a asp-controller="Admin" asp-action="ReactivateUser" asp-route-id="@user.Id"
+                                   class="action-btn success" onclick="return confirm('¿Reactivar?')">🔓 Reactivar</a>
+                            }
+                            else if (user.IsBanned)
+                            {
+                                <a asp-controller="Admin" asp-action="UnbanUser" asp-route-id="@user.Id"
+                                   class="action-btn success" onclick="return confirm('¿Desbanear?')">🔓 Desbanear</a>
+                            }
+                            else
+                            {
+                                <button class="action-btn danger" onclick="confirmDelete(@user.Id)">🔒 Desactivar</button>
+                                <a asp-controller="Admin" asp-action="BanUser" asp-route-id="@user.Id"
+                                   class="action-btn warning" onclick="return confirm('¿Banear?')">🚫 Banear</a>
+                                @if (User.IsInRole("SuperAdmin"))
+                                {
+                                    <a asp-controller="Admin" asp-action="DeleteUserPermanently" asp-route-id="@user.Id"
+                                       class="action-btn delete" onclick="return confirm('¿Eliminar?')">💀</a>
                                 }
                             }
-
-                        </div>
-                    
-                    
-                   
-
-                </td>
-
-                    <!-- SISTEMA -->
-                    <td>
-                        @if (user.Role == "SuperAdmin")
-                        {
-                            <span class="text-muted">—</span>
+                            @if (User.IsInRole("SuperAdmin") && user.Id != myId)
+                            {
+                                <form asp-controller="Admin" asp-action="ResetPassword" method="post" style="display:inline">
+                                    <input type="hidden" name="userId" value="@user.Id" />
+                                    <button class="action-btn warning" onclick="return confirm('¿Resetear?')">🔑</button>
+                                </form>
+                            }
                         }
-                        else
-                        {
-                            @(string.IsNullOrEmpty(user.OperatingSystem) ? "—" : user.OperatingSystem)
-                        }
-                    </td>
-
-                    <!-- DISPOSITIVO -->
-                    <td>
-                        @if (user.Role == "SuperAdmin")
-                        {
-                            <span class="text-muted">—</span>
-                        }
-                        else
-                        {
-                            @(string.IsNullOrEmpty(user.Device) ? "—" : user.Device)
-                        }
-                    </td>
-
-                    <!-- NAVEGADOR -->
-                    <td>
-                        @if (user.Role == "SuperAdmin")
-                        {
-                            <span class="text-muted">—</span>
-                        }
-                        else
-                        {
-                            @(string.IsNullOrEmpty(user.Browser) ? "—" : user.Browser)
-                        }
-                    </td>
-
-            </tr>
-            
-            
-
-
-        }
-
-        </tbody>
-    </table>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
 </div>
-<script>
 
-    function confirmDelete(userId)
-    {
-        const confirmacion = confirm("¿Seguro que quieres desactivar este usuario?");
+<style>
+.admin-page { max-width: 1200px; margin: 0 auto; }
 
-        if (confirmacion)
-        {
-            window.location.href = "/Admin/DeleteUser/" + userId;
-        }
-    }
+.admin-header { margin-bottom: 24px; }
+.admin-title { font-size: 24px; font-weight: 800; color: #111827; margin: 0 0 4px; }
+.admin-subtitle { font-size: 14px; color: #9ca3af; margin: 0; }
 
-    function confirmRemoveAdmin(userId)
-    {
-        const confirmacion = confirm("¿Seguro que quieres quitar los permisos de administrador a este usuario?");
+/* CONEXION */
+.connection-banner {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 14px 20px; border-radius: 14px; margin-bottom: 20px;
+    font-weight: 600; font-size: 14px; flex-wrap: wrap; gap: 10px;
+}
+.connection-banner.active { background: #f0fdf4; border: 1px solid #86efac; color: #166534; }
+.connection-banner.blocked { background: #fef2f2; border: 1px solid #fecaca; color: #dc2626; }
+.status-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; margin-right: 6px; }
+.status-dot.green { background: #22c55e; }
+.status-dot.red { background: #dc2626; }
+.connection-status { display: flex; align-items: center; }
+.conn-btn { padding: 8px 16px; border-radius: 10px; border: none; font-size: 13px; font-weight: 600; cursor: pointer; transition: 0.2s; }
+.conn-btn.restore { background: #22c55e; color: white; }
+.conn-btn.block { background: #dc2626; color: white; }
 
-        if (confirmacion)
-        {
-            window.location.href = "/Admin/RemoveAdmin/" + userId;
-        }
-    }
+/* KPIs */
+.kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
+@@media (max-width: 768px) { .kpi-grid { grid-template-columns: repeat(2, 1fr); } }
 
-</script>
+.kpi-card {
+    background: white; border-radius: 16px; padding: 18px;
+    text-align: center; box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+    border: 1px solid rgba(0,0,0,0.04);
+}
+.kpi-icon { font-size: 22px; margin-bottom: 6px; }
+.kpi-value { font-size: 26px; font-weight: 800; color: #111827; margin-bottom: 4px; }
+.kpi-value.danger { color: #dc2626; }
+.kpi-value.warning { color: #d97706; }
+.kpi-value.success { color: #16a34a; }
+.kpi-label { font-size: 11px; color: #9ca3af; font-weight: 600; text-transform: uppercase; }
 
+/* QUICK ACTIONS */
+.quick-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; }
+.quick-btn {
+    padding: 10px 18px; border-radius: 10px; font-size: 13px;
+    font-weight: 600; text-decoration: none; border: none; cursor: pointer; transition: 0.2s;
+}
+.quick-btn.reports { background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; }
+.quick-btn.reports:hover { background: #dc2626; color: white; }
+.quick-btn.code { background: #fef3c7; color: #d97706; border: 1px solid #fde68a; }
+.quick-btn.code:hover { background: #d97706; color: white; }
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
-
-<script>
-
-    const connection = new signalR.HubConnectionBuilder()
-        .withUrl("/chatHub")
-        .build();
-
-    connection.start().catch(function (err) {
-        return console.error(err.toString());
-    });
-
-    connection.on("UserOnline", function (userId) {
-
-        const statusCell = document.getElementById("status-" + userId);
-
-        if (statusCell)
-        {
-            statusCell.innerHTML = '<span class="badge bg-success">Activo</span>';
-        }
-
-    });
-
-    connection.on("UserOffline", function (userId) {
-
-        const statusCell = document.getElementById("status-" + userId);
-
-        if (statusCell)
-        {
-            statusCell.innerHTML = '<span class="badge bg-secondary">Inactivo</span>';
-        }
-
-    });
-
-</script>
-
-<script>
-
-    connection.on("UserOnline", function () {
-
-        const counter = document.getElementById("activeUsers");
-
-        if(counter)
-        {
-            let value = parseInt(counter.innerText);
-            counter.innerText = value + 1;
-        }
-
-    });
-
-    connection.on("UserOffline", function () {
-
-        const counter = document.getElementById("activeUsers");
-
-        if(counter)
-        {
-            let value = parseInt(counter.innerText);
-            counter.innerText = Math.max(0, value - 1);
-        }
-
-    });
-
-</script>
-
-<script>
-
-    let activeCount = 0;
-
-    const activeUsersElement = document.getElementById("activeUsers");
-
-    connection.on("UserOnline", function (userId) {
-
-        activeCount++;
-
-        if (activeUsersElement)
-            activeUsersElement.innerText = activeCount;
-
-    });
-
-    connection.on("UserOffline", function (userId) {
-
-        activeCount--;
-
-        if (activeCount < 0) activeCount = 0;
-
-        if (activeUsersElement)
-            activeUsersElement.innerText = activeCount;
-
-    });
-
-    connection.on("ForceLogout", function (message) {
-    alert(message);
-    window.location.href = "/Account/Login";
-    });
-
-</script>
-<script>
-    function filterUsers() {
-    const input = document.getElementById("searchUser").value.toLowerCase();
-    const rows = document.querySelectorAll(".user-row");
-
-    rows.forEach(row => {
-    const username = row.querySelector(".username").innerText.toLowerCase();
-
-    if (username.includes(input)) {
-    row.style.display = "";
-    } else {
-    row.style.display = "none";
-    }
-    });
-    }
-
-    // 🔥 activar mientras escribe
-    document.getElementById("searchUser").addEventListener("keyup", filterUsers);
-</script>
-<script>
-function pedirCodigoAdmin() {
-    document.getElementById("codeModal").style.display = "flex";
+.code-alert {
+    background: #f0fdf4; color: #166534; padding: 12px 16px;
+    border-radius: 10px; margin-bottom: 16px; font-size: 14px;
+    border: 1px solid #86efac;
 }
 
+/* SEARCH */
+.search-wrap { position: relative; margin-bottom: 20px; max-width: 400px; }
+.search-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); }
+.search-input {
+    width: 100%; padding: 11px 16px 11px 40px;
+    border: 1px solid #e5e7eb; border-radius: 50px;
+    font-size: 14px; outline: none; transition: 0.2s;
+    box-sizing: border-box; background: white;
+}
+.search-input:focus { border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37,99,235,0.1); }
+
+/* TABLE */
+.table-wrap { overflow-x: auto; background: white; border-radius: 20px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); border: 1px solid rgba(0,0,0,0.04); }
+.mobile-cards { display: none; }
+
+@@media (max-width: 768px) {
+    .table-wrap { display: none; }
+    .mobile-cards { display: flex; flex-direction: column; gap: 12px; }
+}
+
+.users-table { width: 100%; border-collapse: collapse; min-width: 900px; }
+.users-table thead th {
+    padding: 12px 14px; font-size: 11px; font-weight: 700;
+    color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px;
+    border-bottom: 1px solid #f3f4f6; white-space: nowrap; background: white;
+}
+.users-table tbody tr:hover { background: #f9fafb; }
+.users-table td { padding: 12px 14px; font-size: 13px; border-bottom: 1px solid #f9fafb; vertical-align: middle; }
+
+/* USER CELL */
+.user-cell { display: flex; align-items: center; gap: 10px; }
+.user-thumb { width: 38px; height: 38px; border-radius: 50%; object-fit: cover; border: 2px solid #e5e7eb; }
+.user-thumb-letter {
+    width: 38px; height: 38px; border-radius: 50%;
+    background: linear-gradient(135deg, #2563eb, #7c3aed);
+    color: white; display: flex; align-items: center; justify-content: center;
+    font-weight: 800; font-size: 14px; flex-shrink: 0;
+}
+.user-name-cell { font-weight: 600; color: #111827; font-size: 14px; }
+.email-cell { color: #6b7280; font-size: 12px; }
+
+/* ROLE TAGS */
+.role-tag { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 10px; font-weight: 700; }
+.role-tag.owner { background: #111827; color: white; }
+.role-tag.admin { background: #dbeafe; color: #1d4ed8; }
+.role-tag.me { background: #f3f4f6; color: #6b7280; }
+
+/* STATUS TAGS */
+.status-tag { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+.status-tag.active { background: #dcfce7; color: #16a34a; }
+.status-tag.banned { background: #fee2e2; color: #dc2626; }
+.status-tag.inactive { background: #fef3c7; color: #d97706; }
+.status-tag.offline { background: #f3f4f6; color: #9ca3af; }
+
+/* ACTION BTNS */
+.actions-cell { display: flex; flex-wrap: wrap; gap: 5px; }
+.action-btn {
+    padding: 5px 10px; border-radius: 8px; font-size: 11px; font-weight: 600;
+    cursor: pointer; border: none; text-decoration: none; transition: 0.15s;
+    display: inline-flex; align-items: center;
+}
+.action-btn.success { background: #dcfce7; color: #16a34a; }
+.action-btn.success:hover { background: #16a34a; color: white; }
+.action-btn.danger { background: #fee2e2; color: #dc2626; }
+.action-btn.danger:hover { background: #dc2626; color: white; }
+.action-btn.warning { background: #fef3c7; color: #d97706; }
+.action-btn.warning:hover { background: #d97706; color: white; }
+.action-btn.delete { background: #f3f4f6; color: #6b7280; }
+.action-btn.delete:hover { background: #6b7280; color: white; }
+.action-btn.primary { background: #dbeafe; color: #2563eb; }
+.action-btn.primary:hover { background: #2563eb; color: white; }
+.action-btn.secondary { background: #f3f4f6; color: #374151; }
+.action-btn.secondary:hover { background: #374151; color: white; }
+
+/* IP */
+.ip-cell { font-size: 12px; }
+.ip-info { display: flex; flex-direction: column; gap: 2px; }
+.ip-addr { font-weight: 600; color: #374151; }
+.ip-info small { color: #9ca3af; }
+.map-link { color: #2563eb; font-size: 11px; }
+.ip-btn { padding: 4px 8px; border-radius: 6px; border: none; cursor: pointer; font-size: 12px; margin-top: 4px; }
+.ip-btn.block { background: #fee2e2; color: #dc2626; }
+.ip-btn.unblock { background: #dcfce7; color: #16a34a; }
+
+/* MOBILE CARDS */
+.mobile-card {
+    background: white; border-radius: 16px; padding: 16px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+    border: 1px solid rgba(0,0,0,0.04);
+}
+.mobile-card-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+.mobile-info { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: #6b7280; margin-bottom: 12px; padding: 10px; background: #f9fafb; border-radius: 10px; }
+
+/* DARK MODE */
+body.bg-dark .admin-title { color: #f1f5f9 !important; }
+body.bg-dark .kpi-card,
+body.bg-dark .table-wrap,
+body.bg-dark .mobile-card { background: #1e1e2e !important; border-color: #2d2d3d !important; }
+body.bg-dark .kpi-value { color: #f1f5f9 !important; }
+body.bg-dark .users-table thead th { color: #64748b !important; border-color: #2d2d3d !important; background: #1e1e2e !important; }
+body.bg-dark .users-table tbody tr:hover { background: #2d2d3d !important; }
+body.bg-dark .users-table td { border-color: #2d2d3d !important; }
+body.bg-dark .user-name-cell { color: #f1f5f9 !important; }
+body.bg-dark .email-cell { color: #64748b !important; }
+body.bg-dark .ip-addr { color: #94a3b8 !important; }
+body.bg-dark .search-input { background: #1e1e2e !important; border-color: #2d2d3d !important; color: #f1f5f9 !important; }
+body.bg-dark .mobile-info { background: #2d2d3d !important; }
+body.bg-dark .connection-banner.active { background: #14532d !important; border-color: #166534 !important; color: #86efac !important; }
+body.bg-dark .connection-banner.blocked { background: #4c1d1d !important; border-color: #7f1d1d !important; color: #fca5a5 !important; }
+
+/* CODE MODAL */
+.code-modal {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.6); display: none;
+    align-items: center; justify-content: center; z-index: 9999;
+}
+.code-box {
+    background: #1f2937; padding: 28px; border-radius: 16px;
+    width: 300px; text-align: center; color: white;
+}
+.code-box input {
+    width: 100%; padding: 10px; border-radius: 10px;
+    border: none; margin-top: 10px; font-size: 18px;
+    text-align: center; letter-spacing: 4px;
+}
+.code-error { color: #f87171; font-size: 13px; margin-top: 8px; }
+.code-actions { margin-top: 14px; display: flex; justify-content: space-between; gap: 8px; }
+.code-actions button {
+    flex: 1; padding: 9px; border-radius: 10px; border: none;
+    font-weight: 600; cursor: pointer;
+}
+.code-actions button:first-child { background: #2563eb; color: white; }
+.code-actions button:last-child { background: #374151; color: white; }
+</style>
+
+<div id="codeModal" class="code-modal">
+    <div class="code-box">
+        <h5>⚠️ Autorización requerida</h5>
+        <p style="font-size:13px;opacity:0.8;">Ingresa el código de 5 dígitos</p>
+        <input type="text" id="codeInput" maxlength="5" inputmode="numeric"
+               placeholder="• • • • •" oninput="this.value = this.value.replace(/\D/g, '')" />
+        <div id="codeError" class="code-error"></div>
+        <div class="code-actions">
+            <button onclick="validarCodigo()">Aceptar</button>
+            <button onclick="cerrarModal()">Cancelar</button>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
+<script>
+const connection = new signalR.HubConnectionBuilder().withUrl("/chatHub").build();
+connection.start().catch(err => console.error(err));
+
+connection.on("UserOnline", function(userId) {
+    const cell = document.getElementById("status-" + userId);
+    const mobCell = document.getElementById("status-mob-" + userId);
+    const html = '<span class="status-tag active">Activo</span>';
+    if (cell) cell.innerHTML = html;
+    if (mobCell) mobCell.innerHTML = html;
+    const counter = document.getElementById("activeUsers");
+    if (counter) counter.innerText = parseInt(counter.innerText) + 1;
+});
+
+connection.on("UserOffline", function(userId) {
+    const cell = document.getElementById("status-" + userId);
+    const mobCell = document.getElementById("status-mob-" + userId);
+    const html = '<span class="status-tag offline">Inactivo</span>';
+    if (cell) cell.innerHTML = html;
+    if (mobCell) mobCell.innerHTML = html;
+    const counter = document.getElementById("activeUsers");
+    if (counter) counter.innerText = Math.max(0, parseInt(counter.innerText) - 1);
+});
+
+connection.on("ForceLogout", function(message) {
+    alert(message);
+    window.location.href = "/Account/Login";
+});
+
+document.getElementById("searchUser").addEventListener("keyup", function() {
+    const value = this.value.toLowerCase();
+    document.querySelectorAll(".user-row").forEach(row => {
+        row.style.display = row.dataset.username.includes(value) ? "" : "none";
+    });
+});
+
+function confirmDelete(userId) {
+    if (confirm("¿Desactivar este usuario?")) window.location.href = "/Admin/DeleteUser/" + userId;
+}
+
+function confirmRemoveAdmin(userId) {
+    if (confirm("¿Quitar permisos de admin?")) window.location.href = "/Admin/RemoveAdmin/" + userId;
+}
+
+function pedirCodigoAdmin() { document.getElementById("codeModal").style.display = "flex"; }
+
 function cerrarModal() {
-    const modal = document.getElementById("codeModal");
-
-    modal.style.display = "none";
-
+    document.getElementById("codeModal").style.display = "none";
     document.getElementById("codeInput").value = "";
     document.getElementById("codeError").innerText = "";
 }
 
 function validarCodigo() {
-
-    let codigo = document.getElementById("codeInput").value.replace(/\D/g, '');
-    let error = document.getElementById("codeError");
-
-    // ❌ vacío
-    if (codigo === "") {
-        error.innerText = "Debes escribir un código";
-        return;
-    }
-
-    // 🔐 TOKEN ANTIFORGERY
+    const codigo = document.getElementById("codeInput").value.replace(/\D/g, '');
+    const error = document.getElementById("codeError");
+    if (!codigo) { error.innerText = "Debes escribir un código"; return; }
     const token = document.querySelector('#antiForgeryForm input[name="__RequestVerificationToken"]').value;
-
     fetch('/Admin/ValidateAccessCode', {
         method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'RequestVerificationToken': token
-        },
+        headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': token },
         body: JSON.stringify({ code: codigo })
-    })
-    .then(res => res.json())
-    .then(data => {
-
-        if (!data.success) {
-            error.innerText = "❌ Código incorrecto o ya utilizado";
-            return;
-        }
-
+    }).then(res => res.json()).then(data => {
+        if (!data.success) { error.innerText = "❌ Código incorrecto"; return; }
         cerrarModal();
-
-        if (confirm("¿Seguro que deseas bloquear la conexión global?")) {
-
-            fetch('/Admin/ToggleConnectionBlock', {
-                method: 'POST',
-                headers: {
-                    'RequestVerificationToken': token
-                }
-            })
-            .then(() => location.reload());
-
+        if (confirm("¿Bloquear la conexión global?")) {
+            fetch('/Admin/ToggleConnectionBlock', { method: 'POST', headers: { 'RequestVerificationToken': token } })
+                .then(() => location.reload());
         }
-
-    })
-    .catch(err => {
-        console.error("ERROR:", err);
-        error.innerText = "⚠️ Error al validar el código";
-    });
+    }).catch(() => { error.innerText = "⚠️ Error al validar"; });
 }
 </script>
-<style>
-    /* 🔥 BOTÓN ELIMINAR */
-    .btn-delete {
-    border: 1px solid #dc3545;
-    color: #dc3545;
-    background: transparent;
-    }
-    .code-modal {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0,0,0,0.6);
-    display: none;
-    align-items: center;
-    justify-content: center;
-    z-index: 9999;
-}
-
-.code-box {
-    background: #1f2937;
-    padding: 20px;
-    border-radius: 15px;
-    width: 300px;
-    text-align: center;
-    color: white;
-}
-
-.code-box input {
-    width: 100%;
-    padding: 8px;
-    border-radius: 8px;
-    border: none;
-    margin-top: 10px;
-}
-
-.code-error {
-    color: #ff4d4d;
-    font-size: 13px;
-    margin-top: 5px;
-}
-
-.code-actions {
-    margin-top: 10px;
-    display: flex;
-    justify-content: space-between;
-}
-
-    .btn-delete:hover {
-    background: #dc3545;
-    color: white;
-    box-shadow: 0 0 10px rgba(220, 53, 69, 0.6);
-    }
-
-    /* 🌙 MODO OSCURO */
-    body.dark-mode .btn-delete {
-    border: 1px solid #ff4d4d;
-    color: #ff4d4d;
-    }
-
-    body.dark-mode .btn-delete:hover {
-    background: #ff4d4d;
-    color: white;
-    }
-</style>
-
-<div id="codeModal" class="code-modal">
-    <div class="code-box">
-
-        <h5>⚠️ Autorización requerida</h5>
-         <p>Necesitas autorización para hacer esto.</p>
-        <p>Ingresa el código de 5 dígitos</p>
-
-       <input type="text"
-       id="codeInput"
-       maxlength="5"
-       inputmode="numeric"
-       placeholder="Código..."
-       oninput="this.value = this.value.replace(/\D/g, '')" />
-
-        <div id="codeError" class="code-error"></div>
-
-        <div class="code-actions">
-            <button onclick="validarCodigo()">Aceptar</button>
-            <button onclick="cerrarModal()">Cancelar</button>
-        </div>
-
-    </div>
-</div>
-

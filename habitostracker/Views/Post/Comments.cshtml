@@ -75,14 +75,21 @@ else
 
                 <!-- ACCIONES -->
                 <div class="comment-actions">
-                    <button class="action-like comment-like-btn" data-id="@c.Id" onclick="toggleCommentLike(this)">
-                        @(ViewBag.MyCommentLikes != null && ((List<int>)ViewBag.MyCommentLikes).Contains(c.Id) ? "❤️" : "🤍")
-                        <span id="like-count-@c.Id">
-                            @(ViewBag.CommentLikes != null && ViewBag.CommentLikes.ContainsKey(c.Id) ? ViewBag.CommentLikes[c.Id] : 0)
-                        </span>
-                    </button>
-                    <button class="action-reply" onclick="toggleReplyBox(@c.Id)">💬 Responder</button>
-                </div>
+    <button class="action-like comment-like-btn" data-id="@c.Id" onclick="toggleCommentLike(this)">
+        @(ViewBag.MyCommentLikes != null && ((List<int>)ViewBag.MyCommentLikes).Contains(c.Id) ? "❤️" : "🤍")
+        <span id="like-count-@c.Id">
+            @(ViewBag.CommentLikes != null && ViewBag.CommentLikes.ContainsKey(c.Id) ? ViewBag.CommentLikes[c.Id] : 0)
+        </span>
+    </button>
+    <button class="action-reply" onclick="toggleReplyBox(@c.Id)">💬 Responder</button>
+    @if (c.UserId == int.Parse(User.FindFirst("UserId").Value))
+    {
+        <a asp-controller="Post" asp-action="DeleteComment" asp-route-id="@c.Id"
+           class="action-delete"
+           data-no-loader="true"
+           onclick="return confirm('¿Eliminar este comentario?')">🗑 Eliminar</a>
+    }
+</div>
 
                 <!-- FORM RESPONDER -->
             <div id="replyBox-@c.Id" class="reply-form" style="display:none;">
@@ -238,6 +245,24 @@ else
     align-items: center;
     margin-top: 12px;
 }
+
+.action-delete {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: 0.15s;
+    color: #ef4444;
+    background: #fef2f2;
+    text-decoration: none;
+}
+
+.action-delete:hover { background: #fee2e2; color: #dc2626; }
+body.bg-dark .action-delete { background: #4c1d1d !important; color: #f87171 !important; }
 
 .file-label {
     font-size: 13px;
