@@ -4,442 +4,382 @@
     var myId = int.Parse(User.FindFirst("UserId").Value);
 }
 
-<div class="container mt-4">
+<div class="discover-page">
 
-    <h2 class="mb-4 fw-bold">🔎 Descubrir amigos</h2>
+    <div class="discover-header">
+        <h2 class="discover-title">🔎 Descubrir amigos</h2>
+        <p class="discover-subtitle">Conecta con personas que comparten tus hábitos</p>
+    </div>
 
-    <!-- BUSCADOR -->
-    <div class="search-box mb-4">
-        <input type="text" id="userSearch" placeholder="Buscar usuarios..." class="form-control" />
+    <div class="search-wrap">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="userSearch" placeholder="Buscar usuarios..." class="search-input" />
     </div>
 
     <div class="user-grid" id="userGrid">
-
         @foreach (var user in Model)
         {
-            if (user.Id != myId)
-            {
+            if (user.Id == myId) continue;
 
-              <div class="user-card" id="user-@user.Id" data-username="@user.Username.ToLower()">
+            @{
+                var sentList = ViewBag.SentRequests as List<int> ?? new List<int>();
+                var friendList = ViewBag.Friends as List<int> ?? new List<int>();
+            }
 
-                    <!-- AVATAR -->
-                    <div class="user-avatar">
+            <div class="user-card" id="user-@user.Id" data-username="@user.Username.ToLower()">
+
+                <div class="card-top">
+                    <div class="avatar-wrap">
                         @if (!string.IsNullOrEmpty(user.ProfileImage))
                         {
-                            <img src="@user.ProfileImage" />
+                            <img src="@user.ProfileImage" class="user-avatar-img" id="avatar-@user.Id" />
                         }
                         else
                         {
-                            <div class="avatar-placeholder">
+                            <div class="avatar-placeholder" id="avatar-@user.Id">
                                 @user.Username.Substring(0, 1).ToUpper()
                             </div>
                         }
+                        <span class="status-dot offline" id="status-@user.Id"></span>
                     </div>
 
-                    <!-- NOMBRE -->
-                    <div class="user-name">
-
-                        <span class="status-dot offline" id="status-@user.Id"></span>
-
-                        @user.Username
-
+                    <div class="user-info">
+                        <div class="user-name">@user.Username</div>
                         @if (user.Role == "Admin")
                         {
                             <span class="role-badge admin">Administrador</span>
                         }
-
                         @if (user.Role == "SuperAdmin")
                         {
                             <span class="role-badge owner">👑 Propietario</span>
                         }
-
+                        <div class="active-label" id="active-@user.Id" style="display:none;">
+                            <span class="active-dot"></span> Activo ahora
+                        </div>
                     </div>
-
-                    <!-- BOTONES -->
-                    <div class="user-actions">
-
-         <a href="/User/Profile/@user.Id" class="btn btn-primary btn-sm guest-block">
-    👁 Ver perfil
-</a>
-                        
-                        
-                        
-                      
-                       @{
-    var sentList = ViewBag.SentRequests as List<int> ?? new List<int>();
-    var friendList = ViewBag.Friends as List<int> ?? new List<int>();
-}
-
-@if (friendList.Contains(user.Id))
-{
-    <button class="btn btn-secondary btn-sm" disabled>
-        ✅ Amigos
-    </button>
-}
-else if (sentList.Contains(user.Id))
-{
-    <button class="btn btn-success btn-sm" disabled>
-        ✔ Enviada
-    </button>
-}
-else
-{
-   <button type="button" class="btn btn-outline-success btn-sm add-friend-btn guest-block"
-        data-user="@user.Id"
-        data-no-loader="true"
-        onclick="sendFriendRequest(this)">
-    ➕ Agregar
-</button>
-}
-
-                    </div>
-
                 </div>
 
-            }
+                <div class="card-actions">
+                    <a href="/User/Profile/@user.Id" class="card-btn view guest-block">👁 Ver perfil</a>
+
+                    @if (friendList.Contains(user.Id))
+                    {
+                        <button class="card-btn friends" disabled>✅ Amigos</button>
+                    }
+                    else if (sentList.Contains(user.Id))
+                    {
+                        <button class="card-btn sent" disabled>✔ Enviada</button>
+                    }
+                    else
+                    {
+                        <button class="card-btn add guest-block"
+                                data-user="@user.Id"
+                                data-no-loader="true"
+                                onclick="sendFriendRequest(this)">
+                            + Agregar
+                        </button>
+                    }
+                </div>
+            </div>
         }
-
     </div>
-
 </div>
 
-
 <style>
-
-    .search-box input {
-        border-radius: 12px;
-        padding: 10px;
-    }
-
-    /* 🔥 MODO OSCURO PARA CARDS */
-body.bg-dark .user-card {
-    background-color: #1e1e1e !important;
-    color: #fff !important;
-}
-body.bg-dark .user-card {
-    background-color: #121212 !important;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+.discover-page {
+    max-width: 1100px;
+    margin: 0 auto;
 }
 
-/* 🔥 TODO el texto dentro */
-body.bg-dark .user-card * {
-    color: #fff !important;
+.discover-header {
+    margin-bottom: 24px;
 }
 
-/* 🔥 bordes más suaves */
-body.bg-dark .user-card {
-    border: 1px solid #333 !important;
-}
-    .status-dot {
-        width: 10px;
-        height: 10px;
-        border-radius: 50%;
-        display: inline-block;
-        margin-right: 6px;
-    }
-
-    .online {
-        background: #22c55e;
-    }
-
-    .offline {
-        background: #9ca3af;
-    }
-
-    .user-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill,minmax(220px,1fr));
-        gap: 20px;
-    }
-
-    .user-card {
-        background: white;
-        border-radius: 16px;
-        padding: 22px;
-        text-align: center;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.08);
-        transition: 0.25s;
-    }
-
-        .user-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 16px 40px rgba(0,0,0,0.15);
-        }
-
-    .user-avatar img {
-        width: 72px;
-        height: 72px;
-        border-radius: 50%;
-        object-fit: cover;
-    }
-
-    .online-avatar {
-        border: 3px solid #22c55e;
-        padding: 2px;
-        border-radius: 50%;
-    }
-
-    .avatar-placeholder {
-        width: 72px;
-        height: 72px;
-        border-radius: 50%;
-        background: #2563eb;
-        color: white;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 26px;
-        font-weight: bold;
-    }
-
-    .online-avatar {
-        border: 3px solid #22c55e;
-        padding: 2px;
-        border-radius: 50%;
-    }
-
-    .user-name {
-        margin-top: 12px;
-        font-size: 16px;
-        font-weight: 600;
-    }
-
-    .role-badge {
-        font-size: 11px;
-        padding: 4px 8px;
-        border-radius: 8px;
-        margin-left: 6px;
-    }
-
-    .admin {
-        background: #facc15;
-        color: #111;
-    }
-
-    .owner {
-        background: #111;
-        color: white;
-    }
-
-    .online-avatar{
-    border:3px solid #22c55e;
-    padding:2px;
-    border-radius:50%;
-    animation: onlinePulse 1.6s infinite;
+.discover-title {
+    font-size: 24px;
+    font-weight: 800;
+    color: #111827;
+    margin: 0 0 4px;
 }
 
-@@keyframes onlinePulse{
-    0%{
-        box-shadow:0 0 0 0 rgba(34,197,94,0.7);
-    }
-    70%{
-        box-shadow:0 0 0 10px rgba(34,197,94,0);
-    }
-    100%{
-        box-shadow:0 0 0 0 rgba(34,197,94,0);
-    }
+.discover-subtitle {
+    font-size: 14px;
+    color: #9ca3af;
+    margin: 0;
 }
 
-.active-now{
-    font-size:12px;
-    color:#22c55e;
-    font-weight:600;
-    margin-left:6px;
+.search-wrap {
+    position: relative;
+    margin-bottom: 28px;
+    max-width: 420px;
 }
 
+.search-icon {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 16px;
+}
 
-.guest-block {
+.search-input {
+    width: 100%;
+    padding: 12px 16px 12px 42px;
+    border: 1px solid #e5e7eb;
+    border-radius: 50px;
+    font-size: 14px;
+    background: white;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    outline: none;
+    transition: 0.2s;
+    box-sizing: border-box;
+}
+
+.search-input:focus {
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
+}
+
+.user-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 16px;
+}
+
+.user-card {
+    background: white;
+    border-radius: 18px;
+    padding: 20px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    border: 1px solid rgba(0,0,0,0.04);
+    transition: 0.2s;
+}
+
+.user-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+}
+
+.card-top {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 16px;
+}
+
+.avatar-wrap {
+    position: relative;
+    flex-shrink: 0;
+}
+
+.user-avatar-img {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid #e5e7eb;
+}
+
+.avatar-placeholder {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #2563eb, #7c3aed);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    font-weight: 800;
+    border: 3px solid #e5e7eb;
+}
+
+.status-dot {
+    position: absolute;
+    bottom: 2px;
+    right: 2px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 2px solid white;
+}
+
+.status-dot.online { background: #22c55e; }
+.status-dot.offline { background: #d1d5db; }
+
+.user-info { flex: 1; min-width: 0; }
+
+.user-name {
+    font-size: 15px;
+    font-weight: 700;
+    color: #111827;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.role-badge {
+    display: inline-block;
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 20px;
+    margin-top: 4px;
+    font-weight: 600;
+}
+
+.role-badge.admin { background: #fef3c7; color: #d97706; }
+.role-badge.owner { background: #111827; color: white; }
+
+.active-label {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 12px;
+    color: #22c55e;
+    font-weight: 600;
+    margin-top: 4px;
+}
+
+.active-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #22c55e;
+    animation: pulse 1.5s infinite;
+}
+
+@@keyframes pulse {
+    0% { box-shadow: 0 0 0 0 rgba(34,197,94,0.7); }
+    70% { box-shadow: 0 0 0 6px rgba(34,197,94,0); }
+    100% { box-shadow: 0 0 0 0 rgba(34,197,94,0); }
+}
+
+.card-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.card-btn {
+    flex: 1;
+    padding: 9px 12px;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 600;
     cursor: pointer;
-}
-    .user-actions {
-        margin-top: 14px;
-        display: flex;
-        gap: 8px;
-        justify-content: center;
-    }
-
-    .add-friend-btn {
-        transition: 0.2s;
-    }
-
-        .add-friend-btn:hover {
-            transform: scale(1.1);
-        }
-
-        .bg-dark .user-card {
-    color: #fff !important;
+    border: none;
+    text-decoration: none;
+    text-align: center;
+    transition: 0.2s;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
 }
 
-.bg-dark .user-card * {
-    color: #fff !important;
+.card-btn.view { background: #2563eb; color: white; }
+.card-btn.view:hover { background: #1d4ed8; color: white; }
+.card-btn.add { background: #f0fdf4; color: #16a34a; border: 1px solid #86efac; }
+.card-btn.add:hover { background: #22c55e; color: white; }
+.card-btn.friends { background: #f0fdf4; color: #16a34a; }
+.card-btn.sent { background: #fef3c7; color: #d97706; }
+
+/* ONLINE AVATAR */
+.online-avatar {
+    border-color: #22c55e !important;
+}
+
+/* DARK MODE */
+body.bg-dark .discover-title { color: #f1f5f9 !important; }
+body.bg-dark .search-input {
+    background: #1e1e2e !important;
+    border-color: #2d2d3d !important;
+    color: #f1f5f9 !important;
+}
+body.bg-dark .user-card {
+    background: #1e1e2e !important;
+    border-color: #2d2d3d !important;
+}
+body.bg-dark .user-name { color: #f1f5f9 !important; }
+body.bg-dark .status-dot { border-color: #1e1e2e !important; }
+body.bg-dark .card-btn.view { background: #2563eb !important; color: white !important; }
+body.bg-dark .card-btn.add {
+    background: #14532d !important;
+    color: #86efac !important;
+    border-color: #166534 !important;
 }
 </style>
 
-
 <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
-
 <script>
-    const connectionGlobal = new signalR.HubConnectionBuilder()
-    .withUrl("/chatHub")
-    .build();
-</script>
+const connectionGlobal = new signalR.HubConnectionBuilder()
+    .withUrl("/chatHub").build();
 
-<script>
+connectionGlobal.start().then(function () {
+    const myId = '@User.FindFirst("UserId")?.Value';
+    connectionGlobal.invoke("JoinUserGroup", myId);
+}).catch(err => console.error(err));
 
-    connectionGlobal.start()
-    .then(function () {
-
-        console.log("SignalR conectado");
-
-        const myId = '@User.FindFirst("UserId")?.Value';
-
-        connectionGlobal.invoke("JoinUserGroup", myId);
-
-    })
-    .catch(function (err) {
-
-        console.error(err.toString());
-
-    });
-
-
-   connectionGlobal.on("UserOnline", function(userId){
-
+connectionGlobal.on("UserOnline", function(userId) {
     const dot = document.getElementById("status-" + userId);
+    if (dot) { dot.classList.remove("offline"); dot.classList.add("online"); }
 
-    if(dot){
-        dot.classList.remove("offline");
-        dot.classList.add("online");
-    }
+    const avatar = document.getElementById("avatar-" + userId);
+    if (avatar) avatar.classList.add("online-avatar");
 
-    // avatar (img o placeholder)
-    const avatar = document.querySelector("#user-" + userId + " .user-avatar img, #user-" + userId + " .avatar-placeholder");
+    const activeLabel = document.getElementById("active-" + userId);
+    if (activeLabel) activeLabel.style.display = "flex";
 
-    if(avatar){
-        avatar.classList.add("online-avatar");
-    }
-
-    // mostrar "Activo ahora"
-    const nameBox = document.querySelector("#user-" + userId + " .user-name");
-
-    if(nameBox && !nameBox.querySelector(".active-now")){
-        const span = document.createElement("span");
-        span.classList.add("active-now");
-        span.innerText = "Activo ahora";
-        nameBox.appendChild(span);
-    }
-
-    // mover usuario arriba
     const card = document.getElementById("user-" + userId);
-
-    if(card){
-        const grid = document.getElementById("userGrid");
-        grid.prepend(card);
-    }
-
+    if (card) document.getElementById("userGrid").prepend(card);
 });
 
-connectionGlobal.on("UserOffline", function(userId){
-
+connectionGlobal.on("UserOffline", function(userId) {
     const dot = document.getElementById("status-" + userId);
+    if (dot) { dot.classList.remove("online"); dot.classList.add("offline"); }
 
-    if(dot){
-        dot.classList.remove("online");
-        dot.classList.add("offline");
-    }
+    const avatar = document.getElementById("avatar-" + userId);
+    if (avatar) avatar.classList.remove("online-avatar");
 
-    const avatar = document.querySelector("#user-" + userId + " .user-avatar img, #user-" + userId + " .avatar-placeholder");
-
-    if(avatar){
-        avatar.classList.remove("online-avatar");
-    }
-
-    const activeText = document.querySelector("#user-" + userId + " .active-now");
-
-    if(activeText){
-        activeText.remove();
-    }
-
+    const activeLabel = document.getElementById("active-" + userId);
+    if (activeLabel) activeLabel.style.display = "none";
 });
 
-
-    // detectar usuarios online al cargar la página
-    fetch("/User/GetOnlineUsers")
+fetch("/User/GetOnlineUsers")
     .then(r => r.json())
     .then(users => {
-
         users.forEach(id => {
-
             const dot = document.getElementById("status-" + id);
-
-            if(dot){
-                dot.classList.remove("offline");
-                dot.classList.add("online");
-            }
-
+            if (dot) { dot.classList.remove("offline"); dot.classList.add("online"); }
+            const activeLabel = document.getElementById("active-" + id);
+            if (activeLabel) activeLabel.style.display = "flex";
         });
-
     });
 
-
-    // buscador
-    document.getElementById("userSearch").addEventListener("keyup", function(){
-
-        const value = this.value.toLowerCase();
-
-        const cards = document.querySelectorAll(".user-card");
-
-        cards.forEach(card=>{
-
-            const username = card.dataset.username;
-
-            if(username.includes(value)){
-                card.style.display="block";
-            }else{
-                card.style.display="none";
-            }
-
-        });
-
+document.getElementById("userSearch").addEventListener("keyup", function() {
+    const value = this.value.toLowerCase();
+    document.querySelectorAll(".user-card").forEach(card => {
+        card.style.display = card.dataset.username.includes(value) ? "block" : "none";
     });
+});
 
-
-
-
-
-    // enviar solicitud
-    function sendFriendRequest(btn){
-
-        if (typeof isGuest !== "undefined" && isGuest) {
-    var modal = new bootstrap.Modal(document.getElementById('guestModal'));
-    modal.show();
-    return;
-}
-
-        event.preventDefault();
-
-        const userId = btn.dataset.user;
-
-        btn.innerHTML="⏳ Enviando...";
-        btn.disabled=true;
-
-        fetch("/User/SendFriendRequest",{
-            method:"POST",
-            headers:{
-                "Content-Type":"application/x-www-form-urlencoded"
-            },
-            body:"receiverId="+userId
-        })
-        .then(()=>{
-            btn.innerHTML="✔ Enviada";
-            btn.classList.remove("btn-outline-success");
-            btn.classList.add("btn-success");
-        })
-        .catch(()=>{
-            btn.innerHTML="❌ Error";
-            btn.disabled=false;
-        });
-
+function sendFriendRequest(btn) {
+    if (typeof isGuest !== "undefined" && isGuest) {
+        new bootstrap.Modal(document.getElementById('guestModal')).show();
+        return;
     }
-
+    const userId = btn.dataset.user;
+    btn.innerHTML = "⏳";
+    btn.disabled = true;
+    fetch("/User/SendFriendRequest", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: "receiverId=" + userId
+    }).then(() => {
+        btn.innerHTML = "✔";
+        btn.classList.remove("add");
+        btn.classList.add("sent");
+    }).catch(() => {
+        btn.innerHTML = "❌";
+        btn.disabled = false;
+    });
+}
 </script>
