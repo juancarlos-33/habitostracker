@@ -1,218 +1,270 @@
-﻿@{
+﻿@inject HabitTrackerApp.Data.HabitDbContext _context
+
+@{
     var block = Context.RequestServices
         .GetService<HabitTrackerApp.Data.HabitDbContext>()
         .ConnectionBlocks
         .FirstOrDefault();
-
     bool isBlocked = block != null && block.IsBlocked;
-}
-
-<h2 class="mb-4 fw-bold">⚙️ Panel de Administración</h2>
-
-
-
-
-
-
-
-
-
-<div class="row g-4">
-
-    <!-- USUARIOS -->
-
-    <div class="col-md-3">
-
-        <a asp-controller="Admin"
-           asp-action="Users"
-           class="text-decoration-none">
-
-            <div class="card shadow-sm border-0 rounded-4 p-4 text-center">
-
-                <div style="font-size:40px;">👥</div>
-
-                <h5 class="mt-3 fw-bold">
-                    Usuarios
-                </h5>
-
-                <p class="text-muted small">
-                    Gestionar usuarios registrados
-                </p>
-
-            </div>
-
-        </a>
-
-    </div>
-
-    <!-- HABITOS -->
-
-    <div class="col-md-3">
-
-        <a asp-controller="Admin"
-           asp-action="Habits"
-           class="text-decoration-none">
-
-            <div class="card shadow-sm border-0 rounded-4 p-4 text-center">
-
-                <div style="font-size:40px;">🔥</div>
-
-                <h5 class="mt-3 fw-bold">
-                    Hábitos
-                </h5>
-
-                <p class="text-muted small">
-                    Ver hábitos creados
-                </p>
-
-            </div>
-
-        </a>
-
-    </div>
-    <!-- MENSAJES -->
-
-    <div class="col-md-3">
-
-        <a asp-controller="Admin"
-           asp-action="Messages"
-           class="text-decoration-none">
-
-            <div class="card shadow-sm border-0 rounded-4 p-4 text-center">
-
-                <div style="font-size:40px;">💬</div>
-
-                <h5 class="mt-3 fw-bold">
-                    Mensajes
-                </h5>
-
-                <p class="text-muted small">
-                    Actividad del chat
-                </p>
-
-            </div>
-
-        </a>
-
-    </div>
-
-    <!-- ESTADISTICAS -->
-
-    <div class="col-md-3">
-
-        <a asp-controller="Admin"
-           asp-action="Statistics"
-           class="text-decoration-none">
-
-            <div class="card shadow-sm border-0 rounded-4 p-4 text-center">
-
-                <div style="font-size:40px;">📊</div>
-
-                <h5 class="mt-3 fw-bold">
-                    Estadísticas
-                </h5>
-
-                <p class="text-muted small">
-                    Información general
-                </p>
-
-            </div>
-
-        </a>
-
-    </div>
-
-    <!-- COMENTARIOS -->
-
-    <div class="col-md-3">
-
-        <a asp-controller="Admin"
-           asp-action="Feedbacks"
-           class="text-decoration-none">
-
-            <div class="card shadow-sm border-0 rounded-4 p-4 text-center">
-
-                <div style="font-size:40px;">📩</div>
-
-                <h5 class="mt-3 fw-bold">
-                    Comentarios
-                    <span class="badge bg-danger ms-1">
-                        @ViewBag.TotalFeedbacks
-                    </span>
-                </h5>
-
-                <p class="text-muted small">
-                    Opiniones de los usuarios
-                </p>
-
-            </div>
-
-        </a>
-
-    </div>
-
-    <div class="col-md-3">
-
-        <a asp-controller="Admin"
-           asp-action="AdminLogs"
-           class="text-decoration-none">
-
-            <div class="card shadow-sm border-0 rounded-4 p-4 text-center">
-
-                <div style="font-size:40px;">📜</div>
-
-                <h5 class="mt-3 fw-bold">
-                    Historial
-                </h5>
-
-                <p class="text-muted small">
-                    Acciones de administradorres
-                </p>
-
-            </div>
-
-        </a>
-
-    </div>
-
-</div>
-
-@{
     var recentUsers = ViewBag.RecentUsers as List<HabitTrackerApp.Models.User> ?? new List<HabitTrackerApp.Models.User>();
 }
 
-<div class="new-users-section">
-    <h4 class="new-users-title">🆕 Usuarios registrados</h4>
-    <p class="new-users-subtitle">Del más reciente al más antiguo</p>
+<div class="admin-index">
 
-    <div class="new-users-grid">
-        @foreach (var user in recentUsers)
-        {
-            <a href="/User/Profile/@user.Id" class="new-user-card">
-                @if (!string.IsNullOrEmpty(user.ProfileImage))
-                {
-                    <img src="@user.ProfileImage" class="new-user-avatar" />
-                }
-                else
-                {
-                    <div class="new-user-letter">@user.Username.Substring(0, 1).ToUpper()</div>
-                }
-                <div class="new-user-info">
-                    <span class="new-user-name">@user.Username</span>
-                    <span class="new-user-date">
-                        @if (user.IsGoogleAccount)
-                        { <span class="google-tag">G</span> }
-                        @user.CreatedAt?.ToString("dd MMM yyyy")
-                    </span>
+    <!-- HEADER -->
+    <div class="ai-header">
+        <div>
+            <h2 class="ai-title">⚙️ Panel de Administración</h2>
+            <p class="ai-subtitle">Bienvenido al centro de control de HabitTracker</p>
+        </div>
+        <div class="ai-time" id="aiClock"></div>
+    </div>
+
+    <!-- MÓDULOS -->
+    <div class="modules-grid">
+
+        <a asp-controller="Admin" asp-action="Users" class="module-card users">
+            <div class="module-icon">👥</div>
+            <div class="module-info">
+                <div class="module-name">Usuarios</div>
+                <div class="module-desc">Gestionar usuarios registrados</div>
+            </div>
+            <div class="module-arrow">→</div>
+        </a>
+
+        <a asp-controller="Admin" asp-action="Habits" class="module-card habits">
+            <div class="module-icon">🔥</div>
+            <div class="module-info">
+                <div class="module-name">Hábitos</div>
+                <div class="module-desc">Ver hábitos creados</div>
+            </div>
+            <div class="module-arrow">→</div>
+        </a>
+
+        <a asp-controller="Admin" asp-action="Messages" class="module-card messages">
+            <div class="module-icon">💬</div>
+            <div class="module-info">
+                <div class="module-name">Mensajes</div>
+                <div class="module-desc">Actividad del chat</div>
+            </div>
+            <div class="module-arrow">→</div>
+        </a>
+
+        <a asp-controller="Admin" asp-action="Statistics" class="module-card stats">
+            <div class="module-icon">📊</div>
+            <div class="module-info">
+                <div class="module-name">Estadísticas</div>
+                <div class="module-desc">Información general</div>
+            </div>
+            <div class="module-arrow">→</div>
+        </a>
+
+        <a asp-controller="Admin" asp-action="Feedbacks" class="module-card feedback">
+            <div class="module-icon">📩</div>
+            <div class="module-info">
+                <div class="module-name">
+                    Comentarios
+                    @if (ViewBag.TotalFeedbacks != null && (int)ViewBag.TotalFeedbacks > 0)
+                    {
+                        <span class="module-badge">@ViewBag.TotalFeedbacks</span>
+                    }
                 </div>
-            </a>
+                <div class="module-desc">Opiniones de los usuarios</div>
+            </div>
+            <div class="module-arrow">→</div>
+        </a>
+
+        <a asp-controller="Admin" asp-action="AdminLogs" class="module-card logs">
+            <div class="module-icon">📜</div>
+            <div class="module-info">
+                <div class="module-name">Historial</div>
+                <div class="module-desc">Acciones de administradores</div>
+            </div>
+            <div class="module-arrow">→</div>
+        </a>
+
+        <a asp-controller="Admin" asp-action="Reports" class="module-card reports">
+            <div class="module-icon">🚩</div>
+            <div class="module-info">
+                <div class="module-name">Reportes</div>
+                <div class="module-desc">Publicaciones reportadas</div>
+            </div>
+            <div class="module-arrow">→</div>
+        </a>
+
+    </div>
+
+    <!-- USUARIOS RECIENTES -->
+    <div class="recent-section">
+        <div class="recent-header">
+            <div>
+                <h4 class="recent-title">🆕 Usuarios registrados</h4>
+             <p class="recent-subtitle">Del más reciente al más antiguo · @recentUsers.Count usuarios · <span style="font-size:11px;color:#d1d5db;">Los invitados no se muestran aquí</span></p>
+            </div>
+        </div>
+
+        @if (!recentUsers.Any())
+        {
+            <div class="recent-empty">
+                <div style="font-size:40px;">👤</div>
+                <p>No hay usuarios registrados aún.</p>
+            </div>
+        }
+        else
+        {
+            <div class="recent-grid">
+                @foreach (var user in recentUsers)
+                {
+                    <a href="/User/Profile/@user.Id" class="recent-card">
+                        <div class="recent-avatar-wrap">
+                            @if (!string.IsNullOrEmpty(user.ProfileImage))
+                            {
+                                <img src="@user.ProfileImage" class="recent-avatar" />
+                            }
+                            else
+                            {
+                                <div class="recent-avatar-letter">@user.Username.Substring(0, 1).ToUpper()</div>
+                            }
+                            @if (user.IsGoogleAccount)
+                            {
+                                <span class="google-dot">G</span>
+                            }
+                        </div>
+                        <div class="recent-info">
+                            <span class="recent-name">@user.Username</span>
+                            <span class="recent-date">@user.CreatedAt?.ToString("dd MMM yyyy")</span>
+                        </div>
+                        @if (user.Role == "Admin")
+                        {
+                            <span class="recent-role admin">Admin</span>
+                        }
+                    </a>
+                }
+            </div>
         }
     </div>
+
 </div>
 
 <style>
-.new-users-section {
-    margin-top: 32px;
+.admin-index { max-width: 1000px; margin: 0 auto; }
+
+/* HEADER */
+.ai-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 28px;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.ai-title {
+    font-size: 26px;
+    font-weight: 800;
+    color: #111827;
+    margin: 0 0 4px;
+}
+
+.ai-subtitle {
+    font-size: 14px;
+    color: #9ca3af;
+    margin: 0;
+}
+
+.ai-time {
+    font-size: 13px;
+    font-weight: 600;
+    color: #6b7280;
+    background: white;
+    padding: 8px 16px;
+    border-radius: 50px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    border: 1px solid rgba(0,0,0,0.04);
+}
+
+/* MODULES */
+.modules-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 12px;
+    margin-bottom: 28px;
+}
+
+.module-card {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 18px 20px;
+    border-radius: 16px;
+    text-decoration: none;
+    transition: 0.2s;
+    border: 1px solid rgba(0,0,0,0.04);
+    background: white;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    position: relative;
+    overflow: hidden;
+}
+
+.module-card::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 4px;
+    border-radius: 4px 0 0 4px;
+}
+
+.module-card.users::before { background: #2563eb; }
+.module-card.habits::before { background: #f97316; }
+.module-card.messages::before { background: #8b5cf6; }
+.module-card.stats::before { background: #16a34a; }
+.module-card.feedback::before { background: #dc2626; }
+.module-card.logs::before { background: #d97706; }
+.module-card.reports::before { background: #ef4444; }
+
+.module-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+}
+
+.module-icon { font-size: 28px; flex-shrink: 0; }
+
+.module-info { flex: 1; }
+
+.module-name {
+    font-size: 15px;
+    font-weight: 700;
+    color: #111827;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.module-desc {
+    font-size: 12px;
+    color: #9ca3af;
+    margin-top: 2px;
+}
+
+.module-badge {
+    background: #dc2626;
+    color: white;
+    font-size: 10px;
+    font-weight: 800;
+    padding: 2px 7px;
+    border-radius: 20px;
+}
+
+.module-arrow {
+    font-size: 18px;
+    color: #d1d5db;
+    transition: 0.2s;
+}
+
+.module-card:hover .module-arrow { color: #6b7280; transform: translateX(3px); }
+
+/* RECENT USERS */
+.recent-section {
     background: white;
     border-radius: 20px;
     padding: 24px;
@@ -220,26 +272,39 @@
     border: 1px solid rgba(0,0,0,0.04);
 }
 
-.new-users-title {
+.recent-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 20px;
+}
+
+.recent-title {
     font-size: 18px;
     font-weight: 800;
     color: #111827;
     margin: 0 0 4px;
 }
 
-.new-users-subtitle {
+.recent-subtitle {
     font-size: 13px;
     color: #9ca3af;
-    margin: 0 0 20px;
+    margin: 0;
 }
 
-.new-users-grid {
+.recent-empty {
+    text-align: center;
+    padding: 40px;
+    color: #9ca3af;
+}
+
+.recent-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: 12px;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 10px;
 }
 
-.new-user-card {
+.recent-card {
     display: flex;
     align-items: center;
     gap: 10px;
@@ -249,45 +314,50 @@
     text-decoration: none;
     transition: 0.2s;
     background: #f9fafb;
+    position: relative;
 }
 
-.new-user-card:hover {
+.recent-card:hover {
     background: #eff6ff;
     border-color: #bfdbfe;
     transform: translateY(-1px);
 }
 
-.new-user-avatar {
-    width: 42px;
-    height: 42px;
-    border-radius: 50%;
-    object-fit: cover;
+.recent-avatar-wrap { position: relative; flex-shrink: 0; }
+
+.recent-avatar {
+    width: 40px; height: 40px;
+    border-radius: 50%; object-fit: cover;
     border: 2px solid #e5e7eb;
-    flex-shrink: 0;
 }
 
-.new-user-letter {
-    width: 42px;
-    height: 42px;
+.recent-avatar-letter {
+    width: 40px; height: 40px;
     border-radius: 50%;
     background: linear-gradient(135deg, #2563eb, #7c3aed);
     color: white;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 800; font-size: 15px;
+}
+
+.google-dot {
+    position: absolute;
+    bottom: -2px; right: -2px;
+    background: #4285f4;
+    color: white;
+    font-size: 8px;
     font-weight: 800;
-    font-size: 16px;
-    flex-shrink: 0;
+    width: 16px; height: 16px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    border: 2px solid white;
 }
 
-.new-user-info {
-    display: flex;
-    flex-direction: column;
-    min-width: 0;
-}
+.recent-info { flex: 1; min-width: 0; }
 
-.new-user-name {
-    font-size: 14px;
+.recent-name {
+    display: block;
+    font-size: 13px;
     font-weight: 700;
     color: #111827;
     white-space: nowrap;
@@ -295,90 +365,89 @@
     text-overflow: ellipsis;
 }
 
-.new-user-date {
-    font-size: 11px;
+.recent-date {
+    display: block;
+    font-size: 10px;
     color: #9ca3af;
-    display: flex;
-    align-items: center;
-    gap: 4px;
+    margin-top: 2px;
 }
 
-.google-tag {
-    background: #4285f4;
-    color: white;
+.recent-role {
     font-size: 9px;
-    font-weight: 800;
-    padding: 1px 5px;
-    border-radius: 4px;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 20px;
+    position: absolute;
+    top: 8px; right: 8px;
 }
+
+.recent-role.admin { background: #dbeafe; color: #1d4ed8; }
 
 /* DARK MODE */
-body.bg-dark .new-users-section {
+body.bg-dark .ai-title { color: #f1f5f9 !important; }
+body.bg-dark .ai-time {
+    background: #1e1e2e !important;
+    border-color: #2d2d3d !important;
+    color: #94a3b8 !important;
+}
+
+body.bg-dark .module-card {
     background: #1e1e2e !important;
     border-color: #2d2d3d !important;
 }
 
-body.bg-dark .new-users-title { color: #f1f5f9 !important; }
-body.bg-dark .new-user-card {
+body.bg-dark .module-name { color: #f1f5f9 !important; }
+body.bg-dark .module-card:hover { box-shadow: 0 8px 24px rgba(0,0,0,0.3) !important; }
+
+body.bg-dark .recent-section {
+    background: #1e1e2e !important;
+    border-color: #2d2d3d !important;
+}
+
+body.bg-dark .recent-title { color: #f1f5f9 !important; }
+body.bg-dark .recent-card {
     background: #2d2d3d !important;
     border-color: #3d3d4d !important;
 }
 
-body.bg-dark .new-user-card:hover {
+body.bg-dark .recent-card:hover {
     background: #1e3a5f !important;
     border-color: #2563eb !important;
 }
 
-body.bg-dark .new-user-name { color: #f1f5f9 !important; }
+body.bg-dark .recent-name { color: #f1f5f9 !important; }
+body.bg-dark .google-dot { border-color: #2d2d3d !important; }
 </style>
 
-@section Scripts{
+@section Scripts {
 <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
-
 <script>
+// RELOJ
+function updateClock() {
+    const now = new Date();
+    const h = String(now.getHours()).padStart(2, '0');
+    const m = String(now.getMinutes()).padStart(2, '0');
+    const s = String(now.getSeconds()).padStart(2, '0');
+    const clock = document.getElementById('aiClock');
+    if (clock) clock.innerText = `🕐 ${h}:${m}:${s}`;
+}
+setInterval(updateClock, 1000);
+updateClock();
 
-    const connection = new signalR.HubConnectionBuilder()
-        .withUrl("/chatHub")
-        .build();
+const connection = new signalR.HubConnectionBuilder()
+    .withUrl("/chatHub").build();
 
-    connection.start().catch(function (err) {
-        return console.error(err.toString());
-    });
+connection.start().catch(err => console.error(err));
 
-    // 🔔 cuando llegue un comentario nuevo
-       connection.on("NewFeedback", function () {
+connection.on("NewFeedback", function () {
+    const badge = document.querySelector(".module-badge");
+    if (badge) badge.innerText = parseInt(badge.innerText) + 1;
 
-        const badge = document.querySelector("#feedbackCounter");
-
-        if (badge) {
-            let current = parseInt(badge.innerText);
-            badge.innerText = current + 1;
-        }
-
-        // 🔔 mostrar notificación
-        const toast = document.createElement("div");
-
-        toast.innerHTML = "💬 Nuevo comentario recibido";
-
-        toast.style.position = "fixed";
-        toast.style.bottom = "20px";
-        toast.style.right = "20px";
-        toast.style.background = "#111827";
-        toast.style.color = "white";
-        toast.style.padding = "12px 18px";
-        toast.style.borderRadius = "10px";
-        toast.style.boxShadow = "0 10px 25px rgba(0,0,0,0.2)";
-        toast.style.zIndex = "9999";
-
-        document.body.appendChild(toast);
-
-        setTimeout(() => {
-            toast.remove();
-        }, 4000);
-
-    });
-
+    const toast = document.createElement("div");
+    toast.innerHTML = "💬 Nuevo comentario recibido";
+    toast.style.cssText = "position:fixed;bottom:20px;right:20px;background:#111827;color:white;padding:12px 18px;border-radius:10px;box-shadow:0 10px 25px rgba(0,0,0,0.2);z-index:9999;font-size:14px;";
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 4000);
+});
 </script>
-
-        }
-
+}

@@ -1354,11 +1354,8 @@ namespace HabitTrackerApp.Controllers
             var user = new User
             {
                 Username = username,
-
-                // 🔥 contraseña automática (IMPORTANTE)
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword(Guid.NewGuid().ToString()),
-
-                Email = $"{username}@guest.com",
+                Email = null,
                 EmailConfirmed = true,
                 Role = "Guest",
                 CreatedAt = DateTime.Now,
@@ -1789,11 +1786,15 @@ namespace HabitTrackerApp.Controllers
                     return "Desconocido";
 
                 var municipality =
-                    address["town"]?.ToString() ??
-                    address["city"]?.ToString() ??
-                    address["village"]?.ToString() ??
-                    address["county"]?.ToString() ??
-                    "Desconocido";
+    address["municipality"]?.ToString() ??
+    address["town"]?.ToString() ??
+    address["village"]?.ToString() ??
+    address["suburb"]?.ToString() ??
+    address["city_district"]?.ToString() ??
+    address["city"]?.ToString() ??
+    address["county"]?.ToString() ??
+    address["state_district"]?.ToString() ??
+    "Desconocido";
 
                 return municipality;
             }

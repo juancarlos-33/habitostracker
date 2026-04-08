@@ -170,11 +170,13 @@
                                 </div>
                             </td>
                             <td class="email-cell">
-                                @if (user.Role == "SuperAdmin")
-                                { <span class="text-muted">🔒 Privado</span> }
-                                else
-                                { @user.Email }
-                            </td>
+    @if (user.Role == "SuperAdmin")
+    { <span class="text-muted">🔒 Privado</span> }
+    else if (user.Role == "Guest")
+    { <span class="text-muted">👤 Usuario invitado</span> }
+    else
+    { @user.Email }
+</td>
                             <td id="status-@user.Id">
                                 @if (user.IsBanned)
                                 { <span class="status-tag banned">Baneado</span> }
@@ -343,10 +345,18 @@
 
             @if (user.Role != "SuperAdmin")
             {
-               <div class="mobile-info">
-    <span>📧 @user.Email</span>
+            <div class="mobile-info">
+  <span>📧 @(user.Role == "Guest" ? "Usuario invitado" : user.Email)</span>
     <span>🌐 @(user.LastIp ?? "—")</span>
     <span>💻 @(user.Device ?? "—") · @(user.Browser ?? "—")</span>
+    @if (!string.IsNullOrEmpty(user.Country))
+    {
+        <span>🌍 @user.Country @(!string.IsNullOrEmpty(user.City) ? $"· {user.City}" : "")</span>
+    }
+    @if (!string.IsNullOrEmpty(user.Municipality))
+    {
+        <span>🏙 @user.Municipality</span>
+    }
     @if (user.Latitude != null && user.Longitude != null)
     {
         <a target="_blank"
