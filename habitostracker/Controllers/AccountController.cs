@@ -1319,7 +1319,8 @@ public async Task<IActionResult> ExternalLoginCallback()
 
 
         [HttpPost]
-        [ValidateAntiForgeryToken]
+        [IgnoreAntiforgeryToken]  // 👈 aquí
+   
         public async Task<IActionResult> GuestRegister(string username)
         {
             if (string.IsNullOrWhiteSpace(username))
