@@ -19,14 +19,11 @@ namespace HabitTrackerApp.Controllers
             _context = context;
         }
 
-        // 🔐 Obtener UserId seguro
         private int GetUserId()
         {
             var claim = User.FindFirst("UserId");
-
             if (claim == null)
                 throw new UnauthorizedAccessException("Usuario no autenticado correctamente.");
-
             return int.Parse(claim.Value);
         }
 
@@ -34,6 +31,21 @@ namespace HabitTrackerApp.Controllers
         public IActionResult Index()
         {
             var userId = GetUserId();
+
+            var user = _context.Users.FirstOrDefault(u => u.Id == userId);
+            if (user == null) return RedirectToAction("Login", "Account");
+
+            // 🔥 Si es Google y el perfil está incompleto → forzar CompleteProfile
+            if (user.IsGoogleAccount)
+            {
+                bool perfilIncompleto = string.IsNullOrEmpty(user.Gender)
+                    || user.Gender == "No especificado"
+                    || string.IsNullOrEmpty(user.Bio)
+                    || user.Bio == "Registrado con Google";
+
+                if (perfilIncompleto)
+                    return RedirectToAction("CompleteProfile", "Account");
+            }
 
             var habits = _context.Habits
                 .Where(h => h.UserId == userId)
@@ -58,17 +70,13 @@ namespace HabitTrackerApp.Controllers
                 .Where(h => userHabitIds.Contains(h.HabitId));
 
             if (date.HasValue)
-            {
-                historyQuery = historyQuery
-                    .Where(h => h.Date.Date == date.Value.Date);
-            }
+                historyQuery = historyQuery.Where(h => h.Date.Date == date.Value.Date);
 
             var history = historyQuery
                 .OrderByDescending(h => h.Date)
                 .ToList();
 
             ViewBag.SelectedDate = date;
-
             return View(history);
         }
 
@@ -107,14 +115,11 @@ namespace HabitTrackerApp.Controllers
             }
 
             var userId = GetUserId();
-
             var user = _context.Users.FirstOrDefault(u => u.Id == userId);
 
-            // 🚫 límite para usuarios gratis
             if (user != null && !user.IsPremium)
             {
                 var count = _context.Habits.Count(h => h.UserId == userId);
-
                 if (count >= 5)
                 {
                     TempData["Error"] = "🚫 Límite alcanzado (máx 5 hábitos). Hazte premium 😈";
@@ -132,7 +137,6 @@ namespace HabitTrackerApp.Controllers
             _context.SaveChanges();
 
             TempData["Success"] = "✅ Hábito creado correctamente";
-
             return RedirectToAction("Index");
         }
 
@@ -140,12 +144,8 @@ namespace HabitTrackerApp.Controllers
         public IActionResult Edit(int id)
         {
             var userId = GetUserId();
-
-            var habit = _context.Habits
-                .FirstOrDefault(h => h.Id == id && h.UserId == userId);
-
+            var habit = _context.Habits.FirstOrDefault(h => h.Id == id && h.UserId == userId);
             if (habit == null) return NotFound();
-
             return View(habit);
         }
 
@@ -154,14 +154,10 @@ namespace HabitTrackerApp.Controllers
         public IActionResult Edit(Habit habit)
         {
             var userId = GetUserId();
-
-            var habitInDb = _context.Habits
-                .FirstOrDefault(h => h.Id == habit.Id && h.UserId == userId);
-
+            var habitInDb = _context.Habits.FirstOrDefault(h => h.Id == habit.Id && h.UserId == userId);
             if (habitInDb == null) return NotFound();
 
             habitInDb.Name = habit.Name;
-
             _context.SaveChanges();
             return RedirectToAction("Index");
         }
@@ -170,9 +166,7 @@ namespace HabitTrackerApp.Controllers
         public IActionResult Delete(int id)
         {
             var userId = GetUserId();
-
-            var habit = _context.Habits
-                .FirstOrDefault(h => h.Id == id && h.UserId == userId);
+            var habit = _context.Habits.FirstOrDefault(h => h.Id == id && h.UserId == userId);
 
             if (habit != null)
             {
@@ -187,10 +181,7 @@ namespace HabitTrackerApp.Controllers
         public IActionResult Complete(int id)
         {
             var userId = GetUserId();
-
-            var habit = _context.Habits
-                .FirstOrDefault(h => h.Id == id && h.UserId == userId);
-
+            var habit = _context.Habits.FirstOrDefault(h => h.Id == id && h.UserId == userId);
             if (habit == null) return NotFound();
 
             var today = DateTime.Today;
@@ -217,7 +208,6 @@ namespace HabitTrackerApp.Controllers
             });
 
             CreateAchievementIfNeeded(habit);
-
             _context.SaveChanges();
 
             return RedirectToAction("Index");
@@ -227,10 +217,7 @@ namespace HabitTrackerApp.Controllers
         public IActionResult Fail(int id)
         {
             var userId = GetUserId();
-
-            var habit = _context.Habits
-                .FirstOrDefault(h => h.Id == id && h.UserId == userId);
-
+            var habit = _context.Habits.FirstOrDefault(h => h.Id == id && h.UserId == userId);
             if (habit == null) return NotFound();
 
             habit.StreakDays = 0;
@@ -246,10 +233,8 @@ namespace HabitTrackerApp.Controllers
             });
 
             _context.SaveChanges();
-
             return RedirectToAction("Index");
         }
-
 
         [HttpPost]
         public IActionResult AddComment(int habitId, string content)
@@ -264,11 +249,8 @@ namespace HabitTrackerApp.Controllers
             };
 
             _context.HabitComments.Add(comment);
-            _context.SaveChanges(); // 🔥 primero guardamos
+            _context.SaveChanges();
 
-            var commentId = comment.Id; // 🔥 ahora sí existe
-
-            // 🔥 obtener hábito y usuario actual
             var habit = _context.Habits.FirstOrDefault(h => h.Id == habitId);
             var currentUser = _context.Users.FirstOrDefault(u => u.Id == userId);
 
@@ -276,10 +258,8 @@ namespace HabitTrackerApp.Controllers
             {
                 _context.Notifications.Add(new Notification
                 {
-               
                     UserId = habit.UserId,
                     FromUserId = userId,
-                   
                     Message = "💬 comentó tu hábito",
                     CreatedAt = DateTime.Now,
                     IsRead = false,
@@ -289,10 +269,9 @@ namespace HabitTrackerApp.Controllers
             }
 
             _context.SaveChanges();
-
             return RedirectToAction("Index");
         }
-        // 🏆 LOGROS
+
         private void CreateAchievementIfNeeded(Habit habit)
         {
             string achievementTitle = null;
@@ -325,7 +304,6 @@ namespace HabitTrackerApp.Controllers
         public IActionResult Calendar(DateTime? month)
         {
             var userId = GetUserId();
-
             DateTime selectedDate = month ?? DateTime.Today;
 
             var firstDay = new DateTime(selectedDate.Year, selectedDate.Month, 1);
@@ -336,35 +314,26 @@ namespace HabitTrackerApp.Controllers
                 .Select(h => h.Id)
                 .ToList();
 
-            // 🔥 Historial SOLO del mes (para el heatmap)
             var monthlyHistory = _context.HabitHistories
                 .Where(h => userHabitIds.Contains(h.HabitId)
                     && h.Date >= firstDay
                     && h.Date <= lastDay)
                 .ToList();
 
-            // 🔥 Historial TOTAL del usuario (para estadísticas reales)
             var fullHistory = _context.HabitHistories
                 .Where(h => userHabitIds.Contains(h.HabitId))
                 .ToList();
 
-            // 🏆 Mejor día del mes
             var bestDay = monthlyHistory
                 .Where(h => h.Completed)
                 .GroupBy(h => h.Date.Date)
-                .Select(g => new
-                {
-                    Date = g.Key,
-                    Count = g.Count()
-                })
+                .Select(g => new { Date = g.Key, Count = g.Count() })
                 .OrderByDescending(g => g.Count)
                 .FirstOrDefault();
 
             ViewBag.BestDay = bestDay;
 
-            // 📊 CONSISTENCIA REAL DEL MES
             int daysInMonth = DateTime.DaysInMonth(selectedDate.Year, selectedDate.Month);
-
             int completedDays = monthlyHistory
                 .Where(h => h.Completed)
                 .Select(h => h.Date.Date)
@@ -377,7 +346,6 @@ namespace HabitTrackerApp.Controllers
 
             ViewBag.Consistency = consistency;
 
-            // 📅 SEMANA REAL (aunque cruce meses)
             var startOfWeek = DateTime.Today.AddDays(-(int)DateTime.Today.DayOfWeek);
             var endOfWeek = startOfWeek.AddDays(6);
 
@@ -388,16 +356,12 @@ namespace HabitTrackerApp.Controllers
             ViewBag.WeeklyCompleted = weeklyData.Count(h => h.Completed);
             ViewBag.WeeklyFailed = weeklyData.Count(h => !h.Completed);
 
-            // 🎯 META DINÁMICA SEGÚN HÁBITOS
             int totalHabits = userHabitIds.Count;
-            int monthlyGoal = totalHabits * daysInMonth; // meta perfecta
-
+            int monthlyGoal = totalHabits * daysInMonth;
             int monthlyCompleted = monthlyHistory.Count(h => h.Completed);
 
             ViewBag.MonthlyGoal = monthlyGoal;
             ViewBag.MonthlyCompleted = monthlyCompleted;
-
-            // 📊 Comparación con mes anterior
 
             var previousMonthStart = firstDay.AddMonths(-1);
             var previousMonthEnd = previousMonthStart.AddMonths(1).AddDays(-1);
@@ -411,18 +375,13 @@ namespace HabitTrackerApp.Controllers
             int previousCompleted = previousMonthHistory.Count(h => h.Completed);
             int currentCompleted = monthlyHistory.Count(h => h.Completed);
 
-            int percentageChange = 0;
-
-            if (previousCompleted > 0)
-            {
-                percentageChange = (int)(((double)(currentCompleted - previousCompleted)
-                    / previousCompleted) * 100);
-            }
+            int percentageChange = previousCompleted > 0
+                ? (int)(((double)(currentCompleted - previousCompleted) / previousCompleted) * 100)
+                : 0;
 
             ViewBag.PercentageChange = percentageChange;
             ViewBag.PreviousCompleted = previousCompleted;
             ViewBag.CurrentCompleted = currentCompleted;
-            // 🏆 Mejor mes histórico del usuario
 
             var allUserHistory = _context.HabitHistories
                 .Where(h => userHabitIds.Contains(h.HabitId) && h.Completed)
@@ -430,12 +389,7 @@ namespace HabitTrackerApp.Controllers
 
             var bestMonth = allUserHistory
                 .GroupBy(h => new { h.Date.Year, h.Date.Month })
-                .Select(g => new
-                {
-                    Year = g.Key.Year,
-                    Month = g.Key.Month,
-                    Count = g.Count()
-                })
+                .Select(g => new { Year = g.Key.Year, Month = g.Key.Month, Count = g.Count() })
                 .OrderByDescending(g => g.Count)
                 .FirstOrDefault();
 
@@ -443,11 +397,10 @@ namespace HabitTrackerApp.Controllers
             {
                 ViewBag.BestMonthName = new DateTime(bestMonth.Year, bestMonth.Month, 1)
                     .ToString("MMMM yyyy");
-
                 ViewBag.BestMonthCount = bestMonth.Count;
             }
-            return View(monthlyHistory);
 
+            return View(monthlyHistory);
         }
     }
 }
