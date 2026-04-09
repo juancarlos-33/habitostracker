@@ -68,6 +68,7 @@ namespace HabitTrackerApp
             {
                options.ClientId = builder.Configuration["Google:ClientId"];
 options.ClientSecret = builder.Configuration["Google:ClientSecret"];
+                options.SignInScheme = "Cookies";
             })
             .AddJwtBearer(JwtBearerDefaults.AuthenticationScheme, options =>
             {

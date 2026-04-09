@@ -5,6 +5,7 @@ using HabitTrackerApp.Models;
 using HabitTrackerApp.Services;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
@@ -1226,7 +1227,10 @@ namespace HabitTrackerApp.Controllers
             {
                 return RedirectToAction("Login", new { ipblocked = true });
             }
-            var result = await HttpContext.AuthenticateAsync("Cookies");
+            // ✅ DESPUÉS
+            var result = await HttpContext.AuthenticateAsync(
+                GoogleDefaults.AuthenticationScheme); // = "Google"
+
             if (!result.Succeeded) return RedirectToAction("Login");
 
             var email = result.Principal.FindFirst(ClaimTypes.Email)?.Value;
