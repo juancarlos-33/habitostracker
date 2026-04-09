@@ -4,16 +4,12 @@
 }
 
 <div class="guest-container">
-    // ... resto igual ...
-
-<div class="guest-container">
 
     <h2 class="text-center mb-2">👤 Modo Invitado</h2>
     <p class="text-center text-muted mb-4">
         Estás entrando con acceso limitado
     </p>
 
-    <!-- 🔥 MENSAJES DE ERROR -->
     @if (!ViewData.ModelState.IsValid)
     {
         <div class="alert alert-danger text-center">
@@ -35,12 +31,11 @@
     </div>
 
     <form method="post" asp-action="GuestRegister">
-
+        @Html.AntiForgeryToken()
         <div class="mb-3">
             <label>Crear Nombre de usuario</label>
             <input name="username" class="form-control" placeholder="Ej: Invitado123" required />
         </div>
-
         <button class="btn btn-primary w-100 d-flex align-items-center justify-content-center gap-2 py-2 fw-semibold guest-btn">
             <span>🚀</span>
             <span>Continuar como invitado</span>
@@ -52,10 +47,10 @@
     <h5 class="text-center">🔁 ¿Ya entraste como invitado antes?</h5>
 
     <form method="post" asp-action="GuestLoginExisting">
+        @Html.AntiForgeryToken()
         <div class="mb-3">
             <input name="username" class="form-control" placeholder="Tu usuario" required />
         </div>
-
         <button class="btn btn-outline-secondary w-100">
             🔓 Entrar con mi usuario invitado
         </button>
@@ -96,9 +91,6 @@
     .guest-btn {
         background: linear-gradient(135deg, #4e73df, #224abe);
         border: none;
-    }
-
-    .guest-btn {
         border-radius: 12px;
         transition: all 0.3s ease;
         font-size: 15px;
@@ -113,7 +105,6 @@
             transform: scale(0.98);
         }
 
-    /* 🔥 mejora visual del error */
     .alert {
         border-radius: 10px;
         font-size: 14px;
