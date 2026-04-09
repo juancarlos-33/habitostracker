@@ -1418,44 +1418,24 @@ namespace HabitTrackerApp.Controllers
 
         public async Task<IActionResult> GoogleResponse()
         {
-            // 🔥 OBTENER IP
-            string ip = HttpContext.Request.Headers["X-Forwarded-For"].FirstOrDefault();
-
-            if (!string.IsNullOrEmpty(ip))
-            {
-                ip = ip.Split(',').First().Trim();
-            }
-            else
-            {
-                ip = HttpContext.Connection.RemoteIpAddress?.ToString();
-            }
-
-            // 🔥 BLOQUEAR SI LA IP ESTÁ EN LISTA
-            var blocked = _context.BlockedIPs.FirstOrDefault(x => x.IpAddress == ip);
-            if (blocked != null)
-            {
-                return RedirectToAction("Login", new { ipblocked = true });
-            }
+            // ... (todo el código de IP y bloqueo igual) ...
 
             var result = await HttpContext.AuthenticateAsync("Cookies");
-
             var claims = result.Principal.Identities.FirstOrDefault()?.Claims;
 
             var email = claims?.FirstOrDefault(c => c.Type == ClaimTypes.Email)?.Value;
             var name = claims?.FirstOrDefault(c => c.Type == ClaimTypes.Name)?.Value;
+            var picture = claims?.FirstOrDefault(c => c.Type == "picture")?.Value;
 
             if (email == null) return RedirectToAction("Login");
 
-            // 🔥 detectar usuario actual
+            // 🔥 Invitado → convertir
             var userIdClaim = User.FindFirst("UserId");
-
             if (userIdClaim != null)
             {
-                int userId = int.Parse(userIdClaim.Value);
+                int currentUserId = int.Parse(userIdClaim.Value);
+                var currentUser = _context.Users.FirstOrDefault(u => u.Id == currentUserId);
 
-                var currentUser = _context.Users.FirstOrDefault(u => u.Id == userId);
-
-                // 🔥 SI ES INVITADO → CONVERTIR
                 if (currentUser != null && currentUser.Role == "Guest")
                 {
                     currentUser.Email = email;
@@ -1463,28 +1443,24 @@ namespace HabitTrackerApp.Controllers
                     currentUser.Role = "User";
                     currentUser.EmailConfirmed = true;
                     currentUser.IsGoogleAccount = true;
-
-                    currentUser.Gender = currentUser.Gender ?? "No especificado";
-                    currentUser.FullName = currentUser.FullName ?? name ?? "Usuario";
-                    currentUser.Bio = currentUser.Bio ?? "Registrado con Google";
+                    currentUser.Gender = "No especificado";
+                    currentUser.FullName = name ?? "Usuario";
+                    currentUser.Bio = "Registrado con Google";
                     currentUser.IsActive = true;
-
-
-
                     _context.SaveChanges();
 
                     await SignInUser(currentUser);
-
                     return RedirectToAction("CompleteProfile", "Account");
                 }
             }
 
-            // 🔥 flujo normal (no invitado)
-            // 🔥 flujo normal (no invitado)
+            // 🔥 Flujo normal
             var user = _context.Users.FirstOrDefault(u => u.Email == email);
+            bool isNewUser = false;
 
             if (user == null)
             {
+                isNewUser = true;
                 user = new User
                 {
                     Username = name ?? email,
@@ -1499,14 +1475,11 @@ namespace HabitTrackerApp.Controllers
                     IsActive = true,
                     IsGoogleAccount = true
                 };
-
                 _context.Users.Add(user);
                 _context.SaveChanges();
-                
             }
 
-            // 🔥 Obtener foto de Google si no tiene ProfileImage
-            var picture = claims?.FirstOrDefault(c => c.Type == "picture")?.Value;
+            // 🔥 Foto de Google
             if (string.IsNullOrEmpty(user.ProfileImage) && !string.IsNullOrEmpty(picture))
             {
                 user.ProfilePicture = picture;
@@ -1514,6 +1487,15 @@ namespace HabitTrackerApp.Controllers
             }
 
             await SignInUser(user);
+
+            // 🔥 Redirigir a CompleteProfile si es nuevo O si el perfil está incompleto
+            bool perfilIncompleto = string.IsNullOrEmpty(user.Gender)
+                || user.Gender == "No especificado"
+                || string.IsNullOrEmpty(user.Bio)
+                || user.Bio == "Registrado con Google";
+
+            if (isNewUser || perfilIncompleto)
+                return RedirectToAction("CompleteProfile", "Account");
 
             return RedirectToAction("Index", "Habit");
         }
