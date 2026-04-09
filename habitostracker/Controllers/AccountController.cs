@@ -1205,139 +1205,118 @@ namespace HabitTrackerApp.Controllers
             return Challenge(properties, provider);
         }
 
-        [HttpGet]
-        public async Task<IActionResult> ExternalLoginCallback()
+       [HttpGet]
+public async Task<IActionResult> ExternalLoginCallback()
+{
+    try
+    {
+        string ip = HttpContext.Request.Headers["X-Forwarded-For"].FirstOrDefault();
+        if (!string.IsNullOrEmpty(ip))
+            ip = ip.Split(',').First().Trim();
+        else
+            ip = HttpContext.Connection.RemoteIpAddress?.ToString();
+
+        var blocked = _context.BlockedIPs.FirstOrDefault(x => x.IpAddress == ip);
+        if (blocked != null)
+            return RedirectToAction("Login", new { ipblocked = true });
+
+        var result = await HttpContext.AuthenticateAsync(GoogleDefaults.AuthenticationScheme);
+        if (!result.Succeeded)
         {
+            await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+            return RedirectToAction("Login");
+        }
 
-            string ip = HttpContext.Request.Headers["X-Forwarded-For"].FirstOrDefault();
+        var email = result.Principal.FindFirst(ClaimTypes.Email)?.Value;
+        var name = result.Principal.FindFirst(ClaimTypes.Name)?.Value;
+        var picture = result.Principal.FindFirst("picture")?.Value;
 
-            if (!string.IsNullOrEmpty(ip))
+        if (email == null) return RedirectToAction("Login");
+
+        var user = _context.Users.FirstOrDefault(u => u.Email == email);
+
+        if (user == null)
+        {
+            user = new User
             {
-                ip = ip.Split(',').First().Trim();
-            }
-            else
+                Email = email,
+                Username = name ?? email,
+                ProfilePicture = picture,
+                EmailConfirmed = true,
+                IsActive = true,
+                Gender = "No especificado",
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword(Guid.NewGuid().ToString()),
+                IsGoogleAccount = true,
+                Role = "User"
+            };
+            _context.Users.Add(user);
+            _context.SaveChanges();
+        }
+        else
+        {
+            if (!user.IsGoogleAccount)
             {
-                ip = HttpContext.Connection.RemoteIpAddress?.ToString();
-            }
-
-            // 🔥 VALIDAR IP BLOQUEADA
-            var blocked = _context.BlockedIPs.FirstOrDefault(x => x.IpAddress == ip);
-
-            if (blocked != null)
-            {
-                return RedirectToAction("Login", new { ipblocked = true });
-            }
-            // ✅ DESPUÉS
-            var result = await HttpContext.AuthenticateAsync(
-                GoogleDefaults.AuthenticationScheme); // = "Google"
-
-            if (!result.Succeeded) return RedirectToAction("Login");
-
-            var email = result.Principal.FindFirst(ClaimTypes.Email)?.Value;
-            var name = result.Principal.FindFirst(ClaimTypes.Name)?.Value;
-            var picture = result.Principal.FindFirst("picture")?.Value;
-
-            if (email == null) return RedirectToAction("Login");
-
-            var user = _context.Users.FirstOrDefault(u => u.Email == email);
-
-            if (user == null)
-            {
-                user = new User
-                {
-                    Email = email,
-                    Username = name ?? email,
-                    ProfilePicture = picture,
-                    EmailConfirmed = true,
-                    IsActive = true,
-                    Gender = "No especificado",
-                    PasswordHash = BCrypt.Net.BCrypt.HashPassword(Guid.NewGuid().ToString()),
-                    IsGoogleAccount = true,
-                    Role = "User"
-                };
-                _context.Users.Add(user);
+                user.IsGoogleAccount = true;
                 _context.SaveChanges();
             }
-            else
-            {
-                // 🔥 Si existe pero no estaba marcado como Google, actualizarlo
-                if (!user.IsGoogleAccount)
-                {
-                    user.IsGoogleAccount = true;
-                    _context.SaveChanges();
-                }
-            }
-
-            // 🟢 ACTUALIZAR ÚLTIMA VEZ ONLINE
-            user.LastOnline = DateTime.Now;
-
-            // 🟢 IP
-
-            // 🟢 DEVICE INFO
-            var userAgent = HttpContext.Request.Headers["User-Agent"].ToString();
-            user.Device = GetDevice(userAgent);
-            user.OperatingSystem = GetOS(userAgent);
-            user.Browser = GetBrowser(userAgent);
-            user.LastIp = ip;
-
-            // 🔥 GEO IP
-            try
-            {
-                using var httpClient = new HttpClient();
-                httpClient.Timeout = TimeSpan.FromSeconds(5);
-
-                var geoJson = await httpClient.GetStringAsync($"https://ipwho.is/{ip}");
-                var geoDoc = System.Text.Json.JsonDocument.Parse(geoJson);
-                var geoRoot = geoDoc.RootElement;
-
-                if (geoRoot.GetProperty("success").GetBoolean())
-                {
-                    user.Country = geoRoot.GetProperty("country").GetString();
-                    user.City = geoRoot.GetProperty("city").GetString();
-                    user.Latitude = geoRoot.GetProperty("latitude").GetDouble();
-                    user.Longitude = geoRoot.GetProperty("longitude").GetDouble();
-                }
-            }
-            catch { }
-
-            _context.SaveChanges();
-
-            // 🔥 LOGIN CON CLAIMS (IMPORTANTE)
-            var claims = new List<Claim>
-{
-    new Claim("UserId", user.Id.ToString()),
-    new Claim(ClaimTypes.Name, user.Username),
-    new Claim(ClaimTypes.Email, user.Email),
-    new Claim(ClaimTypes.Role, user.Role ?? "User"),
-    new Claim("ProfileImage", user.ProfileImage ?? user.ProfilePicture ?? "")
-};
-            var identity = new ClaimsIdentity(claims, "Cookies");
-            var principal = new ClaimsPrincipal(identity);
-
-            await HttpContext.SignInAsync("Cookies", principal);
-
-
-            // 🔥 PERFIL INCOMPLETO - si no tiene género o bio configurados
-            if (user.IsGoogleAccount && (string.IsNullOrEmpty(user.Gender) || user.Gender == "No especificado" || string.IsNullOrEmpty(user.Bio) || user.Bio == "Registrado con Google"))
-            {
-                return RedirectToAction("CompleteProfile", "Account");
-            }
-
-            return RedirectToAction("Index", "Habit");
-
         }
 
-            [HttpGet]
-        public IActionResult GuestRegister()
+        user.LastOnline = DateTime.Now;
+        var userAgent = HttpContext.Request.Headers["User-Agent"].ToString();
+        user.Device = GetDevice(userAgent);
+        user.OperatingSystem = GetOS(userAgent);
+        user.Browser = GetBrowser(userAgent);
+        user.LastIp = ip;
+
+        try
         {
-            // 🔥 SI ES INVITADO (nuevo o viejo)
-            if (User.Identity.IsAuthenticated && User.IsInRole("Guest"))
+            using var httpClient = new HttpClient();
+            httpClient.Timeout = TimeSpan.FromSeconds(5);
+            var geoJson = await httpClient.GetStringAsync($"https://ipwho.is/{ip}");
+            var geoDoc = System.Text.Json.JsonDocument.Parse(geoJson);
+            var geoRoot = geoDoc.RootElement;
+            if (geoRoot.GetProperty("success").GetBoolean())
             {
-                return RedirectToAction("Index", "Habit");
+                user.Country = geoRoot.GetProperty("country").GetString();
+                user.City = geoRoot.GetProperty("city").GetString();
+                user.Latitude = geoRoot.GetProperty("latitude").GetDouble();
+                user.Longitude = geoRoot.GetProperty("longitude").GetDouble();
             }
-
-            return View();
         }
+        catch { }
+
+        _context.SaveChanges();
+
+        var claims = new List<Claim>
+        {
+            new Claim("UserId", user.Id.ToString()),
+            new Claim(ClaimTypes.Name, user.Username),
+            new Claim(ClaimTypes.Email, user.Email),
+            new Claim(ClaimTypes.Role, user.Role ?? "User"),
+            new Claim("ProfileImage", user.ProfileImage ?? user.ProfilePicture ?? "")
+        };
+        var identity = new ClaimsIdentity(claims, "Cookies");
+        var principal = new ClaimsPrincipal(identity);
+        await HttpContext.SignInAsync("Cookies", principal);
+
+        bool perfilIncompleto = string.IsNullOrEmpty(user.Gender)
+            || user.Gender == "No especificado"
+            || string.IsNullOrEmpty(user.Bio)
+            || user.Bio == "Registrado con Google";
+
+        if (perfilIncompleto)
+            return RedirectToAction("CompleteProfile", "Account");
+
+        return RedirectToAction("Index", "Habit");
+    }
+    catch (Exception)
+    {
+        await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+        return RedirectToAction("Login");
+    }
+}
+
+
 
         [HttpPost]
         [ValidateAntiForgeryToken]
