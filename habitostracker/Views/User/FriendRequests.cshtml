@@ -4,89 +4,171 @@
     ViewData["Title"] = "Solicitudes de amistad";
 }
 
-<div class="container mt-4">
+<div class="requests-page">
 
-    <h2 class="mb-4">📩 Solicitudes de amistad</h2>
-
-    <table class="table table-bordered text-center">
-
-        <thead class="table-light">
-
-            <tr>
-                <th>Usuario</th>
-                <th>Acción</th>
-            </tr>
-
-        </thead>
-
-        <tbody>
-
-            @if (!Model.Any())
-            {
-                <tr>
-                    <td colspan="2" class="text-center text-muted">
-                        Todavía no tienes solicitudes de amistad bot 🙃
-                    </td>
-                </tr>
-            }
+    <div class="requests-header">
+        <h2 class="requests-title">📩 Solicitudes de amistad</h2>
+        <p class="requests-subtitle">
+            @if (Model.Any())
+            { @($"{Model.Count} solicitud{(Model.Count > 1 ? "es" : "")} pendiente{(Model.Count > 1 ? "s" : "")}") }
             else
+            { <span>Sin solicitudes pendientes</span> }
+        </p>
+    </div>
+
+    @if (!Model.Any())
+    {
+        <div class="requests-empty">
+            <div class="empty-icon">📭</div>
+            <h5>Todo tranquilo por aquí</h5>
+            <p>Cuando alguien te envíe una solicitud de amistad aparecerá aquí.</p>
+        </div>
+    }
+    else
+    {
+        <div class="requests-list">
+            @foreach (var request in Model)
             {
-                @foreach (var request in Model)
-                {
-                    <tr>
-
-                        <td class="d-flex align-items-center">
-
-                            <a asp-controller="User"
-                               asp-action="Profile"
-                               asp-route-id="@request.SenderId">
-
-                                <img src="@Url.Content(string.IsNullOrEmpty(request.ProfileImage)
-                                                                             ? "/profiles/default.png" 
-                                                                             : request.ProfileImage)"
-                             style="width:40px;height:40px;border-radius:50%;margin-right:10px;cursor:pointer;object-fit:cover;" />
-
+                <div class="request-card">
+                    <div class="request-left">
+                        <a href="/User/Profile/@request.SenderId" style="text-decoration:none;">
+                            @if (!string.IsNullOrEmpty(request.ProfileImage))
+                            {
+                                <img src="@request.ProfileImage" class="request-avatar" />
+                            }
+                            else
+                            {
+                                <div class="request-avatar-letter">
+                                    @request.SenderUsername.Substring(0, 1).ToUpper()
+                                </div>
+                            }
+                        </a>
+                        <div class="request-info">
+                            <a href="/User/Profile/@request.SenderId" class="request-username">
+                                @request.SenderUsername
                             </a>
+                            <span class="request-text">quiere ser tu amigo 👋</span>
+                        </div>
+                    </div>
 
-                            <span>
-                                @request.SenderUsername quiere ser tu amigo
-                            </span>
-
-                        </td>
-
-                        <td>
-
-                            <form asp-controller="User"
-                                  asp-action="AcceptFriendRequest"
-                                  method="post"
-                                  style="display:inline;">
-
-                                <input type="hidden" name="requestId" value="@request.Id" />
-
-                                <button type="submit" class="btn btn-success btn-sm">
-                                    Aceptar
-                                </button>
-
-                            </form>
-                            <form asp-controller="User"
-                                  asp-action="RejectFriendRequest"
-                                  method="post"
-                                  style="display:inline;">
-
-                                <input type="hidden" name="requestId" value="@request.Id" />
-
-                                <button type="submit" class="btn btn-danger btn-sm">
-                                    Rechazar
-                                </button>
-
-                            </form>
-                        </td>
-
-                    </tr>
-                        }
+                    <div class="request-actions">
+                        <form asp-controller="User" asp-action="AcceptFriendRequest" method="post">
+                            <input type="hidden" name="requestId" value="@request.Id" />
+                            <button type="submit" class="req-btn accept">✔ Aceptar</button>
+                        </form>
+                        <form asp-controller="User" asp-action="RejectFriendRequest" method="post">
+                            <input type="hidden" name="requestId" value="@request.Id" />
+                            <button type="submit" class="req-btn reject">✖ Rechazar</button>
+                        </form>
+                    </div>
+                </div>
             }
-
-        </tbody>
-    </table>
-
+        </div>
+    }
 </div>
+
+<style>
+.requests-page { max-width: 680px; margin: 0 auto; }
+
+.requests-header { margin-bottom: 24px; }
+.requests-title { font-size: 24px; font-weight: 800; color: #111827; margin: 0 0 4px; }
+.requests-subtitle { font-size: 14px; color: #9ca3af; margin: 0; }
+
+.requests-empty {
+    text-align: center;
+    padding: 60px 20px;
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    border: 1px solid rgba(0,0,0,0.04);
+}
+
+.empty-icon { font-size: 52px; margin-bottom: 14px; }
+.requests-empty h5 { font-size: 20px; font-weight: 700; color: #111827; margin-bottom: 8px; }
+.requests-empty p { font-size: 14px; color: #9ca3af; margin: 0; }
+
+.requests-list { display: flex; flex-direction: column; gap: 12px; }
+
+.request-card {
+    background: white;
+    border-radius: 18px;
+    padding: 18px 20px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    border: 1px solid rgba(0,0,0,0.04);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+    transition: 0.2s;
+}
+
+.request-card:hover {
+    box-shadow: 0 6px 20px rgba(0,0,0,0.1);
+    transform: translateY(-1px);
+}
+
+.request-left { display: flex; align-items: center; gap: 14px; }
+
+.request-avatar {
+    width: 52px; height: 52px;
+    border-radius: 50%; object-fit: cover;
+    border: 2px solid #e5e7eb;
+    flex-shrink: 0;
+}
+
+.request-avatar-letter {
+    width: 52px; height: 52px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #2563eb, #7c3aed);
+    color: white;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 800; font-size: 20px;
+    flex-shrink: 0;
+}
+
+.request-info { display: flex; flex-direction: column; }
+
+.request-username {
+    font-size: 16px;
+    font-weight: 700;
+    color: #111827;
+    text-decoration: none;
+    transition: 0.2s;
+}
+
+.request-username:hover { color: #2563eb; }
+
+.request-text { font-size: 13px; color: #9ca3af; margin-top: 2px; }
+
+.request-actions { display: flex; gap: 8px; }
+
+.req-btn {
+    padding: 9px 18px;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.req-btn.accept { background: #dcfce7; color: #16a34a; }
+.req-btn.accept:hover { background: #16a34a; color: white; }
+.req-btn.reject { background: #fee2e2; color: #dc2626; }
+.req-btn.reject:hover { background: #dc2626; color: white; }
+
+/* DARK MODE */
+body.bg-dark .requests-title { color: #f1f5f9 !important; }
+body.bg-dark .requests-empty,
+body.bg-dark .request-card {
+    background: #1e1e2e !important;
+    border-color: #2d2d3d !important;
+}
+body.bg-dark .requests-empty h5 { color: #f1f5f9 !important; }
+body.bg-dark .request-username { color: #f1f5f9 !important; }
+body.bg-dark .req-btn.accept { background: #14532d !important; color: #86efac !important; }
+body.bg-dark .req-btn.accept:hover { background: #16a34a !important; color: white !important; }
+body.bg-dark .req-btn.reject { background: #4c1d1d !important; color: #f87171 !important; }
+body.bg-dark .req-btn.reject:hover { background: #dc2626 !important; color: white !important; }
+</style>

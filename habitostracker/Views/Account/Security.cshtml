@@ -4,313 +4,388 @@
     ViewData["Title"] = "Seguridad";
 }
 
-<div class="sec-container">
-    
+<div class="sec-page">
+
     <div class="sec-header">
-        <h2>🔐 Seguridad</h2>
-        <span>Gestiona tu cuenta</span>
+        <h2 class="sec-title">🔐 Seguridad</h2>
+        <p class="sec-subtitle">Gestiona la seguridad de tu cuenta</p>
     </div>
 
     <!-- INFO -->
     <div class="sec-card">
-        <div>
-            <strong>Última conexión:</strong>
-            @(Model.LastOnline?.ToString("dd MMM yyyy HH:mm") ?? "No disponible")
-        </div>
-        <div>
-            <strong>IP:</strong>
-            @(string.IsNullOrEmpty(Model.LastIp) ? "No disponible" : Model.LastIp)
-        </div>
-        <div>
-            <strong>Dispositivo:</strong>
-            @(Model.Device ?? "No disponible")
+        <div class="sec-card-title">📋 Información de sesión</div>
+        <div class="sec-info-grid">
+            <div class="sec-info-item">
+                <span class="sec-info-label">Última conexión</span>
+                <span class="sec-info-value">@(Model.LastOnline?.ToString("dd MMM yyyy · HH:mm") ?? "No disponible")</span>
+            </div>
+            <div class="sec-info-item">
+                <span class="sec-info-label">Dirección IP</span>
+                <span class="sec-info-value">@(string.IsNullOrEmpty(Model.LastIp) ? "No disponible" : Model.LastIp)</span>
+            </div>
+            <div class="sec-info-item">
+                <span class="sec-info-label">Dispositivo</span>
+                <span class="sec-info-value">@(Model.Device ?? "No disponible")</span>
+            </div>
         </div>
     </div>
 
     <!-- SESIONES -->
     <div class="sec-card">
-        <h5>🟢 Sesiones activas</h5>
-        <div>Dispositivo actual: @(Model.Device ?? "Desconocido")</div>
-        <div>IP actual: @(Model.LastIp ?? "No disponible")</div>
-
-        <button class="sec-btn danger" onclick="logoutAll()">
-            Cerrar todas las sesiones
+        <div class="sec-card-title">🟢 Sesiones activas</div>
+        <div class="session-info">
+            <div class="session-dot"></div>
+            <div>
+                <div class="session-device">@(Model.Device ?? "Desconocido")</div>
+                <div class="session-ip">@(Model.LastIp ?? "No disponible")</div>
+            </div>
+        </div>
+        <button class="sec-danger-btn" data-no-loader="true" onclick="logoutAll()">
+            🚪 Cerrar todas las sesiones
         </button>
     </div>
 
     <!-- CAMBIAR CONTRASEÑA -->
-    <!-- CAMBIAR CONTRASEÑA -->
     @if (!Model.IsGoogleAccount)
     {
-        <button class="sec-toggle" onclick="toggleSection('pwd')">
-            🔑 Cambiar contraseña
-        </button>
-
-        <div id="section-pwd" class="sec-box">
-            <form asp-controller="Account" asp-action="ChangePassword" method="post">
-                @Html.AntiForgeryToken()
-
-                <input name="CurrentPassword" type="password" placeholder="Contraseña actual" class="sec-input" />
-                <input name="NewPassword" type="password" placeholder="Nueva contraseña" class="sec-input" />
-                <input name="ConfirmPassword" type="password" placeholder="Confirmar contraseña" class="sec-input" />
-
-                <button type="submit" class="sec-btn-primary">
-                    Actualizar contraseña
-                </button>
-            </form>
+        <div class="sec-card">
+            <button class="sec-toggle-btn" data-no-loader="true" onclick="toggleSection('pwd')">
+                <span>🔑 Cambiar contraseña</span>
+                <span class="toggle-arrow" id="arrow-pwd">▼</span>
+            </button>
+            <div id="section-pwd" class="sec-box">
+                <form asp-controller="Account" asp-action="ChangePassword" method="post">
+                    @Html.AntiForgeryToken()
+                    <input name="CurrentPassword" type="password" placeholder="Contraseña actual" class="sec-input" />
+                    <input name="NewPassword" type="password" placeholder="Nueva contraseña" class="sec-input" />
+                    <input name="ConfirmPassword" type="password" placeholder="Confirmar contraseña" class="sec-input" />
+                    <button type="submit" class="sec-primary-btn">💾 Actualizar contraseña</button>
+                </form>
+            </div>
         </div>
     }
 
     <!-- ELIMINAR CUENTA -->
-    <button class="sec-toggle danger" onclick="toggleSection('del')">
-        ⚠️ Eliminar cuenta
-    </button>
-
-    <div id="section-del" class="sec-box">
-        @if (TempData["Error"] != null)
-        {
-            <div class="sec-alert-error">❌ @TempData["Error"]</div>
-        }
-
-        <form asp-controller="Account" asp-action="DeleteAccount" method="post"
-              onsubmit="return validarEliminar()">
-            @Html.AntiForgeryToken()
-
-            @if (!Model.IsGoogleAccount)
+    <div class="sec-card danger-card">
+        <button class="sec-toggle-btn danger" data-no-loader="true" onclick="toggleSection('del')">
+            <span>⚠️ Eliminar cuenta</span>
+            <span class="toggle-arrow" id="arrow-del">▼</span>
+        </button>
+        <div id="section-del" class="sec-box">
+            @if (TempData["Error"] != null)
             {
-                <input id="deletePassword" name="password" type="password"
-                       placeholder="Tu contraseña"
-                       class="sec-input"
-                       oninput="limpiarError()" />
+                <div class="sec-alert-error">❌ @TempData["Error"]</div>
             }
-            else
-            {
-                <input id="confirmDelete" name="confirmText" type="text"
-                       placeholder='Escribe ELIMINAR para confirmar'
-                       class="sec-input" />
-            }
-
-            <div id="deleteError" class="sec-alert-error" style="display:none;"></div>
-
-            <button type="submit" class="sec-btn-danger">
-                🗑️ Eliminar cuenta
-            </button>
-        </form>
+            <p class="delete-warning">Esta acción es irreversible. Tu cuenta y todos tus datos serán eliminados permanentemente.</p>
+            <form asp-controller="Account" asp-action="DeleteAccount" method="post"
+                  onsubmit="return validarEliminar()">
+                @Html.AntiForgeryToken()
+                @if (!Model.IsGoogleAccount)
+                {
+                    <input id="deletePassword" name="password" type="password"
+                           placeholder="Ingresa tu contraseña para confirmar"
+                           class="sec-input" oninput="limpiarError()" />
+                }
+                else
+                {
+                    <input id="confirmDelete" name="confirmText" type="text"
+                           placeholder="Escribe ELIMINAR para confirmar"
+                           class="sec-input" />
+                }
+                <div id="deleteError" class="sec-alert-error" style="display:none;"></div>
+                <button type="submit" class="sec-delete-btn">🗑️ Eliminar mi cuenta</button>
+            </form>
+        </div>
     </div>
 
 </div>
 
 <style>
-    .sec-container {
-        max-width: 650px;
-        margin: 40px auto;
-        font-family: sans-serif;
-    }
+.sec-page {
+    max-width: 580px;
+    margin: 0 auto;
+}
 
-    sec-alert-error {
-        background: #fef2f2;
-        border: 1px solid #fecaca;
-        color: #b91c1c;
-        padding: 8px 12px;
-        border-radius: 8px;
-        margin-bottom: 10px;
-        font-size: 0.875rem;
-    }
+.sec-header { margin-bottom: 24px; }
+.sec-title { font-size: 24px; font-weight: 800; color: #111827; margin: 0 0 4px; }
+.sec-subtitle { font-size: 14px; color: #9ca3af; margin: 0; }
 
-    .sec-header {
-        margin-bottom: 20px;
-    }
+.sec-card {
+    background: white;
+    border-radius: 18px;
+    padding: 20px;
+    margin-bottom: 14px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+    border: 1px solid rgba(0,0,0,0.04);
+}
 
-        .sec-header h2 {
-            margin: 0;
-        }
+.sec-card.danger-card { border-color: #fecaca; }
 
-        .sec-header span {
-            font-size: 0.9rem;
-            color: gray;
-        }
+.sec-card-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: #111827;
+    margin-bottom: 14px;
+}
 
-    .sec-card {
-        background: white;
-        padding: 15px;
-        border-radius: 12px;
-        margin-bottom: 15px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-    }
+.sec-info-grid { display: flex; flex-direction: column; gap: 10px; }
 
-    .sec-btn {
-        width: 100%;
-        padding: 10px;
-        margin-top: 10px;
-        border: none;
-        border-radius: 8px;
-        background: #e2e8f0;
-        cursor: pointer;
-    }
+.sec-info-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 14px;
+    background: #f9fafb;
+    border-radius: 10px;
+    flex-wrap: wrap;
+    gap: 6px;
+}
 
-        .sec-btn.danger {
-            background: #fee2e2;
-            color: #b91c1c;
-        }
+.sec-info-label { font-size: 13px; color: #6b7280; font-weight: 500; }
+.sec-info-value { font-size: 13px; font-weight: 600; color: #111827; }
 
-    .sec-toggle {
-        width: 100%;
-        padding: 14px;
-        margin-top: 10px;
-        border: none;
-        border-radius: 10px;
-        background: #f1f5f9;
-        font-weight: 600;
-        text-align: left;
-        cursor: pointer;
-    }
+.session-info {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 12px 16px;
+    background: #f0fdf4;
+    border-radius: 12px;
+    margin-bottom: 14px;
+    border: 1px solid #86efac;
+}
 
-        .sec-toggle:hover {
-            background: #e2e8f0;
-        }
+.session-dot {
+    width: 12px; height: 12px;
+    border-radius: 50%;
+    background: #22c55e;
+    flex-shrink: 0;
+    box-shadow: 0 0 0 4px rgba(34,197,94,0.2);
+    animation: pulse 2s infinite;
+}
 
-        .sec-toggle.danger {
-            color: #dc2626;
-            background: #fef2f2;
-        }
+@@keyframes pulse {
+    0% { box-shadow: 0 0 0 0 rgba(34,197,94,0.4); }
+    70% { box-shadow: 0 0 0 8px rgba(34,197,94,0); }
+    100% { box-shadow: 0 0 0 0 rgba(34,197,94,0); }
+}
 
-    .sec-box {
-        display: none;
-        margin-top: 10px;
-        padding: 15px;
-        background: #f8fafc;
-        border-radius: 10px;
-        position: relative;
-        z-index: 9999;
-    }
+.session-device { font-size: 14px; font-weight: 600; color: #166534; }
+.session-ip { font-size: 12px; color: #6b7280; }
 
-    .sec-input {
-        width: 100%;
-        margin-bottom: 10px;
-        padding: 10px;
-        border-radius: 8px;
-        border: 1px solid #ccc;
-    }
+.sec-danger-btn {
+    width: 100%;
+    padding: 11px;
+    border: none;
+    border-radius: 10px;
+    background: #fee2e2;
+    color: #dc2626;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.2s;
+}
 
-    .sec-btn-primary {
-        background: #2563eb;
-        color: white;
-        border: none;
-        padding: 10px;
-        border-radius: 8px;
-        width: 100%;
-    }
+.sec-danger-btn:hover { background: #dc2626; color: white; }
 
-    .sec-btn-danger {
-        background: #dc2626;
-        color: white;
-        border: none;
-        padding: 10px;
-        border-radius: 8px;
-        width: 100%;
-    }
+.sec-toggle-btn {
+    width: 100%;
+    padding: 0;
+    border: none;
+    background: none;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 15px;
+    font-weight: 700;
+    color: #111827;
+    cursor: pointer;
+}
+
+.sec-toggle-btn.danger { color: #dc2626; }
+.toggle-arrow { font-size: 12px; color: #9ca3af; transition: 0.2s; }
+
+.sec-box {
+    display: none;
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid #f3f4f6;
+}
+
+.sec-input {
+    width: 100%;
+    padding: 11px 14px;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    font-size: 14px;
+    margin-bottom: 10px;
+    outline: none;
+    transition: 0.2s;
+    box-sizing: border-box;
+    background: white;
+    color: #111827;
+}
+
+.sec-input:focus { border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37,99,235,0.1); }
+
+.sec-primary-btn {
+    width: 100%;
+    padding: 12px;
+    background: linear-gradient(135deg, #2563eb, #7c3aed);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.sec-primary-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(37,99,235,0.3); }
+
+.delete-warning {
+    font-size: 13px;
+    color: #dc2626;
+    background: #fef2f2;
+    padding: 10px 14px;
+    border-radius: 10px;
+    margin-bottom: 14px;
+    border: 1px solid #fecaca;
+}
+
+.sec-delete-btn {
+    width: 100%;
+    padding: 12px;
+    background: #dc2626;
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.sec-delete-btn:hover { background: #b91c1c; }
+
+.sec-alert-error {
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    color: #b91c1c;
+    padding: 10px 14px;
+    border-radius: 10px;
+    margin-bottom: 10px;
+    font-size: 13px;
+}
+
+/* DARK MODE */
+body.bg-dark .sec-title { color: #f1f5f9 !important; }
+body.bg-dark .sec-card {
+    background: #1e1e2e !important;
+    border-color: #2d2d3d !important;
+}
+body.bg-dark .sec-card.danger-card { border-color: #4c1d1d !important; }
+body.bg-dark .sec-card-title { color: #f1f5f9 !important; }
+body.bg-dark .sec-info-item { background: #2d2d3d !important; }
+body.bg-dark .sec-info-label { color: #64748b !important; }
+body.bg-dark .sec-info-value { color: #f1f5f9 !important; }
+body.bg-dark .session-info { background: #14532d !important; border-color: #166534 !important; }
+body.bg-dark .session-ip { color: #94a3b8 !important; }
+body.bg-dark .sec-toggle-btn { color: #f1f5f9 !important; }
+body.bg-dark .sec-toggle-btn.danger { color: #f87171 !important; }
+body.bg-dark .sec-box { border-color: #2d2d3d !important; }
+body.bg-dark .sec-input {
+    background: #2d2d3d !important;
+    border-color: #3d3d4d !important;
+    color: #f1f5f9 !important;
+}
+body.bg-dark .sec-danger-btn { background: #4c1d1d !important; color: #f87171 !important; }
+body.bg-dark .sec-danger-btn:hover { background: #dc2626 !important; color: white !important; }
 </style>
 
 <script>
-    function toggleSection(id) {
-        const el = document.getElementById("section-" + id);
-        el.style.display = el.style.display === "block" ? "none" : "block";
-    }
+function toggleSection(id) {
+    const el = document.getElementById("section-" + id);
+    const arrow = document.getElementById("arrow-" + id);
+    const isOpen = el.style.display === "block";
+    el.style.display = isOpen ? "none" : "block";
+    if (arrow) arrow.style.transform = isOpen ? "rotate(0deg)" : "rotate(180deg)";
+}
 
-       function logoutAll() {
-        fetch("/Account/LogoutAll", { method: "POST" })
-            .then(() => window.location.href = "/Account/Login");
-    }
+function logoutAll() {
+    fetch("/Account/LogoutAll", { method: "POST" })
+        .then(() => window.location.href = "/Account/Login");
+}
 
-    document.addEventListener("DOMContentLoaded", function () {
-        // 🔥 Quitar overlay
-        const loader = document.getElementById("globalLoader");
-        if (loader) {
-            loader.style.display = "none";
-            loader.style.pointerEvents = "none";
-        }
+document.addEventListener("DOMContentLoaded", function () {
+    const loader = document.getElementById("globalLoader");
+    if (loader) { loader.style.display = "none"; loader.style.pointerEvents = "none"; }
 
-        // 🔥 Verificar contraseña en tiempo real
-        let passwordValida = false;
-
-        const input = document.getElementById("deletePassword");
-        if (input) {
-            input.addEventListener("input", async function () {
-                const pwd = this.value;
-                const error = document.getElementById("deleteError");
-
-                if (!pwd || pwd.trim() === "") {
-                    error.style.display = "none";
-                    passwordValida = false;
-                    return;
-                }
-
-                const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
-
-                const response = await fetch("/Account/VerifyPassword", {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/x-www-form-urlencoded",
-                        "RequestVerificationToken": token
-                    },
-                    body: "password=" + encodeURIComponent(pwd)
-                });
-
-                const data = await response.json();
-
-                error.style.display = "block";
-
-                if (data.valid) {
-                    error.style.background = "#f0fdf4";
-                    error.style.borderColor = "#86efac";
-                    error.style.color = "#16a34a";
-                    error.innerText = "✅ Contraseña correcta";
-                    passwordValida = true;
-                } else {
-                    error.style.background = "#fef2f2";
-                    error.style.borderColor = "#fecaca";
-                    error.style.color = "#b91c1c";
-                    error.innerText = "❌ Contraseña incorrecta";
-                    passwordValida = false;
-                }
+    let passwordValida = false;
+    const input = document.getElementById("deletePassword");
+    if (input) {
+        input.addEventListener("input", async function () {
+            const pwd = this.value;
+            const error = document.getElementById("deleteError");
+            if (!pwd || pwd.trim() === "") {
+                error.style.display = "none";
+                passwordValida = false;
+                return;
+            }
+            const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+            const response = await fetch("/Account/VerifyPassword", {
+                method: "POST",
+                headers: { "Content-Type": "application/x-www-form-urlencoded", "RequestVerificationToken": token },
+                body: "password=" + encodeURIComponent(pwd)
             });
-        }
-
-        // 🔥 guardar passwordValida en window para acceder desde validarEliminar
-        window.getPasswordValida = () => passwordValida;
-    });
-        function validarEliminar() {
-        const pwdInput = document.getElementById("deletePassword");
-        const confirmInput = document.getElementById("confirmDelete");
-        const error = document.getElementById("deleteError");
-
-        if (confirmInput) {
-            const val = confirmInput.value.trim().toUpperCase();
-            if (val !== "ELIMINAR") {
-                error.style.display = "block";
+            const data = await response.json();
+            error.style.display = "block";
+            if (data.valid) {
+                error.style.background = "#f0fdf4";
+                error.style.borderColor = "#86efac";
+                error.style.color = "#16a34a";
+                error.innerText = "✅ Contraseña correcta";
+                passwordValida = true;
+            } else {
                 error.style.background = "#fef2f2";
                 error.style.borderColor = "#fecaca";
                 error.style.color = "#b91c1c";
-                error.innerText = "⚠️ Debes escribir ELIMINAR para confirmar.";
-                return false;
+                error.innerText = "❌ Contraseña incorrecta";
+                passwordValida = false;
             }
-            return confirm("¿Estás seguro? Tu cuenta se eliminará para siempre.");
-        }
+        });
+    }
+    window.getPasswordValida = () => passwordValida;
+});
 
-        const pwd = pwdInput.value;
-        if (!pwd || pwd.trim() === "") {
+function validarEliminar() {
+    const pwdInput = document.getElementById("deletePassword");
+    const confirmInput = document.getElementById("confirmDelete");
+    const error = document.getElementById("deleteError");
+
+    if (confirmInput) {
+        const val = confirmInput.value.trim().toUpperCase();
+        if (val !== "ELIMINAR") {
             error.style.display = "block";
             error.style.background = "#fef2f2";
             error.style.borderColor = "#fecaca";
             error.style.color = "#b91c1c";
-            error.innerText = "⚠️ Debes ingresar tu contraseña.";
+            error.innerText = "⚠️ Debes escribir ELIMINAR para confirmar.";
             return false;
         }
-
-        if (!window.getPasswordValida()) {
-            return false;
-        }
-
         return confirm("¿Estás seguro? Tu cuenta se eliminará para siempre.");
     }
+
+    const pwd = pwdInput?.value;
+    if (!pwd || pwd.trim() === "") {
+        error.style.display = "block";
+        error.style.background = "#fef2f2";
+        error.style.borderColor = "#fecaca";
+        error.style.color = "#b91c1c";
+        error.innerText = "⚠️ Debes ingresar tu contraseña.";
+        return false;
+    }
+    if (!window.getPasswordValida()) return false;
+    return confirm("¿Estás seguro? Tu cuenta se eliminará para siempre.");
+}
 </script>
