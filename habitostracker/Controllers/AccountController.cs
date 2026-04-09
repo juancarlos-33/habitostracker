@@ -1315,7 +1315,14 @@ public async Task<IActionResult> ExternalLoginCallback()
         return RedirectToAction("Login");
     }
 }
+        [HttpGet]
+        public IActionResult GuestRegister()
+        {
+            if (User.Identity.IsAuthenticated && User.IsInRole("Guest"))
+                return RedirectToAction("Index", "Habit");
 
+            return View();
+        }
 
 
         [HttpPost]
