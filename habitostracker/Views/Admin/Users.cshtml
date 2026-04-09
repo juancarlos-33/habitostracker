@@ -249,10 +249,15 @@
                                         <span class="ip-addr">@user.LastIp</span>
                                         @if (!string.IsNullOrEmpty(user.LastIp) && ipInfo != null && ipInfo.ContainsKey(user.LastIp))
                                         {
-                                            <small>
-                                                🌍 @ipInfo[user.LastIp].country
-                                                🏙 @ipInfo[user.LastIp].city
-                                            </small>
+                                           <small>
+    🌍 @ipInfo[user.LastIp].country
+    🏙 @ipInfo[user.LastIp].city
+    @if (!string.IsNullOrEmpty(user.Municipality))
+    {
+        <br /> @user.Municipality
+    }
+</small>
+
                                             @if (user.Latitude != null && user.Longitude != null)
                                             {
                                                 <a target="_blank" class="map-link"
