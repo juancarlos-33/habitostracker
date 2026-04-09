@@ -28,7 +28,7 @@ namespace HabitTrackerApp.Models
         public string? FullName { get; set; }
 
         // 📧 Email con validación real
-        [Required(ErrorMessage = "El correo es obligatorio.")]
+   
         [EmailAddress(ErrorMessage = "Debe ingresar un correo válido.")]
 
        
