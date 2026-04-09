@@ -1327,7 +1327,6 @@ public async Task<IActionResult> ExternalLoginCallback()
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-
         public async Task<IActionResult> GuestRegister(string username)
         {
             if (string.IsNullOrWhiteSpace(username))
@@ -1345,15 +1344,13 @@ public async Task<IActionResult> ExternalLoginCallback()
             var user = new User
             {
                 Username = username,
+                Email = $"guest_{Guid.NewGuid()}@guest.local", // 👈 cambia aquí
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword(Guid.NewGuid().ToString()),
-                Email = null,
                 EmailConfirmed = true,
                 Role = "Guest",
                 CreatedAt = DateTime.Now,
                 IsActive = true,
                 IsGoogleAccount = false,
-
-                // 🔹 datos por defecto
                 Gender = "No especificado",
                 FullName = "Invitado",
                 Bio = "Usuario invitado"
@@ -1368,7 +1365,6 @@ public async Task<IActionResult> ExternalLoginCallback()
 
             return RedirectToAction("Index", "Habit");
         }
-
         [HttpGet]
         public IActionResult UpgradeAccount()
         {
