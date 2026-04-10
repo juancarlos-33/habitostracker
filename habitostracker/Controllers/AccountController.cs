@@ -1578,7 +1578,7 @@ public async Task<IActionResult> ExternalLoginCallback()
         }
 
         [HttpPost]
-        [ValidateAntiForgeryToken]
+        [IgnoreAntiforgeryToken] // 🔥 Google OAuth rompe el token
         public async Task<IActionResult> CompleteProfile(string gender, string bio)
         {
             var userIdClaim = User.FindFirst("UserId");
@@ -1598,7 +1598,6 @@ public async Task<IActionResult> ExternalLoginCallback()
 
             return RedirectToAction("Index", "Habit");
         }
-
 
         private string GetOS(string userAgent)
         {

@@ -281,35 +281,26 @@ namespace HabitTrackerApp.Controllers
             var username = User.Identity.Name;
 
             string imagePath = null;
-
             bool isSensitive = false;
 
             if (image != null && image.Length > 0)
             {
-                // detección automática de contenido sospechoso
                 var fileNameLower = image.FileName.ToLower();
-
-                string[] suspiciousWords =
-                {
-            "porn",
-            "sex",
-            "xxx",
-            "nude",
-            "nsfw",
-            "18+",
-            "hentai"
-        };
-
+                string[] suspiciousWords = { "porn", "sex", "xxx", "nude", "nsfw", "18+", "hentai" };
                 foreach (var word in suspiciousWords)
                 {
-                    if (fileNameLower.Contains(word))
-                    {
-                        isSensitive = true;
-                        break;
-                    }
+                    if (fileNameLower.Contains(word)) { isSensitive = true; break; }
                 }
 
-                imagePath = await _cloudinaryService.UploadImageAsync(image);
+                try
+                {
+                    imagePath = await _cloudinaryService.UploadImageAsync(image);
+                }
+                catch (Exception)
+                {
+                    TempData["Error"] = "No se pudo subir la imagen. Intenta de nuevo.";
+                    return RedirectToAction("Create");
+                }
             }
 
             var post = new Post
@@ -330,26 +321,25 @@ namespace HabitTrackerApp.Controllers
         public IActionResult Delete(int id)
         {
             var post = _context.Posts.FirstOrDefault(p => p.Id == id);
-
-            if (post == null)
-                return NotFound();
+            if (post == null) return NotFound();
 
             var userId = int.Parse(User.FindFirst("UserId").Value);
-            var isAdmin = User.IsInRole("Admin") || User.IsInRole("SuperAdmin");
 
-            // 🔥 permitir si es el dueño O si es admin
+            // 🔥 verificar rol desde la BD, no desde la cookie
+            var currentUser = _context.Users.FirstOrDefault(u => u.Id == userId);
+            var isAdmin = currentUser?.Role == "Admin" || currentUser?.Role == "SuperAdmin";
+
             if (post.UserId != userId && !isAdmin)
                 return Unauthorized();
 
-            // 🔥 eliminar reportes asociados también
             var reports = _context.PostReports.Where(r => r.PostId == id);
             _context.PostReports.RemoveRange(reports);
 
             _context.Posts.Remove(post);
             _context.SaveChanges();
 
-            // 🔥 si es admin, redirigir a Reports
-            if (isAdmin)
+            // 🔥 solo redirigir a Reports si es admin Y viene de Reports
+            if (isAdmin && Request.Headers["Referer"].ToString().Contains("Reports"))
                 return RedirectToAction("Reports", "Admin");
 
             return RedirectToAction("Index");
