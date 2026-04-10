@@ -335,16 +335,25 @@ namespace HabitTrackerApp.Controllers
                 return NotFound();
 
             var userId = int.Parse(User.FindFirst("UserId").Value);
+            var isAdmin = User.IsInRole("Admin") || User.IsInRole("SuperAdmin");
 
-            if (post.UserId != userId)
+            // 🔥 permitir si es el dueño O si es admin
+            if (post.UserId != userId && !isAdmin)
                 return Unauthorized();
+
+            // 🔥 eliminar reportes asociados también
+            var reports = _context.PostReports.Where(r => r.PostId == id);
+            _context.PostReports.RemoveRange(reports);
 
             _context.Posts.Remove(post);
             _context.SaveChanges();
 
+            // 🔥 si es admin, redirigir a Reports
+            if (isAdmin)
+                return RedirectToAction("Reports", "Admin");
+
             return RedirectToAction("Index");
         }
-
         public IActionResult Details(int id)
         {
             var post = _context.Posts
