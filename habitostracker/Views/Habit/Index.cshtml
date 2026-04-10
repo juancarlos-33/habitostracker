@@ -42,13 +42,19 @@
         .ToList();
 
     // 🔥 Porcentaje real por día
-    var dailyCompletion = last7Days.Select(date => {
-        if (!habits.Any()) return 0;
-        int completed = habits.Count(h => h.LastCheckDate.HasValue && h.LastCheckDate.Value.Date == date.Date && h.Completed);
-        int failed = habits.Count(h => h.LastCheckDate.HasValue && h.LastCheckDate.Value.Date == date.Date && !h.Completed);
-        int total = completed + failed;
-        return total > 0 ? (int)((completed * 100.0) / total) : 0;
-    }).ToList();
+   // ✅ DESPUÉS - usa HabitHistories (historial real)
+var habitIds = habits.Select(h => h.Id).ToList();
+var histories = _context.HabitHistories
+    .Where(h => habitIds.Contains(h.HabitId) && h.Date >= DateTime.Today.AddDays(-6))
+    .ToList();
+
+var dailyCompletion = last7Days.Select(date => {
+    if (!habits.Any()) return 0;
+    int completed = histories.Count(h => h.Date.Date == date.Date && h.Completed);
+    int failed = histories.Count(h => h.Date.Date == date.Date && !h.Completed);
+    int total = completed + failed;
+    return total > 0 ? (int)((completed * 100.0) / total) : 0;
+}).ToList();
 }
 
 @if (user != null)
