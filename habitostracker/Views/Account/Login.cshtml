@@ -14,7 +14,7 @@ body {
     align-items:center;
     justify-content:center;
     font-family:Inter,system-ui;
-    background:#0d1117;
+    background:#0a0f1e;
     overflow:hidden;
 }
 
@@ -38,14 +38,14 @@ body {
 }
 
 .login-card {
-    width:420px;
+    width:400px;
     max-width:95%;
     padding:36px 32px;
     border-radius:20px;
-    background:rgba(30,41,59,0.85);
+    background:rgba(20,30,50,0.88);
     backdrop-filter:blur(20px);
     border:1px solid rgba(255,255,255,0.08);
-    box-shadow:0 25px 60px rgba(0,0,0,0.6);
+    box-shadow:0 25px 60px rgba(0,0,0,0.7);
 }
 
 .login-header {
@@ -113,10 +113,10 @@ body {
     gap:10px;
     width:100%;
     padding:12px;
-    background:rgba(255,255,255,0.07);
-    border:1px solid rgba(255,255,255,0.15);
+    background:rgba(255,255,255,0.05);
+    border:1px solid rgba(255,255,255,0.18);
     border-radius:10px;
-    color:#ddd;
+    color:#ccc;
     font-size:14px;
     font-weight:500;
     text-decoration:none;
@@ -125,7 +125,7 @@ body {
 }
 
 .guest-btn:hover {
-    background:rgba(255,255,255,0.12);
+    background:rgba(255,255,255,0.1);
     color:white;
 }
 
@@ -146,7 +146,7 @@ body {
     margin:0 10px;
 }
 
-.form-label { color:rgba(255,255,255,0.7); font-size:13px; }
+.form-label { color:rgba(255,255,255,0.65); font-size:13px; }
 
 .form-control {
     background:rgba(255,255,255,0.06);
@@ -156,6 +156,7 @@ body {
     color:white;
     font-size:14px;
     transition:0.2s;
+    width:100%;
 }
 
 .form-control:focus {
@@ -166,7 +167,7 @@ body {
     outline:none;
 }
 
-.form-control::placeholder { color:rgba(255,255,255,0.25); }
+.form-control::placeholder { color:rgba(255,255,255,0.2); }
 
 .password-toggle {
     position:absolute;
@@ -174,7 +175,7 @@ body {
     top:50%;
     transform:translateY(-50%);
     cursor:pointer;
-    opacity:0.6;
+    opacity:0.5;
     font-size:16px;
 }
 
@@ -217,7 +218,7 @@ body {
 .btn-login:hover::before { left:100%; }
 .btn-login:hover { transform:scale(1.03); box-shadow:0 8px 20px rgba(37,99,235,0.5); }
 
-.register-text { color:rgba(255,255,255,0.5); font-size:13px; }
+.register-text { color:rgba(255,255,255,0.45); font-size:13px; }
 
 .register-link {
     color:#4da6ff;
@@ -416,50 +417,57 @@ if (window.history.replaceState) {
     window.history.replaceState(null, null, window.location.href);
 }
 
-// 🔥 PLEXUS ANIMATION
+// PLEXUS
 const canvas = document.getElementById("plexus-bg");
 const ctx = canvas.getContext("2d");
 
-function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+function resize() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+}
 resize();
 window.addEventListener("resize", resize);
 
 let pts = [];
-for (let i = 0; i < 80; i++) {
+for (let i = 0; i < 120; i++) {
     pts.push({
         x: Math.random() * canvas.width,
         y: Math.random() * canvas.height,
-        vx: (Math.random() - 0.5) * 0.5,
-        vy: (Math.random() - 0.5) * 0.5
+        vx: (Math.random() - 0.5) * 0.4,
+        vy: (Math.random() - 0.5) * 0.4,
+        r: Math.random() * 1.5 + 1
     });
 }
 
 function drawPlexus() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    pts.forEach(p => {
-        p.x += p.vx; p.y += p.vy;
-        if (p.x < 0 || p.x > canvas.width) p.vx *= -1;
-        if (p.y < 0 || p.y > canvas.height) p.vy *= -1;
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, 2, 0, Math.PI * 2);
-        ctx.fillStyle = "rgba(96,165,250,0.7)";
-        ctx.fill();
-    });
+
     for (let i = 0; i < pts.length; i++) {
         for (let j = i + 1; j < pts.length; j++) {
             const dx = pts[i].x - pts[j].x;
             const dy = pts[i].y - pts[j].y;
             const dist = Math.sqrt(dx*dx + dy*dy);
-            if (dist < 150) {
+            if (dist < 180) {
                 ctx.beginPath();
                 ctx.moveTo(pts[i].x, pts[i].y);
                 ctx.lineTo(pts[j].x, pts[j].y);
-                ctx.strokeStyle = `rgba(96,165,250,${0.15 * (1 - dist/150)})`;
-                ctx.lineWidth = 0.8;
+                ctx.strokeStyle = `rgba(80,140,220,${0.25 * (1 - dist/180)})`;
+                ctx.lineWidth = 0.6;
                 ctx.stroke();
             }
         }
     }
+
+    pts.forEach(p => {
+        p.x += p.vx; p.y += p.vy;
+        if (p.x < 0 || p.x > canvas.width) p.vx *= -1;
+        if (p.y < 0 || p.y > canvas.height) p.vy *= -1;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        ctx.fillStyle = "rgba(100,160,240,0.8)";
+        ctx.fill();
+    });
+
     requestAnimationFrame(drawPlexus);
 }
 drawPlexus();
