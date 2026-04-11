@@ -5,7 +5,7 @@
 }
 
 <style>
-    /* 1. COLORES POR DEFECTO (MODO CLARO) */
+    /* VARIABLES DINÁMICAS */
     :root {
         --hist-bg-card: #ffffff;
         --hist-bg-filter: #f8f9fa;
@@ -15,38 +15,45 @@
         --hist-hover: rgba(0, 0, 0, 0.03);
     }
 
-    /* 2. COLORES PARA MODO OSCURO (Se activa si el padre tiene clase .dark o data-bs-theme) */
-    [data-bs-theme="dark"], .dark-mode, .dark {
-        --hist-bg-card: #1a1d20; /* Color oscuro profundo */
-        --hist-bg-filter: #212529;
-        --hist-text-main: #f8f9fa;
-        --hist-text-muted: #adb5bd;
-        --hist-border: rgba(255, 255, 255, 0.1);
-        --hist-hover: rgba(255, 255, 255, 0.05);
+    /* MODO OSCURO REFORZADO */
+    /* He añadido 'body.dark' y otros selectores comunes para asegurar que enganche */
+    [data-bs-theme="dark"], .dark-mode, .dark, body.dark {
+        --hist-bg-card: #1a1d20 !important;
+        --hist-bg-filter: #212529 !important; /* Aquí estaba el fallo, ahora forzamos el cambio */
+        --hist-text-main: #f8f9fa !important;
+        --hist-text-muted: #adb5bd !important;
+        --hist-border: rgba(255, 255, 255, 0.1) !important;
+        --hist-hover: rgba(255, 255, 255, 0.05) !important;
     }
 
     .history-wrapper {
         color: var(--hist-text-main);
     }
 
-    /* Estilo de la sección de filtros */
+    /* TARJETA DE FILTROS - Corregida para aceptar variables */
     .filter-card {
         background-color: var(--hist-bg-filter) !important;
-        border: 1px solid var(--hist-border);
+        border: 1px solid var(--hist-border) !important;
         border-radius: 12px;
         padding: 20px;
-        transition: background 0.3s ease;
+        transition: all 0.3s ease;
     }
 
-    /* Estilo de la tabla principal */
+    /* TARJETA DE TABLA */
     .table-container-card {
         background-color: var(--hist-bg-card) !important;
-        border: 1px solid var(--hist-border);
+        border: 1px solid var(--hist-border) !important;
         border-radius: 12px;
         overflow: hidden;
         box-shadow: 0 4px 12px rgba(0,0,0,0.05);
     }
 
+    /* Ajuste para los textos dentro de la tarjeta de filtros */
+    .filter-card label, .filter-card h5 {
+        color: var(--hist-text-main) !important;
+    }
+
+    /* TABLA */
     .table {
         color: var(--hist-text-main) !important;
         margin-bottom: 0;
@@ -54,25 +61,25 @@
     }
 
         .table thead th {
-            background-color: rgba(120, 120, 120, 0.05);
-            color: var(--hist-text-muted);
-            border-bottom: 1px solid var(--hist-border);
-            font-weight: 700;
-            font-size: 0.75rem;
-            text-transform: uppercase;
+            background-color: rgba(120, 120, 120, 0.05) !important;
+            color: var(--hist-text-muted) !important;
+            border-bottom: 1px solid var(--hist-border) !important;
         }
 
         .table td {
-            border-bottom: 1px solid var(--hist-border);
+            border-bottom: 1px solid var(--hist-border) !important;
             background-color: transparent !important;
-            padding: 16px;
+            color: var(--hist-text-main) !important;
         }
 
-        .table tr:hover {
-            background-color: var(--hist-hover) !important;
-        }
+    /* INPUTS */
+    .custom-date-input {
+        background-color: rgba(120, 120, 120, 0.1) !important;
+        color: var(--hist-text-main) !important;
+        border: 1px solid var(--hist-border) !important;
+    }
 
-    /* Badges Adaptables */
+    /* Badges */
     .status-pill {
         padding: 5px 12px;
         border-radius: 50px;
@@ -84,30 +91,17 @@
     }
 
     .status-ok {
-        background: rgba(25, 135, 84, 0.15);
-        color: #2ecc71; /* Un verde que se ve bien en ambos */
-        border: 1px solid rgba(46, 204, 113, 0.2);
+        background: rgba(46, 204, 113, 0.2);
+        color: #2ecc71;
+        border: 1px solid rgba(46, 204, 113, 0.3);
     }
 
     .status-fail {
-        background: rgba(220, 53, 69, 0.15);
-        color: #e74c3c; /* Un rojo que se ve bien en ambos */
-        border: 1px solid rgba(231, 76, 60, 0.2);
-    }
-
-    /* Input de fecha adaptable */
-    .custom-date-input {
-        background-color: transparent !important;
-        color: var(--hist-text-main) !important;
-        border: 1px solid var(--hist-border) !important;
-    }
-
-    /* Esto hace que el icono del calendario sea blanco en modo oscuro */
-    [data-bs-theme="dark"] .custom-date-input, .dark .custom-date-input {
-        color-scheme: dark;
+        background: rgba(231, 76, 60, 0.2);
+        color: #e74c3c;
+        border: 1px solid rgba(231, 76, 60, 0.3);
     }
 </style>
-
 <div class="container py-4 history-wrapper">
     <div class="d-flex align-items-center mb-4">
         <div class="p-3 rounded-circle bg-primary bg-opacity-10 me-3">
