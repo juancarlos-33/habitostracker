@@ -5,126 +5,189 @@
 }
 
 <style>
-    .history-card {
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
-        border: none;
+    /* VARIABLES DINÁMICAS: Se adaptan al fondo */
+    :root {
+        --history-card-bg: #ffffff;
+        --history-text-main: #212529;
+        --history-text-muted: #6c757d;
+        --history-border: rgba(0,0,0,0.08);
+        --history-filter-bg: #f8f9fa;
     }
 
-    .table thead th {
-        background-color: #f8f9fa;
-        border-bottom: 2px solid #dee2e6;
-        color: #6c757d;
-        font-weight: 700;
-        letter-spacing: 0.5px;
+    /* Si el body tiene una clase de modo oscuro o detecta fondo oscuro */
+    [data-bs-theme="dark"], .dark-mode, body.dark {
+        --history-card-bg: #1e2125; /* Un gris muy oscuro, no negro puro */
+        --history-text-main: #f8f9fa;
+        --history-text-muted: #adb5bd;
+        --history-border: rgba(255,255,255,0.1);
+        --history-filter-bg: #2b3035;
     }
 
-    .badge-soft-success {
-        background-color: #d1e7dd;
-        color: #0f5132;
-        border: 1px solid #badbcc;
-    }
-
-    .badge-soft-danger {
-        background-color: #f8d7da;
-        color: #842029;
-        border: 1px solid #f5c2c7;
+    .history-container {
+        color: var(--history-text-main);
     }
 
     .filter-section {
-        background: #ffffff;
-        padding: 20px;
-        border-radius: 15px;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+        background: var(--history-filter-bg);
+        border: 1px solid var(--history-border);
+        padding: 24px;
+        border-radius: 16px;
+        transition: all 0.3s ease;
+    }
+
+    .main-card {
+        background: var(--history-card-bg);
+        border: 1px solid var(--history-border);
+        border-radius: 16px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+        overflow: hidden;
+    }
+
+    /* Estilo de la tabla adaptable */
+    .table {
+        color: var(--history-text-main) !important;
+        margin-bottom: 0;
+    }
+
+        .table thead th {
+            background: var(--history-filter-bg);
+            color: var(--history-text-muted);
+            border-bottom: 1px solid var(--history-border);
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 1px;
+            padding: 15px 20px;
+        }
+
+        .table td {
+            padding: 18px 20px;
+            border-bottom: 1px solid var(--history-border);
+            background: transparent !important;
+        }
+
+    /* Badges Modernos con Neumorfismo sutil */
+    .badge-pill-custom {
+        padding: 6px 14px;
+        border-radius: 50px;
+        font-weight: 600;
+        font-size: 0.8rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .status-completed {
+        background: rgba(25, 135, 84, 0.15);
+        color: #4cd137;
+        border: 1px solid rgba(76, 209, 55, 0.3);
+    }
+
+    .status-failed {
+        background: rgba(220, 53, 69, 0.15);
+        color: #ff7675;
+        border: 1px solid rgba(255, 118, 117, 0.3);
+    }
+
+    .habit-name {
+        font-size: 1.05rem;
+        letter-spacing: -0.3px;
+    }
+
+    /* Animación al pasar el mouse */
+    .table tbody tr:hover {
+        background-color: rgba(120, 120, 120, 0.05) !important;
     }
 </style>
 
-<div class="container py-5">
-    <div class="d-flex align-items-center justify-content-between mb-4">
-        <div>
-            <h2 class="fw-bold text-dark mb-1">📅 Historial de Hábitos</h2>
-            <p class="text-muted">Consulta tu progreso y consistencia en el tiempo.</p>
+<div class="container py-5 history-container">
+    <div class="row mb-5">
+        <div class="col-lg-8">
+            <h1 class="display-6 fw-bold mb-2">📅 Historial de Hábitos</h1>
+            <p class="opacity-75 fs-5">Tu constancia es la clave del éxito. Aquí tienes tu progreso detallado.</p>
         </div>
     </div>
 
-    <div class="filter-section mb-4">
-        <form method="get">
-            <div class="row g-3 align-items-end">
-                <div class="col-12 col-md-4">
-                    <label class="form-label fw-bold small text-uppercase">Filtrar por fecha</label>
-                    <div class="input-group">
-                        <span class="input-group-text bg-light border-end-0"><i class="bi bi-calendar3"></i></span>
-                        <input type="date"
-                               name="date"
-                               class="form-control border-start-0 ps-0"
-                               value="@(ViewBag.SelectedDate != null ? ((DateTime)ViewBag.SelectedDate).ToString("yyyy-MM-dd") : "")" />
-                    </div>
+    <div class="filter-section mb-5">
+        <form method="get" class="row g-3 align-items-end">
+            <div class="col-md-4">
+                <label class="form-label small fw-bold text-uppercase opacity-75">Seleccionar Fecha</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-transparent border-end-0"><i class="bi bi-calendar-event"></i></span>
+                    <input type="date"
+                           name="date"
+                           class="form-control bg-transparent border-start-0 text-reset"
+                           style="color-scheme: dark;"
+                           value="@(ViewBag.SelectedDate != null ? ((DateTime)ViewBag.SelectedDate).ToString("yyyy-MM-dd") : "")" />
                 </div>
+            </div>
 
-                <div class="col-12 col-md-auto d-flex gap-2">
-                    <button type="submit" class="btn btn-primary px-4 shadow-sm">
-                        <i class="bi bi-search me-2"></i>Filtrar
-                    </button>
-                    <a asp-action="History" class="btn btn-light border px-4">
-                        Limpiar
-                    </a>
-                </div>
+            <div class="col-md-auto">
+                <button type="submit" class="btn btn-primary px-4 rounded-3 fw-bold">
+                    <i class="bi bi-filter me-2"></i>Aplicar Filtro
+                </button>
+                <a asp-action="History" class="btn btn-link text-decoration-none text-muted fw-medium">
+                    Limpiar Filtros
+                </a>
             </div>
         </form>
     </div>
 
     @if (Model == null || Model.Count == 0)
     {
-        <div class="card border-0 shadow-sm rounded-4 py-5">
-            <div class="card-body text-center">
+        <div class="main-card py-5 text-center">
+            <div class="py-4">
                 <div class="mb-3">
-                    <i class="bi bi-clipboard-x text-muted" style="font-size: 3rem;"></i>
+                    <i class="bi bi-search-heart text-muted" style="font-size: 4rem; opacity: 0.3;"></i>
                 </div>
-                <h5 class="text-dark">Sin registros</h5>
-                <p class="text-muted mx-auto" style="max-width: 300px;">
-                    No encontramos actividad para la fecha seleccionada. ¡Intenta con otro día!
-                </p>
+                <h4 class="fw-bold">No hay registros hoy</h4>
+                <p class="text-muted">Parece que no hay actividad registrada para esta fecha.</p>
             </div>
         </div>
     }
     else
     {
-        <div class="card shadow-sm border-0 rounded-4 overflow-hidden">
+        <div class="main-card shadow-lg">
             <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0">
-                    <thead class="table-light">
+                <table class="table align-middle">
+                    <thead>
                         <tr>
-                            <th class="ps-4">Fecha</th>
-                            <th>Hábito</th>
-                            <th class="text-center">Estado</th>
+                            <th>Día y Fecha</th>
+                            <th>Nombre del Hábito</th>
+                            <th class="text-center">Estado de Cumplimiento</th>
                         </tr>
                     </thead>
                     <tbody>
                         @foreach (var item in Model)
                         {
                             <tr>
-                                <td class="ps-4 text-muted">
-                                    <div class="d-flex flex-column">
-                                        <span class="fw-medium text-dark">@item.Date.ToString("dd MMM, yyyy")</span>
-                                        <small class="text-uppercase" style="font-size: 0.7rem;">@item.Date.ToString("dddd")</small>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="bg-primary bg-opacity-10 text-primary rounded-3 p-2 me-3 d-none d-sm-block">
+                                            <i class="bi bi-calendar3"></i>
+                                        </div>
+                                        <div>
+                                            <div class="fw-bold">@item.Date.ToString("dd MMM, yyyy")</div>
+                                            <div class="small text-muted text-uppercase" style="font-size: 0.65rem;">@item.Date.ToString("dddd")</div>
+                                        </div>
                                     </div>
                                 </td>
 
                                 <td>
-                                    <span class="fw-bold text-dark fs-6">@item.HabitName</span>
+                                    <span class="habit-name fw-semibold">@item.HabitName</span>
                                 </td>
 
                                 <td class="text-center">
                                     @if (item.Completed)
                                     {
-                                        <span class="badge rounded-pill badge-soft-success px-3 py-2">
-                                            <i class="bi bi-check-circle-fill me-1"></i> Completado
-                                        </span>
+                                        <div class="badge-pill-custom status-completed">
+                                            <i class="bi bi-check2-circle"></i> Completado
+                                        </div>
                                     }
                                     else
                                     {
-                                        <span class="badge rounded-pill badge-soft-danger px-3 py-2">
-                                            <i class="bi bi-x-circle-fill me-1"></i> Fallado
-                                        </span>
+                                        <div class="badge-pill-custom status-failed">
+                                            <i class="bi bi-exclamation-triangle"></i> Fallado
+                                        </div>
                                     }
                                 </td>
                             </tr>
@@ -134,8 +197,11 @@
             </div>
         </div>
         
-        <div class="mt-3 text-end">
-            <small class="text-muted">Mostrando @Model.Count registro(s)</small>
+        <div class="d-flex justify-content-between align-items-center mt-4 px-2">
+            <span class="small text-muted">Total de registros: <strong>@Model.Count</strong></span>
+            <button class="btn btn-sm btn-outline-secondary rounded-pill px-3" onclick="window.print()">
+                <i class="bi bi-printer me-1"></i> Imprimir Reporte
+            </button>
         </div>
     }
 </div>
