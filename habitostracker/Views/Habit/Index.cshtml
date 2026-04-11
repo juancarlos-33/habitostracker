@@ -109,6 +109,21 @@
     <p class="quote-text" id="quoteText"></p>
 </div>
 
+<!-- CLIMA -->
+<div class="weather-card" id="weatherCard" style="display:none;">
+    <div class="weather-left">
+        <span class="weather-icon" id="weatherIcon">⛅</span>
+        <div>
+            <div class="weather-temp" id="weatherTemp">--°C</div>
+            <div class="weather-city" id="weatherCity">Obteniendo ubicación...</div>
+        </div>
+    </div>
+    <div class="weather-right">
+        <div class="weather-desc" id="weatherDesc">--</div>
+        <div class="weather-extra" id="weatherExtra">💨 -- km/h</div>
+    </div>
+</div>
+
 <!-- KPIs -->
 <div class="kpi-grid">
     <div class="kpi-card">
@@ -297,7 +312,43 @@
         "El dolor de la disciplina es menor que el dolor del arrepentimiento. 💎",
         "Sé la mejor versión de ti mismo, cada día. 🌟",
         "Los ganadores hacen lo que los perdedores no quieren hacer. 👑",
-        "No cuentes los días, haz que los días cuenten. ⏳"
+        "No cuentes los días, haz que los días cuenten. ⏳",
+        "El secreto del éxito es la consistencia del propósito. 🧠",
+        "Cae siete veces, levántate ocho. 🥊",
+        "No esperes la motivación, crea el hábito. ⚙️",
+        "El éxito es la suma de pequeños esfuerzos repetidos cada día. 📈",
+        "Trabaja en silencio, deja que tus resultados hagan el ruido. 🔇",
+        "Lo que haces hoy puede mejorar todos tus mañanas. ☀️",
+        "La única forma de hacer un gran trabajo es amar lo que haces. ❤️",
+        "Primero forma el hábito, luego el hábito te forma a ti. 🔄",
+        "Si puedes soñarlo, puedes lograrlo. 💭",
+        "Cada experto fue una vez un principiante. 🌿",
+        "No te rindas, los comienzos siempre son difíciles. 🏔️",
+        "El progreso, no la perfección, es el objetivo. 📊",
+        "Invierte en ti mismo, es la mejor inversión. 💰",
+        "Los hábitos son el interés compuesto del auto-mejoramiento. 📉",
+        "Haz de tu vida una obra maestra. 🎨",
+        "El coraje no es la ausencia de miedo, es actuar a pesar de él. 🦁",
+        "Sueña en grande, actúa en pequeño, empieza ahora. 🎯",
+        "El único límite eres tú mismo. 🚧",
+        "La grandeza no viene de circunstancias, sino de esfuerzo. 💥",
+        "Nunca es tarde para ser lo que podrías haber sido. 🕰️",
+        "El futuro pertenece a quienes se preparan hoy. 🗓️",
+        "Tu actitud determina tu dirección. 🧭",
+        "Cada día que avanzas es un día que te acercas a tu meta. 🏁",
+        "La vida es 10% lo que te pasa y 90% cómo reaccionas. ⚖️",
+        "Rodéate de personas que enciendan tu fuego, no que lo apaguen. 🔦",
+        "El esfuerzo de hoy es el éxito de mañana. 🌅",
+        "No busques el momento perfecto, toma el momento y hazlo perfecto. ⏰",
+        "Más vale intentarlo y fallar que no intentarlo nunca. 🎲",
+        "La disciplina es elegir entre lo que quieres ahora y lo que quieres más. ⚡",
+        "Cada mañana traes nuevas fuerzas y nuevos pensamientos. 🌄",
+        "La perseverancia es la madre del éxito. 🏅",
+        "No te compares con otros, compárate con quien eras ayer. 🪞",
+        "El camino al éxito está siempre en construcción. 🔨",
+        "Haz hoy lo que otros no harán para tener mañana lo que otros no tendrán. 🌠",
+        "La excelencia no es un acto, es un hábito. 👌",
+        "Comienza donde estás, usa lo que tienes, haz lo que puedas. 🛠️"
     ];
 
     let fraseIndex = Math.floor(Math.random() * frases.length);
@@ -320,7 +371,72 @@
         quoteText.style.transform = "translateY(0)";
     }, 100);
 
-    setInterval(mostrarFrase, 5000);
+    setInterval(mostrarFrase, 4000);
+
+    // CLIMA
+    function getWeatherIcon(code) {
+        if (code >= 200 && code < 300) return "⛈️";
+        if (code >= 300 && code < 400) return "🌦️";
+        if (code >= 500 && code < 600) return "🌧️";
+        if (code >= 600 && code < 700) return "❄️";
+        if (code >= 700 && code < 800) return "🌫️";
+        if (code === 800) return "☀️";
+        if (code === 801) return "🌤️";
+        if (code >= 802) return "⛅";
+        return "🌡️";
+    }
+
+    function getWeatherDesc(code) {
+        if (code >= 200 && code < 300) return "Tormenta eléctrica";
+        if (code >= 300 && code < 400) return "Llovizna";
+        if (code >= 500 && code < 600) return "Lluvia";
+        if (code >= 600 && code < 700) return "Nieve";
+        if (code >= 700 && code < 800) return "Neblina";
+        if (code === 800) return "Cielo despejado";
+        if (code === 801) return "Poco nublado";
+        if (code === 802) return "Parcialmente nublado";
+        if (code >= 803) return "Nublado";
+        return "Sin datos";
+    }
+
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(function(pos) {
+            const lat = pos.coords.latitude;
+            const lon = pos.coords.longitude;
+
+            fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&timezone=auto`)
+                .then(r => r.json())
+                .then(data => {
+                    const w = data.current_weather;
+                    const temp = Math.round(w.temperature);
+                    const code = w.weathercode;
+                    const wind = Math.round(w.windspeed);
+
+                    document.getElementById("weatherTemp").textContent = temp + "°C";
+                    document.getElementById("weatherIcon").textContent = getWeatherIcon(code);
+                    document.getElementById("weatherDesc").textContent = getWeatherDesc(code);
+                    document.getElementById("weatherExtra").textContent = "💨 " + wind + " km/h";
+                    document.getElementById("weatherCard").style.display = "flex";
+
+                    fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`, {
+                        headers: { "Accept-Language": "es" }
+                    })
+                        .then(r => r.json())
+                        .then(geo => {
+                            const city = geo.address?.city
+                                || geo.address?.town
+                                || geo.address?.village
+                                || geo.address?.county
+                                || "Tu ubicación";
+                            document.getElementById("weatherCity").textContent = city;
+                        })
+                        .catch(() => {
+                            document.getElementById("weatherCity").textContent = "Tu ubicación";
+                        });
+                })
+                .catch(() => {});
+        }, function() {}, { timeout: 6000 });
+    }
 </script>
 }
 
@@ -422,7 +538,7 @@
     border: 1px solid rgba(99,102,241,0.3);
     border-radius: 14px;
     padding: 16px 22px;
-    margin-bottom: 22px;
+    margin-bottom: 16px;
     min-height: 58px;
 }
 
@@ -439,6 +555,28 @@
     line-height: 1.5;
     font-style: italic;
 }
+
+/* ===== WEATHER ===== */
+.weather-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: linear-gradient(135deg, #0ea5e9, #0284c7);
+    border-radius: 14px;
+    padding: 16px 22px;
+    margin-bottom: 22px;
+    color: white;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.weather-left { display: flex; align-items: center; gap: 14px; }
+.weather-icon { font-size: 38px; line-height: 1; }
+.weather-temp { font-size: 30px; font-weight: 800; line-height: 1; }
+.weather-city { font-size: 13px; opacity: 0.85; margin-top: 4px; }
+.weather-right { text-align: right; }
+.weather-desc { font-size: 15px; font-weight: 600; text-transform: capitalize; }
+.weather-extra { font-size: 13px; opacity: 0.8; margin-top: 4px; }
 
 /* ===== KPIs ===== */
 .kpi-grid {
@@ -516,7 +654,7 @@
     border-bottom: 1px solid #f3f4f6;
 }
 
-.habits-table tbody tr:not(.comment-row):hover { background: #f9fafb; border-radius: 10px; }
+.habits-table tbody tr:not(.comment-row):hover { background: #f9fafb; }
 
 .habits-table td {
     padding: 14px 12px;
@@ -565,7 +703,6 @@
 .hab-btn.delete:hover { background: #6b7280; color: white; }
 
 .comment-row td { padding: 8px 12px 14px; border-bottom: 1px solid #f3f4f6; }
-
 .comment-form { display: flex; gap: 8px; margin-bottom: 6px; }
 
 .comment-input {
@@ -580,12 +717,7 @@
 }
 
 .comment-input:focus { border-color: #6366f1; background: white; box-shadow: 0 0 0 3px rgba(99,102,241,0.1); }
-
-.comment-item {
-    font-size: 13px;
-    color: #4b5563;
-    padding: 4px 0;
-}
+.comment-item { font-size: 13px; color: #4b5563; padding: 4px 0; }
 
 .empty-state { text-align: center; padding: 50px 20px; color: #9ca3af; }
 .empty-icon { font-size: 52px; margin-bottom: 14px; }
@@ -626,6 +758,10 @@ body.bg-dark .chart-card {
 body.bg-dark .quote-card {
     background: linear-gradient(135deg, #1e1e2e, #0f0f1a) !important;
     border-color: rgba(99,102,241,0.25) !important;
+}
+
+body.bg-dark .weather-card {
+    background: linear-gradient(135deg, #075985, #0369a1) !important;
 }
 
 body.bg-dark .kpi-value { color: #f1f5f9 !important; }
