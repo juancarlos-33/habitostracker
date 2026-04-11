@@ -64,7 +64,7 @@
         <div class="achievements-grid">
             @foreach (var achievement in Model.OrderByDescending(a => a.DateUnlocked))
             {
-                @{
+                {
                     string badgeIcon = "🏅";
                     string badgeClass = "bronze";
 
@@ -76,9 +76,9 @@
                     { badgeIcon = "🔥"; badgeClass = "silver"; }
                 }
 
-                <div class="achievement-card @badgeClass">
+                <div class="achievement-card badgeClass">
                     <div class="achievement-glow"></div>
-                    <div class="achievement-icon">@badgeIcon</div>
+                    <div class="achievement-icon">badgeIcon</div>
                     <div class="achievement-body">
                         <h5 class="achievement-title">@achievement.Title</h5>
                         <div class="achievement-habit">
