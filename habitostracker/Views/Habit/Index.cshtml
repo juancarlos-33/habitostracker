@@ -27,11 +27,11 @@
     if (user != null)
     {
         if (user.Gender?.ToLower() == "masculino")
-        { welcomeMessage = $"Bienvenido {user.Username}"; welcomeClass = "welcome-male"; }
+        { welcomeMessage = $"Bienvenido, {user.Username} 👋"; welcomeClass = "welcome-male"; }
         else if (user.Gender?.ToLower() == "femenino")
-        { welcomeMessage = $"Bienvenida {user.Username}"; welcomeClass = "welcome-female"; }
+        { welcomeMessage = $"Bienvenida, {user.Username} 👋"; welcomeClass = "welcome-female"; }
         else
-        { welcomeMessage = $"Bienvenido {user.Username}"; }
+        { welcomeMessage = $"Bienvenido, {user.Username} 👋"; }
     }
 
     ViewData["Title"] = "HabitTracker Pro";
@@ -41,20 +41,18 @@
         .Reverse()
         .ToList();
 
-    // 🔥 Porcentaje real por día
-   // ✅ DESPUÉS - usa HabitHistories (historial real)
-var habitIds = habits.Select(h => h.Id).ToList();
-var histories = _context.HabitHistories
-    .Where(h => habitIds.Contains(h.HabitId) && h.Date >= DateTime.Today.AddDays(-6))
-    .ToList();
+    var habitIds = habits.Select(h => h.Id).ToList();
+    var histories = _context.HabitHistories
+        .Where(h => habitIds.Contains(h.HabitId) && h.Date >= DateTime.Today.AddDays(-6))
+        .ToList();
 
-var dailyCompletion = last7Days.Select(date => {
-    if (!habits.Any()) return 0;
-    int completed = histories.Count(h => h.Date.Date == date.Date && h.Completed);
-    int failed = histories.Count(h => h.Date.Date == date.Date && !h.Completed);
-    int total = completed + failed;
-    return total > 0 ? (int)((completed * 100.0) / total) : 0;
-}).ToList();
+    var dailyCompletion = last7Days.Select(date => {
+        if (!habits.Any()) return 0;
+        int completed = histories.Count(h => h.Date.Date == date.Date && h.Completed);
+        int failed = histories.Count(h => h.Date.Date == date.Date && !h.Completed);
+        int total = completed + failed;
+        return total > 0 ? (int)((completed * 100.0) / total) : 0;
+    }).ToList();
 }
 
 @if (user != null)
@@ -62,13 +60,13 @@ var dailyCompletion = last7Days.Select(date => {
     if (!user.IsPremium)
     {
         <div class="plan-banner">
-            <span>🚀 Estás en versión gratuita (máx 5 hábitos)</span>
-            <a asp-controller="User" asp-action="Pay" class="premium-btn">💳 Volverme Premium</a>
+            <span>🚀 Estás en versión gratuita <b>(máx 5 hábitos)</b></span>
+            <a asp-controller="User" asp-action="Pay" class="premium-btn">💳 Hazte Premium</a>
         </div>
     }
     else
     {
-        <div class="plan-banner premium">👑 Eres usuario PREMIUM — sin límites 🔥</div>
+        <div class="plan-banner premium">👑 Eres usuario <b>PREMIUM</b> — sin límites 🔥</div>
     }
 }
 
@@ -76,17 +74,39 @@ var dailyCompletion = last7Days.Select(date => {
 <div class="welcome-card @welcomeClass">
     <div class="welcome-content">
         <div class="welcome-avatar">
-            @{var profileImage = User.FindFirst("ProfileImage")?.Value;}
+            @{ var profileImage = User.FindFirst("ProfileImage")?.Value; }
             @if (!string.IsNullOrEmpty(profileImage))
             { <img src="@profileImage" alt="avatar" /> }
             else
-            { @(username.Substring(0, 1).ToUpper()) }
+            { @(username.Length > 0 ? username.Substring(0, 1).ToUpper() : "?") }
         </div>
-        <div>
+        <div class="welcome-text">
             <h5>@welcomeMessage</h5>
             <small>Disciplina diaria. Resultados extraordinarios.</small>
         </div>
     </div>
+    <div class="welcome-stats">
+        <div class="welcome-stat">
+            <span class="ws-val">@completedToday</span>
+            <span class="ws-label">Hoy</span>
+        </div>
+        <div class="welcome-stat-divider"></div>
+        <div class="welcome-stat">
+            <span class="ws-val">@totalStreak</span>
+            <span class="ws-label">Racha</span>
+        </div>
+        <div class="welcome-stat-divider"></div>
+        <div class="welcome-stat">
+            <span class="ws-val">@completionRate%</span>
+            <span class="ws-label">Hoy</span>
+        </div>
+    </div>
+</div>
+
+<!-- FRASES MOTIVACIONALES -->
+<div class="quote-card">
+    <span class="quote-icon">✨</span>
+    <p class="quote-text" id="quoteText"></p>
 </div>
 
 <!-- KPIs -->
@@ -212,58 +232,96 @@ var dailyCompletion = last7Days.Select(date => {
 </div>
 
 @section Scripts {
-    <script>
-        const labels = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(last7Days.Select(d => d.ToString("dd/MM"))));
-        const data = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(dailyCompletion));
+<script>
+    const labels = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(last7Days.Select(d => d.ToString("dd/MM"))));
+    const data = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(dailyCompletion));
 
-        const isDark = document.body.classList.contains('bg-dark');
-        const gridColor = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)';
-        const textColor = isDark ? '#94a3b8' : '#6b7280';
+    const isDark = document.body.classList.contains('bg-dark');
+    const gridColor = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)';
+    const textColor = isDark ? '#94a3b8' : '#6b7280';
 
-        new Chart(document.getElementById('habitChart'), {
-            type: 'line',
-            data: {
-                labels: labels,
-                datasets: [{
-                    data: data,
-                    borderWidth: 3,
-                    tension: 0.4,
-                    fill: true,
-                    pointRadius: 5,
-                    pointHoverRadius: 7,
-                    pointBackgroundColor: '#6366f1',
-                    backgroundColor: 'rgba(99,102,241,0.12)',
-                    borderColor: '#6366f1'
-                }]
-            },
-            options: {
-                responsive: true,
-                plugins: {
-                    legend: { display: false },
-                    tooltip: {
-                        callbacks: {
-                            label: ctx => ctx.parsed.y + '% completado'
-                        }
-                    }
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        max: 100,
-                        ticks: {
-                            color: textColor,
-                            callback: val => val + '%'
-                        },
-                        grid: { color: gridColor }
-                    },
-                    x: {
-                        ticks: { color: textColor },
-                        grid: { color: gridColor }
+    new Chart(document.getElementById('habitChart'), {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                data: data,
+                borderWidth: 3,
+                tension: 0.4,
+                fill: true,
+                pointRadius: 5,
+                pointHoverRadius: 7,
+                pointBackgroundColor: '#6366f1',
+                backgroundColor: 'rgba(99,102,241,0.12)',
+                borderColor: '#6366f1'
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: ctx => ctx.parsed.y + '% completado'
                     }
                 }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 100,
+                    ticks: { color: textColor, callback: val => val + '%' },
+                    grid: { color: gridColor }
+                },
+                x: {
+                    ticks: { color: textColor },
+                    grid: { color: gridColor }
+                }
             }
-        });
-    </script>
+        }
+    });
+
+    // FRASES MOTIVACIONALES
+    const frases = [
+        "La disciplina es el puente entre metas y logros. 🚀",
+        "Cada día es una nueva oportunidad para mejorar. 💪",
+        "Los pequeños hábitos crean grandes cambios. 🌱",
+        "El éxito no es un destino, es un hábito diario. 🏆",
+        "No necesitas ser perfecto, solo consistente. 🔥",
+        "Un hábito a la vez. Un día a la vez. ⚡",
+        "La constancia vence al talento cuando el talento no es constante. 🎯",
+        "Hoy es el mejor día para empezar. 📅",
+        "Tu futuro depende de lo que hagas hoy. 💡",
+        "La motivación te arranca, el hábito te mantiene. 🛤️",
+        "Pequeñas acciones repetidas crean grandes resultados. ✨",
+        "El dolor de la disciplina es menor que el dolor del arrepentimiento. 💎",
+        "Sé la mejor versión de ti mismo, cada día. 🌟",
+        "Los ganadores hacen lo que los perdedores no quieren hacer. 👑",
+        "No cuentes los días, haz que los días cuenten. ⏳"
+    ];
+
+    let fraseIndex = Math.floor(Math.random() * frases.length);
+    const quoteText = document.getElementById("quoteText");
+
+    function mostrarFrase() {
+        quoteText.style.opacity = "0";
+        quoteText.style.transform = "translateY(6px)";
+        setTimeout(() => {
+            fraseIndex = (fraseIndex + 1) % frases.length;
+            quoteText.textContent = frases[fraseIndex];
+            quoteText.style.opacity = "1";
+            quoteText.style.transform = "translateY(0)";
+        }, 600);
+    }
+
+    quoteText.textContent = frases[fraseIndex];
+    setTimeout(() => {
+        quoteText.style.opacity = "1";
+        quoteText.style.transform = "translateY(0)";
+    }, 100);
+
+    setInterval(mostrarFrase, 5000);
+</script>
 }
 
 <style>
@@ -275,15 +333,17 @@ var dailyCompletion = last7Days.Select(date => {
     background: #fefce8;
     border: 1px solid #fde68a;
     color: #92400e;
-    padding: 12px 18px;
-    border-radius: 12px;
-    margin-bottom: 16px;
+    padding: 12px 20px;
+    border-radius: 14px;
+    margin-bottom: 18px;
     font-size: 14px;
     font-weight: 500;
+    flex-wrap: wrap;
+    gap: 10px;
 }
 
 .plan-banner.premium {
-    background: #f0fdf4;
+    background: linear-gradient(135deg, #f0fdf4, #dcfce7);
     border-color: #86efac;
     color: #166534;
 }
@@ -291,75 +351,126 @@ var dailyCompletion = last7Days.Select(date => {
 .premium-btn {
     background: #111;
     color: white;
-    padding: 7px 14px;
+    padding: 8px 16px;
     border-radius: 20px;
     font-size: 13px;
     font-weight: 600;
     text-decoration: none;
     transition: 0.2s;
+    white-space: nowrap;
 }
 
-.premium-btn:hover { background: #333; color: white; }
+.premium-btn:hover { background: #333; color: white; transform: scale(1.03); }
 
 /* ===== WELCOME ===== */
 .welcome-card {
     color: white;
-    padding: 22px 26px;
-    border-radius: 20px;
-    margin-bottom: 24px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+    padding: 24px 28px;
+    border-radius: 22px;
+    margin-bottom: 16px;
+    box-shadow: 0 12px 35px rgba(0,0,0,0.18);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 16px;
 }
 
 .welcome-content { display: flex; align-items: center; gap: 16px; }
 
 .welcome-avatar {
-    width: 52px; height: 52px;
+    width: 54px; height: 54px;
     border-radius: 50%;
     background: rgba(255,255,255,0.25);
     display: flex; align-items: center; justify-content: center;
     font-size: 22px; font-weight: bold;
     overflow: hidden;
+    border: 2px solid rgba(255,255,255,0.3);
+    flex-shrink: 0;
 }
 
 .welcome-avatar img { width: 100%; height: 100%; object-fit: cover; }
 
-.welcome-card h5 { margin: 0; font-weight: 700; font-size: 18px; }
-.welcome-card small { opacity: 0.85; font-size: 13px; }
+.welcome-text h5 { margin: 0; font-weight: 700; font-size: 18px; }
+.welcome-text small { opacity: 0.8; font-size: 13px; }
+
+.welcome-stats {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    background: rgba(255,255,255,0.15);
+    padding: 12px 20px;
+    border-radius: 14px;
+    backdrop-filter: blur(8px);
+}
+
+.welcome-stat { text-align: center; }
+.ws-val { display: block; font-size: 20px; font-weight: 800; }
+.ws-label { display: block; font-size: 10px; opacity: 0.75; text-transform: uppercase; letter-spacing: 0.5px; }
+.welcome-stat-divider { width: 1px; height: 30px; background: rgba(255,255,255,0.25); }
 
 .welcome-male { background: linear-gradient(135deg, #2563eb, #1e3a8a); }
 .welcome-female { background: linear-gradient(135deg, #ec4899, #9d174d); }
 .welcome-neutral { background: linear-gradient(135deg, #6366f1, #7c3aed); }
+
+/* ===== QUOTE CARD ===== */
+.quote-card {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    background: linear-gradient(135deg, #1e293b, #0f172a);
+    border: 1px solid rgba(99,102,241,0.3);
+    border-radius: 14px;
+    padding: 16px 22px;
+    margin-bottom: 22px;
+    min-height: 58px;
+}
+
+.quote-icon { font-size: 20px; flex-shrink: 0; }
+
+.quote-text {
+    color: rgba(255,255,255,0.9);
+    font-size: 14px;
+    font-weight: 500;
+    margin: 0;
+    opacity: 0;
+    transform: translateY(6px);
+    transition: opacity 0.6s ease, transform 0.6s ease;
+    line-height: 1.5;
+    font-style: italic;
+}
 
 /* ===== KPIs ===== */
 .kpi-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     gap: 14px;
-    margin-bottom: 24px;
+    margin-bottom: 22px;
 }
 
 @@media (max-width: 768px) {
     .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+    .welcome-stats { display: none; }
 }
 
 .kpi-card {
     background: white;
-    border-radius: 16px;
-    padding: 20px;
+    border-radius: 18px;
+    padding: 22px 16px;
     text-align: center;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
     border: 1px solid rgba(0,0,0,0.04);
-    transition: 0.2s;
+    transition: 0.25s;
 }
 
-.kpi-card:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.1); }
+.kpi-card:hover { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(0,0,0,0.1); }
 
-.kpi-icon { font-size: 24px; margin-bottom: 8px; }
-.kpi-value { font-size: 28px; font-weight: 800; color: #111827; margin-bottom: 4px; }
+.kpi-icon { font-size: 26px; margin-bottom: 10px; }
+.kpi-value { font-size: 30px; font-weight: 800; color: #111827; margin-bottom: 5px; }
 .kpi-value.streak { color: #16a34a; }
 .kpi-value.today { color: #2563eb; }
 .kpi-value.record { color: #d97706; }
-.kpi-label { font-size: 12px; color: #9ca3af; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+.kpi-label { font-size: 11px; color: #9ca3af; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; }
 
 /* ===== ACTION ROW ===== */
 .action-row { margin-bottom: 20px; }
@@ -367,37 +478,34 @@ var dailyCompletion = last7Days.Select(date => {
 .new-habit-btn {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
-    background: #2563eb;
+    gap: 8px;
+    background: linear-gradient(135deg, #2563eb, #4f46e5);
     color: white;
-    padding: 10px 20px;
+    padding: 11px 24px;
     border-radius: 50px;
     font-weight: 600;
     font-size: 14px;
     text-decoration: none;
     transition: 0.2s;
-    box-shadow: 0 4px 12px rgba(37,99,235,0.3);
+    box-shadow: 0 4px 14px rgba(37,99,235,0.35);
 }
 
-.new-habit-btn:hover { background: #1d4ed8; transform: translateY(-1px); color: white; }
-.new-habit-btn.locked { background: #374151; box-shadow: none; }
-.new-habit-btn.locked:hover { background: #1f2937; }
+.new-habit-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(37,99,235,0.45); color: white; }
+.new-habit-btn.locked { background: linear-gradient(135deg, #374151, #1f2937); box-shadow: none; }
+.new-habit-btn.locked:hover { transform: translateY(-1px); }
 
 /* ===== HABITS TABLE ===== */
 .habits-card {
     background: white;
-    border-radius: 20px;
+    border-radius: 22px;
     padding: 24px;
     margin-bottom: 20px;
-    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    box-shadow: 0 2px 14px rgba(0,0,0,0.06);
     border: 1px solid rgba(0,0,0,0.04);
     overflow-x: auto;
 }
 
-.habits-table {
-    width: 100%;
-    border-collapse: collapse;
-}
+.habits-table { width: 100%; border-collapse: collapse; }
 
 .habits-table thead th {
     font-size: 11px;
@@ -408,7 +516,7 @@ var dailyCompletion = last7Days.Select(date => {
     border-bottom: 1px solid #f3f4f6;
 }
 
-.habits-table tbody tr:not(.comment-row):hover { background: #f9fafb; }
+.habits-table tbody tr:not(.comment-row):hover { background: #f9fafb; border-radius: 10px; }
 
 .habits-table td {
     padding: 14px 12px;
@@ -425,10 +533,11 @@ var dailyCompletion = last7Days.Select(date => {
 .status-badge {
     display: inline-flex;
     align-items: center;
-    padding: 4px 10px;
+    padding: 5px 12px;
     border-radius: 20px;
     font-size: 12px;
     font-weight: 600;
+    white-space: nowrap;
 }
 
 .status-badge.success { background: #dcfce7; color: #16a34a; }
@@ -438,8 +547,8 @@ var dailyCompletion = last7Days.Select(date => {
 .action-btns { display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; }
 
 .hab-btn {
-    padding: 5px 10px;
-    border-radius: 8px;
+    padding: 6px 11px;
+    border-radius: 9px;
     font-size: 13px;
     text-decoration: none;
     transition: 0.15s;
@@ -461,30 +570,26 @@ var dailyCompletion = last7Days.Select(date => {
 
 .comment-input {
     flex: 1;
-    padding: 8px 14px;
+    padding: 9px 16px;
     border-radius: 50px;
     border: 1px solid #e5e7eb;
     font-size: 13px;
     outline: none;
     background: #f9fafb;
+    transition: 0.2s;
 }
 
-.comment-input:focus { border-color: #6366f1; background: white; }
+.comment-input:focus { border-color: #6366f1; background: white; box-shadow: 0 0 0 3px rgba(99,102,241,0.1); }
 
 .comment-item {
     font-size: 13px;
     color: #4b5563;
-    padding: 3px 0;
+    padding: 4px 0;
 }
 
-.empty-state {
-    text-align: center;
-    padding: 40px;
-    color: #9ca3af;
-}
-
-.empty-icon { font-size: 48px; margin-bottom: 12px; }
-.empty-state p { font-size: 16px; font-weight: 500; margin: 0; }
+.empty-state { text-align: center; padding: 50px 20px; color: #9ca3af; }
+.empty-icon { font-size: 52px; margin-bottom: 14px; }
+.empty-state p { font-size: 16px; font-weight: 500; margin: 0 0 6px; }
 .empty-state small { font-size: 13px; }
 
 .limit-alert {
@@ -492,7 +597,7 @@ var dailyCompletion = last7Days.Select(date => {
     color: #dc2626;
     padding: 12px 16px;
     border-radius: 10px;
-    margin-bottom: 14px;
+    margin-bottom: 16px;
     font-size: 14px;
     font-weight: 500;
 }
@@ -502,13 +607,13 @@ var dailyCompletion = last7Days.Select(date => {
 /* ===== CHART ===== */
 .chart-card {
     background: white;
-    border-radius: 20px;
-    padding: 24px;
-    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    border-radius: 22px;
+    padding: 26px;
+    box-shadow: 0 2px 14px rgba(0,0,0,0.06);
     border: 1px solid rgba(0,0,0,0.04);
 }
 
-.chart-title { font-weight: 700; font-size: 16px; margin-bottom: 16px; }
+.chart-title { font-weight: 700; font-size: 16px; margin-bottom: 18px; color: #111827; }
 
 /* ===== DARK MODE ===== */
 body.bg-dark .kpi-card,
@@ -516,6 +621,11 @@ body.bg-dark .habits-card,
 body.bg-dark .chart-card {
     background: #1e1e2e !important;
     border-color: #2d2d3d !important;
+}
+
+body.bg-dark .quote-card {
+    background: linear-gradient(135deg, #1e1e2e, #0f0f1a) !important;
+    border-color: rgba(99,102,241,0.25) !important;
 }
 
 body.bg-dark .kpi-value { color: #f1f5f9 !important; }
@@ -527,9 +637,10 @@ body.bg-dark .habits-table tbody tr:not(.comment-row):hover { background: #2d2d3
 body.bg-dark .date-val { color: #64748b !important; }
 body.bg-dark .comment-input { background: #2d2d3d; border-color: #3d3d4d; color: white; }
 body.bg-dark .comment-item { color: #94a3b8; }
-body.bg-dark .plan-banner { background: #2d2d1a; border-color: #4d4d1a; color: #fde68a; }
-body.bg-dark .chart-title { color: #f1f5f9; }
-body.bg-dark .empty-state { color: #64748b; }
+body.bg-dark .plan-banner { background: #2d2d1a !important; border-color: #4d4d1a !important; color: #fde68a !important; }
+body.bg-dark .chart-title { color: #f1f5f9 !important; }
+body.bg-dark .empty-state { color: #64748b !important; }
+body.bg-dark .limit-alert { background: #3a1a1a !important; }
 </style>
 
 <script>
