@@ -15,10 +15,15 @@
 
     <!-- COLUMNA IZQUIERDA -->
     <div class="profile-left">
+
         <div class="avatar-section">
             @if (!string.IsNullOrEmpty(Model.ProfileImage))
             {
                 <img id="previewImage" src="@Model.ProfileImage?v=@DateTime.Now.Ticks" class="profile-avatar" />
+            }
+            else if (!string.IsNullOrEmpty(Model.ProfilePicture))
+            {
+                <img id="previewImage" src="@Model.ProfilePicture" class="profile-avatar" />
             }
             else
             {
@@ -32,7 +37,13 @@
         </div>
 
         <h2 class="profile-name">@Model.Username</h2>
-        <p class="profile-bio-preview">@(string.IsNullOrEmpty(Model.Bio) ? "Sin biografía" : Model.Bio)</p>
+
+        @if (!string.IsNullOrEmpty(Model.FullName))
+        {
+            <p class="profile-fullname">@Model.FullName</p>
+        }
+
+        <p class="profile-bio-preview">@(string.IsNullOrEmpty(Model.Bio) ? "Sin biografía aún..." : Model.Bio)</p>
 
         @if (Model.IsGoogleAccount)
         {
@@ -40,6 +51,11 @@
                 <img src="https://developers.google.com/identity/images/g-logo.png" style="width:14px;" />
                 Cuenta de Google
             </div>
+        }
+
+        @if (Model.IsPremium)
+        {
+            <div class="premium-badge">👑 Usuario Premium</div>
         }
 
         <div class="follow-stats">
@@ -54,6 +70,13 @@
             </div>
         </div>
 
+        @if (Model.CreatedAt.HasValue)
+        {
+            <div class="member-since">
+                📅 Miembro desde @Model.CreatedAt.Value.ToString("MMMM yyyy")
+            </div>
+        }
+
         <button type="button" id="removePhotoBtn" data-no-loader class="remove-photo-btn">
             🗑️ Eliminar foto
         </button>
@@ -66,47 +89,66 @@
             <input type="hidden" id="croppedImageInput" name="croppedImage" />
 
             <div class="form-section">
-                <h4 class="section-title">Información personal</h4>
-
-                <div class="field-group">
-                    <label class="field-label">Usuario</label>
-                    <input class="field-input" value="@Model.Username" disabled />
+                <div class="section-header">
+                    <h4 class="section-title">✏️ Información personal</h4>
+                    <span class="section-subtitle">Actualiza tus datos de perfil</span>
                 </div>
 
-                <div class="field-group">
-                    <label class="field-label">Nombre completo</label>
-                    <input asp-for="FullName" class="field-input" placeholder="Tu nombre completo" />
+                <div class="fields-grid">
+                    <div class="field-group">
+                        <label class="field-label">Usuario</label>
+                        <div class="field-input-wrapper">
+                            <input class="field-input" value="@Model.Username" disabled />
+                            <span class="field-icon">🔒</span>
+                        </div>
+                    </div>
+
+                    <div class="field-group">
+                        <label class="field-label">Nombre completo</label>
+                        <div class="field-input-wrapper">
+                            <input asp-for="FullName" class="field-input" placeholder="Tu nombre completo" />
+                            <span class="field-icon">👤</span>
+                        </div>
+                    </div>
+
+                    <div class="field-group full-width">
+                        <label class="field-label">Correo electrónico</label>
+                        <div class="field-input-wrapper">
+                            <input asp-for="Email" class="field-input" disabled />
+                            <span class="field-icon">📧</span>
+                        </div>
+                    </div>
+
+                    <div class="field-group full-width">
+                        <label class="field-label">Biografía</label>
+                        <textarea asp-for="Bio" class="field-textarea" rows="3" placeholder="Cuéntanos sobre ti..."></textarea>
+                        <span class="field-hint">Máximo 300 caracteres</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <div class="section-header">
+                    <h4 class="section-title">📷 Foto de perfil</h4>
+                    <span class="section-subtitle">Sube o recorta tu imagen</span>
                 </div>
 
-                <div class="field-group">
-                    <label class="field-label">Correo electrónico</label>
-                    <input asp-for="Email" class="field-input" disabled />
+                <div class="upload-zone" onclick="document.getElementById('imageInput').click()">
+                    <span class="upload-icon">⬆️</span>
+                    <span class="upload-text">Haz click para subir una imagen</span>
+                    <span class="upload-hint">JPG, PNG o GIF — máx 5MB</span>
+                    <input type="file" id="imageInput" name="profilePhoto" accept="image/*" style="display:none;" />
                 </div>
 
-                <div class="field-group">
-                    <label class="field-label">Biografía</label>
-                    <textarea asp-for="Bio" class="field-textarea" rows="3" placeholder="Cuéntanos sobre ti..."></textarea>
-                </div>
-
-                <div class="field-group">
-                    <label class="field-label">Miembro desde</label>
-                    <input class="field-input" value="@Model.CreatedAt?.ToString("dd/MM/yyyy")" disabled />
-                </div>
-
-                <!-- SUBIR FOTO -->
-                <div class="field-group">
-                    <label class="field-label">Cambiar foto de perfil</label>
-                    <input type="file" id="imageInput" name="profilePhoto" class="field-input" accept="image/*" />
-                </div>
-
-                <!-- CROPPER -->
                 <div class="cropper-section" id="cropperSection" style="display:none;">
                     <img id="cropImage" style="max-width:100%;" />
                     <button type="button" id="cropButton" data-no-loader class="crop-btn">✂️ Recortar imagen</button>
                 </div>
             </div>
 
-            <button type="submit" class="save-btn">💾 Guardar cambios</button>
+            <button type="submit" class="save-btn">
+                💾 Guardar cambios
+            </button>
         </form>
     </div>
 </div>
@@ -124,28 +166,34 @@
 
 <style>
 .profile-alert {
-    background: #dcfce7;
-    color: #16a34a;
-    padding: 12px 18px;
-    border-radius: 12px;
-    margin-bottom: 20px;
-    font-weight: 500;
+    background: linear-gradient(135deg, #dcfce7, #bbf7d0);
+    color: #15803d;
+    padding: 14px 20px;
+    border-radius: 14px;
+    margin-bottom: 24px;
+    font-weight: 600;
     font-size: 14px;
+    border: 1px solid #86efac;
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
 
 .profile-wrapper {
     display: grid;
-    grid-template-columns: 300px 1fr;
+    grid-template-columns: 280px 1fr;
     gap: 24px;
-    max-width: 900px;
+    max-width: 960px;
     margin: 0 auto;
 }
 
 @@media (max-width: 768px) {
     .profile-wrapper { grid-template-columns: 1fr; }
+    .fields-grid { grid-template-columns: 1fr !important; }
+    .full-width { grid-column: 1 !important; }
 }
 
-/* LEFT */
+/* ===== LEFT ===== */
 .profile-left {
     background: white;
     border-radius: 24px;
@@ -154,13 +202,15 @@
     box-shadow: 0 4px 20px rgba(0,0,0,0.07);
     border: 1px solid rgba(0,0,0,0.05);
     height: fit-content;
+    position: sticky;
+    top: 20px;
 }
 
 .avatar-section {
     position: relative;
     width: 120px;
     height: 120px;
-    margin: 0 auto 16px;
+    margin: 0 auto 20px;
 }
 
 .profile-avatar {
@@ -168,7 +218,8 @@
     height: 120px;
     border-radius: 50%;
     object-fit: cover;
-    border: 4px solid #e5e7eb;
+    border: 4px solid white;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
     display: block;
 }
 
@@ -183,22 +234,24 @@
     justify-content: center;
     font-size: 42px;
     font-weight: 800;
-    border: 4px solid #e5e7eb;
+    border: 4px solid white;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
 }
 
 .avatar-overlay {
     position: absolute;
-    bottom: 0; right: 0;
-    width: 36px; height: 36px;
+    bottom: 2px; right: 2px;
+    width: 34px; height: 34px;
     background: #2563eb;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 16px;
+    font-size: 15px;
     cursor: pointer;
     border: 3px solid white;
     transition: 0.2s;
+    box-shadow: 0 2px 8px rgba(37,99,235,0.4);
 }
 
 .avatar-overlay:hover { background: #1d4ed8; transform: scale(1.1); }
@@ -207,14 +260,22 @@
     font-size: 20px;
     font-weight: 800;
     color: #111827;
-    margin: 0 0 6px;
+    margin: 0 0 4px;
+}
+
+.profile-fullname {
+    font-size: 14px;
+    color: #6b7280;
+    margin: 0 0 8px;
+    font-weight: 500;
 }
 
 .profile-bio-preview {
     font-size: 13px;
     color: #9ca3af;
-    margin-bottom: 14px;
-    line-height: 1.5;
+    margin-bottom: 16px;
+    line-height: 1.6;
+    font-style: italic;
 }
 
 .google-badge {
@@ -227,7 +288,21 @@
     border-radius: 20px;
     font-size: 12px;
     font-weight: 600;
-    margin-bottom: 16px;
+    margin-bottom: 10px;
+}
+
+.premium-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: linear-gradient(135deg, #fef3c7, #fde68a);
+    color: #92400e;
+    padding: 5px 14px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 700;
+    margin-bottom: 10px;
+    border: 1px solid #fcd34d;
 }
 
 .follow-stats {
@@ -238,7 +313,7 @@
     margin: 16px 0;
     padding: 16px;
     background: #f9fafb;
-    border-radius: 14px;
+    border-radius: 16px;
 }
 
 .follow-stat {
@@ -247,16 +322,25 @@
     align-items: center;
     cursor: pointer;
     transition: 0.2s;
+    padding: 4px 8px;
+    border-radius: 10px;
 }
 
+.follow-stat:hover { background: #f3f4f6; }
 .follow-stat:hover .stat-num { color: #2563eb; }
 
-.stat-num { font-size: 20px; font-weight: 800; color: #111827; }
-.stat-label { font-size: 11px; color: #9ca3af; font-weight: 600; text-transform: uppercase; }
+.stat-num { font-size: 22px; font-weight: 800; color: #111827; }
+.stat-label { font-size: 11px; color: #9ca3af; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
 
-.follow-divider {
-    width: 1px; height: 30px;
-    background: #e5e7eb;
+.follow-divider { width: 1px; height: 30px; background: #e5e7eb; }
+
+.member-since {
+    font-size: 12px;
+    color: #9ca3af;
+    margin: 12px 0;
+    padding: 8px 14px;
+    background: #f9fafb;
+    border-radius: 10px;
 }
 
 .remove-photo-btn {
@@ -273,29 +357,45 @@
     margin-top: 8px;
 }
 
-.remove-photo-btn:hover { background: #fee2e2; }
+.remove-photo-btn:hover { background: #fee2e2; border-color: #fca5a5; }
 
-/* RIGHT */
+/* ===== RIGHT ===== */
 .profile-right {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.form-section {
     background: white;
     border-radius: 24px;
-    padding: 32px;
+    padding: 28px 32px;
     box-shadow: 0 4px 20px rgba(0,0,0,0.07);
     border: 1px solid rgba(0,0,0,0.05);
 }
 
-.form-section { margin-bottom: 24px; }
+.section-header { margin-bottom: 22px; }
 
 .section-title {
     font-size: 16px;
     font-weight: 700;
     color: #111827;
-    margin-bottom: 20px;
-    padding-bottom: 12px;
-    border-bottom: 1px solid #f3f4f6;
+    margin: 0 0 4px;
 }
 
-.field-group { margin-bottom: 16px; }
+.section-subtitle {
+    font-size: 13px;
+    color: #9ca3af;
+}
+
+.fields-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+.field-group { margin: 0; }
+.full-width { grid-column: 1 / -1; }
 
 .field-label {
     display: block;
@@ -307,10 +407,14 @@
     margin-bottom: 6px;
 }
 
+.field-input-wrapper {
+    position: relative;
+}
+
 .field-input {
     width: 100%;
-    padding: 11px 14px;
-    border: 1px solid #e5e7eb;
+    padding: 11px 38px 11px 14px;
+    border: 1.5px solid #e5e7eb;
     border-radius: 12px;
     font-size: 14px;
     color: #111827;
@@ -325,12 +429,25 @@
     box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
 }
 
-.field-input:disabled { background: #f9fafb; color: #9ca3af; }
+.field-input:disabled {
+    background: #f9fafb;
+    color: #9ca3af;
+    cursor: not-allowed;
+}
+
+.field-icon {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 15px;
+    opacity: 0.5;
+}
 
 .field-textarea {
     width: 100%;
     padding: 11px 14px;
-    border: 1px solid #e5e7eb;
+    border: 1.5px solid #e5e7eb;
     border-radius: 12px;
     font-size: 14px;
     color: #111827;
@@ -338,6 +455,7 @@
     transition: 0.2s;
     resize: vertical;
     box-sizing: border-box;
+    font-family: inherit;
 }
 
 .field-textarea:focus {
@@ -346,46 +464,78 @@
     box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
 }
 
+.field-hint {
+    font-size: 11px;
+    color: #9ca3af;
+    margin-top: 4px;
+    display: block;
+}
+
+.upload-zone {
+    border: 2px dashed #e5e7eb;
+    border-radius: 16px;
+    padding: 28px;
+    text-align: center;
+    cursor: pointer;
+    transition: 0.2s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+}
+
+.upload-zone:hover {
+    border-color: #2563eb;
+    background: #eff6ff;
+}
+
+.upload-icon { font-size: 28px; }
+.upload-text { font-size: 14px; font-weight: 600; color: #374151; }
+.upload-hint { font-size: 12px; color: #9ca3af; }
+
 .cropper-section {
-    margin-top: 12px;
+    margin-top: 16px;
     text-align: center;
 }
 
 .crop-btn {
     margin-top: 12px;
-    padding: 10px 20px;
-    background: #16a34a;
+    padding: 10px 24px;
+    background: linear-gradient(135deg, #16a34a, #15803d);
     color: white;
     border: none;
     border-radius: 12px;
     font-weight: 600;
     cursor: pointer;
     transition: 0.2s;
+    font-size: 14px;
 }
 
-.crop-btn:hover { background: #15803d; }
+.crop-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(22,163,74,0.3); }
 
 .save-btn {
     width: 100%;
-    padding: 14px;
+    padding: 15px;
     background: linear-gradient(135deg, #2563eb, #7c3aed);
     color: white;
     border: none;
-    border-radius: 14px;
+    border-radius: 16px;
     font-size: 15px;
     font-weight: 700;
     cursor: pointer;
     transition: 0.2s;
     box-shadow: 0 4px 15px rgba(37,99,235,0.3);
+    margin-top: 4px;
 }
 
-.save-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(37,99,235,0.4); }
+.save-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(37,99,235,0.4); }
 
-/* MODAL */
+/* ===== MODAL ===== */
 .follow-modal {
     position: fixed; top: 0; left: 0;
     width: 100%; height: 100%;
     background: rgba(0,0,0,0.5);
+    backdrop-filter: blur(4px);
     display: flex;
     justify-content: center;
     align-items: center;
@@ -394,11 +544,12 @@
 
 .follow-content {
     background: white;
-    border-radius: 20px;
-    padding: 24px;
-    width: 360px;
-    max-height: 500px;
+    border-radius: 24px;
+    padding: 28px;
+    width: 380px;
+    max-height: 520px;
     overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.2);
 }
 
 .follow-header {
@@ -406,36 +557,49 @@
     justify-content: space-between;
     align-items: center;
     font-weight: 700;
-    font-size: 16px;
-    margin-bottom: 16px;
+    font-size: 17px;
+    margin-bottom: 18px;
     color: #111827;
+    padding-bottom: 14px;
+    border-bottom: 1px solid #f3f4f6;
 }
 
-.close-btn { cursor: pointer; font-size: 18px; color: #9ca3af; }
-.close-btn:hover { color: #111827; }
+.close-btn {
+    cursor: pointer;
+    font-size: 16px;
+    color: #9ca3af;
+    width: 30px; height: 30px;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 50%;
+    transition: 0.2s;
+}
+
+.close-btn:hover { background: #f3f4f6; color: #111827; }
 
 .follow-item {
     display: flex;
     align-items: center;
     gap: 10px;
     padding: 10px;
-    border-radius: 10px;
+    border-radius: 12px;
     cursor: pointer;
     transition: 0.15s;
 }
 
-.follow-item:hover { background: #f3f4f6; }
+.follow-item:hover { background: #f9fafb; }
 
-/* DARK MODE */
+/* ===== DARK MODE ===== */
 body.bg-dark .profile-left,
-body.bg-dark .profile-right {
+body.bg-dark .form-section {
     background: #1e1e2e !important;
     border-color: #2d2d3d !important;
 }
 
 body.bg-dark .profile-name { color: #f1f5f9 !important; }
-body.bg-dark .section-title { color: #f1f5f9 !important; border-color: #2d2d3d !important; }
+body.bg-dark .profile-fullname { color: #94a3b8 !important; }
+body.bg-dark .section-title { color: #f1f5f9 !important; }
 body.bg-dark .field-label { color: #64748b !important; }
+
 body.bg-dark .field-input,
 body.bg-dark .field-textarea {
     background: #2d2d3d !important;
@@ -445,11 +609,16 @@ body.bg-dark .field-textarea {
 
 body.bg-dark .field-input:disabled { background: #252535 !important; color: #64748b !important; }
 body.bg-dark .follow-stats { background: #2d2d3d !important; }
+body.bg-dark .member-since { background: #2d2d3d !important; color: #64748b !important; }
 body.bg-dark .stat-num { color: #f1f5f9 !important; }
 body.bg-dark .follow-content { background: #1e1e2e !important; }
-body.bg-dark .follow-header { color: #f1f5f9 !important; }
+body.bg-dark .follow-header { color: #f1f5f9 !important; border-color: #2d2d3d !important; }
 body.bg-dark .follow-item:hover { background: #2d2d3d !important; }
-body.bg-dark .profile-alert { background: #14532d; color: #86efac; }
+body.bg-dark .upload-zone { border-color: #3d3d4d !important; }
+body.bg-dark .upload-zone:hover { background: #1e3a5f !important; border-color: #2563eb !important; }
+body.bg-dark .upload-text { color: #f1f5f9 !important; }
+body.bg-dark .profile-alert { background: #14532d !important; color: #86efac !important; border-color: #16a34a !important; }
+body.bg-dark .profile-bio-preview { color: #64748b !important; }
 </style>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.js"></script>

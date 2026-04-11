@@ -1,64 +1,319 @@
-﻿<div class="upgrade-container">
+﻿@{
+    ViewData["Title"] = "Completa tu cuenta";
+    Layout = "_LayoutLogin";
+}
 
-    <h2 class="text-center mb-2">🔓 Completa tu cuenta</h2>
-    <p class="text-center text-muted mb-4">
-        Convierte tu cuenta de invitado en una cuenta completa
-    </p>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
 
-    <!-- 🔥 BOTÓN GOOGLE -->
-    <a href="/Account/GoogleLogin" class="btn google-btn w-100 mb-3">
-        <img src="https://developers.google.com/identity/images/g-logo.png"
-             style="width:18px; margin-right:8px;">
+body {
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-family:Inter,system-ui;
+    background:#0d1117;
+    overflow:hidden;
+}
+
+#plexus-bg {
+    position:fixed;
+    top:0; left:0;
+    width:100%; height:100%;
+    z-index:0;
+    pointer-events:none;
+}
+
+.upgrade-wrapper {
+    position:relative;
+    z-index:2;
+    width:100%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    min-height:100vh;
+    padding:30px 20px;
+}
+
+.upgrade-card {
+    width:420px;
+    max-width:95%;
+    padding:36px 32px;
+    border-radius:22px;
+    background:rgba(20,30,50,0.88);
+    backdrop-filter:blur(20px);
+    border:1px solid rgba(255,255,255,0.08);
+    box-shadow:0 25px 60px rgba(0,0,0,0.7);
+}
+
+.upgrade-header {
+    text-align:center;
+    margin-bottom:28px;
+}
+
+.upgrade-icon {
+    font-size:42px;
+    margin-bottom:12px;
+    display:block;
+    animation:bounce 1.2s ease;
+}
+
+@@keyframes bounce {
+    0% { transform:translateY(-20px); opacity:0; }
+    60% { transform:translateY(6px); }
+    100% { transform:translateY(0); opacity:1; }
+}
+
+.upgrade-header h2 {
+    color:white;
+    font-size:22px;
+    font-weight:700;
+    margin:0 0 8px;
+}
+
+.upgrade-header p {
+    color:rgba(255,255,255,0.4);
+    font-size:13px;
+    margin:0;
+    line-height:1.5;
+}
+
+.benefits {
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+    background:rgba(99,102,241,0.08);
+    border:1px solid rgba(99,102,241,0.2);
+    border-radius:12px;
+    padding:14px 16px;
+    margin-bottom:24px;
+}
+
+.benefit-item {
+    display:flex;
+    align-items:center;
+    gap:10px;
+    font-size:13px;
+    color:rgba(255,255,255,0.75);
+}
+
+.benefit-item span:first-child { font-size:16px; }
+
+.google-btn {
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:10px;
+    width:100%;
+    padding:12px;
+    background:white;
+    border-radius:10px;
+    border:none;
+    color:#3c4043;
+    font-weight:500;
+    font-size:14px;
+    text-decoration:none;
+    transition:0.2s;
+    margin-bottom:16px;
+}
+
+.google-btn img { width:18px; }
+.google-btn:hover { background:#f1f1f1; transform:scale(1.02); color:#3c4043; }
+
+.divider {
+    display:flex;
+    align-items:center;
+    margin:0 0 16px;
+    font-size:12px;
+    color:rgba(255,255,255,0.25);
+}
+
+.divider::before,
+.divider::after {
+    content:"";
+    flex:1;
+    height:1px;
+    background:rgba(255,255,255,0.1);
+    margin:0 10px;
+}
+
+.field { margin-bottom:14px; }
+
+.field label {
+    display:block;
+    font-size:12px;
+    color:rgba(255,255,255,0.5);
+    text-transform:uppercase;
+    letter-spacing:0.6px;
+    font-weight:600;
+    margin-bottom:6px;
+}
+
+.field input {
+    width:100%;
+    padding:11px 14px;
+    background:rgba(255,255,255,0.06);
+    border:1px solid rgba(255,255,255,0.1);
+    border-radius:10px;
+    color:white;
+    font-size:14px;
+    outline:none;
+    transition:0.2s;
+}
+
+.field input:focus {
+    background:rgba(255,255,255,0.09);
+    border-color:#6366f1;
+    box-shadow:0 0 0 3px rgba(99,102,241,0.15);
+}
+
+.field input::placeholder { color:rgba(255,255,255,0.2); }
+
+.btn-upgrade {
+    width:100%;
+    padding:13px;
+    border-radius:10px;
+    border:none;
+    background:linear-gradient(90deg,#6366f1,#2563eb);
+    color:white;
+    font-weight:700;
+    font-size:15px;
+    cursor:pointer;
+    transition:0.2s;
+    margin-top:6px;
+    position:relative;
+    overflow:hidden;
+}
+
+.btn-upgrade::before {
+    content:"";
+    position:absolute;
+    top:0; left:-100%;
+    width:100%; height:100%;
+    background:linear-gradient(120deg,transparent,rgba(255,255,255,0.2),transparent);
+    transition:0.5s;
+}
+
+.btn-upgrade:hover::before { left:100%; }
+.btn-upgrade:hover { transform:scale(1.02); box-shadow:0 8px 20px rgba(99,102,241,0.4); }
+
+.back-link {
+    text-align:center;
+    margin-top:18px;
+    font-size:13px;
+    color:rgba(255,255,255,0.35);
+}
+
+.back-link a {
+    color:#6366f1;
+    font-weight:600;
+    text-decoration:none;
+}
+
+.back-link a:hover { color:#818cf8; }
+
+.alert { border-radius:10px; font-size:13px; margin-bottom:16px; }
+</style>
+
+<canvas id="plexus-bg"></canvas>
+
+<div class="upgrade-wrapper">
+<div class="upgrade-card">
+
+    <div class="upgrade-header">
+        <span class="upgrade-icon">🔓</span>
+        <h2>Completa tu cuenta</h2>
+        <p>Convierte tu cuenta de invitado en una cuenta completa y desbloquea todo</p>
+    </div>
+
+    <div class="benefits">
+        <div class="benefit-item"><span>💬</span><span>Enviar y recibir mensajes</span></div>
+        <div class="benefit-item"><span>👥</span><span>Agregar amigos y seguir usuarios</span></div>
+        <div class="benefit-item"><span>📸</span><span>Publicar fotos y comentar</span></div>
+        <div class="benefit-item"><span>🔔</span><span>Recibir notificaciones en tiempo real</span></div>
+        <div class="benefit-item"><span>🏆</span><span>Guardar tu progreso para siempre</span></div>
+    </div>
+
+    <a href="/Account/GoogleLogin" class="google-btn">
+        <img src="https://developers.google.com/identity/images/g-logo.png" />
         Continuar con Google
     </a>
 
-    <div class="text-center mb-3 text-muted">o</div>
+    <div class="divider"><span>o crea con correo</span></div>
 
-    <!-- 🔥 FORMULARIO -->
     <form method="post" asp-action="UpgradeAccount">
+        @Html.AntiForgeryToken()
 
-        <div class="mb-3">
+        <div class="field">
             <label>Correo electrónico</label>
-            <input name="email" type="email" class="form-control" required />
+            <input name="email" type="email" placeholder="tu@correo.com" required />
         </div>
 
-        <div class="mb-3">
+        <div class="field">
             <label>Contraseña</label>
-            <input name="password" type="password" class="form-control" required />
+            <input name="password" type="password" placeholder="••••••••" required />
         </div>
 
-        <button class="btn btn-primary w-100">
-            🚀 Crear cuenta
+        <button type="submit" class="btn-upgrade">
+            🚀 Crear mi cuenta
         </button>
     </form>
 
+    <div class="back-link">
+        <a asp-controller="Habit" asp-action="Index">← Seguir como invitado</a>
+    </div>
+
+</div>
 </div>
 
-<style>
-    .upgrade-container {
-        max-width: 400px;
-        margin: auto;
-        padding: 25px;
-        background: #fff;
-        border-radius: 16px;
-        box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-    }
+<script>
+const canvas = document.getElementById("plexus-bg");
+const ctx = canvas.getContext("2d");
 
-    /* 🔥 botón Google estilo moderno */
-    .google-btn {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background: #fff;
-        border: 1px solid #ddd;
-        border-radius: 10px;
-        font-weight: 500;
-        padding: 10px;
-        transition: 0.2s;
-    }
+function resize() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+}
+resize();
+window.addEventListener("resize", resize);
 
-        .google-btn:hover {
-            background: #f5f5f5;
-            transform: scale(1.02);
+let pts = [];
+for (let i = 0; i < 80; i++) {
+    pts.push({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        vx: (Math.random() - 0.5) * 0.4,
+        vy: (Math.random() - 0.5) * 0.4,
+    });
+}
+
+function drawPlexus() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    for (let i = 0; i < pts.length; i++) {
+        for (let j = i + 1; j < pts.length; j++) {
+            const dx = pts[i].x - pts[j].x;
+            const dy = pts[i].y - pts[j].y;
+            const dist = Math.sqrt(dx*dx + dy*dy);
+            if (dist < 160) {
+                ctx.beginPath();
+                ctx.moveTo(pts[i].x, pts[i].y);
+                ctx.lineTo(pts[j].x, pts[j].y);
+                ctx.strokeStyle = `rgba(99,102,241,${0.2 * (1 - dist/160)})`;
+                ctx.lineWidth = 0.6;
+                ctx.stroke();
+            }
         }
-</style>
+    }
+    pts.forEach(p => {
+        p.x += p.vx; p.y += p.vy;
+        if (p.x < 0 || p.x > canvas.width) p.vx *= -1;
+        if (p.y < 0 || p.y > canvas.height) p.vy *= -1;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 1.8, 0, Math.PI * 2);
+        ctx.fillStyle = "rgba(99,102,241,0.7)";
+        ctx.fill();
+    });
+    requestAnimationFrame(drawPlexus);
+}
+drawPlexus();
+</script>
