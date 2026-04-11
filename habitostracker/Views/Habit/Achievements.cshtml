@@ -2,61 +2,277 @@
 
 @{
     ViewData["Title"] = "Logros";
-
 }
 
-<div class="container mt-5">
+<div class="achievements-page">
 
-    <div class="text-center mb-5">
-        <h2 class="fw-bold">🏆 Logros Desbloqueados</h2>
-        <p class="opacity-75">Tu disciplina está dando resultados.</p>
+    <div class="achievements-header">
+        <h2 class="achievements-title">🏆 Logros Desbloqueados</h2>
+        <p class="achievements-subtitle">Tu disciplina está dando resultados. ¡Sigue así!</p>
     </div>
 
     @if (Model == null || Model.Count == 0)
     {
-        <div class="card shadow border-0 rounded-4">
-            <div class="card-body text-center">
-                <h5 class="fw-bold">Aún no tienes logros desbloqueados</h5>
-                <p class="opacity-75">Sigue completando hábitos para desbloquear insignias 🔥</p>
+        <div class="empty-achievements">
+            <div class="empty-trophy">🏆</div>
+            <h4>Aún no tienes logros</h4>
+            <p>Completa hábitos consecutivamente para desbloquear insignias 🔥</p>
+            <div class="achievement-hints">
+                <div class="hint-item">
+                    <span class="hint-icon">🔥</span>
+                    <div>
+                        <div class="hint-title">7 días seguidos</div>
+                        <div class="hint-desc">Completa un hábito 7 días consecutivos</div>
+                    </div>
+                </div>
+                <div class="hint-item">
+                    <span class="hint-icon">💪</span>
+                    <div>
+                        <div class="hint-title">30 días seguidos</div>
+                        <div class="hint-desc">Mantén la racha durante un mes</div>
+                    </div>
+                </div>
+                <div class="hint-item">
+                    <span class="hint-icon">🧠</span>
+                    <div>
+                        <div class="hint-title">100 días seguidos</div>
+                        <div class="hint-desc">El logro definitivo de disciplina</div>
+                    </div>
+                </div>
             </div>
         </div>
     }
     else
     {
-        <div class="row">
+        <div class="achievements-stats">
+            <div class="ach-stat">
+                <span class="ach-stat-val">@Model.Count</span>
+                <span class="ach-stat-label">Logros</span>
+            </div>
+            <div class="ach-stat-divider"></div>
+            <div class="ach-stat">
+                <span class="ach-stat-val">@Model.Select(a => a.HabitName).Distinct().Count()</span>
+                <span class="ach-stat-label">Hábitos</span>
+            </div>
+            <div class="ach-stat-divider"></div>
+            <div class="ach-stat">
+                <span class="ach-stat-val">@Model.OrderByDescending(a => a.DateUnlocked).First().DateUnlocked.ToString("dd/MM")</span>
+                <span class="ach-stat-label">Último logro</span>
+            </div>
+        </div>
 
-            @foreach (var achievement in Model)
+        <div class="achievements-grid">
+            @foreach (var achievement in Model.OrderByDescending(a => a.DateUnlocked))
             {
-                <div class="col-md-4 mb-4">
-                    <div class="card shadow-sm border-0 rounded-4 h-100">
-                        <div class="card-body text-center">
+                @{
+                    string badgeIcon = "🏅";
+                    string badgeClass = "bronze";
 
-                            <div style="font-size: 40px;">
-                                🏅
-                            </div>
+                    if (achievement.Title.Contains("100"))
+                    { badgeIcon = "🧠"; badgeClass = "diamond"; }
+                    else if (achievement.Title.Contains("30"))
+                    { badgeIcon = "💪"; badgeClass = "gold"; }
+                    else if (achievement.Title.Contains("7"))
+                    { badgeIcon = "🔥"; badgeClass = "silver"; }
+                }
 
-                            <h5 class="fw-bold mt-3">
-                                @achievement.Title
-                            </h5>
-
-                            <p class="mb-1">
-                                Hábito:
-                                <span class="fw-semibold">
-                                    @achievement.HabitName
-                                </span>
-                            </p>
-
-                            <small class="opacity-75">
-                                Desbloqueado el
-                                @achievement.DateUnlocked.ToString("dd/MM/yyyy")
-                            </small>
-
+                <div class="achievement-card @badgeClass">
+                    <div class="achievement-glow"></div>
+                    <div class="achievement-icon">@badgeIcon</div>
+                    <div class="achievement-body">
+                        <h5 class="achievement-title">@achievement.Title</h5>
+                        <div class="achievement-habit">
+                            <span class="habit-dot"></span>
+                            @achievement.HabitName
+                        </div>
+                        <div class="achievement-date">
+                            🗓 Desbloqueado el @achievement.DateUnlocked.ToString("dd MMM yyyy")
                         </div>
                     </div>
+                    <div class="achievement-badge-ribbon">LOGRO</div>
                 </div>
             }
-
         </div>
     }
-
 </div>
+
+<style>
+.achievements-page { max-width: 1000px; margin: 0 auto; }
+
+.achievements-header { text-align: center; margin-bottom: 28px; }
+.achievements-title { font-size: 28px; font-weight: 800; color: #111827; margin: 0 0 8px; }
+.achievements-subtitle { font-size: 15px; color: #9ca3af; margin: 0; }
+
+/* EMPTY */
+.empty-achievements {
+    text-align: center;
+    padding: 50px 24px;
+    background: white;
+    border-radius: 24px;
+    box-shadow: 0 2px 14px rgba(0,0,0,0.06);
+    border: 1px solid rgba(0,0,0,0.04);
+}
+
+.empty-trophy { font-size: 64px; margin-bottom: 16px; opacity: 0.4; }
+.empty-achievements h4 { font-size: 20px; font-weight: 700; color: #111827; margin-bottom: 8px; }
+.empty-achievements p { font-size: 14px; color: #9ca3af; margin-bottom: 28px; }
+
+.achievement-hints {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    max-width: 380px;
+    margin: 0 auto;
+    text-align: left;
+}
+
+.hint-item {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    background: #f9fafb;
+    border: 1px solid #f3f4f6;
+    border-radius: 12px;
+    padding: 12px 16px;
+}
+
+.hint-icon { font-size: 24px; flex-shrink: 0; }
+.hint-title { font-size: 14px; font-weight: 700; color: #111827; }
+.hint-desc { font-size: 12px; color: #9ca3af; margin-top: 2px; }
+
+/* STATS */
+.achievements-stats {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 24px;
+    background: white;
+    border-radius: 16px;
+    padding: 18px 28px;
+    margin-bottom: 24px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+    border: 1px solid rgba(0,0,0,0.04);
+    width: fit-content;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.ach-stat { text-align: center; }
+.ach-stat-val { display: block; font-size: 24px; font-weight: 900; color: #111827; }
+.ach-stat-label { display: block; font-size: 11px; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; margin-top: 2px; }
+.ach-stat-divider { width: 1px; height: 36px; background: #e5e7eb; }
+
+/* GRID */
+.achievements-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 16px;
+}
+
+/* CARD */
+.achievement-card {
+    position: relative;
+    background: white;
+    border-radius: 22px;
+    padding: 28px 24px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+    border: 1px solid rgba(0,0,0,0.06);
+    overflow: hidden;
+    transition: 0.25s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 14px;
+}
+
+.achievement-card:hover { transform: translateY(-4px); box-shadow: 0 12px 30px rgba(0,0,0,0.12); }
+
+.achievement-glow {
+    position: absolute;
+    top: -30px; right: -30px;
+    width: 100px; height: 100px;
+    border-radius: 50%;
+    opacity: 0.08;
+}
+
+.achievement-card.bronze .achievement-glow { background: #d97706; }
+.achievement-card.silver .achievement-glow { background: #6366f1; }
+.achievement-card.gold .achievement-glow { background: #f59e0b; }
+.achievement-card.diamond .achievement-glow { background: #06b6d4; }
+
+.achievement-card.bronze { border-color: #fde68a; }
+.achievement-card.silver { border-color: #c7d2fe; }
+.achievement-card.gold { border-color: #fcd34d; background: linear-gradient(135deg, #fffbeb, white); }
+.achievement-card.diamond { border-color: #a5f3fc; background: linear-gradient(135deg, #ecfeff, white); }
+
+.achievement-icon {
+    font-size: 52px;
+    line-height: 1;
+    animation: iconPop 0.5s ease;
+}
+
+@@keyframes iconPop {
+    0% { transform: scale(0.5); opacity: 0; }
+    70% { transform: scale(1.1); }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+.achievement-title {
+    font-size: 16px;
+    font-weight: 800;
+    color: #111827;
+    margin: 0;
+}
+
+.achievement-habit {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: #6b7280;
+    font-weight: 500;
+}
+
+.habit-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: #2563eb;
+    flex-shrink: 0;
+}
+
+.achievement-date {
+    font-size: 12px;
+    color: #9ca3af;
+}
+
+.achievement-badge-ribbon {
+    position: absolute;
+    top: 14px; right: -8px;
+    background: #2563eb;
+    color: white;
+    font-size: 10px;
+    font-weight: 800;
+    padding: 3px 14px 3px 10px;
+    letter-spacing: 1px;
+    clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%, 8% 50%);
+}
+
+.achievement-card.gold .achievement-badge-ribbon { background: #d97706; }
+.achievement-card.diamond .achievement-badge-ribbon { background: #0891b2; }
+.achievement-card.silver .achievement-badge-ribbon { background: #6366f1; }
+
+/* DARK MODE */
+body.bg-dark .achievements-title { color: #f1f5f9 !important; }
+body.bg-dark .achievement-card,
+body.bg-dark .empty-achievements,
+body.bg-dark .achievements-stats { background: #1e1e2e !important; border-color: #2d2d3d !important; }
+body.bg-dark .achievement-card.gold { background: linear-gradient(135deg, #2d2410, #1e1e2e) !important; }
+body.bg-dark .achievement-card.diamond { background: linear-gradient(135deg, #0c2030, #1e1e2e) !important; }
+body.bg-dark .achievement-title { color: #f1f5f9 !important; }
+body.bg-dark .ach-stat-val { color: #f1f5f9 !important; }
+body.bg-dark .ach-stat-divider { background: #2d2d3d !important; }
+body.bg-dark .hint-item { background: #2d2d3d !important; border-color: #3d3d4d !important; }
+body.bg-dark .hint-title { color: #f1f5f9 !important; }
+body.bg-dark .empty-achievements h4 { color: #f1f5f9 !important; }
+</style>

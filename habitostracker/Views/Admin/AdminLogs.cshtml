@@ -1,226 +1,328 @@
 ﻿@model List<HabitTrackerApp.Models.AdminLog>
 
-<h2 class="mb-4">📜 Historial de acciones de administración</h2>
+<div class="logs-page">
 
-<!-- ESTADISTICAS -->
-<div class="row mb-4">
+    <div class="logs-header">
+        <h2 class="logs-title">📜 Historial de administración</h2>
+        <p class="logs-subtitle">Registro de todas las acciones realizadas por administradores</p>
+    </div>
 
-    <div class="col-md-3">
-        <div class="card shadow-sm text-center">
-            <div class="card-body">
-                <h5>🚫 Baneos</h5>
-                <h3>@Model.Count(x => x.Action.Contains("Banear"))</h3>
-            </div>
+    <!-- STATS -->
+    <div class="logs-stats">
+        <div class="log-stat red">
+            <div class="log-stat-icon">🚫</div>
+            <div class="log-stat-value">@Model.Count(x => x.Action.Contains("Banear"))</div>
+            <div class="log-stat-label">Baneos</div>
+        </div>
+        <div class="log-stat green">
+            <div class="log-stat-icon">🔓</div>
+            <div class="log-stat-value">@Model.Count(x => x.Action.Contains("Reactivar"))</div>
+            <div class="log-stat-label">Reactivados</div>
+        </div>
+        <div class="log-stat yellow">
+            <div class="log-stat-icon">⚠️</div>
+            <div class="log-stat-value">@Model.Count(x => x.Action.Contains("Desactivar"))</div>
+            <div class="log-stat-label">Desactivados</div>
+        </div>
+        <div class="log-stat blue">
+            <div class="log-stat-icon">👑</div>
+            <div class="log-stat-value">@Model.Count(x => x.Action.Contains("administrador"))</div>
+            <div class="log-stat-label">Admins creados</div>
         </div>
     </div>
 
-    <div class="col-md-3">
-        <div class="card shadow-sm text-center">
-            <div class="card-body">
-                <h5>🔓 Reactivados</h5>
-                <h3>@Model.Count(x => x.Action.Contains("Reactivar"))</h3>
-            </div>
-        </div>
+    <!-- BUSCADOR -->
+    <div class="logs-search-wrap">
+        <span class="search-icon">🔍</span>
+        <input type="text"
+               id="logSearch"
+               class="logs-search"
+               placeholder="Buscar administrador, acción o usuario..." />
     </div>
 
-    <div class="col-md-3">
-        <div class="card shadow-sm text-center">
-            <div class="card-body">
-                <h5>⚠ Desactivados</h5>
-                <h3>@Model.Count(x => x.Action.Contains("Desactivar"))</h3>
+    <!-- TABLA -->
+    <div class="logs-table-wrap">
+        @if (!Model.Any())
+        {
+            <div class="empty-state">
+                <div class="empty-icon">📜</div>
+                <h5>Sin registros</h5>
+                <p>No hay acciones registradas aún.</p>
             </div>
-        </div>
-    </div>
+        }
+        else
+        {
+            <table class="logs-table" id="adminLogsTable">
+                <thead>
+                    <tr>
+                        <th>Administrador</th>
+                        <th>Acción</th>
+                        <th>Usuario afectado</th>
+                        <th>Fecha</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var log in Model)
+                    {
+                        <tr class="logRow">
+                            <td>
+                                <div class="user-cell">
+                                    @{
+                                        var profileImage = log.AdminProfileImage;
+                                        if (string.IsNullOrEmpty(profileImage))
+                                        {
+                                            var allUsers = ViewBag.Users as List<HabitTrackerApp.Models.User>;
+                                            var admin = allUsers?.FirstOrDefault(u => u.Id == log.AdminId);
+                                            profileImage = admin?.ProfileImage ?? admin?.ProfilePicture;
+                                        }
+                                    }
+                                    @if (!string.IsNullOrEmpty(profileImage))
+                                    {
+                                        <img src="@profileImage" class="log-avatar" />
+                                    }
+                                    else
+                                    {
+                                        <div class="log-avatar-letter" style="background:#2563eb;">
+                                            @log.AdminName.Substring(0,1).ToUpper()
+                                        </div>
+                                    }
+                                    <span class="log-username">@log.AdminName</span>
+                                </div>
+                            </td>
 
-    <div class="col-md-3">
-        <div class="card shadow-sm text-center">
-            <div class="card-body">
-                <h5>👑 Admins creados</h5>
-                <h3>@Model.Count(x => x.Action.Contains("administrador"))</h3>
-            </div>
-        </div>
-    </div>
+                            <td>
+                                @if (log.Action.Contains("Banear"))
+                                {
+                                    <span class="action-badge danger">🚫 @log.Action</span>
+                                }
+                                else if (log.Action.Contains("Reactivar"))
+                                {
+                                    <span class="action-badge success">🔓 @log.Action</span>
+                                }
+                                else if (log.Action.Contains("Desactivar"))
+                                {
+                                    <span class="action-badge warning">⚠️ @log.Action</span>
+                                }
+                                else if (log.Action.Contains("administrador"))
+                                {
+                                    <span class="action-badge primary">👑 @log.Action</span>
+                                }
+                                else
+                                {
+                                    <span class="action-badge neutral">@log.Action</span>
+                                }
+                            </td>
 
+                            <td>
+                                <div class="user-cell">
+                                    @{
+                                        var users = ViewBag.Users as List<HabitTrackerApp.Models.User>;
+                                        var targetUser = users?.FirstOrDefault(u => u.Id == log.TargetUserId);
+                                        var targetImg = targetUser?.ProfileImage ?? targetUser?.ProfilePicture;
+                                    }
+                                    @if (!string.IsNullOrEmpty(targetImg))
+                                    {
+                                        <img src="@targetImg" class="log-avatar" />
+                                    }
+                                    else
+                                    {
+                                        <div class="log-avatar-letter" style="background:#64748b;">
+                                            @log.TargetUsername.Substring(0,1).ToUpper()
+                                        </div>
+                                    }
+                                    <span class="log-username">@log.TargetUsername</span>
+                                </div>
+                            </td>
+
+                            <td>
+                                @{
+                                    var diff = DateTime.Now - log.CreatedAt;
+                                }
+                                <span class="log-time">
+                                    @if (diff.TotalMinutes < 1)
+                                    { <text>Hace unos segundos</text> }
+                                    else if (diff.TotalMinutes < 60)
+                                    { <text>Hace @((int)Math.Floor(diff.TotalMinutes)) min</text> }
+                                    else if (diff.TotalHours < 24)
+                                    { <text>Hace @((int)Math.Floor(diff.TotalHours)) horas</text> }
+                                    else
+                                    { @log.CreatedAt.ToString("dd/MM/yyyy HH:mm") }
+                                </span>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    </div>
 </div>
 
-
-<input type="text"
-       id="logSearch"
-       class="form-control mb-3"
-       placeholder="🔍 Buscar administrador, acción o usuario...">
-
-
-<table class="table table-hover shadow-sm" id="adminLogsTable">
-
-    <thead class="table-dark">
-        <tr>
-            <th>Administrador</th>
-            <th>Acción</th>
-            <th>Usuario afectado</th>
-            <th>Fecha</th>
-        </tr>
-    </thead>
-
-    <tbody>
-
-        @foreach (var log in Model)
-        {
-
-            <tr class="logRow">
-
-                <td>
-
-                    <div style="display:flex;align-items:center;gap:10px">
-
-                        @{
-                            var profileImage = log.AdminProfileImage;
-
-                            if (string.IsNullOrEmpty(profileImage))
-                            {
-                                var allUsers = ViewBag.Users as List<HabitTrackerApp.Models.User>;
-                                var admin = allUsers?.FirstOrDefault(u => u.Id == log.AdminId);
-                                profileImage = admin?.ProfileImage;
-                            }
-                        }
-
-                        @if (!string.IsNullOrEmpty(profileImage))
-                        {
-                            <img src="@profileImage"
-                                 width="35"
-                                 height="35"
-                                 style="border-radius:50%">
-                        }
-                        else
-                        {
-                            <div style="width:35px;height:35px;border-radius:50%;background:#2563eb;color:white;
-                                display:flex;align-items:center;justify-content:center;font-weight:bold;">
-                                @log.AdminName.Substring(0, 1).ToUpper()
-                            </div>
-                        }
-
-                        <strong>@log.AdminName</strong>
-
-                    </div>
-
-                </td>
-
-
-                <td>
-
-                    @if (log.Action.Contains("Banear"))
-                    {
-                        <span class="badge bg-danger">🚫 @log.Action</span>
-                    }
-                    else if (log.Action.Contains("Reactivar"))
-                    {
-                        <span class="badge bg-success">🔓 @log.Action</span>
-                    }
-                    else if (log.Action.Contains("Desactivar"))
-                    {
-                        <span class="badge bg-warning text-dark">⚠ @log.Action</span>
-                    }
-                    else if (log.Action.Contains("administrador"))
-                    {
-                        <span class="badge bg-primary">👑 @log.Action</span>
-                    }
-                    else
-                    {
-                        <span class="badge bg-secondary">@log.Action</span>
-                    }
-
-                </td>
-
-
-                <td>
-
-                    <div style="display:flex;align-items:center;gap:10px">
-
-                        @{
-                            var users = ViewBag.Users as List<HabitTrackerApp.Models.User>;
-                            var targetUser = users?.FirstOrDefault(u => u.Id == log.TargetUserId);
-                        }
-
-                        @if (!string.IsNullOrEmpty(targetUser?.ProfileImage))
-                        {
-                            <img src="@targetUser.ProfileImage"
-                                 width="35"
-                                 height="35"
-                                 style="border-radius:50%">
-                        }
-                        else
-                        {
-                            <div style="width:35px;height:35px;border-radius:50%;background:#64748b;color:white;
-                                display:flex;align-items:center;justify-content:center;font-weight:bold;">
-                                @log.TargetUsername.Substring(0, 1).ToUpper()
-                            </div>
-                        }
-
-                        <strong>@log.TargetUsername</strong>
-
-                    </div>
-
-                </td>
-
-                <td>
-
-                    @{
-                        var diff = DateTime.Now - log.CreatedAt;
-                    }
-
-                    @if (diff.TotalMinutes < 1)
-                    {
-                        <span class="text-success">Hace unos segundos</span>
-                    }
-                    else if (diff.TotalMinutes < 60)
-                    {
-                        <span>Hace @(Math.Floor(diff.TotalMinutes)) min</span>
-                    }
-                    else if (diff.TotalHours < 24)
-                    {
-                        <span>Hace @(Math.Floor(diff.TotalHours)) horas</span>
-                    }
-                    else
-                    {
-                        <span>@log.CreatedAt.ToString("dd/MM/yyyy HH:mm")</span>
-                    }
-
-                </td>
-
-            </tr>
-
-        }
-
-    </tbody>
-
-</table>
-
-
 <style>
+.logs-page { max-width: 1100px; margin: 0 auto; }
 
-    .logRow:hover {
-        background: #f1f5f9;
-        transform: scale(1.01);
-        transition: 0.15s;
-    }
+.logs-header { margin-bottom: 24px; }
+.logs-title { font-size: 24px; font-weight: 800; color: #111827; margin: 0 0 4px; }
+.logs-subtitle { font-size: 14px; color: #9ca3af; margin: 0; }
+
+.logs-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 14px;
+    margin-bottom: 20px;
+}
+
+.log-stat {
+    background: white;
+    border-radius: 18px;
+    padding: 20px 16px;
+    text-align: center;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+    border: 1px solid rgba(0,0,0,0.04);
+    transition: 0.2s;
+}
+
+.log-stat:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.1); }
+
+.log-stat-icon { font-size: 24px; margin-bottom: 8px; }
+.log-stat-value { font-size: 32px; font-weight: 900; line-height: 1; margin-bottom: 4px; }
+.log-stat-label { font-size: 12px; color: #9ca3af; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+
+.log-stat.red .log-stat-value { color: #dc2626; }
+.log-stat.green .log-stat-value { color: #16a34a; }
+.log-stat.yellow .log-stat-value { color: #d97706; }
+.log-stat.blue .log-stat-value { color: #2563eb; }
+
+.logs-search-wrap {
+    position: relative;
+    margin-bottom: 16px;
+}
+
+.search-icon {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 16px;
+}
+
+.logs-search {
+    width: 100%;
+    padding: 12px 16px 12px 44px;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    font-size: 14px;
+    outline: none;
+    transition: 0.2s;
+    background: white;
+    color: #111827;
+}
+
+.logs-search:focus {
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
+}
+
+.logs-table-wrap {
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    border: 1px solid rgba(0,0,0,0.04);
+    overflow-x: auto;
+}
+
+.logs-table { width: 100%; border-collapse: collapse; }
+
+.logs-table thead th {
+    font-size: 11px;
+    font-weight: 700;
+    color: #9ca3af;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    padding: 16px 16px 14px;
+    border-bottom: 1px solid #f3f4f6;
+    white-space: nowrap;
+}
+
+.logRow { transition: background 0.15s; }
+.logRow:hover { background: #f9fafb; }
+
+.logs-table td {
+    padding: 14px 16px;
+    font-size: 14px;
+    border-bottom: 1px solid #f9fafb;
+    vertical-align: middle;
+}
+
+.user-cell { display: flex; align-items: center; gap: 10px; }
+
+.log-avatar {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #e5e7eb;
+    flex-shrink: 0;
+}
+
+.log-avatar-letter {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 14px;
+    flex-shrink: 0;
+}
+
+.log-username { font-weight: 600; color: #111827; }
+
+.action-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.action-badge.danger { background: #fee2e2; color: #dc2626; }
+.action-badge.success { background: #dcfce7; color: #16a34a; }
+.action-badge.warning { background: #fef3c7; color: #d97706; }
+.action-badge.primary { background: #eff6ff; color: #2563eb; }
+.action-badge.neutral { background: #f3f4f6; color: #6b7280; }
+
+.log-time { font-size: 12px; color: #9ca3af; white-space: nowrap; }
+
+.empty-state {
+    text-align: center;
+    padding: 60px 20px;
+}
+
+.empty-icon { font-size: 48px; margin-bottom: 14px; }
+.empty-state h5 { font-size: 18px; font-weight: 700; color: #111827; margin-bottom: 8px; }
+.empty-state p { font-size: 14px; color: #9ca3af; margin: 0; }
+
+/* DARK MODE */
+body.bg-dark .logs-title { color: #f1f5f9 !important; }
+body.bg-dark .log-stat,
+body.bg-dark .logs-table-wrap { background: #1e1e2e !important; border-color: #2d2d3d !important; }
+body.bg-dark .logs-search { background: #1e1e2e !important; border-color: #2d2d3d !important; color: #f1f5f9 !important; }
+body.bg-dark .logs-search::placeholder { color: #64748b !important; }
+body.bg-dark .logs-table thead th { color: #64748b !important; border-color: #2d2d3d !important; }
+body.bg-dark .logs-table td { border-color: #2d2d3d !important; }
+body.bg-dark .logRow:hover { background: #2d2d3d !important; }
+body.bg-dark .log-username { color: #f1f5f9 !important; }
+body.bg-dark .log-stat-label { color: #64748b !important; }
+body.bg-dark .empty-state h5 { color: #f1f5f9 !important; }
 </style>
 
-
 <script>
-
-    document.getElementById("logSearch").addEventListener("keyup",function(){
-
-    const value=this.value.toLowerCase();
-
-    const rows=document.querySelectorAll("#adminLogsTable tbody tr");
-
-    rows.forEach(row=>{
-
-    const text=row.innerText.toLowerCase();
-
-    row.style.display=text.includes(value)?"":"none";
-
+document.getElementById("logSearch").addEventListener("keyup", function() {
+    const value = this.value.toLowerCase();
+    document.querySelectorAll("#adminLogsTable tbody tr").forEach(row => {
+        row.style.display = row.innerText.toLowerCase().includes(value) ? "" : "none";
     });
-
-    });
-
+});
 </script>

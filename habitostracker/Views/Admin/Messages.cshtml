@@ -1,140 +1,261 @@
 ﻿@model List<HabitTrackerApp.Models.Message>
 
-<h2 class="mb-4 fw-bold">💬 Panel de mensajes</h2>
+<div class="messages-page">
 
-<table class="table table-hover align-middle shadow-sm">
-    <thead class="table-dark">
-        <tr>
-            <th>De</th>
-            <th>Para</th>
-            <th>Mensaje</th>
-            <th>Estado</th>
-            <th>Fecha</th>
-            <th></th>
-        </tr>
-    </thead>
+    <div class="messages-header">
+        <h2 class="messages-title">💬 Panel de mensajes</h2>
+        <p class="messages-subtitle">Historial de conversaciones entre usuarios</p>
+    </div>
 
-    <tbody>
-
-        @foreach (var msg in Model)
-        {
-            <tr>
-
-                <td>
-                    <div class="d-flex align-items-center gap-2">
-
-                        @if (msg.Sender != null && !string.IsNullOrEmpty(msg.Sender.ProfileImage))
-                        {
-                            <img src="@msg.Sender.ProfileImage"
-                                 width="35"
-                                 height="35"
-                                 style="border-radius:50%;object-fit:cover;">
-                        }
-                        else
-                        {
-                            <div class="avatar-circle">
-                                @(msg.Sender != null
-                                ? msg.Sender.Username.Substring(0, 1).ToUpper()
-                                : "X")
-                            </div>
-                        }
-
-                        <strong>
-                            @(msg.Sender != null
-                            ? msg.Sender.Username
-                            : "Cuenta eliminada")
-                        </strong>
-
-                    </div>
-                </td>
-
-                <td>
-                    <div class="d-flex align-items-center gap-2">
-
-                        @if (msg.Receiver != null && !string.IsNullOrEmpty(msg.Receiver.ProfileImage))
-                        {
-                            <img src="@msg.Receiver.ProfileImage"
-                                 width="35"
-                                 height="35"
-                                 style="border-radius:50%;object-fit:cover;">
-                        }
-                        else
-                        {
-                            <div class="avatar-circle">
-                                @(msg.Receiver != null
-                                ? msg.Receiver.Username.Substring(0, 1).ToUpper()
-                                : "X")
-                            </div>
-                        }
-
-                        <strong>
-                            @(msg.Receiver != null
-                            ? msg.Receiver.Username
-                            : "Cuenta eliminada")
-                        </strong>
-
-                    </div>
-                </td>
-
-                <td style="max-width:250px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
-                    @msg.Content
-                </td>
-
-                <td>
-
-                    @if (msg.IsRead)
+    @if (!Model.Any())
+    {
+        <div class="empty-state">
+            <div class="empty-icon">💬</div>
+            <h5>No hay mensajes</h5>
+            <p>Aún no se han enviado mensajes en la plataforma.</p>
+        </div>
+    }
+    else
+    {
+        <div class="messages-table-wrap">
+            <table class="messages-table">
+                <thead>
+                    <tr>
+                        <th>De</th>
+                        <th>Para</th>
+                        <th>Mensaje</th>
+                        <th>Estado</th>
+                        <th>Fecha</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var msg in Model)
                     {
-                        <span class="badge bg-success">
-                            ✔ Visto
-                        </span>
+                        <tr>
+                            <td>
+                                <div class="user-cell">
+                                    @if (msg.Sender != null && !string.IsNullOrEmpty(msg.Sender.ProfileImage))
+                                    {
+                                        <img src="@msg.Sender.ProfileImage" class="user-avatar" />
+                                    }
+                                    else
+                                    {
+                                        <div class="avatar-letter" style="background:#2563eb;">
+                                            @(msg.Sender != null ? msg.Sender.Username.Substring(0,1).ToUpper() : "X")
+                                        </div>
+                                    }
+                                    <span class="user-name">
+                                        @(msg.Sender != null ? msg.Sender.Username : "Cuenta eliminada")
+                                    </span>
+                                </div>
+                            </td>
+
+                            <td>
+                                <div class="user-cell">
+                                    @if (msg.Receiver != null && !string.IsNullOrEmpty(msg.Receiver.ProfileImage))
+                                    {
+                                        <img src="@msg.Receiver.ProfileImage" class="user-avatar" />
+                                    }
+                                    else
+                                    {
+                                        <div class="avatar-letter" style="background:#7c3aed;">
+                                            @(msg.Receiver != null ? msg.Receiver.Username.Substring(0,1).ToUpper() : "X")
+                                        </div>
+                                    }
+                                    <span class="user-name">
+                                        @(msg.Receiver != null ? msg.Receiver.Username : "Cuenta eliminada")
+                                    </span>
+                                </div>
+                            </td>
+
+                            <td>
+                                <span class="msg-content">@msg.Content</span>
+                            </td>
+
+                            <td>
+                                @if (msg.IsRead)
+                                {
+                                    <span class="status-badge read">✔ Visto</span>
+                                }
+                                else
+                                {
+                                    <span class="status-badge unread">📩 No visto</span>
+                                }
+                            </td>
+
+                            <td>
+                                <span class="msg-date">@msg.SentAt.ToString("dd/MM/yyyy HH:mm")</span>
+                            </td>
+
+                            <td>
+                                @if (msg.SenderId != null && msg.ReceiverId != null)
+                                {
+                                    <a class="btn-chat"
+                                       asp-controller="Admin"
+                                       asp-action="Conversation"
+                                       asp-route-user1="@msg.SenderId"
+                                       asp-route-user2="@msg.ReceiverId">
+                                        💬 Ver chat
+                                    </a>
+                                }
+                            </td>
+                        </tr>
                     }
-                    else
-                    {
-                        <span class="badge bg-warning text-dark">
-                            📩 No visto
-                        </span>
-                    }
-
-                </td>
-
-                <td>
-                    @msg.SentAt.ToString("dd/MM/yyyy HH:mm")
-                </td>
-
-                <td>
-
-                    @if (msg.SenderId != null && msg.ReceiverId != null)
-                    {
-                        <a class="btn btn-sm btn-outline-primary"
-                               asp-controller="Admin"
-                               asp-action="Conversation"
-                               asp-route-user1="@msg.SenderId"
-                               asp-route-user2="@msg.ReceiverId">
-
-                            💬 Ver chat
-
-                        </a>
-                    }
-
-                </td>
-
-            </tr>
-        }
-
-    </tbody>
-</table>
+                </tbody>
+            </table>
+        </div>
+    }
+</div>
 
 <style>
+.messages-page { max-width: 1100px; margin: 0 auto; }
 
-    .avatar-circle {
-        width: 35px;
-        height: 35px;
-        border-radius: 50%;
-        background: #2563eb;
-        color: white;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-weight: bold;
-    }
+.messages-header { margin-bottom: 24px; }
+.messages-title { font-size: 24px; font-weight: 800; color: #111827; margin: 0 0 4px; }
+.messages-subtitle { font-size: 14px; color: #9ca3af; margin: 0; }
+
+.empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    border: 1px solid rgba(0,0,0,0.04);
+}
+
+.empty-icon { font-size: 52px; margin-bottom: 16px; }
+.empty-state h5 { font-size: 20px; font-weight: 700; color: #111827; margin-bottom: 8px; }
+.empty-state p { font-size: 14px; color: #9ca3af; margin: 0; }
+
+.messages-table-wrap {
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    border: 1px solid rgba(0,0,0,0.04);
+    overflow-x: auto;
+}
+
+.messages-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.messages-table thead th {
+    font-size: 11px;
+    font-weight: 700;
+    color: #9ca3af;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    padding: 16px 16px 14px;
+    border-bottom: 1px solid #f3f4f6;
+    white-space: nowrap;
+}
+
+.messages-table tbody tr {
+    transition: background 0.15s;
+}
+
+.messages-table tbody tr:hover { background: #f9fafb; }
+
+.messages-table td {
+    padding: 14px 16px;
+    font-size: 14px;
+    border-bottom: 1px solid #f9fafb;
+    vertical-align: middle;
+}
+
+.user-cell {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.user-avatar {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #e5e7eb;
+    flex-shrink: 0;
+}
+
+.avatar-letter {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 14px;
+    flex-shrink: 0;
+}
+
+.user-name {
+    font-weight: 600;
+    color: #111827;
+    white-space: nowrap;
+}
+
+.msg-content {
+    display: block;
+    max-width: 220px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: #4b5563;
+    font-size: 13px;
+}
+
+.msg-date {
+    font-size: 12px;
+    color: #9ca3af;
+    white-space: nowrap;
+}
+
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.status-badge.read { background: #dcfce7; color: #16a34a; }
+.status-badge.unread { background: #fef3c7; color: #d97706; }
+
+.btn-chat {
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 14px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    text-decoration: none;
+    background: #eff6ff;
+    color: #2563eb;
+    transition: 0.2s;
+    white-space: nowrap;
+}
+
+.btn-chat:hover { background: #2563eb; color: white; }
+
+/* DARK MODE */
+body.bg-dark .messages-title { color: #f1f5f9 !important; }
+body.bg-dark .messages-table-wrap,
+body.bg-dark .empty-state {
+    background: #1e1e2e !important;
+    border-color: #2d2d3d !important;
+}
+body.bg-dark .messages-table thead th { color: #64748b !important; border-color: #2d2d3d !important; }
+body.bg-dark .messages-table td { border-color: #2d2d3d !important; }
+body.bg-dark .messages-table tbody tr:hover { background: #2d2d3d !important; }
+body.bg-dark .user-name { color: #f1f5f9 !important; }
+body.bg-dark .msg-content { color: #94a3b8 !important; }
+body.bg-dark .msg-date { color: #64748b !important; }
+body.bg-dark .empty-state h5 { color: #f1f5f9 !important; }
+body.bg-dark .btn-chat { background: #1e3a5f !important; color: #60a5fa !important; }
+body.bg-dark .btn-chat:hover { background: #2563eb !important; color: white !important; }
 </style>
