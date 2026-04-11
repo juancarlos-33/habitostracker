@@ -5,155 +5,136 @@
 }
 
 <style>
-    /* VARIABLES DINÁMICAS: Se adaptan al fondo */
+    /* VARIABLES REFORZADAS PARA MODO OSCURO */
     :root {
-        --history-card-bg: #ffffff;
-        --history-text-main: #212529;
-        --history-text-muted: #6c757d;
-        --history-border: rgba(0,0,0,0.08);
-        --history-filter-bg: #f8f9fa;
+        --hist-bg-card: #ffffff;
+        --hist-bg-filter: #f8f9fa;
+        --hist-text: #212529;
+        --hist-text-muted: #6c757d;
+        --hist-border: rgba(0,0,0,0.1);
     }
 
-    /* Si el body tiene una clase de modo oscuro o detecta fondo oscuro */
-    [data-bs-theme="dark"], .dark-mode, body.dark {
-        --history-card-bg: #1e2125; /* Un gris muy oscuro, no negro puro */
-        --history-text-main: #f8f9fa;
-        --history-text-muted: #adb5bd;
-        --history-border: rgba(255,255,255,0.1);
-        --history-filter-bg: #2b3035;
+    /* Forzamos el modo oscuro basado en lo que veo en tu captura */
+    [data-bs-theme="dark"], .dark-mode, body {
+        --hist-bg-card: #212529; /* Color similar al de tu barra de navegación */
+        --hist-bg-filter: #2c3034;
+        --hist-text: #f8f9fa;
+        --hist-text-muted: #adb5bd;
+        --hist-border: rgba(255,255,255,0.1);
     }
 
-    .history-container {
-        color: var(--history-text-main);
+    .history-main-container {
+        color: var(--hist-text);
     }
 
-    .filter-section {
-        background: var(--history-filter-bg);
-        border: 1px solid var(--history-border);
-        padding: 24px;
-        border-radius: 16px;
-        transition: all 0.3s ease;
+    /* Filtros con fondo condicional */
+    .filter-box {
+        background-color: var(--hist-bg-filter) !important;
+        border: 1px solid var(--hist-border);
+        border-radius: 12px;
+        padding: 20px;
     }
 
-    .main-card {
-        background: var(--history-card-bg);
-        border: 1px solid var(--history-border);
-        border-radius: 16px;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+    /* La tarjeta de la tabla */
+    .table-card {
+        background-color: var(--hist-bg-card) !important;
+        border: 1px solid var(--hist-border);
+        border-radius: 12px;
         overflow: hidden;
     }
 
-    /* Estilo de la tabla adaptable */
     .table {
-        color: var(--history-text-main) !important;
+        color: var(--hist-text) !important;
         margin-bottom: 0;
     }
 
         .table thead th {
-            background: var(--history-filter-bg);
-            color: var(--history-text-muted);
-            border-bottom: 1px solid var(--history-border);
-            text-transform: uppercase;
+            background-color: rgba(0,0,0,0.05);
+            color: var(--hist-text-muted);
+            border-bottom: 1px solid var(--hist-border);
             font-size: 0.75rem;
-            letter-spacing: 1px;
-            padding: 15px 20px;
+            text-transform: uppercase;
+            padding: 15px;
         }
 
+        /* Evitar que el fondo blanco de Bootstrap se filtre */
         .table td {
-            padding: 18px 20px;
-            border-bottom: 1px solid var(--history-border);
-            background: transparent !important;
+            background-color: transparent !important;
+            border-bottom: 1px solid var(--hist-border);
+            padding: 15px;
         }
 
-    /* Badges Modernos con Neumorfismo sutil */
-    .badge-pill-custom {
-        padding: 6px 14px;
+    /* Badges con mejor contraste para modo oscuro */
+    .status-badge {
+        padding: 6px 12px;
         border-radius: 50px;
         font-weight: 600;
         font-size: 0.8rem;
         display: inline-flex;
         align-items: center;
-        gap: 6px;
+        gap: 5px;
     }
 
-    .status-completed {
-        background: rgba(25, 135, 84, 0.15);
-        color: #4cd137;
-        border: 1px solid rgba(76, 209, 55, 0.3);
+    .status-ok {
+        background: rgba(40, 167, 69, 0.2);
+        color: #4ade80; /* Verde más brillante para lectura en oscuro */
+        border: 1px solid rgba(40, 167, 69, 0.3);
     }
 
-    .status-failed {
-        background: rgba(220, 53, 69, 0.15);
-        color: #ff7675;
-        border: 1px solid rgba(255, 118, 117, 0.3);
+    .status-ko {
+        background: rgba(220, 53, 69, 0.2);
+        color: #ff8787; /* Rojo más suave */
+        border: 1px solid rgba(220, 53, 69, 0.3);
     }
 
-    .habit-name {
-        font-size: 1.05rem;
-        letter-spacing: -0.3px;
-    }
-
-    /* Animación al pasar el mouse */
-    .table tbody tr:hover {
-        background-color: rgba(120, 120, 120, 0.05) !important;
+    /* Estilo para el input date en modo oscuro */
+    input[type="date"] {
+        color-scheme: dark;
+        background-color: rgba(255,255,255,0.05) !important;
+        color: var(--hist-text) !important;
+        border: 1px solid var(--hist-border) !important;
     }
 </style>
 
-<div class="container py-5 history-container">
-    <div class="row mb-5">
-        <div class="col-lg-8">
-            <h1 class="display-6 fw-bold mb-2">📅 Historial de Hábitos</h1>
-            <p class="opacity-75 fs-5">Tu constancia es la clave del éxito. Aquí tienes tu progreso detallado.</p>
-        </div>
+<div class="container py-4 history-main-container">
+    <div class="mb-4">
+        <h2 class="fw-bold"><i class="bi bi-journal-text me-2"></i>Historial de Hábitos</h2>
+        <p class="text-muted">Visualiza tu progreso diario y mantén tu racha.</p>
     </div>
 
-    <div class="filter-section mb-5">
+    <div class="filter-box mb-4 shadow-sm">
         <form method="get" class="row g-3 align-items-end">
             <div class="col-md-4">
-                <label class="form-label small fw-bold text-uppercase opacity-75">Seleccionar Fecha</label>
-                <div class="input-group">
-                    <span class="input-group-text bg-transparent border-end-0"><i class="bi bi-calendar-event"></i></span>
-                    <input type="date"
-                           name="date"
-                           class="form-control bg-transparent border-start-0 text-reset"
-                           style="color-scheme: dark;"
-                           value="@(ViewBag.SelectedDate != null ? ((DateTime)ViewBag.SelectedDate).ToString("yyyy-MM-dd") : "")" />
-                </div>
+                <label class="form-label small fw-bold text-uppercase opacity-75">Filtrar por fecha</label>
+                <input type="date" name="date" class="form-control"
+                       value="@(ViewBag.SelectedDate != null ? ((DateTime)ViewBag.SelectedDate).ToString("yyyy-MM-dd") : "")" />
             </div>
-
             <div class="col-md-auto">
-                <button type="submit" class="btn btn-primary px-4 rounded-3 fw-bold">
-                    <i class="bi bi-filter me-2"></i>Aplicar Filtro
+                <button type="submit" class="btn btn-primary px-4 fw-bold">
+                    <i class="bi bi-funnel me-1"></i> Aplicar Filtro
                 </button>
-                <a asp-action="History" class="btn btn-link text-decoration-none text-muted fw-medium">
-                    Limpiar Filtros
-                </a>
+                <a asp-action="History" class="btn btn-outline-secondary ms-2">Limpiar</a>
             </div>
         </form>
     </div>
 
     @if (Model == null || Model.Count == 0)
     {
-        <div class="main-card py-5 text-center">
-            <div class="py-4">
-                <div class="mb-3">
-                    <i class="bi bi-search-heart text-muted" style="font-size: 4rem; opacity: 0.3;"></i>
-                </div>
-                <h4 class="fw-bold">No hay registros hoy</h4>
-                <p class="text-muted">Parece que no hay actividad registrada para esta fecha.</p>
-            </div>
+        <div class="table-card p-5 text-center">
+            <i class="bi bi-calendar-x text-muted mb-3" style="font-size: 3rem;"></i>
+            <h5 class="text-muted">No se encontraron registros para esta fecha</h5>
         </div>
     }
     else
     {
-        <div class="main-card shadow-lg">
+        <div class="table-card shadow">
             <div class="table-responsive">
                 <table class="table align-middle">
                     <thead>
                         <tr>
                             <th>Día y Fecha</th>
-                            <th>Nombre del Hábito</th>
-                            <th class="text-center">Estado de Cumplimiento</th>
+                            <th>Hábito</th>
+                            <th class="text-center">Estado</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -162,31 +143,27 @@
                             <tr>
                                 <td>
                                     <div class="d-flex align-items-center">
-                                        <div class="bg-primary bg-opacity-10 text-primary rounded-3 p-2 me-3 d-none d-sm-block">
-                                            <i class="bi bi-calendar3"></i>
+                                        <div class="p-2 rounded bg-primary bg-opacity-10 me-3">
+                                            <i class="bi bi-calendar3 text-primary"></i>
                                         </div>
                                         <div>
                                             <div class="fw-bold">@item.Date.ToString("dd MMM, yyyy")</div>
-                                            <div class="small text-muted text-uppercase" style="font-size: 0.65rem;">@item.Date.ToString("dddd")</div>
+                                            <div class="small text-muted text-uppercase" style="font-size: 0.6rem;">@item.Date.ToString("dddd")</div>
                                         </div>
                                     </div>
                                 </td>
-
-                                <td>
-                                    <span class="habit-name fw-semibold">@item.HabitName</span>
-                                </td>
-
+                                <td class="fw-semibold">@item.HabitName</td>
                                 <td class="text-center">
                                     @if (item.Completed)
                                     {
-                                        <div class="badge-pill-custom status-completed">
-                                            <i class="bi bi-check2-circle"></i> Completado
+                                        <div class="status-badge status-ok">
+                                            <i class="bi bi-check-circle-fill"></i> Completado
                                         </div>
                                     }
                                     else
                                     {
-                                        <div class="badge-pill-custom status-failed">
-                                            <i class="bi bi-exclamation-triangle"></i> Fallado
+                                        <div class="status-badge status-ko">
+                                            <i class="bi bi-x-circle-fill"></i> Fallado
                                         </div>
                                     }
                                 </td>
@@ -197,10 +174,10 @@
             </div>
         </div>
         
-        <div class="d-flex justify-content-between align-items-center mt-4 px-2">
-            <span class="small text-muted">Total de registros: <strong>@Model.Count</strong></span>
-            <button class="btn btn-sm btn-outline-secondary rounded-pill px-3" onclick="window.print()">
-                <i class="bi bi-printer me-1"></i> Imprimir Reporte
+        <div class="mt-3 d-flex justify-content-between align-items-center opacity-75">
+            <small>Total: @Model.Count registros</small>
+            <button class="btn btn-sm btn-dark border-secondary rounded-pill px-3" onclick="window.print()">
+                <i class="bi bi-printer me-1"></i> Imprimir
             </button>
         </div>
     }
