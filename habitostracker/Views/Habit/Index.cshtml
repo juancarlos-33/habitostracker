@@ -567,7 +567,33 @@
 
 @@media (max-width: 768px) {
     .kpi-grid { grid-template-columns: repeat(2, 1fr); }
-    .welcome-right { display: none; }
+    
+    .welcome-card {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+    
+    .welcome-right {
+        width: 100%;
+        justify-content: space-between;
+    }
+    
+    .welcome-stats {
+        flex: 1;
+        gap: 10px;
+        padding: 10px 14px;
+    }
+    
+    .ws-val { font-size: 16px; }
+    .ws-label { font-size: 9px; }
+    
+    .welcome-weather {
+        padding: 10px 12px;
+    }
+    
+    .ww-temp { font-size: 15px; }
+    .ww-icon { font-size: 22px; }
 }
 
 .kpi-card {
