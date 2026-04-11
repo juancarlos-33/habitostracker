@@ -5,165 +5,175 @@
 }
 
 <style>
-    /* VARIABLES REFORZADAS PARA MODO OSCURO */
+    /* 1. COLORES POR DEFECTO (MODO CLARO) */
     :root {
         --hist-bg-card: #ffffff;
         --hist-bg-filter: #f8f9fa;
-        --hist-text: #212529;
+        --hist-text-main: #212529;
         --hist-text-muted: #6c757d;
-        --hist-border: rgba(0,0,0,0.1);
+        --hist-border: rgba(0, 0, 0, 0.12);
+        --hist-hover: rgba(0, 0, 0, 0.03);
     }
 
-    /* Forzamos el modo oscuro basado en lo que veo en tu captura */
-    [data-bs-theme="dark"], .dark-mode, body {
-        --hist-bg-card: #212529; /* Color similar al de tu barra de navegación */
-        --hist-bg-filter: #2c3034;
-        --hist-text: #f8f9fa;
+    /* 2. COLORES PARA MODO OSCURO (Se activa si el padre tiene clase .dark o data-bs-theme) */
+    [data-bs-theme="dark"], .dark-mode, .dark {
+        --hist-bg-card: #1a1d20; /* Color oscuro profundo */
+        --hist-bg-filter: #212529;
+        --hist-text-main: #f8f9fa;
         --hist-text-muted: #adb5bd;
-        --hist-border: rgba(255,255,255,0.1);
+        --hist-border: rgba(255, 255, 255, 0.1);
+        --hist-hover: rgba(255, 255, 255, 0.05);
     }
 
-    .history-main-container {
-        color: var(--hist-text);
+    .history-wrapper {
+        color: var(--hist-text-main);
     }
 
-    /* Filtros con fondo condicional */
-    .filter-box {
+    /* Estilo de la sección de filtros */
+    .filter-card {
         background-color: var(--hist-bg-filter) !important;
         border: 1px solid var(--hist-border);
         border-radius: 12px;
         padding: 20px;
+        transition: background 0.3s ease;
     }
 
-    /* La tarjeta de la tabla */
-    .table-card {
+    /* Estilo de la tabla principal */
+    .table-container-card {
         background-color: var(--hist-bg-card) !important;
         border: 1px solid var(--hist-border);
         border-radius: 12px;
         overflow: hidden;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
     }
 
     .table {
-        color: var(--hist-text) !important;
+        color: var(--hist-text-main) !important;
         margin-bottom: 0;
+        background-color: transparent !important;
     }
 
         .table thead th {
-            background-color: rgba(0,0,0,0.05);
+            background-color: rgba(120, 120, 120, 0.05);
             color: var(--hist-text-muted);
             border-bottom: 1px solid var(--hist-border);
+            font-weight: 700;
             font-size: 0.75rem;
             text-transform: uppercase;
-            padding: 15px;
         }
 
-        /* Evitar que el fondo blanco de Bootstrap se filtre */
         .table td {
-            background-color: transparent !important;
             border-bottom: 1px solid var(--hist-border);
-            padding: 15px;
+            background-color: transparent !important;
+            padding: 16px;
         }
 
-    /* Badges con mejor contraste para modo oscuro */
-    .status-badge {
-        padding: 6px 12px;
+        .table tr:hover {
+            background-color: var(--hist-hover) !important;
+        }
+
+    /* Badges Adaptables */
+    .status-pill {
+        padding: 5px 12px;
         border-radius: 50px;
         font-weight: 600;
         font-size: 0.8rem;
         display: inline-flex;
         align-items: center;
-        gap: 5px;
+        gap: 6px;
     }
 
     .status-ok {
-        background: rgba(40, 167, 69, 0.2);
-        color: #4ade80; /* Verde más brillante para lectura en oscuro */
-        border: 1px solid rgba(40, 167, 69, 0.3);
+        background: rgba(25, 135, 84, 0.15);
+        color: #2ecc71; /* Un verde que se ve bien en ambos */
+        border: 1px solid rgba(46, 204, 113, 0.2);
     }
 
-    .status-ko {
-        background: rgba(220, 53, 69, 0.2);
-        color: #ff8787; /* Rojo más suave */
-        border: 1px solid rgba(220, 53, 69, 0.3);
+    .status-fail {
+        background: rgba(220, 53, 69, 0.15);
+        color: #e74c3c; /* Un rojo que se ve bien en ambos */
+        border: 1px solid rgba(231, 76, 60, 0.2);
     }
 
-    /* Estilo para el input date en modo oscuro */
-    input[type="date"] {
-        color-scheme: dark;
-        background-color: rgba(255,255,255,0.05) !important;
-        color: var(--hist-text) !important;
+    /* Input de fecha adaptable */
+    .custom-date-input {
+        background-color: transparent !important;
+        color: var(--hist-text-main) !important;
         border: 1px solid var(--hist-border) !important;
+    }
+
+    /* Esto hace que el icono del calendario sea blanco en modo oscuro */
+    [data-bs-theme="dark"] .custom-date-input, .dark .custom-date-input {
+        color-scheme: dark;
     }
 </style>
 
-<div class="container py-4 history-main-container">
-    <div class="mb-4">
-        <h2 class="fw-bold"><i class="bi bi-journal-text me-2"></i>Historial de Hábitos</h2>
-        <p class="text-muted">Visualiza tu progreso diario y mantén tu racha.</p>
+<div class="container py-4 history-wrapper">
+    <div class="d-flex align-items-center mb-4">
+        <div class="p-3 rounded-circle bg-primary bg-opacity-10 me-3">
+            <i class="bi bi-calendar-check fs-3 text-primary"></i>
+        </div>
+        <div>
+            <h2 class="fw-bold mb-0">Historial de Hábitos</h2>
+            <p class="text-muted mb-0 small">Revisa tus logros pasados</p>
+        </div>
     </div>
 
-    <div class="filter-box mb-4 shadow-sm">
+    <div class="filter-card mb-4">
         <form method="get" class="row g-3 align-items-end">
             <div class="col-md-4">
-                <label class="form-label small fw-bold text-uppercase opacity-75">Filtrar por fecha</label>
-                <input type="date" name="date" class="form-control"
+                <label class="form-label small text-uppercase fw-bold opacity-75">Seleccionar Fecha</label>
+                <input type="date" name="date" class="form-control custom-date-input"
                        value="@(ViewBag.SelectedDate != null ? ((DateTime)ViewBag.SelectedDate).ToString("yyyy-MM-dd") : "")" />
             </div>
-            <div class="col-md-auto">
-                <button type="submit" class="btn btn-primary px-4 fw-bold">
-                    <i class="bi bi-funnel me-1"></i> Aplicar Filtro
+            <div class="col-md-auto d-flex gap-2">
+                <button type="submit" class="btn btn-primary px-4">
+                    <i class="bi bi-search me-2"></i>Filtrar
                 </button>
-                <a asp-action="History" class="btn btn-outline-secondary ms-2">Limpiar</a>
+                <a asp-action="History" class="btn btn-outline-secondary">Limpiar</a>
             </div>
         </form>
     </div>
 
     @if (Model == null || Model.Count == 0)
     {
-        <div class="table-card p-5 text-center">
-            <i class="bi bi-calendar-x text-muted mb-3" style="font-size: 3rem;"></i>
-            <h5 class="text-muted">No se encontraron registros para esta fecha</h5>
+        <div class="table-container-card p-5 text-center">
+            <i class="bi bi-emoji-expressionless text-muted display-4"></i>
+            <p class="mt-3 text-muted">No encontramos nada para este día.</p>
         </div>
     }
     else
     {
-        <div class="table-card shadow">
+        <div class="table-container-card shadow-sm">
             <div class="table-responsive">
                 <table class="table align-middle">
                     <thead>
                         <tr>
-                            <th>Día y Fecha</th>
+                            <th class="ps-4">Fecha</th>
                             <th>Hábito</th>
-                            <th class="text-center">Estado</th>
+                            <th class="text-center">Resultado</th>
                         </tr>
                     </thead>
                     <tbody>
                         @foreach (var item in Model)
                         {
                             <tr>
-                                <td>
-                                    <div class="d-flex align-items-center">
-                                        <div class="p-2 rounded bg-primary bg-opacity-10 me-3">
-                                            <i class="bi bi-calendar3 text-primary"></i>
-                                        </div>
-                                        <div>
-                                            <div class="fw-bold">@item.Date.ToString("dd MMM, yyyy")</div>
-                                            <div class="small text-muted text-uppercase" style="font-size: 0.6rem;">@item.Date.ToString("dddd")</div>
-                                        </div>
-                                    </div>
+                                <td class="ps-4">
+                                    <div class="fw-bold">@item.Date.ToString("dd MMM, yyyy")</div>
+                                    <div class="small text-muted text-uppercase">@item.Date.ToString("dddd")</div>
                                 </td>
-                                <td class="fw-semibold">@item.HabitName</td>
+                                <td class="fw-semibold fs-5">@item.HabitName</td>
                                 <td class="text-center">
                                     @if (item.Completed)
                                     {
-                                        <div class="status-badge status-ok">
-                                            <i class="bi bi-check-circle-fill"></i> Completado
+                                        <div class="status-pill status-ok">
+                                            <i class="bi bi-check-lg"></i> Completado
                                         </div>
                                     }
                                     else
                                     {
-                                        <div class="status-badge status-ko">
-                                            <i class="bi bi-x-circle-fill"></i> Fallado
+                                        <div class="status-pill status-fail">
+                                            <i class="bi bi-x-lg"></i> Fallado
                                         </div>
                                     }
                                 </td>
@@ -174,9 +184,9 @@
             </div>
         </div>
         
-        <div class="mt-3 d-flex justify-content-between align-items-center opacity-75">
-            <small>Total: @Model.Count registros</small>
-            <button class="btn btn-sm btn-dark border-secondary rounded-pill px-3" onclick="window.print()">
+        <div class="mt-3 d-flex justify-content-between align-items-center">
+            <span class="small text-muted fw-medium">Registros: @Model.Count</span>
+            <button class="btn btn-sm btn-outline-secondary" onclick="window.print()">
                 <i class="bi bi-printer me-1"></i> Imprimir
             </button>
         </div>
