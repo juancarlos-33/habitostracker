@@ -3,16 +3,240 @@
     Layout = "_LayoutLogin";
 }
 
-<div class="guest-container">
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
 
-    <h2 class="text-center mb-2">👤 Modo Invitado</h2>
-    <p class="text-center text-muted mb-4">
-        Estás entrando con acceso limitado
-    </p>
+body {
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-family:Inter,system-ui;
+    background:#0d1117;
+    overflow:hidden;
+}
+
+#plexus-bg {
+    position:fixed;
+    top:0; left:0;
+    width:100%; height:100%;
+    z-index:0;
+    pointer-events:none;
+}
+
+.guest-wrapper {
+    position:relative;
+    z-index:2;
+    width:100%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    min-height:100vh;
+    padding:30px 20px;
+}
+
+.guest-card {
+    width:420px;
+    max-width:95%;
+    padding:36px 32px;
+    border-radius:22px;
+    background:rgba(20,30,50,0.88);
+    backdrop-filter:blur(20px);
+    border:1px solid rgba(255,255,255,0.08);
+    box-shadow:0 25px 60px rgba(0,0,0,0.7);
+}
+
+.guest-header {
+    text-align:center;
+    margin-bottom:24px;
+}
+
+.guest-icon {
+    font-size:44px;
+    display:block;
+    margin-bottom:12px;
+    animation:bounce 1.2s ease;
+}
+
+@@keyframes bounce {
+    0% { transform:translateY(-20px); opacity:0; }
+    60% { transform:translateY(6px); }
+    100% { transform:translateY(0); opacity:1; }
+}
+
+.guest-header h2 {
+    color:white;
+    font-size:22px;
+    font-weight:700;
+    margin:0 0 8px;
+}
+
+.guest-header p {
+    color:rgba(255,255,255,0.4);
+    font-size:13px;
+    margin:0;
+}
+
+.limits-box {
+    background:rgba(239,68,68,0.08);
+    border:1px solid rgba(239,68,68,0.2);
+    border-radius:12px;
+    padding:14px 16px;
+    margin-bottom:24px;
+}
+
+.limits-title {
+    font-size:12px;
+    font-weight:700;
+    color:rgba(255,255,255,0.5);
+    text-transform:uppercase;
+    letter-spacing:0.6px;
+    margin-bottom:10px;
+}
+
+.limit-item {
+    display:flex;
+    align-items:center;
+    gap:10px;
+    font-size:13px;
+    color:rgba(255,255,255,0.55);
+    padding:4px 0;
+}
+
+.limit-item span:first-child { font-size:14px; }
+
+.field { margin-bottom:14px; }
+
+.field label {
+    display:block;
+    font-size:12px;
+    color:rgba(255,255,255,0.5);
+    text-transform:uppercase;
+    letter-spacing:0.6px;
+    font-weight:600;
+    margin-bottom:6px;
+}
+
+.field input {
+    width:100%;
+    padding:11px 14px;
+    background:rgba(255,255,255,0.06);
+    border:1px solid rgba(255,255,255,0.1);
+    border-radius:10px;
+    color:white;
+    font-size:14px;
+    outline:none;
+    transition:0.2s;
+}
+
+.field input:focus {
+    background:rgba(255,255,255,0.09);
+    border-color:#6366f1;
+    box-shadow:0 0 0 3px rgba(99,102,241,0.15);
+}
+
+.field input::placeholder { color:rgba(255,255,255,0.2); }
+
+.btn-guest {
+    width:100%;
+    padding:13px;
+    border-radius:10px;
+    border:none;
+    background:linear-gradient(90deg,#6366f1,#2563eb);
+    color:white;
+    font-weight:700;
+    font-size:15px;
+    cursor:pointer;
+    transition:0.2s;
+    position:relative;
+    overflow:hidden;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:8px;
+}
+
+.btn-guest::before {
+    content:"";
+    position:absolute;
+    top:0; left:-100%;
+    width:100%; height:100%;
+    background:linear-gradient(120deg,transparent,rgba(255,255,255,0.2),transparent);
+    transition:0.5s;
+}
+
+.btn-guest:hover::before { left:100%; }
+.btn-guest:hover { transform:scale(1.02); box-shadow:0 8px 20px rgba(99,102,241,0.4); }
+
+.divider {
+    display:flex;
+    align-items:center;
+    margin:20px 0;
+    font-size:12px;
+    color:rgba(255,255,255,0.25);
+}
+
+.divider::before,
+.divider::after {
+    content:"";
+    flex:1;
+    height:1px;
+    background:rgba(255,255,255,0.08);
+    margin:0 10px;
+}
+
+.section-title {
+    text-align:center;
+    font-size:14px;
+    font-weight:600;
+    color:rgba(255,255,255,0.6);
+    margin-bottom:14px;
+}
+
+.btn-existing {
+    width:100%;
+    padding:12px;
+    border-radius:10px;
+    border:1px solid rgba(255,255,255,0.12);
+    background:rgba(255,255,255,0.05);
+    color:rgba(255,255,255,0.7);
+    font-size:14px;
+    font-weight:500;
+    cursor:pointer;
+    transition:0.2s;
+}
+
+.btn-existing:hover {
+    background:rgba(255,255,255,0.1);
+    color:white;
+    border-color:rgba(255,255,255,0.25);
+}
+
+.footer-note {
+    text-align:center;
+    margin-top:18px;
+    font-size:12px;
+    color:rgba(255,255,255,0.25);
+    line-height:1.5;
+}
+
+.alert { border-radius:10px; font-size:13px; margin-bottom:16px; }
+</style>
+
+<canvas id="plexus-bg"></canvas>
+
+<div class="guest-wrapper">
+<div class="guest-card">
+
+    <div class="guest-header">
+        <span class="guest-icon">👤</span>
+        <h2>Modo Invitado</h2>
+        <p>Accede sin cuenta con funciones limitadas</p>
+    </div>
 
     @if (!ViewData.ModelState.IsValid)
     {
-        <div class="alert alert-danger text-center">
+        <div class="alert alert-danger">
             @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
             {
                 <div>@error.ErrorMessage</div>
@@ -20,93 +244,95 @@
         </div>
     }
 
-    <div class="guest-info mb-4">
-        <p>⚠ Algunas funciones no estarán disponibles:</p>
-        <ul>
-            <li>❌ Enviar mensajes</li>
-            <li>❌ Agregar amigos</li>
-            <li>❌ Comentar o publicar</li>
-            <li>❌ Subir fotos</li>
-        </ul>
+    <div class="limits-box">
+        <div class="limits-title">⚠ Funciones no disponibles</div>
+        <div class="limit-item"><span>❌</span><span>Enviar y recibir mensajes</span></div>
+        <div class="limit-item"><span>❌</span><span>Agregar amigos</span></div>
+        <div class="limit-item"><span>❌</span><span>Comentar o publicar</span></div>
+        <div class="limit-item"><span>❌</span><span>Subir fotos</span></div>
     </div>
 
     <form method="post" asp-action="GuestRegister">
         @Html.AntiForgeryToken()
-        <div class="mb-3">
-            <label>Crear Nombre de usuario</label>
-            <input name="username" class="form-control" placeholder="Ej: Invitado123" required />
+        <div class="field">
+            <label>Crear nombre de usuario</label>
+            <input name="username" placeholder="Ej: Invitado123" required />
         </div>
-        <button class="btn btn-primary w-100 d-flex align-items-center justify-content-center gap-2 py-2 fw-semibold guest-btn">
-            <span>🚀</span>
-            <span>Continuar como invitado</span>
+        <button type="submit" class="btn-guest">
+            🚀 Continuar como invitado
         </button>
     </form>
 
-    <hr class="my-4" />
+    <div class="divider"><span>¿Ya entraste antes?</span></div>
 
-    <h5 class="text-center">🔁 ¿Ya entraste como invitado antes?</h5>
+    <div class="section-title">🔁 Recupera tu sesión de invitado</div>
 
     <form method="post" asp-action="GuestLoginExisting">
         @Html.AntiForgeryToken()
-        <div class="mb-3">
-            <input name="username" class="form-control" placeholder="Tu usuario" required />
+        <div class="field">
+            <label>Tu usuario anterior</label>
+            <input name="username" placeholder="Tu usuario invitado" required />
         </div>
-        <button class="btn btn-outline-secondary w-100">
+        <button type="submit" class="btn-existing">
             🔓 Entrar con mi usuario invitado
         </button>
     </form>
 
-    <p class="text-center mt-3 small text-muted">
-        Puedes crear una cuenta más adelante para desbloquear todas las funciones
+    <p class="footer-note">
+        Puedes crear una cuenta completa más adelante para desbloquear todas las funciones
     </p>
 
 </div>
+</div>
 
-<style>
-    .guest-container {
-        max-width: 400px;
-        margin: auto;
-        padding: 25px;
-        background: #fff;
-        border-radius: 16px;
-        box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-    }
+<script>
+const canvas = document.getElementById("plexus-bg");
+const ctx = canvas.getContext("2d");
 
-    .guest-info {
-        background: #f8f9fa;
-        padding: 15px;
-        border-radius: 10px;
-        font-size: 14px;
-    }
+function resize() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+}
+resize();
+window.addEventListener("resize", resize);
 
-        .guest-info ul {
-            padding-left: 18px;
-            margin: 0;
+let pts = [];
+for (let i = 0; i < 80; i++) {
+    pts.push({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        vx: (Math.random() - 0.5) * 0.4,
+        vy: (Math.random() - 0.5) * 0.4,
+    });
+}
+
+function drawPlexus() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    for (let i = 0; i < pts.length; i++) {
+        for (let j = i + 1; j < pts.length; j++) {
+            const dx = pts[i].x - pts[j].x;
+            const dy = pts[i].y - pts[j].y;
+            const dist = Math.sqrt(dx*dx + dy*dy);
+            if (dist < 160) {
+                ctx.beginPath();
+                ctx.moveTo(pts[i].x, pts[i].y);
+                ctx.lineTo(pts[j].x, pts[j].y);
+                ctx.strokeStyle = `rgba(99,102,241,${0.2 * (1 - dist/160)})`;
+                ctx.lineWidth = 0.6;
+                ctx.stroke();
+            }
         }
-
-        .guest-info li {
-            margin-bottom: 5px;
-        }
-
-    .guest-btn {
-        background: linear-gradient(135deg, #4e73df, #224abe);
-        border: none;
-        border-radius: 12px;
-        transition: all 0.3s ease;
-        font-size: 15px;
     }
-
-        .guest-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 15px rgba(0,0,0,0.2);
-        }
-
-        .guest-btn:active {
-            transform: scale(0.98);
-        }
-
-    .alert {
-        border-radius: 10px;
-        font-size: 14px;
-    }
-</style>
+    pts.forEach(p => {
+        p.x += p.vx; p.y += p.vy;
+        if (p.x < 0 || p.x > canvas.width) p.vx *= -1;
+        if (p.y < 0 || p.y > canvas.height) p.vy *= -1;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 1.8, 0, Math.PI * 2);
+        ctx.fillStyle = "rgba(99,102,241,0.7)";
+        ctx.fill();
+    });
+    requestAnimationFrame(drawPlexus);
+}
+drawPlexus();
+</script>
