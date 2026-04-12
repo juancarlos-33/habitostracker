@@ -200,11 +200,38 @@ namespace HabitTrackerApp.Controllers
             return View();
         }
 
+
+        [HttpPost]
+        public async Task<IActionResult> Delete(int messageId, string scope)
+        {
+            var myId = int.Parse(User.FindFirst("UserId").Value);
+            var msg = _context.Messages.FirstOrDefault(m => m.Id == messageId);
+            if (msg == null) return NotFound();
+
+            if (scope == "all" && msg.SenderId == myId)
+            {
+                // eliminar para todos
+                _context.Messages.Remove(msg);
+                await _context.SaveChangesAsync();
+                // notificar al receptor
+                await _hubContext.Clients.Group(msg.ReceiverId.ToString())
+                    .SendAsync("MessageDeleted", messageId);
+            }
+            else
+            {
+                // eliminar solo para mí — marcamos como eliminado
+                if (msg.SenderId == myId) msg.DeletedBySender = true;
+                else msg.DeletedByReceiver = true;
+                await _context.SaveChangesAsync();
+            }
+
+            return Ok();
+        }
+
         [HttpPost]
         public async Task<IActionResult> SendAudio(IFormFile audio)
         {
             var senderId = int.Parse(User.FindFirst("UserId").Value);
-
             if (audio == null || audio.Length == 0) return BadRequest();
 
             var folderPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/audios");
@@ -217,12 +244,13 @@ namespace HabitTrackerApp.Controllers
                 await audio.CopyToAsync(stream);
 
             var receiverId = int.Parse(Request.Form["receiverId"]);
+            var audioUrl = "/audios/" + fileName;
 
             var message = new Message
             {
                 SenderId = senderId,
                 ReceiverId = receiverId,
-                Content = "/audios/" + fileName,
+                Content = audioUrl,
                 SentAt = DateTime.Now,
                 IsRead = false
             };
@@ -230,7 +258,11 @@ namespace HabitTrackerApp.Controllers
             _context.Messages.Add(message);
             await _context.SaveChangesAsync();
 
-            return Ok();
+            // 🔥 notificar en tiempo real al receptor
+            await _hubContext.Clients.Group(receiverId.ToString())
+                .SendAsync("ReceiveAudio", senderId, audioUrl);
+
+            return Json(new { audioUrl });
         }
 
         [HttpPost]
@@ -250,6 +282,8 @@ namespace HabitTrackerApp.Controllers
 
             return Ok();
         }
+
+
 
         public class ReactRequest
         {

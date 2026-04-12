@@ -16,17 +16,12 @@
 
 <div class="chat-page">
 
-    <!-- HEADER -->
     <div class="chat-header">
         <a asp-controller="User" asp-action="Profile" asp-route-id="@ViewBag.OtherUserId" class="chat-header-user">
             @if (!string.IsNullOrEmpty(otherImg))
-            {
-                <img src="@otherImg" class="chat-header-avatar" />
-            }
+            { <img src="@otherImg" class="chat-header-avatar" /> }
             else
-            {
-                <div class="chat-header-avatar avatar-letter">@otherName.Substring(0,1).ToUpper()</div>
-            }
+            { <div class="chat-header-avatar avatar-letter">@otherName.Substring(0,1).ToUpper()</div> }
             <div>
                 <div class="chat-header-name">@otherName</div>
                 <div class="chat-header-status @(isOnline ? "online" : "offline")" id="onlineStatus">
@@ -86,7 +81,7 @@
             var senderImg = msg.Sender?.ProfileImage ?? msg.Sender?.ProfilePicture;
             var senderInitial = (msg.Sender?.Username ?? "?").Substring(0,1).ToUpper();
 
-            <div class="msg-wrap @(isMe ? "msg-mine" : "msg-theirs")">
+            <div class="msg-wrap @(isMe ? "msg-mine" : "msg-theirs")" id="msg-@msg.Id">
                 @if (!isMe)
                 {
                     if (!string.IsNullOrEmpty(senderImg))
@@ -139,6 +134,15 @@
                         <button onclick="reactToMessage(@msg.Id, '😂')">😂</button>
                         <button onclick="reactToMessage(@msg.Id, '👍')">👍</button>
                         <button onclick="reactToMessage(@msg.Id, '😮')">😮</button>
+                        @if (isMe)
+                        {
+                            <button onclick="deleteMessage(@msg.Id, 'me')" class="delete-msg-btn" title="Eliminar para mí">🗑</button>
+                            <button onclick="deleteMessage(@msg.Id, 'all')" class="delete-msg-btn delete-all-btn" title="Eliminar para todos">❌</button>
+                        }
+                        else
+                        {
+                            <button onclick="deleteMessage(@msg.Id, 'me')" class="delete-msg-btn" title="Eliminar para mí">🗑</button>
+                        }
                     </div>
                 </div>
 
@@ -203,14 +207,12 @@
 </div>
 
 <style>
-/* ─── LAYOUT ─────────────────────────────── */
 .chat-page {
     display: flex;
     flex-direction: column;
     position: fixed;
     top: 56px; left: 0; right: 0; bottom: 0;
     background: white;
-    overflow: hidden;
     z-index: 10;
 }
 
@@ -227,7 +229,6 @@
     }
 }
 
-/* ─── HEADER ─────────────────────────────── */
 .chat-header {
     display: flex;
     align-items: center;
@@ -304,7 +305,6 @@
 .call-btn:hover { background: #15803d; transform: scale(1.05); }
 .call-btn.calling { background: #dc2626; animation: pulse-ring 1s infinite; }
 
-/* ─── CALL MODALS ────────────────────────── */
 #callModal, #incomingCallModal {
     position: fixed;
     inset: 0;
@@ -359,9 +359,9 @@
 
 .call-name { font-size: 22px; font-weight: 700; margin-bottom: 6px; }
 .call-status { font-size: 13px; color: rgba(255,255,255,0.55); margin-bottom: 8px; }
-.call-timer { font-size: 20px; font-weight: 700; color: #4ade80; margin-bottom: 24px; font-variant-numeric: tabular-nums; }
-
+.call-timer { font-size: 20px; font-weight: 700; color: #4ade80; margin-bottom: 24px; }
 .incoming-pulse { color: #4ade80 !important; animation: textPulse 1s infinite; }
+
 @@keyframes textPulse {
     0%, 100% { opacity: 1; }
     50% { opacity: 0.5; }
@@ -386,7 +386,6 @@
 .call-end-btn:hover { background: #b91c1c; transform: scale(1.1); }
 .call-accept-btn:hover { background: #15803d; transform: scale(1.1); }
 
-/* ─── DELETED ─────────────────────────────── */
 .deleted-alert {
     background: #fef3c7;
     color: #92400e;
@@ -397,22 +396,24 @@
     flex-shrink: 0;
 }
 
-/* ─── CHAT BOX ───────────────────────────── */
+/* 🔥 SCROLL ARREGLADO */
 .chat-box {
     flex: 1;
-    overflow-y: auto;
+    overflow-y: scroll !important;
+    overflow-x: hidden;
     padding: 16px;
     background: #f0f2f5;
     display: flex;
     flex-direction: column;
     gap: 4px;
     -webkit-overflow-scrolling: touch;
+    min-height: 0;
 }
 
-.chat-box::-webkit-scrollbar { width: 3px; }
+.chat-box::-webkit-scrollbar { width: 4px; }
+.chat-box::-webkit-scrollbar-track { background: transparent; }
 .chat-box::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 10px; }
 
-/* ─── MENSAJES ───────────────────────────── */
 .msg-wrap {
     display: flex;
     align-items: flex-end;
@@ -479,6 +480,7 @@
     box-shadow: 0 2px 12px rgba(0,0,0,0.15);
     gap: 2px;
     margin-top: 3px;
+    flex-wrap: wrap;
 }
 
 .reaction-btns button {
@@ -494,7 +496,10 @@
 .reaction-btns button:hover { transform: scale(1.3); }
 .msg-wrap:hover .reaction-btns { display: flex; }
 
-/* ─── TYPING ─────────────────────────────── */
+.delete-msg-btn { opacity: 0.6; }
+.delete-msg-btn:hover { opacity: 1; }
+.delete-all-btn { color: #dc2626; }
+
 .typing-indicator {
     display: flex;
     gap: 4px;
@@ -522,7 +527,6 @@
     30% { transform: translateY(-6px); }
 }
 
-/* ─── FORM ───────────────────────────────── */
 form {
     flex-shrink: 0;
     padding: 10px 12px;
@@ -536,7 +540,10 @@ form {
     margin-bottom: 8px;
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
 }
+
+.emoji-row::-webkit-scrollbar { display: none; }
 
 .emoji-row span {
     font-size: 22px;
@@ -569,7 +576,7 @@ form {
 }
 
 .input-btn:hover { background: #f3f4f6; }
-.input-btn.recording { background: #fee2e2; border-color: #fca5a5; }
+.input-btn.recording { background: #fee2e2; border-color: #fca5a5; animation: pulse-ring 1s infinite; }
 
 .msg-input {
     flex: 1;
@@ -638,7 +645,6 @@ form {
 .btn-send-audio { background: #dcfce7; color: #16a34a; }
 .btn-cancel-audio { background: #fee2e2; color: #dc2626; }
 
-/* ─── DARK MODE ──────────────────────────── */
 body.bg-dark .chat-page { background: #1e1e2e !important; }
 body.bg-dark .chat-header { background: #1e1e2e !important; border-color: #2d2d3d !important; }
 body.bg-dark .chat-header-name { color: #f1f5f9 !important; }
@@ -656,9 +662,12 @@ body.bg-dark .typing-indicator { background: #2d2d3d !important; }
 const myId = "@User.FindFirst("UserId").Value";
 const receiverId = "@ViewBag.OtherUserId";
 const chatBox = document.getElementById("chatBox");
-chatBox.scrollTop = chatBox.scrollHeight;
 
-// ─── SIGNALR ─────────────────────────────
+// 🔥 scroll al fondo al cargar
+window.addEventListener("load", () => {
+    chatBox.scrollTop = chatBox.scrollHeight;
+});
+
 const connection = new signalR.HubConnectionBuilder()
     .withUrl("/chatHub")
     .withAutomaticReconnect()
@@ -670,6 +679,7 @@ connection.start().then(async () => {
     localStorage.setItem("currentChatUserId", receiverId);
 });
 
+// 🔥 RECIBIR MENSAJE EN TIEMPO REAL
 connection.on("ReceiveMessage", (senderId, rcvId, senderName, message) => {
     const currentChat = localStorage.getItem("currentChatUserId");
     if (senderId != currentChat && rcvId != currentChat) return;
@@ -690,6 +700,57 @@ connection.on("ReceiveMessage", (senderId, rcvId, senderName, message) => {
 
     fetch("/Message/MarkAsSeen?senderId=" + senderId, { method: "POST" });
     connection.invoke("MessagesViewed", senderId);
+});
+
+// 🔥 RECIBIR AUDIO EN TIEMPO REAL (sin recargar)
+connection.on("ReceiveAudio", (senderId, audioUrl) => {
+    const currentChat = localStorage.getItem("currentChatUserId");
+    if (senderId != currentChat) return;
+
+    const profileImage = "@(ViewBag.OtherUserProfileImage ?? "")";
+    const firstLetter = "@otherName".charAt(0).toUpperCase();
+    const avatarHTML = profileImage
+        ? `<img src="${profileImage}" class="msg-avatar" />`
+        : `<div class="msg-avatar avatar-letter-gray">${firstLetter}</div>`;
+
+    const wrap = document.createElement("div");
+    wrap.className = "msg-wrap msg-theirs";
+    wrap.innerHTML = `
+        ${avatarHTML}
+        <div class="msg-content-wrap">
+            <div class="msg-bubble bubble-theirs">
+                <audio controls class="msg-audio">
+                    <source src="${audioUrl}" type="audio/webm" />
+                </audio>
+            </div>
+        </div>`;
+    chatBox.appendChild(wrap);
+    chatBox.scrollTop = chatBox.scrollHeight;
+});
+
+// 🔥 INDICADOR GRABANDO AUDIO
+connection.on("UserRecording", () => {
+    const ind = document.getElementById("typingIndicator");
+    ind.style.display = "flex";
+    ind.setAttribute("data-recording", "true");
+});
+
+connection.on("UserStoppedRecording", () => {
+    const ind = document.getElementById("typingIndicator");
+    if (ind.getAttribute("data-recording") === "true") {
+        ind.style.display = "none";
+        ind.removeAttribute("data-recording");
+    }
+});
+
+// 🔥 ELIMINAR MENSAJE EN TIEMPO REAL
+connection.on("MessageDeleted", (messageId) => {
+    const el = document.getElementById("msg-" + messageId);
+    if (el) {
+        el.style.opacity = "0";
+        el.style.transition = "0.3s";
+        setTimeout(() => el.remove(), 300);
+    }
 });
 
 connection.on("MessageSeen", (messageId) => {
@@ -724,27 +785,51 @@ document.getElementById("messageInput").addEventListener("keydown", () => {
     typingTimer = setTimeout(() => connection.invoke("StopTyping", receiverId), 1500);
 });
 
-connection.on("ShowTyping", () => { document.getElementById("typingIndicator").style.display = "flex"; });
-connection.on("HideTyping", () => { document.getElementById("typingIndicator").style.display = "none"; });
+connection.on("ShowTyping", () => {
+    const ind = document.getElementById("typingIndicator");
+    if (!ind.getAttribute("data-recording"))
+        ind.style.display = "flex";
+});
+
+connection.on("HideTyping", () => {
+    const ind = document.getElementById("typingIndicator");
+    if (!ind.getAttribute("data-recording"))
+        ind.style.display = "none";
+});
+
 connection.on("ReceiveReaction", (messageId, reaction) => {
     const el = document.getElementById("reaction-" + messageId);
     if (el) { el.textContent = reaction; el.style.display = "inline"; }
 });
 
-// ─── LLAMADAS WebRTC ─────────────────────
+// 🔥 ELIMINAR MENSAJE
+async function deleteMessage(messageId, scope) {
+    const msg = scope === "all" ? "¿Eliminar para todos?" : "¿Eliminar para ti?";
+    if (!confirm(msg)) return;
+
+    const res = await fetch(`/Message/Delete?messageId=${messageId}&scope=${scope}`, { method: "POST" });
+    if (res.ok) {
+        const el = document.getElementById("msg-" + messageId);
+        if (el) {
+            el.style.opacity = "0";
+            el.style.transition = "0.3s";
+            setTimeout(() => el.remove(), 300);
+        }
+    }
+}
+
+// ─── LLAMADAS ────────────────────────────
 window.peerConnection = null;
 window.localStream = null;
 let callerId = null;
 let callTimerInterval = null;
 let callSeconds = 0;
 
-// 🔥 CLAVE: no agrega tracks aquí, se agregan manualmente
 function createPeerConnection(targetId) {
     const pc = new RTCPeerConnection({
         iceServers: [
             { urls: "stun:stun.l.google.com:19302" },
             { urls: "stun:stun1.l.google.com:19302" },
-            { urls: "stun:stun2.l.google.com:19302" },
         ]
     });
 
@@ -758,7 +843,7 @@ function createPeerConnection(targetId) {
             document.body.appendChild(audio);
         }
         audio.srcObject = event.streams[0];
-        audio.play().catch(e => console.warn("play():", e));
+        audio.play().catch(e => console.warn(e));
     };
 
     pc.onicecandidate = (event) => {
@@ -767,9 +852,8 @@ function createPeerConnection(targetId) {
     };
 
     pc.onconnectionstatechange = () => {
-        const status = document.getElementById("callStatus");
         if (pc.connectionState === "connected") {
-            if (status) status.textContent = "En llamada";
+            document.getElementById("callStatus").textContent = "En llamada";
             startCallTimer();
         } else if (["disconnected","failed","closed"].includes(pc.connectionState)) {
             endCall();
@@ -794,31 +878,19 @@ function startCallTimer() {
 
 async function startCall() {
     try {
-        // 1. Pedir micrófono
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
         window.localStream = stream;
-
-        // 2. Mostrar modal
         document.getElementById("callModal").style.display = "flex";
         document.getElementById("callStatus").textContent = "Llamando...";
         document.getElementById("callBtn").classList.add("calling");
-
-        // 3. Crear PC
         const pc = createPeerConnection(receiverId);
-
-        // 4. 🔥 Agregar tracks AL PC antes del offer
         stream.getTracks().forEach(track => pc.addTrack(track, stream));
-
-        // 5. Crear offer
         const offer = await pc.createOffer({ offerToReceiveAudio: true });
         await pc.setLocalDescription(offer);
-
-        // 6. Enviar por SignalR
         await connection.invoke("CallUser", receiverId);
         await connection.invoke("SendOffer", receiverId, JSON.stringify(offer));
-
     } catch (err) {
-        alert("❌ Micrófono: " + err.message);
+        alert("❌ " + err.message);
         document.getElementById("callModal").style.display = "none";
         document.getElementById("callBtn").classList.remove("calling");
     }
@@ -833,19 +905,11 @@ async function acceptCall() {
     document.getElementById("incomingCallModal").style.display = "none";
     document.getElementById("callModal").style.display = "flex";
     document.getElementById("callStatus").textContent = "Conectando...";
-
     try {
-        // 1. Pedir micrófono
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
         window.localStream = stream;
-
-        // 2. Crear PC
         const pc = createPeerConnection(callerId);
-
-        // 3. 🔥 Agregar tracks AL PC ANTES de que llegue el offer
         stream.getTracks().forEach(track => pc.addTrack(track, stream));
-
-        // El ReceiveOffer se encarga del resto
     } catch (err) {
         alert("❌ " + err.message);
         endCall();
@@ -858,14 +922,10 @@ function rejectCall() {
     callerId = null;
 }
 
-// 🔥 CLAVE: cuando llega el offer el PC ya tiene el stream del receptor
 connection.on("ReceiveOffer", async (offer) => {
-    if (!window.peerConnection) {
-        // fallback: si aún no hay PC (caso raro)
-        if (window.localStream) {
-            const pc = createPeerConnection(callerId ?? receiverId);
-            window.localStream.getTracks().forEach(t => pc.addTrack(t, window.localStream));
-        }
+    if (!window.peerConnection && window.localStream) {
+        const pc = createPeerConnection(callerId ?? receiverId);
+        window.localStream.getTracks().forEach(t => pc.addTrack(t, window.localStream));
     }
     await window.peerConnection.setRemoteDescription(new RTCSessionDescription(JSON.parse(offer)));
     const answer = await window.peerConnection.createAnswer();
@@ -882,7 +942,7 @@ connection.on("ReceiveIceCandidate", async (candidate) => {
     try {
         if (window.peerConnection)
             await window.peerConnection.addIceCandidate(new RTCIceCandidate(JSON.parse(candidate)));
-    } catch (err) { console.warn("ICE:", err); }
+    } catch (err) { console.warn(err); }
 });
 
 connection.on("CallEnded", () => endCall());
@@ -891,29 +951,18 @@ function endCall() {
     document.getElementById("callModal").style.display = "none";
     document.getElementById("incomingCallModal").style.display = "none";
     document.getElementById("callBtn").classList.remove("calling");
-
     if (callTimerInterval) { clearInterval(callTimerInterval); callTimerInterval = null; }
     const timerEl = document.getElementById("callTimer");
     if (timerEl) { timerEl.style.display = "none"; timerEl.textContent = "00:00"; }
-
     const audio = document.getElementById("callAudio");
     if (audio) { audio.pause(); audio.srcObject = null; audio.remove(); }
-
-    if (window.localStream) {
-        window.localStream.getTracks().forEach(t => t.stop());
-        window.localStream = null;
-    }
-
-    if (window.peerConnection) {
-        window.peerConnection.close();
-        window.peerConnection = null;
-    }
-
+    if (window.localStream) { window.localStream.getTracks().forEach(t => t.stop()); window.localStream = null; }
+    if (window.peerConnection) { window.peerConnection.close(); window.peerConnection = null; }
     try { connection.invoke("HangUp", callerId ?? receiverId); } catch(e) {}
     callerId = null;
 }
 
-// ─── AUDIO GRABACIÓN ─────────────────────
+// ─── GRABACIÓN ────────────────────────────
 var mediaRecorder = null;
 var audioChunks = [];
 var isRecording = false;
@@ -930,6 +979,8 @@ async function startRecording() {
         mediaRecorder.stop();
         isRecording = false;
         document.getElementById("recordBtn").classList.remove("recording");
+        // 🔥 avisar que paró de grabar
+        connection.invoke("StopRecording", receiverId);
         return;
     }
     try {
@@ -938,6 +989,9 @@ async function startRecording() {
         audioChunks = [];
         isRecording = true;
         document.getElementById("recordBtn").classList.add("recording");
+        // 🔥 avisar que está grabando
+        connection.invoke("StartRecording", receiverId);
+
         mediaRecorder.ondataavailable = e => { if (e.data?.size > 0) audioChunks.push(e.data); };
         mediaRecorder.onstop = () => {
             if (!audioChunks.length) return;
@@ -950,13 +1004,46 @@ async function startRecording() {
     } catch (err) { alert("Error al acceder al micrófono"); }
 }
 
+// 🔥 ENVIAR AUDIO SIN RECARGAR
 async function sendAudio() {
     if (!window.recordedAudio) return;
     const formData = new FormData();
     formData.append("audio", window.recordedAudio, "audio.webm");
     formData.append("receiverId", receiverId);
-    await fetch('/Message/SendAudio', { method: 'POST', body: formData });
-    location.reload();
+
+    const btn = document.querySelector(".btn-send-audio");
+    btn.textContent = "⏳ Enviando...";
+    btn.disabled = true;
+
+    const res = await fetch('/Message/SendAudio', { method: 'POST', body: formData });
+    if (res.ok) {
+        const data = await res.json();
+        // 🔥 agregar el audio al chat sin recargar
+        const myImg = "@(User.FindFirst("ProfileImage")?.Value ?? "")";
+        const myInitial = "@User.Identity.Name.Substring(0,1).ToUpper()";
+        const avatarHTML = myImg
+            ? `<img src="${myImg}" class="msg-avatar" />`
+            : `<div class="msg-avatar avatar-letter">${myInitial}</div>`;
+
+        const wrap = document.createElement("div");
+        wrap.className = "msg-wrap msg-mine";
+        wrap.innerHTML = `
+            <div class="msg-content-wrap">
+                <div class="msg-bubble bubble-mine">
+                    <audio controls class="msg-audio">
+                        <source src="${data.audioUrl}" type="audio/webm" />
+                    </audio>
+                </div>
+                <div class="msg-meta"><span class="msg-status sent">✔ enviado</span></div>
+            </div>
+            ${avatarHTML}`;
+        chatBox.appendChild(wrap);
+        chatBox.scrollTop = chatBox.scrollHeight;
+        cancelAudio();
+    }
+
+    btn.textContent = "✅ Enviar";
+    btn.disabled = false;
 }
 
 function cancelAudio() {
@@ -965,7 +1052,6 @@ function cancelAudio() {
     document.getElementById("audioPreview").style.display = "none";
 }
 
-// ─── ARCHIVOS ─────────────────────────────
 const fileInput = document.getElementById("fileInput");
 fileInput.addEventListener("change", function() {
     const file = this.files[0];

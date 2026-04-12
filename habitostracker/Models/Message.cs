@@ -6,6 +6,9 @@ namespace HabitTrackerApp.Models
     {
         public int Id { get; set; }
 
+        public bool DeletedBySender { get; set; } = false;
+        public bool DeletedByReceiver { get; set; } = false;
+
         public int? SenderId { get; set; }
 
         public int? ReceiverId { get; set; }
