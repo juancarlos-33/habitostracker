@@ -17,40 +17,29 @@ namespace habitostracker.Migrations
             migrationBuilder.AlterColumn<string>(
                 name: "Email",
                 table: "Users",
-                type: "nvarchar(450)",
+                type: "text",
                 nullable: true,
                 oldClrType: typeof(string),
-                oldType: "nvarchar(450)");
+                oldType: "text");
 
             migrationBuilder.AddColumn<bool>(
                 name: "DeletedByReceiver",
                 table: "Messages",
-                type: "bit",
+                type: "boolean",
                 nullable: false,
                 defaultValue: false);
 
             migrationBuilder.AddColumn<bool>(
                 name: "DeletedBySender",
                 table: "Messages",
-                type: "bit",
+                type: "boolean",
                 nullable: false,
                 defaultValue: false);
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Users_Email",
-                table: "Users",
-                column: "Email",
-                unique: true,
-                filter: "[Email] IS NOT NULL");
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropIndex(
-                name: "IX_Users_Email",
-                table: "Users");
-
             migrationBuilder.DropColumn(
                 name: "DeletedByReceiver",
                 table: "Messages");
@@ -62,11 +51,11 @@ namespace habitostracker.Migrations
             migrationBuilder.AlterColumn<string>(
                 name: "Email",
                 table: "Users",
-                type: "nvarchar(450)",
+                type: "text",
                 nullable: false,
                 defaultValue: "",
                 oldClrType: typeof(string),
-                oldType: "nvarchar(450)",
+                oldType: "text",
                 oldNullable: true);
 
             migrationBuilder.CreateIndex(
