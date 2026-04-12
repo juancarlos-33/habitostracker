@@ -3,6 +3,7 @@
     ViewData["Title"] = "Perfil de usuario";
     var myId = int.Parse(User.FindFirst("UserId").Value);
     var db = Context.RequestServices.GetService<HabitTrackerApp.Data.HabitDbContext>();
+    var culture = new System.Globalization.CultureInfo("es-ES");
     var isFollowing = db.Follows.Any(f => f.FollowerId == myId && f.FollowingId == Model.Id);
     var friendStatus = db.FriendRequests
         .Where(f => (f.SenderId == myId && f.ReceiverId == Model.Id) ||
@@ -14,15 +15,19 @@
         .Where(p => p.UserId == Model.Id)
         .OrderByDescending(p => p.CreatedAt)
         .ToList();
+
+    var profilePic = !string.IsNullOrEmpty(Model.ProfileImage)
+        ? Model.ProfileImage
+        : Model.ProfilePicture;
 }
 
 <div class="profile-page">
 
     <div class="profile-main">
         <div class="profile-avatar-wrap">
-            @if (!string.IsNullOrEmpty(Model.ProfileImage))
+            @if (!string.IsNullOrEmpty(profilePic))
             {
-                <img src="@Model.ProfileImage" class="profile-avatar" />
+                <img src="@profilePic" class="profile-avatar" />
             }
             else
             {
@@ -44,7 +49,7 @@
                     {
                         <p class="profile-bio">@Model.Bio</p>
                     }
-                    <p class="profile-joined">📅 Se unió el @Model.CreatedAt?.ToString("dd MMM yyyy")</p>
+                    <p class="profile-joined">📅 Se unió el @Model.CreatedAt?.ToString("dd MMM yyyy", culture)</p>
                 </div>
 
                 @if (Model.Id != myId)
@@ -148,7 +153,7 @@
                         }
                         <div class="post-tile-info">
                             <p class="post-tile-desc">@(post.Description?.Length > 50 ? post.Description.Substring(0, 50) + "..." : post.Description ?? "")</p>
-                            <small class="post-tile-date2">@post.CreatedAt.ToString("dd MMM yyyy · hh:mm tt")</small>
+                            <small class="post-tile-date2">@post.CreatedAt.ToString("dd MMM yyyy · hh:mm tt", culture)</small>
                         </div>
                         <div class="post-tile-overlay">
                             <span>@(isVideo ? "▶ Ver video" : "👁 Ver post")</span>
@@ -279,11 +284,17 @@
 
 @@media (max-width: 768px) {
     .posts-grid { grid-template-columns: repeat(2, 1fr); }
-    .profile-main { flex-direction: column; align-items: center; text-align: center; }
+    .profile-main {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        padding: 0 16px;
+    }
     .profile-top { justify-content: center; }
     .profile-actions { justify-content: center; }
     .profile-stats { margin: 0 auto; }
     .profile-bio { max-width: 100%; }
+    .profile-username { font-size: 20px; }
 }
 
 .post-tile {
