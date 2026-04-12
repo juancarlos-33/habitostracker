@@ -222,6 +222,8 @@ namespace HabitTrackerApp.Controllers
             return RedirectToAction("Index");
         }
 
+
+        [HttpGet]
         public IActionResult Create()
         {
             return View();
