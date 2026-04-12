@@ -19,16 +19,24 @@ public class CloudinaryService
     public async Task<string> UploadVideoAsync(IFormFile file)
     {
         using var stream = file.OpenReadStream();
+
+        _cloudinary.Api.Timeout = 180000;
+
         var uploadParams = new VideoUploadParams
         {
             File = new FileDescription(file.FileName, stream),
-            Folder = "habitostracker/videos"
-           
+            Folder = "habitostracker/videos",
+            PublicId = Guid.NewGuid().ToString(),
+            Overwrite = true
         };
+
         var result = await _cloudinary.UploadAsync(uploadParams);
+
+        if (result.Error != null)
+            throw new Exception(result.Error.Message);
+
         return result.SecureUrl.ToString();
     }
-
     public async Task<string> UploadImageAsync(IFormFile file)
     {
         using var stream = file.OpenReadStream();
