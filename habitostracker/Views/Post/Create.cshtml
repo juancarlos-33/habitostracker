@@ -293,6 +293,28 @@ function removeMedia(e) {
     uploadPlaceholder.style.display = "block";
 }
 
+mediaInput.addEventListener("change", function() {
+    const file = this.files[0];
+    if (!file) return;
+
+    if (file.type.startsWith("video")) {
+        const video = document.createElement("video");
+        video.preload = "metadata";
+        video.onloadedmetadata = function() {
+            URL.revokeObjectURL(video.src);
+            if (video.duration > 600) { // 10 minutos
+                alert("⚠️ El video no puede durar más de 10 minutos.");
+                mediaInput.value = "";
+                return;
+            }
+            showPreview(file);
+        };
+        video.src = URL.createObjectURL(file);
+    } else {
+        showPreview(file);
+    }
+});
+
 // Drag & Drop
 uploadZone.addEventListener("dragover", (e) => {
     e.preventDefault();
