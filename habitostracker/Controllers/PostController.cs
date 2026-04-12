@@ -280,7 +280,7 @@ namespace HabitTrackerApp.Controllers
             var userId = int.Parse(User.FindFirst("UserId").Value);
             var username = User.Identity.Name;
 
-            string imagePath = null;
+            string mediaPath = null;
             bool isSensitive = false;
 
             if (image != null && image.Length > 0)
@@ -294,13 +294,25 @@ namespace HabitTrackerApp.Controllers
 
                 try
                 {
-                    imagePath = await _cloudinaryService.UploadImageAsync(image);
+                    // 🔥 detectar si es video o imagen
+                    bool isVideo = image.ContentType.StartsWith("video");
+
+                    if (isVideo)
+                        mediaPath = await _cloudinaryService.UploadVideoAsync(image);
+                    else
+                        mediaPath = await _cloudinaryService.UploadImageAsync(image);
                 }
                 catch (Exception)
                 {
-                    TempData["Error"] = "No se pudo subir la imagen. Intenta de nuevo.";
+                    TempData["Error"] = "No se pudo subir el archivo. Intenta de nuevo.";
                     return RedirectToAction("Create");
                 }
+            }
+
+            if (string.IsNullOrWhiteSpace(description) && mediaPath == null)
+            {
+                TempData["Error"] = "Debes escribir algo o subir una imagen/video.";
+                return RedirectToAction("Create");
             }
 
             var post = new Post
@@ -308,7 +320,7 @@ namespace HabitTrackerApp.Controllers
                 UserId = userId,
                 Username = username,
                 Description = description,
-                ImagePath = imagePath,
+                ImagePath = mediaPath,
                 CreatedAt = DateTime.Now,
                 IsSensitive = isSensitive
             };

@@ -16,6 +16,19 @@ public class CloudinaryService
         _cloudinary = new Cloudinary(account);
     }
 
+    public async Task<string> UploadVideoAsync(IFormFile file)
+    {
+        using var stream = file.OpenReadStream();
+        var uploadParams = new VideoUploadParams
+        {
+            File = new FileDescription(file.FileName, stream),
+            Folder = "habitostracker/videos"
+           
+        };
+        var result = await _cloudinary.UploadAsync(uploadParams);
+        return result.SecureUrl.ToString();
+    }
+
     public async Task<string> UploadImageAsync(IFormFile file)
     {
         using var stream = file.OpenReadStream();
