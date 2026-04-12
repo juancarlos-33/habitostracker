@@ -296,7 +296,6 @@ namespace HabitTrackerApp.Controllers
 
                 try
                 {
-                    // 🔥 detectar si es video o imagen
                     bool isVideo = image.ContentType.StartsWith("video");
 
                     if (isVideo)
@@ -304,9 +303,9 @@ namespace HabitTrackerApp.Controllers
                     else
                         mediaPath = await _cloudinaryService.UploadImageAsync(image);
                 }
-                catch (Exception)
+                catch (Exception ex)
                 {
-                    TempData["Error"] = "No se pudo subir el archivo. Intenta de nuevo.";
+                    TempData["Error"] = "Error al subir: " + ex.Message;
                     return RedirectToAction("Create");
                 }
             }
