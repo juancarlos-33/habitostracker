@@ -5,107 +5,211 @@
     var myId = int.Parse(User.FindFirst("UserId").Value);
 }
 
-<div class="container mt-4">
+<div class="inbox-page">
 
-    <h2 class="mb-4">📨 Conversaciones</h2>
+    <div class="inbox-header">
+        <h2 class="inbox-title">💬 Conversaciones</h2>
+        <p class="inbox-subtitle">Tus mensajes directos</p>
+    </div>
 
-    <table class="table table-hover">
-
-        <tbody>
-
-            @if (!Model.Any())
+    @if (!Model.Any())
+    {
+        <div class="inbox-empty">
+            <div class="inbox-empty-icon">📭</div>
+            <h5>Sin conversaciones</h5>
+            <p>Aún no tienes mensajes. ¡Busca a alguien y empieza a chatear!</p>
+        </div>
+    }
+    else
+    {
+        <div class="inbox-list">
+            @foreach (var msg in Model)
             {
-                <tr>
-                    <td class="text-center text-muted">
-                        No tienes mensajes todavía 📭
-                    </td>
-                </tr>
+                var otherUserId = msg.SenderId == myId ? msg.ReceiverId : msg.SenderId;
+                var otherUser = msg.SenderId == myId ? msg.Receiver : msg.Sender;
+                var username = otherUser?.Username ?? ("Usuario " + otherUserId);
+                var profileImage = otherUser?.ProfileImage ?? otherUser?.ProfilePicture;
+                var firstLetter = username.Substring(0, 1).ToUpper();
+                var isUnread = !msg.IsRead && msg.ReceiverId == myId;
+                var isMe = msg.SenderId == myId;
+
+                <a href="/Message/Chat?userId=@otherUserId" class="inbox-item @(isUnread ? "unread" : "")">
+                    <div class="inbox-avatar-wrap">
+                        @if (!string.IsNullOrEmpty(profileImage))
+                        {
+                            <img src="@profileImage" class="inbox-avatar" />
+                        }
+                        else
+                        {
+                            <div class="inbox-avatar avatar-letter">@firstLetter</div>
+                        }
+                        <div class="inbox-online-dot" id="dot-@otherUserId" style="display:none;"></div>
+                    </div>
+
+                    <div class="inbox-info">
+                        <div class="inbox-name">@username</div>
+                        <div class="inbox-preview">
+                            @if (isMe) { <span class="inbox-you">Tú: </span> }
+                            @if (!string.IsNullOrEmpty(msg.Content) && msg.Content.EndsWith(".webm"))
+                            { <span>🎤 Audio</span> }
+                            else if (!string.IsNullOrEmpty(msg.FileUrl))
+                            { <span>📎 Archivo</span> }
+                            else
+                            { <span>@msg.Content</span> }
+                        </div>
+                    </div>
+
+                    <div class="inbox-right">
+                        <div class="inbox-time">@msg.SentAt.ToString("HH:mm")</div>
+                        @if (isUnread)
+                        {
+                            <div class="inbox-unread-badge">●</div>
+                        }
+                        else if (isMe && msg.IsRead)
+                        {
+                            <div class="inbox-seen">✔✔</div>
+                        }
+                    </div>
+                </a>
             }
-            else
-            {
-                @foreach (var msg in Model)
-                {
-                    var otherUserId = msg.SenderId == myId ? msg.ReceiverId : msg.SenderId;
-                    var otherUser = msg.SenderId == myId ? msg.Receiver : msg.Sender;
-                    var username = otherUser?.Username ?? ("Usuario " + otherUserId);
-                    var profileImage = otherUser?.ProfileImage;
-                    var firstLetter = username?.Substring(0, 1).ToUpper();
-                    <tr style="cursor:pointer"
-                        onclick="window.location='/Message/Chat?userId=@otherUserId'">
-
-                        <td>
-
-                            <div class="d-flex align-items-center gap-3">
-
-                                <!-- FOTO O INICIAL -->
-                                @if (!string.IsNullOrEmpty(profileImage))
-                                {
-                                    <img src="@profileImage"
-                                         style="width:45px;height:45px;border-radius:50%;object-fit:cover;"
-                                         onerror="this.style.display='none';this.nextElementSibling.style.display='flex';" />
-                                    <div style="width:45px;height:45px;border-radius:50%;background:#2563eb;
-                                        color:white;display:none;align-items:center;justify-content:center;
-                                        font-weight:bold;font-size:18px;">
-                                        @firstLetter
-                                    </div>
-                                }
-                                else
-                                {
-                                    <div style="width:45px;height:45px;border-radius:50%;background:#2563eb;
-                                        color:white;display:flex;align-items:center;justify-content:center;
-                                        font-weight:bold;font-size:18px;">
-                                        @firstLetter
-                                    </div>
-                                }
-                                <div style="
-                                            width:45px;
-                                            height:45px;
-                                            border-radius:50%;
-                                            background:#2563eb;
-                                            color:white;
-                                            display:none;
-                                            align-items:center;
-                                            justify-content:center;
-                                            font-weight:bold;
-                                            font-size:18px;">
-                                    @firstLetter
-                                </div>
-
-                                <div>
-
-                                    <div class="fw-bold">
-                                        @username
-                                    </div>
-                                    <div class="text-muted small" style="
-                                        max-width: 300px;
-                                        white-space: nowrap;
-                                        overflow: hidden;
-                                        text-overflow: ellipsis;">
-                                        @if (!string.IsNullOrEmpty(msg.Content) && msg.Content.EndsWith(".webm"))
-                                        {
-                                            <span>🎤 Audio</span>
-                                        }
-                                        else
-                                        {
-                                            @msg.Content
-                                        }
-                                    </div>
-                                </div>
-
-                            </div>
-
-                        </td>
-
-                        <td class="text-end text-muted small">
-                            @msg.SentAt.ToString("HH:mm")
-                        </td>
-
-                    </tr>
-                }
-            }
-
-        </tbody>
-
-    </table>
-
+        </div>
+    }
 </div>
+
+<style>
+.inbox-page { max-width: 680px; margin: 0 auto; }
+
+.inbox-header { margin-bottom: 20px; }
+.inbox-title { font-size: 24px; font-weight: 800; color: #111827; margin: 0 0 4px; }
+.inbox-subtitle { font-size: 14px; color: #9ca3af; margin: 0; }
+
+.inbox-empty {
+    text-align: center;
+    padding: 60px 20px;
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    border: 1px solid rgba(0,0,0,0.04);
+}
+
+.inbox-empty-icon { font-size: 52px; margin-bottom: 14px; }
+.inbox-empty h5 { font-size: 18px; font-weight: 700; color: #111827; margin-bottom: 8px; }
+.inbox-empty p { font-size: 14px; color: #9ca3af; margin: 0; }
+
+.inbox-list {
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    border: 1px solid rgba(0,0,0,0.04);
+    overflow: hidden;
+}
+
+.inbox-item {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 18px;
+    text-decoration: none;
+    color: inherit;
+    border-bottom: 1px solid #f9fafb;
+    transition: background 0.15s;
+    position: relative;
+}
+
+.inbox-item:last-child { border-bottom: none; }
+.inbox-item:hover { background: #f9fafb; }
+.inbox-item.unread { background: #eff6ff; }
+.inbox-item.unread:hover { background: #dbeafe; }
+
+.inbox-avatar-wrap { position: relative; flex-shrink: 0; }
+
+.inbox-avatar {
+    width: 52px; height: 52px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #e5e7eb;
+}
+
+.avatar-letter {
+    background: linear-gradient(135deg, #2563eb, #7c3aed);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 20px;
+}
+
+.inbox-online-dot {
+    position: absolute;
+    bottom: 2px; right: 2px;
+    width: 12px; height: 12px;
+    border-radius: 50%;
+    background: #16a34a;
+    border: 2px solid white;
+}
+
+.inbox-info { flex: 1; min-width: 0; }
+
+.inbox-name {
+    font-size: 15px;
+    font-weight: 700;
+    color: #111827;
+    margin-bottom: 3px;
+}
+
+.inbox-preview {
+    font-size: 13px;
+    color: #9ca3af;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 220px;
+}
+
+.inbox-item.unread .inbox-preview { color: #374151; font-weight: 500; }
+
+.inbox-you { color: #6b7280; }
+
+.inbox-right {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+    flex-shrink: 0;
+}
+
+.inbox-time { font-size: 12px; color: #9ca3af; }
+.inbox-item.unread .inbox-time { color: #2563eb; font-weight: 600; }
+
+.inbox-unread-badge { color: #2563eb; font-size: 18px; }
+.inbox-seen { font-size: 12px; color: #2563eb; }
+
+/* DARK MODE */
+body.bg-dark .inbox-title { color: #f1f5f9 !important; }
+body.bg-dark .inbox-list,
+body.bg-dark .inbox-empty { background: #1e1e2e !important; border-color: #2d2d3d !important; }
+body.bg-dark .inbox-item { border-color: #2d2d3d !important; color: #f1f5f9 !important; }
+body.bg-dark .inbox-item:hover { background: #2d2d3d !important; }
+body.bg-dark .inbox-item.unread { background: #1e3a5f !important; }
+body.bg-dark .inbox-name { color: #f1f5f9 !important; }
+body.bg-dark .inbox-empty h5 { color: #f1f5f9 !important; }
+</style>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
+<script>
+const myId = "@myId";
+const conn = new signalR.HubConnectionBuilder().withUrl("/chatHub").withAutomaticReconnect().build();
+
+conn.start().then(() => conn.invoke("JoinUserGroup", myId));
+
+conn.on("UserOnline", (userId) => {
+    const dot = document.getElementById("dot-" + userId);
+    if (dot) dot.style.display = "block";
+});
+
+conn.on("UserOffline", (userId) => {
+    const dot = document.getElementById("dot-" + userId);
+    if (dot) dot.style.display = "none";
+});
+</script>
