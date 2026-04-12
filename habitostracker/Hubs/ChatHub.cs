@@ -10,7 +10,6 @@ namespace HabitTrackerApp.Hubs
     public class ChatHub : Hub
     {
         private static HashSet<string> ConnectedUsers = new HashSet<string>();
-
         private readonly HabitDbContext _context;
         private readonly OnlineUsersService _onlineUsers;
 
@@ -19,8 +18,6 @@ namespace HabitTrackerApp.Hubs
             _context = context;
             _onlineUsers = onlineUsers;
         }
-
-
 
         public async Task KickBlockedIP(string ip)
         {
@@ -53,98 +50,84 @@ namespace HabitTrackerApp.Hubs
             await Clients.Group(receiverId).SendAsync("HideTyping");
         }
 
-        // 🔔 CUANDO EL USUARIO VE LOS MENSAJES
         public async Task MessagesViewed(string senderId)
         {
             await Clients.Group(senderId).SendAsync("ForceSeenUpdate");
         }
 
-        // 🟢 CUANDO EL USUARIO SE CONECTA
         public override async Task OnConnectedAsync()
         {
             var userId = Context.UserIdentifier;
-
             if (!string.IsNullOrEmpty(userId))
             {
-                // marcar usuario online
                 _onlineUsers.SetOnline(userId);
-
-                // unir al grupo del usuario
                 await Groups.AddToGroupAsync(Context.ConnectionId, userId);
-
-                // avisar a todos que está online
                 await Clients.All.SendAsync("UserOnline", userId);
 
                 if (!ConnectedUsers.Contains(userId))
                 {
                     ConnectedUsers.Add(userId);
-
                     var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == int.Parse(userId));
                     var superAdmin = await _context.Users.FirstOrDefaultAsync(u => u.Role == "SuperAdmin");
-
                     if (superAdmin != null && user != null && user.Role != "SuperAdmin")
-                    {
-                        await Clients.User(superAdmin.Id.ToString())
-                            .SendAsync("UserConnectedNotification", user.Username);
-                    }
+                        await Clients.User(superAdmin.Id.ToString()).SendAsync("UserConnectedNotification", user.Username);
                 }
             }
-
             await base.OnConnectedAsync();
         }
 
-        // ⚫ CUANDO EL USUARIO SE DESCONECTA
         public override async Task OnDisconnectedAsync(Exception? exception)
         {
             var userId = Context.UserIdentifier;
-
             if (!string.IsNullOrEmpty(userId))
             {
                 _onlineUsers.SetOffline(userId);
-
                 var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == int.Parse(userId));
-
                 if (user != null)
                 {
                     user.LastOnline = DateTime.Now;
                     await _context.SaveChangesAsync();
                 }
-
-
-
-                // avisar a todos que está offline
                 await Clients.All.SendAsync("UserOffline", userId);
             }
-
             await base.OnDisconnectedAsync(exception);
         }
 
         public async Task CallUser(string receiverId)
         {
-            await Clients.Group(receiverId)
-                .SendAsync("IncomingCall", Context.UserIdentifier);
+            // 🔥 pasar también el callerId para que el receptor sepa quien llama
+            await Clients.Group(receiverId).SendAsync("IncomingCall", Context.UserIdentifier);
         }
+
         public async Task SendOffer(string receiverId, string offer)
         {
-            await Clients.Group(receiverId)
-                .SendAsync("ReceiveOffer", offer);
+            await Clients.Group(receiverId).SendAsync("ReceiveOffer", offer);
         }
+
         public async Task SendIceCandidate(string receiverId, string candidate)
         {
-            await Clients.Group(receiverId)
-                .SendAsync("ReceiveIceCandidate", candidate);
+            await Clients.Group(receiverId).SendAsync("ReceiveIceCandidate", candidate);
         }
 
         public async Task SendAnswer(string receiverId, string answer)
         {
-            await Clients.Group(receiverId)
-                .SendAsync("ReceiveAnswer", answer);
+            await Clients.Group(receiverId).SendAsync("ReceiveAnswer", answer);
         }
 
         public async Task SendReaction(string receiverId, int messageId, string reaction)
         {
-            await Clients.Group(receiverId)
-                .SendAsync("ReceiveReaction", messageId, reaction);
+            await Clients.Group(receiverId).SendAsync("ReceiveReaction", messageId, reaction);
+        }
+
+        // 🔥 NUEVO: para sincronizar llamada entre las dos ventanas
+        public async Task CallReady(string receiverId)
+        {
+            await Clients.Group(receiverId).SendAsync("PeerReady");
+        }
+
+        public async Task HangUp(string receiverId)
+        {
+            await Clients.Group(receiverId).SendAsync("CallEnded");
         }
     }
 }

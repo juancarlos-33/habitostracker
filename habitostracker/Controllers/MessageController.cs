@@ -7,10 +7,6 @@ using HabitTrackerApp.Hubs;
 using Microsoft.AspNetCore.Authorization;
 using System.Threading.Tasks;
 
-
-
-
-
 namespace HabitTrackerApp.Controllers
 {
     [Authorize]
@@ -25,9 +21,6 @@ namespace HabitTrackerApp.Controllers
             _hubContext = hubContext;
         }
 
-        // =====================================
-        // 📥 BANDEJA DE MENSAJES
-        // =====================================
         public IActionResult Inbox()
         {
             var myId = int.Parse(User.FindFirst("UserId").Value);
@@ -40,7 +33,6 @@ namespace HabitTrackerApp.Controllers
                 .Select(g => g.First())
                 .ToList();
 
-            // 🔥 cargar AMBOS usuarios
             foreach (var msg in conversations)
             {
                 msg.Sender = _context.Users.FirstOrDefault(u => u.Id == msg.SenderId);
@@ -49,20 +41,14 @@ namespace HabitTrackerApp.Controllers
 
             return View(conversations);
         }
-        // =====================================
-        // 💬 CHAT ENTRE USUARIOS
-        // =====================================
+
         public async Task<IActionResult> Chat(int userId)
         {
             var userIdClaim = User.FindFirst("UserId");
-            if (userIdClaim == null)
-            {
-                return RedirectToAction("Login", "Account");
-            }
+            if (userIdClaim == null) return RedirectToAction("Login", "Account");
 
             var myId = int.Parse(userIdClaim.Value);
 
-            // 🔹 MENSAJES NO LEÍDOS
             var unreadMessages = _context.Messages
                 .Where(m => m.SenderId == userId && m.ReceiverId == myId && !m.IsRead)
                 .ToList();
@@ -70,19 +56,12 @@ namespace HabitTrackerApp.Controllers
             foreach (var msg in unreadMessages)
             {
                 msg.IsRead = true;
-
-                await _hubContext.Clients
-                    .Group(msg.SenderId.ToString())
-                    .SendAsync("MessageSeen", msg.Id);
+                await _hubContext.Clients.Group(msg.SenderId.ToString()).SendAsync("MessageSeen", msg.Id);
             }
 
             _context.SaveChanges();
+            await _hubContext.Clients.Group(userId.ToString()).SendAsync("ForceSeenUpdate");
 
-            await _hubContext.Clients
-                .Group(userId.ToString())
-                .SendAsync("ForceSeenUpdate");
-
-            // 🔹 CARGAR CONVERSACIÓN
             var messages = _context.Messages
                 .Where(m => (m.SenderId == myId && m.ReceiverId == userId) ||
                             (m.SenderId == userId && m.ReceiverId == myId))
@@ -92,43 +71,32 @@ namespace HabitTrackerApp.Controllers
 
             ViewBag.OtherUserId = userId;
 
-            // 🔥 🔥 CAMBIO AQUÍ (IMPORTANTE)
             var otherUser = _context.Users
                 .Where(u => u.Id == userId)
-                .Select(u => new
-                {
-                    u.Username,
-                    u.ProfileImage,
-                    u.LastOnline
-                })
+                .Select(u => new { u.Username, u.ProfileImage, u.ProfilePicture, u.LastOnline })
                 .FirstOrDefault();
 
             ViewBag.OtherUsername = otherUser?.Username ?? "Usuario";
             ViewBag.OtherLastOnline = otherUser?.LastOnline;
-            ViewBag.OtherUserProfileImage = otherUser?.ProfileImage;
+            ViewBag.OtherUserProfileImage = otherUser?.ProfileImage ?? otherUser?.ProfilePicture;
 
             return View(messages);
         }
-        // =====================================
-        // ✉️ ENVIAR MENSAJE
-        // =====================================
+
         [HttpPost]
         public async Task<IActionResult> Send(int receiverId, string content, IFormFile file)
         {
-            // 🔒 OBTENER USUARIO ACTUAL
             var currentUser = GetCurrentUser();
 
-            // 🚫 BLOQUEAR INVITADOS
             if (currentUser.Role == "Guest")
             {
-                TempData["Error"] = "✨ Debes crear una cuenta para enviar mensajes y desbloquear todas las funciones.";
+                TempData["Error"] = "✨ Debes crear una cuenta para enviar mensajes.";
                 return RedirectToAction("Chat", new { userId = receiverId });
             }
 
             var senderId = int.Parse(User.FindFirst("UserId").Value);
             var senderName = User.Identity?.Name ?? "Usuario";
 
-            // 🔥 VALIDAR QUE EL RECEPTOR EXISTE
             var receiverExists = _context.Users.Any(u => u.Id == receiverId);
             if (!receiverExists)
             {
@@ -138,30 +106,19 @@ namespace HabitTrackerApp.Controllers
 
             string filePath = null;
 
-            // 📁 SI HAY ARCHIVO
             if (file != null && file.Length > 0)
             {
                 var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/uploads");
-
-                if (!Directory.Exists(uploadsFolder))
-                    Directory.CreateDirectory(uploadsFolder);
-
+                if (!Directory.Exists(uploadsFolder)) Directory.CreateDirectory(uploadsFolder);
                 var fileName = Guid.NewGuid().ToString() + Path.GetExtension(file.FileName);
                 var fullPath = Path.Combine(uploadsFolder, fileName);
-
                 using (var stream = new FileStream(fullPath, FileMode.Create))
-                {
                     await file.CopyToAsync(stream);
-                }
-
                 filePath = "/uploads/" + fileName;
             }
 
-            // 🔥 VALIDAR QUE NO ESTÉ TODO VACÍO
             if (string.IsNullOrWhiteSpace(content) && file == null)
-            {
                 return RedirectToAction("Chat", new { userId = receiverId });
-            }
 
             var message = new Message
             {
@@ -175,7 +132,8 @@ namespace HabitTrackerApp.Controllers
 
             _context.Messages.Add(message);
 
-            // 🔔 GUARDAR NOTIFICACIÓN
+            var sender = _context.Users.FirstOrDefault(u => u.Id == senderId);
+
             _context.Notifications.Add(new Notification
             {
                 UserId = receiverId,
@@ -183,10 +141,7 @@ namespace HabitTrackerApp.Controllers
                 Message = "💬 Nuevo mensaje de " + senderName,
                 CreatedAt = DateTime.Now,
                 IsRead = false,
-                FromUserImage = _context.Users
-                    .Where(u => u.Id == senderId)
-                    .Select(u => u.ProfileImage)
-                    .FirstOrDefault() ?? "",
+                FromUserImage = sender?.ProfileImage ?? "",
                 FromUsername = senderName
             });
 
@@ -195,39 +150,19 @@ namespace HabitTrackerApp.Controllers
             await _hubContext.Clients.Group(receiverId.ToString())
                 .SendAsync("ReceiveMessage", senderId, receiverId, senderName, content ?? "");
 
-            var sender = _context.Users.FirstOrDefault(u => u.Id == senderId);
-
             await _hubContext.Clients.Group(receiverId.ToString())
-                .SendAsync(
-                    "ReceiveNotification",
-                    senderId,
-                    "💬 Nuevo mensaje",
-                    senderName,
-                    sender?.ProfileImage ?? "",
-                    "/Message/Chat?userId=" + senderId
-                );
-
-            await _hubContext.Clients.User(receiverId.ToString())
-                .SendAsync(
-                    "ReceiveNotification",
-                    senderId,
-                    "💬 Nuevo mensaje",
-                    senderName,
-                    sender?.ProfileImage ?? "",
-                    "/Message/Chat?userId=" + senderId
-                );
+                .SendAsync("ReceiveNotification", senderId, "💬 Nuevo mensaje", senderName,
+                    sender?.ProfileImage ?? "", "/Message/Chat?userId=" + senderId);
 
             return RedirectToAction("Chat", new { userId = receiverId });
         }
+
         private User GetCurrentUser()
         {
             var username = User.Identity.Name;
             return _context.Users.FirstOrDefault(u => u.Username == username);
         }
 
-        // =====================================
-        // 👀 MARCAR MENSAJES COMO VISTOS EN TIEMPO REAL
-        // =====================================
         [HttpPost]
         public async Task<IActionResult> MarkAsSeen(int senderId)
         {
@@ -240,14 +175,10 @@ namespace HabitTrackerApp.Controllers
             foreach (var msg in messages)
             {
                 msg.IsRead = true;
-
-                await _hubContext.Clients
-                    .Group(senderId.ToString())
-                    .SendAsync("MessageSeen", msg.Id);
+                await _hubContext.Clients.Group(senderId.ToString()).SendAsync("MessageSeen", msg.Id);
             }
 
             _context.SaveChanges();
-
             return Ok();
         }
 
@@ -261,9 +192,10 @@ namespace HabitTrackerApp.Controllers
 
             ViewBag.MyId = myId;
             ViewBag.MyUsername = me?.Username;
-            ViewBag.MyImage = me?.ProfileImage;
+            ViewBag.MyImage = me?.ProfileImage ?? me?.ProfilePicture;
+            ViewBag.OtherUserId = userId;
             ViewBag.OtherUsername = other.Username;
-            ViewBag.OtherImage = other.ProfileImage;
+            ViewBag.OtherImage = other.ProfileImage ?? other.ProfilePicture;
 
             return View();
         }
@@ -273,36 +205,28 @@ namespace HabitTrackerApp.Controllers
         {
             var senderId = int.Parse(User.FindFirst("UserId").Value);
 
-            if (audio == null || audio.Length == 0)
-                return BadRequest();
+            if (audio == null || audio.Length == 0) return BadRequest();
 
-            // 📁 crear carpeta si no existe
             var folderPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/audios");
+            if (!Directory.Exists(folderPath)) Directory.CreateDirectory(folderPath);
 
-            if (!Directory.Exists(folderPath))
-                Directory.CreateDirectory(folderPath);
-
-            // 🧾 nombre único
             var fileName = Guid.NewGuid().ToString() + ".webm";
             var filePath = Path.Combine(folderPath, fileName);
 
-            // 💾 guardar archivo
             using (var stream = new FileStream(filePath, FileMode.Create))
-            {
                 await audio.CopyToAsync(stream);
-            }
 
-            // 💬 guardar como mensaje
             var receiverId = int.Parse(Request.Form["receiverId"]);
 
             var message = new Message
             {
                 SenderId = senderId,
-                ReceiverId = receiverId, // 🔥 CLAVE
+                ReceiverId = receiverId,
                 Content = "/audios/" + fileName,
                 SentAt = DateTime.Now,
                 IsRead = false
             };
+
             _context.Messages.Add(message);
             await _context.SaveChangesAsync();
 
@@ -313,9 +237,7 @@ namespace HabitTrackerApp.Controllers
         public async Task<IActionResult> React([FromBody] ReactRequest request)
         {
             var message = _context.Messages.FirstOrDefault(m => m.Id == request.MessageId);
-
-            if (message == null)
-                return NotFound();
+            if (message == null) return NotFound();
 
             message.Reaction = request.Reaction;
             _context.SaveChanges();
