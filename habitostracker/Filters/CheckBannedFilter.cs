@@ -2,6 +2,8 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using System.Security.Claims;
 
 namespace HabitTrackerApp.Filters
 {
@@ -18,28 +20,42 @@ namespace HabitTrackerApp.Filters
         {
             var userIdClaim = context.HttpContext.User.FindFirst("UserId");
 
-            if (userIdClaim != null)
+            if (userIdClaim == null) return;
+
+            int userId = int.Parse(userIdClaim.Value);
+            var user = _context.Users.FirstOrDefault(u => u.Id == userId);
+
+            if (user == null) return;
+
+            if (!user.IsActive || user.IsBanned)
             {
-                int userId = int.Parse(userIdClaim.Value);
+                context.HttpContext.SignOutAsync();
+                context.Result = new RedirectToActionResult("Login", "Account", null);
+                return;
+            }
 
-                var user = _context.Users.FirstOrDefault(u => u.Id == userId);
+            // 🔥 Si el claim ProfileImage está vacío pero el usuario tiene foto, refrescar sesión
+            var currentProfileImage = context.HttpContext.User.FindFirst("ProfileImage")?.Value;
+            var realPhoto = user.ProfileImage ?? user.ProfilePicture ?? "";
 
-                if (user != null)
+            if (string.IsNullOrEmpty(currentProfileImage) && !string.IsNullOrEmpty(realPhoto))
+            {
+                var claims = new List<Claim>
                 {
-                    if (!user.IsActive)
-                    {
-                        context.HttpContext.SignOutAsync();
-                        context.Result = new RedirectToActionResult("Login", "Account", null);
-                        return;
-                    }
+                    new Claim("UserId", user.Id.ToString()),
+                    new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+                    new Claim(ClaimTypes.Name, user.Username ?? "Usuario"),
+                    new Claim(ClaimTypes.Role, user.Role ?? "User"),
+                    new Claim("ProfileImage", realPhoto)
+                };
 
-                    if (user.IsBanned)
-                    {
-                        context.HttpContext.SignOutAsync();
-                        context.Result = new RedirectToActionResult("Login", "Account", null);
-                        return;
-                    }
-                }
+                var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+                var principal = new ClaimsPrincipal(identity);
+
+                // 🔥 async fire-and-forget para no bloquear el filtro
+                _ = context.HttpContext.SignInAsync(
+                    CookieAuthenticationDefaults.AuthenticationScheme,
+                    principal);
             }
         }
 
