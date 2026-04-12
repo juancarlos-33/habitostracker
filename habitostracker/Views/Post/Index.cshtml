@@ -48,14 +48,19 @@
                     @if (post.User != null)
                     {
                         <a asp-controller="User" asp-action="Profile" asp-route-id="@post.UserId" class="avatar-link">
-                            @if (!string.IsNullOrEmpty(post.User.ProfileImage))
-                            {
-                                <img src="@post.User.ProfileImage" class="post-avatar" />
-                            }
-                            else
-                            {
-                                <div class="post-avatar-placeholder">@post.DisplayUsername.Substring(0,1).ToUpper()</div>
-                            }
+                           @{
+    var postPic = !string.IsNullOrEmpty(post.User?.ProfileImage)
+        ? post.User.ProfileImage
+        : post.User?.ProfilePicture;
+}
+@if (!string.IsNullOrEmpty(postPic))
+{
+    <img src="@postPic" class="post-avatar" />
+}
+else
+{
+    <div class="post-avatar-placeholder">@post.DisplayUsername.Substring(0, 1).ToUpper()</div>
+}
                         </a>
                     }
                     else

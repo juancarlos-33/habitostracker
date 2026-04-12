@@ -979,10 +979,12 @@ function toggleSidebar(){
                     <div class="dropdown">
 
                         @{
-                            var userName = User.Identity.Name ?? "U";
-                            var firstLetter = userName.Substring(0, 1).ToUpper();
-                            var profileImage = User.FindFirst("ProfileImage")?.Value;
-                        }
+    var userName = User.Identity.Name ?? "U";
+    var firstLetter = userName.Substring(0, 1).ToUpper();
+    var profileImage = User.FindFirst("ProfileImage")?.Value;
+    if (string.IsNullOrEmpty(profileImage))
+        profileImage = User.FindFirst("ProfilePicture")?.Value;
+}
 
                         <button class="btn btn-light rounded-pill px-3 d-flex align-items-center gap-2 shadow-sm"
                                 type="button"
