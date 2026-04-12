@@ -322,7 +322,10 @@ document.getElementById("createForm").addEventListener("submit", function(e) {
         alert("Debes escribir algo o subir una imagen/video.");
         return;
     }
-    document.getElementById("btnPublish").disabled = true;
-    document.getElementById("btnPublish").textContent = "⏳ Publicando...";
+    // 🔥 deshabilitar DESPUÉS de un pequeño delay para que el form se envíe primero
+    setTimeout(() => {
+        document.getElementById("btnPublish").disabled = true;
+        document.getElementById("btnPublish").textContent = "⏳ Publicando...";
+    }, 100);
 });
 </script>
