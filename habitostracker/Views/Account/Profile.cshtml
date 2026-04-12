@@ -89,6 +89,7 @@
         <form asp-controller="Account" asp-action="Profile" method="post" enctype="multipart/form-data" data-no-loader>
             @Html.AntiForgeryToken()
             <input type="hidden" id="croppedImageInput" name="croppedImage" />
+            <input type="file" id="imageInput" name="profilePhoto" accept="image/*" style="display:none;" />
 
             <div class="form-section">
                 <div class="section-header">
@@ -129,23 +130,14 @@
                 </div>
             </div>
 
-            <div class="form-section">
+            <!-- 🔥 CROPPER oculto, se activa desde el botón de la foto -->
+            <div class="form-section" id="cropperSection" style="display:none;">
                 <div class="section-header">
-                    <h4 class="section-title">📷 Foto de perfil</h4>
-                    <span class="section-subtitle">Sube o recorta tu imagen</span>
+                    <h4 class="section-title">✂️ Recortar imagen</h4>
+                    <span class="section-subtitle">Ajusta tu foto antes de guardar</span>
                 </div>
-
-                <div class="upload-zone" onclick="document.getElementById('imageInput').click()">
-                    <span class="upload-icon">⬆️</span>
-                    <span class="upload-text">Haz click para subir una imagen</span>
-                    <span class="upload-hint">JPG, PNG o GIF — máx 5MB</span>
-                    <input type="file" id="imageInput" name="profilePhoto" accept="image/*" style="display:none;" />
-                </div>
-
-                <div class="cropper-section" id="cropperSection" style="display:none;">
-                    <img id="cropImage" style="max-width:100%;" />
-                    <button type="button" id="cropButton" data-no-loader class="crop-btn">✂️ Recortar imagen</button>
-                </div>
+                <img id="cropImage" style="max-width:100%;" />
+                <button type="button" id="cropButton" data-no-loader class="crop-btn">✂️ Confirmar recorte</button>
             </div>
 
             <button type="submit" class="save-btn">
@@ -181,12 +173,28 @@
     gap: 8px;
 }
 
+/* 🔥 PC: 2 columnas | Móvil: 1 columna */
 .profile-wrapper {
     display: grid;
     grid-template-columns: 280px 1fr;
     gap: 24px;
     max-width: 960px;
     margin: 0 auto;
+}
+
+@@media (max-width: 768px) {
+    .profile-wrapper {
+        grid-template-columns: 1fr;
+    }
+    .profile-left {
+        position: static !important;
+    }
+    .fields-grid {
+        grid-template-columns: 1fr !important;
+    }
+    .full-width {
+        grid-column: 1 !important;
+    }
 }
 
 @@media (min-width: 769px) {
@@ -204,9 +212,7 @@
     box-shadow: 0 4px 20px rgba(0,0,0,0.07);
     border: 1px solid rgba(0,0,0,0.05);
     height: fit-content;
-    /* 🔥 quitar position sticky — causa el problema en móvil */
 }
-
 
 .avatar-section {
     position: relative;
@@ -216,26 +222,20 @@
 }
 
 .profile-avatar {
-    width: 120px;
-    height: 120px;
-    border-radius: 50%;
-    object-fit: cover;
+    width: 120px; height: 120px;
+    border-radius: 50%; object-fit: cover;
     border: 4px solid white;
     box-shadow: 0 4px 20px rgba(0,0,0,0.15);
     display: block;
 }
 
 .profile-avatar-letter {
-    width: 120px;
-    height: 120px;
+    width: 120px; height: 120px;
     border-radius: 50%;
     background: linear-gradient(135deg, #2563eb, #7c3aed);
     color: white;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 42px;
-    font-weight: 800;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 42px; font-weight: 800;
     border: 4px solid white;
     box-shadow: 0 4px 20px rgba(0,0,0,0.15);
 }
@@ -246,11 +246,8 @@
     width: 34px; height: 34px;
     background: #2563eb;
     border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 15px;
-    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 15px; cursor: pointer;
     border: 3px solid white;
     transition: 0.2s;
     box-shadow: 0 2px 8px rgba(37,99,235,0.4);
@@ -354,24 +351,12 @@
 .field-textarea:focus { outline: none; border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37,99,235,0.1); }
 .field-hint { font-size: 11px; color: #9ca3af; margin-top: 4px; display: block; }
 
-.upload-zone {
-    border: 2px dashed #e5e7eb; border-radius: 16px; padding: 28px;
-    text-align: center; cursor: pointer; transition: 0.2s;
-    display: flex; flex-direction: column; align-items: center; gap: 6px;
-}
-
-.upload-zone:hover { border-color: #2563eb; background: #eff6ff; }
-.upload-icon { font-size: 28px; }
-.upload-text { font-size: 14px; font-weight: 600; color: #374151; }
-.upload-hint { font-size: 12px; color: #9ca3af; }
-
-.cropper-section { margin-top: 16px; text-align: center; }
-
 .crop-btn {
     margin-top: 12px; padding: 10px 24px;
     background: linear-gradient(135deg, #16a34a, #15803d);
     color: white; border: none; border-radius: 12px;
     font-weight: 600; cursor: pointer; transition: 0.2s; font-size: 14px;
+    display: block; width: 100%;
 }
 
 .crop-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(22,163,74,0.3); }
@@ -429,9 +414,6 @@ body.bg-dark .member-since { background: #2d2d3d !important; color: #64748b !imp
 body.bg-dark .stat-num { color: #f1f5f9 !important; }
 body.bg-dark .follow-content { background: #1e1e2e !important; }
 body.bg-dark .follow-header { color: #f1f5f9 !important; border-color: #2d2d3d !important; }
-body.bg-dark .upload-zone { border-color: #3d3d4d !important; }
-body.bg-dark .upload-zone:hover { background: #1e3a5f !important; border-color: #2563eb !important; }
-body.bg-dark .upload-text { color: #f1f5f9 !important; }
 body.bg-dark .profile-alert { background: #14532d !important; color: #86efac !important; border-color: #16a34a !important; }
 body.bg-dark .profile-bio-preview { color: #64748b !important; }
 </style>
@@ -453,6 +435,8 @@ input.addEventListener("change", function(e) {
     reader.onload = function(event) {
         image.src = event.target.result;
         cropperSection.style.display = "block";
+        // 🔥 scroll hasta el cropper en móvil
+        cropperSection.scrollIntoView({ behavior: "smooth", block: "start" });
         if (cropper) cropper.destroy();
         cropper = new Cropper(image, {
             aspectRatio: 1, viewMode: 1,
