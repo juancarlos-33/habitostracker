@@ -307,7 +307,7 @@ namespace HabitTrackerApp.Controllers
                 }
                 catch (Exception ex)
                 {
-                    TempData["Error"] = $"Error: {ex.Message} | Tipo: {image.ContentType} | Tamaño: {image.Length}";
+                    TempData["Error"] = "Error al subir: " + ex.Message;
                     return RedirectToAction("Create");
                 }
             }
