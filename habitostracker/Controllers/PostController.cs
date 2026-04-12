@@ -277,6 +277,8 @@ namespace HabitTrackerApp.Controllers
         }
 
         [HttpPost]
+        [RequestSizeLimit(524288000)]
+        [RequestFormLimits(MultipartBodyLengthLimit = 524288000)]
         public async Task<IActionResult> Create(string description, IFormFile image)
         {
             var userId = int.Parse(User.FindFirst("UserId").Value);

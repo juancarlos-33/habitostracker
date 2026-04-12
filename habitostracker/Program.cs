@@ -134,6 +134,17 @@ options.ClientSecret = builder.Configuration["Google:ClientSecret"];
             builder.Services.AddDataProtection()
      .SetApplicationName("habitostracker");
 
+            // 🔥 permitir archivos grandes (videos)
+            builder.Services.Configure<Microsoft.AspNetCore.Http.Features.FormOptions>(options =>
+            {
+                options.MultipartBodyLengthLimit = 524288000; // 500MB
+            });
+
+            builder.WebHost.ConfigureKestrel(options =>
+            {
+                options.Limits.MaxRequestBodySize = 524288000; // 500MB
+            });
+
             var app = builder.Build();
             app.UseSession();
 
