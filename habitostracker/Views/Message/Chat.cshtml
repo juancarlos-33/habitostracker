@@ -202,8 +202,16 @@
             <input type="text" id="messageInput" name="content" class="msg-input"
                    placeholder="@(isDeletedUser ? "No puedes enviar mensajes" : "Escribe un mensaje...")"
                    @(isDeletedUser ? "disabled" : "") autocomplete="off" />
-            <button type="submit" class="send-btn" @(isDeletedUser ? "disabled" : "")>➤</button>
+           <button type="submit" class="send-btn" id="sendBtn" @(isDeletedUser ? "disabled" : "") disabled>➤</button>
         </div>
+
+        <!-- 🔥 indicador grabando -->
+<div id="recordingStatus" style="display:none;" class="recording-status">
+    <span class="rec-dot"></span>
+    <span>Grabando audio...</span>
+    <span id="recTimer">0:00</span>
+</div>
+
     </form>
 </div>
 
@@ -217,8 +225,10 @@
     background: white;
     z-index: 10;
     overflow: hidden;
+    /* 🔥 fix móvil */
+    height: calc(100vh - 56px);
+    max-height: calc(100vh - 56px);
 }
-
 @@media (min-width: 768px) {
     .chat-page {
         position: relative;
@@ -249,6 +259,12 @@
     gap: 10px;
     text-decoration: none;
     color: inherit;
+}
+
+.send-btn:disabled {
+    background: #9ca3af;
+    cursor: not-allowed;
+    transform: none;
 }
 
 .chat-header-avatar {
@@ -283,6 +299,32 @@
     width: 28px; height: 28px;
     border-radius: 50%;
     flex-shrink: 0;
+}
+
+.recording-status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 12px;
+    background: #fee2e2;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #dc2626;
+    margin-bottom: 6px;
+}
+
+.rec-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    background: #dc2626;
+    animation: recPulse 1s infinite;
+    flex-shrink: 0;
+}
+
+@@keyframes recPulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.4; transform: scale(0.8); }
 }
 
 .chat-header-name { font-size: 14px; font-weight: 700; color: #111827; }
@@ -738,6 +780,10 @@ connection.on("ReceiveAudio", (senderId, audioUrl) => {
 
 connection.on("UserRecording", () => {
     const ind = document.getElementById("typingIndicator");
+    ind.innerHTML = `
+        <span class="rec-dot" style="width:8px;height:8px;border-radius:50%;background:#dc2626;animation:recPulse 1s infinite;flex-shrink:0;"></span>
+        <span style="font-size:12px;color:#dc2626;font-weight:600;">Grabando audio...</span>
+    `;
     ind.style.display = "flex";
     ind.setAttribute("data-recording", "true");
     chatBox.scrollTop = chatBox.scrollHeight;
@@ -746,6 +792,11 @@ connection.on("UserRecording", () => {
 connection.on("UserStoppedRecording", () => {
     const ind = document.getElementById("typingIndicator");
     if (ind.getAttribute("data-recording") === "true") {
+        ind.innerHTML = `
+            <span class="typing-dot"></span>
+            <span class="typing-dot"></span>
+            <span class="typing-dot"></span>
+        `;
         ind.style.display = "none";
         ind.removeAttribute("data-recording");
     }
@@ -985,12 +1036,20 @@ function addEmoji(emoji) {
     input.focus();
 }
 
+// 🔥 habilitar/deshabilitar botón según input
+const sendBtn = document.getElementById("sendBtn");
+document.getElementById("messageInput").addEventListener("input", function() {
+    sendBtn.disabled = this.value.trim() === "";
+});
+
 async function startRecording() {
     if (isRecording && mediaRecorder?.state === "recording") {
         mediaRecorder.requestData();
         mediaRecorder.stop();
         isRecording = false;
         document.getElementById("recordBtn").classList.remove("recording");
+        document.getElementById("recordBtn").innerHTML = "🎤";
+        document.getElementById("recordingStatus").style.display = "none";
         connection.invoke("StopRecording", receiverId);
         return;
     }
@@ -1000,20 +1059,32 @@ async function startRecording() {
         audioChunks = [];
         isRecording = true;
         document.getElementById("recordBtn").classList.add("recording");
+        document.getElementById("recordBtn").innerHTML = "⏹️";
+        document.getElementById("recordingStatus").style.display = "flex";
         connection.invoke("StartRecording", receiverId);
 
         mediaRecorder.ondataavailable = e => { if (e.data?.size > 0) audioChunks.push(e.data); };
         mediaRecorder.onstop = () => {
+            stream.getTracks().forEach(t => t.stop());
             if (!audioChunks.length) return;
             const blob = new Blob(audioChunks, { type: 'audio/webm' });
             window.recordedAudio = blob;
             document.getElementById("previewPlayer").src = URL.createObjectURL(blob);
             document.getElementById("audioPreview").style.display = "block";
+            document.getElementById("recordingStatus").style.display = "none";
         };
         mediaRecorder.start();
+        // 🔥 timer de grabación
+let recSeconds = 0;
+const recInterval = setInterval(() => {
+    if (!isRecording) { clearInterval(recInterval); return; }
+    recSeconds++;
+    const m = Math.floor(recSeconds / 60);
+    const s = String(recSeconds % 60).padStart(2, "0");
+    document.getElementById("recTimer").textContent = `${m}:${s}`;
+}, 1000);
     } catch (err) { alert("Error al acceder al micrófono"); }
 }
-
 async function sendAudio() {
     if (!window.recordedAudio) return;
     const formData = new FormData();
