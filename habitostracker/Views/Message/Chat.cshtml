@@ -33,11 +33,21 @@
                 </div>
             </div>
         </a>
-        <button class="call-btn" id="callBtn" onclick="startCall()" title="Llamar">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.81a19.79 19.79 0 01-3.07-8.67A2 2 0 012 1h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 8.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/>
-            </svg>
-        </button>
+        <div class="header-menu-wrap">
+            <button class="header-menu-btn" onclick="toggleHeaderMenu()" data-no-loader title="Opciones">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                    <circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/>
+                </svg>
+            </button>
+            <div id="headerMenu" class="header-menu-dropdown" style="display:none;">
+                <button onclick="silenciarNotificaciones()">🔕 Silenciar notificaciones</button>
+                <button onclick="crearGrupo()">👥 Crear grupo</button>
+                <button onclick="anclarChat()">📌 Anclar chat</button>
+                <hr class="menu-divider" />
+                <button onclick="denunciarUsuario()" class="menu-danger">🚩 Denunciar</button>
+                <button onclick="bloquearUsuario()" class="menu-danger">🚫 Bloquear</button>
+            </div>
+        </div>
     </div>
 
     @if (isDeletedUser)
@@ -127,12 +137,10 @@
                             }
                         </div>
                     </div>
-
                     @if (!string.IsNullOrEmpty(msg.Reaction))
                     { <span class="msg-reaction-badge" id="reaction-@msg.Id">@msg.Reaction</span> }
                     else
                     { <span class="msg-reaction-badge" id="reaction-@msg.Id" style="display:none;"></span> }
-
                     <div class="reaction-btns">
                         <button onclick="reactToMessage(@msg.Id, '🔥')">🔥</button>
                         <button onclick="reactToMessage(@msg.Id, '❤️')">❤️</button>
@@ -152,20 +160,15 @@
                 </div>
             </div>
         }
-
         <div id="typingIndicator" class="typing-indicator" style="display:none;">
-            <span class="typing-dot"></span>
-            <span class="typing-dot"></span>
-            <span class="typing-dot"></span>
+            <span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span>
         </div>
     </div>
 
     <div id="emojiPanel" class="emoji-panel" style="display:none;">
         <div class="emoji-grid">
             @foreach (var e in new[]{"😀","😂","🥹","😍","🥰","😎","🤩","🤗","😏","😒","😭","😤","😡","🥺","😱","🤯","🤔","🫡","🤫","😴","🤢","🤮","🤧","🥵","🥶","😵","🤠","🥳","😺","👻","💀","☠️","🤡","👾","🔥","❤️","🧡","💛","💚","💙","💜","🖤","💔","❣️","💕","💯","✨","🎉","🏆","⚡","🌈","👍","👎","👏","🙏","💪","🫶","✌️","🤙","👋","🤝","🫂","💆","🧠","👀","💬","🎵","🎶","🍕","🍺","🎮","⚽","🏀","🎯"})
-            {
-                <span onclick="addEmoji('@e')">@e</span>
-            }
+            { <span onclick="addEmoji('@e')">@e</span> }
         </div>
     </div>
 
@@ -229,64 +232,44 @@
 
 <style>
 .chat-page {
-    display: flex;
-    flex-direction: column;
-    position: fixed;
-    top: 0; left: 0; right: 0; bottom: 0;
-    background: #f8f9fb;
-    z-index: 10;
-    overflow: hidden;
-    padding-top: 90px;
+    display: flex; flex-direction: column;
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    background: #f8f9fb; z-index: 10; overflow: hidden; padding-top: 90px;
 }
 
 @@media (min-width: 768px) {
     .chat-page {
-        position: relative;
-        padding-top: 0;
-        height: calc(100vh - 130px);
-        max-width: 860px;
-        margin: 0 auto;
-        border-radius: 20px;
-        box-shadow: 0 8px 40px rgba(0,0,0,0.1);
-        overflow: hidden;
-        border: 1px solid rgba(0,0,0,0.06);
+        position: relative; padding-top: 0;
+        height: calc(100vh - 130px); max-width: 860px; margin: 0 auto;
+        border-radius: 20px; box-shadow: 0 8px 40px rgba(0,0,0,0.1);
+        overflow: hidden; border: 1px solid rgba(0,0,0,0.06);
     }
 }
 
 .chat-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
+    display: flex; align-items: center; justify-content: space-between;
     padding: 12px 16px;
     background: linear-gradient(135deg, #1e293b, #334155);
-    flex-shrink: 0;
-    z-index: 2;
+    flex-shrink: 0; z-index: 2;
 }
 
 .chat-header-user {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    text-decoration: none;
-    color: white;
-    min-width: 0;
+    display: flex; align-items: center; gap: 12px;
+    text-decoration: none; color: white; min-width: 0; flex: 1;
 }
 
 .chat-avatar-wrap { position: relative; flex-shrink: 0; }
 
 .chat-header-avatar {
-    width: 42px; height: 42px;
-    border-radius: 50%; object-fit: cover;
-    border: 2px solid rgba(255,255,255,0.2);
-    display: block;
+    width: 42px; height: 42px; border-radius: 50%; object-fit: cover;
+    border: 2px solid rgba(255,255,255,0.2); display: block;
 }
 
 .avatar-letter {
     width: 42px; height: 42px; border-radius: 50%;
     background: linear-gradient(135deg, #6366f1, #8b5cf6);
     color: white; display: flex; align-items: center; justify-content: center;
-    font-weight: 800; font-size: 16px;
-    border: 2px solid rgba(255,255,255,0.2);
+    font-weight: 800; font-size: 16px; border: 2px solid rgba(255,255,255,0.2);
 }
 
 .online-dot {
@@ -303,40 +286,62 @@
 .chat-header-status { font-size: 11px; margin-top: 1px; color: rgba(255,255,255,0.5); }
 .chat-header-status.online { color: #4ade80; }
 
-.call-btn {
-    width: 40px; height: 40px; border-radius: 50%; border: none;
+/* 🔥 MENÚ 3 PUNTOS */
+.header-menu-wrap { position: relative; flex-shrink: 0; }
+
+.header-menu-btn {
+    width: 38px; height: 38px; border-radius: 50%; border: none;
     background: rgba(255,255,255,0.1); color: white; cursor: pointer;
     display: flex; align-items: center; justify-content: center;
-    transition: 0.2s; flex-shrink: 0;
+    transition: 0.2s;
 }
 
-.call-btn:hover { background: rgba(255,255,255,0.2); transform: scale(1.05); }
-.call-btn.calling { background: #dc2626; animation: callPulse 1s infinite; }
+.header-menu-btn:hover { background: rgba(255,255,255,0.2); }
 
+.header-menu-dropdown {
+    position: absolute; top: 46px; right: 0;
+    background: #1e293b; border-radius: 14px; padding: 6px;
+    min-width: 210px; box-shadow: 0 12px 40px rgba(0,0,0,0.5);
+    border: 1px solid rgba(255,255,255,0.08); z-index: 9999;
+    animation: menuFadeIn 0.15s ease;
+}
+
+@@keyframes menuFadeIn {
+    from { opacity: 0; transform: translateY(-8px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.header-menu-dropdown button {
+    display: flex; align-items: center; gap: 10px;
+    width: 100%; padding: 10px 14px;
+    background: none; border: none; color: #f1f5f9;
+    font-size: 14px; font-weight: 500; cursor: pointer;
+    border-radius: 10px; text-align: left; transition: 0.15s;
+}
+
+.header-menu-dropdown button:hover { background: rgba(255,255,255,0.08); }
+.header-menu-dropdown .menu-danger { color: #f87171 !important; }
+.menu-divider { margin: 4px 8px; border: none; border-top: 1px solid rgba(255,255,255,0.08); }
+
+/* MODALES LLAMADA */
 #callModal, #incomingCallModal {
-    position: fixed; inset: 0;
-    background: rgba(15,23,42,0.92);
-    z-index: 99999;
-    display: flex; align-items: center; justify-content: center;
+    position: fixed; inset: 0; background: rgba(15,23,42,0.92);
+    z-index: 99999; display: flex; align-items: center; justify-content: center;
     backdrop-filter: blur(16px);
 }
 
 .call-modal-inner {
     background: linear-gradient(160deg, #1e293b 0%, #0f172a 100%);
-    border-radius: 32px; padding: 44px 36px;
-    text-align: center; color: white; min-width: 300px;
-    box-shadow: 0 32px 80px rgba(0,0,0,0.7);
+    border-radius: 32px; padding: 44px 36px; text-align: center;
+    color: white; min-width: 300px; box-shadow: 0 32px 80px rgba(0,0,0,0.7);
     border: 1px solid rgba(255,255,255,0.07);
 }
 
-.call-ripple {
-    position: relative; width: 100px; height: 100px; margin: 0 auto 20px;
-}
+.call-ripple { position: relative; width: 100px; height: 100px; margin: 0 auto 20px; }
 
 .call-ripple::before, .call-ripple::after {
-    content: ''; position: absolute; inset: -12px;
-    border-radius: 50%; border: 2px solid rgba(99,102,241,0.3);
-    animation: ripple 2s infinite;
+    content: ''; position: absolute; inset: -12px; border-radius: 50%;
+    border: 2px solid rgba(99,102,241,0.3); animation: ripple 2s infinite;
 }
 
 .call-ripple::after { animation-delay: 1s; }
@@ -346,11 +351,7 @@
     100% { transform: scale(1.4); opacity: 0; }
 }
 
-.call-avatar-img {
-    width: 100px; height: 100px; border-radius: 50%;
-    object-fit: cover; border: 3px solid #6366f1; display: block;
-}
-
+.call-avatar-img { width: 100px; height: 100px; border-radius: 50%; object-fit: cover; border: 3px solid #6366f1; display: block; }
 .call-avatar-letter {
     width: 100px; height: 100px; border-radius: 50%;
     background: linear-gradient(135deg, #6366f1, #8b5cf6);
@@ -374,50 +375,30 @@
     display: flex; align-items: center; justify-content: center; color: white;
 }
 
-.call-end-btn, .call-reject-btn {
-    background: linear-gradient(135deg,#dc2626,#b91c1c);
-    box-shadow: 0 6px 20px rgba(220,38,38,0.4);
-}
-
-.call-accept-btn {
-    background: linear-gradient(135deg,#22c55e,#16a34a);
-    box-shadow: 0 6px 20px rgba(34,197,94,0.4);
-}
-
+.call-end-btn, .call-reject-btn { background: linear-gradient(135deg,#dc2626,#b91c1c); box-shadow: 0 6px 20px rgba(220,38,38,0.4); }
+.call-accept-btn { background: linear-gradient(135deg,#22c55e,#16a34a); box-shadow: 0 6px 20px rgba(34,197,94,0.4); }
 .call-end-btn:hover, .call-reject-btn:hover, .call-accept-btn:hover { transform: scale(1.08); }
 
 .deleted-alert {
-    background: #fef9c3; color: #854d0e;
-    text-align: center; padding: 8px;
-    font-size: 12px; font-weight: 600; flex-shrink: 0;
+    background: #fef9c3; color: #854d0e; text-align: center;
+    padding: 8px; font-size: 12px; font-weight: 600; flex-shrink: 0;
     border-bottom: 1px solid #fde047;
 }
 
-/* 🔥 SCROLLBAR BONITA */
 .chat-box {
-    flex: 1;
-    overflow-y: auto;
-    overflow-x: hidden;
-    padding: 16px 12px;
-    background: #f1f5f9;
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    -webkit-overflow-scrolling: touch;
-    min-height: 0;
-    overscroll-behavior: contain;
+    flex: 1; overflow-y: auto; overflow-x: hidden;
+    padding: 16px 12px; background: #f1f5f9;
+    display: flex; flex-direction: column; gap: 4px;
+    -webkit-overflow-scrolling: touch; min-height: 0; overscroll-behavior: contain;
 }
 
 .chat-box::-webkit-scrollbar { width: 6px; }
 .chat-box::-webkit-scrollbar-track { background: rgba(0,0,0,0.04); border-radius: 10px; }
 .chat-box::-webkit-scrollbar-thumb {
     background: linear-gradient(180deg, #6366f1, #8b5cf6);
-    border-radius: 10px;
-    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 10px; border: 1px solid rgba(255,255,255,0.2);
 }
-.chat-box::-webkit-scrollbar-thumb:hover {
-    background: linear-gradient(180deg, #4f46e5, #7c3aed);
-}
+.chat-box::-webkit-scrollbar-thumb:hover { background: linear-gradient(180deg, #4f46e5, #7c3aed); }
 
 .msg-wrap { display: flex; max-width: 78%; margin-bottom: 1px; }
 .msg-mine { align-self: flex-end; }
@@ -428,12 +409,9 @@
 .msg-theirs .msg-content-wrap { align-items: flex-start; }
 
 .msg-bubble {
-    padding: 10px 14px 6px;
-    border-radius: 18px;
-    font-size: 14px; line-height: 1.55;
-    word-break: break-word;
-    max-width: min(320px, 74vw);
-    position: relative;
+    padding: 10px 14px 6px; border-radius: 18px;
+    font-size: 14px; line-height: 1.55; word-break: break-word;
+    max-width: min(320px, 74vw); position: relative;
 }
 
 .bubble-mine {
@@ -443,8 +421,7 @@
 }
 
 .bubble-theirs {
-    background: white; color: #1e293b;
-    border-bottom-left-radius: 4px;
+    background: white; color: #1e293b; border-bottom-left-radius: 4px;
     box-shadow: 0 2px 8px rgba(0,0,0,0.06);
 }
 
@@ -460,44 +437,36 @@
 .bubble-theirs .msg-time { color: #94a3b8; }
 
 .msg-check { font-size: 11px; }
-.msg-check.sent { color: rgba(255,255,255,0.6); }
-.msg-check.seen { color: #a5f3fc; }
+.msg-check.pending { font-size: 13px; opacity: 0.6; }
+.msg-check.sent { color: rgba(255,255,255,0.7); }
+.msg-check.seen { color: #a5f3fc; font-weight: 700; }
 
 .msg-media { max-width: 200px; border-radius: 12px; display: block; margin-top: 6px; }
 .msg-audio { max-width: 220px; margin-top: 6px; }
 
 .msg-reaction-badge {
-    font-size: 16px; margin-top: 3px;
-    background: white; border-radius: 20px;
-    padding: 1px 6px;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.1);
-    width: fit-content;
+    font-size: 16px; margin-top: 3px; background: white; border-radius: 20px;
+    padding: 1px 6px; box-shadow: 0 1px 4px rgba(0,0,0,0.1); width: fit-content;
 }
 
 .reaction-btns {
-    display: none; background: white;
-    border-radius: 24px; padding: 5px 8px;
-    box-shadow: 0 8px 24px rgba(0,0,0,0.15);
-    gap: 2px; margin-top: 4px;
-    flex-wrap: wrap; z-index: 10;
-    border: 1px solid rgba(0,0,0,0.05);
+    display: none; background: white; border-radius: 24px; padding: 5px 8px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.15); gap: 2px; margin-top: 4px;
+    flex-wrap: wrap; z-index: 10; border: 1px solid rgba(0,0,0,0.05);
 }
 
 .reaction-btns button {
     background: none; border: none; cursor: pointer;
-    font-size: 18px; padding: 3px 4px; border-radius: 10px;
-    transition: transform 0.15s;
+    font-size: 18px; padding: 3px 4px; border-radius: 10px; transition: transform 0.15s;
 }
 
 .reaction-btns button:hover { transform: scale(1.35); background: #f1f5f9; }
 .msg-wrap:hover .reaction-btns { display: flex; }
 
 .typing-indicator {
-    display: flex; gap: 5px; align-items: center;
-    padding: 10px 16px;
+    display: flex; gap: 5px; align-items: center; padding: 10px 16px;
     background: white; border-radius: 18px; border-bottom-left-radius: 4px;
-    width: fit-content;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    width: fit-content; box-shadow: 0 2px 8px rgba(0,0,0,0.06);
     align-self: flex-start; margin-top: 4px;
 }
 
@@ -515,16 +484,11 @@
 }
 
 .emoji-panel {
-    flex-shrink: 0; background: white;
-    border-top: 1px solid #e2e8f0;
+    flex-shrink: 0; background: white; border-top: 1px solid #e2e8f0;
     padding: 10px 12px; max-height: 200px; overflow-y: auto;
 }
 
-.emoji-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(36px, 1fr));
-    gap: 4px;
-}
+.emoji-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(36px, 1fr)); gap: 4px; }
 
 .emoji-grid span {
     font-size: 22px; cursor: pointer; text-align: center;
@@ -539,10 +503,9 @@ form {
 }
 
 .recording-status {
-    display: flex; align-items: center; gap: 8px;
-    padding: 6px 14px; background: #fef2f2; border-radius: 12px;
-    font-size: 13px; font-weight: 600; color: #dc2626;
-    margin-bottom: 8px; border: 1px solid #fecaca;
+    display: flex; align-items: center; gap: 8px; padding: 6px 14px;
+    background: #fef2f2; border-radius: 12px; font-size: 13px;
+    font-weight: 600; color: #dc2626; margin-bottom: 8px; border: 1px solid #fecaca;
 }
 
 .rec-dot {
@@ -561,8 +524,8 @@ form {
 .input-bar { display: flex; align-items: center; gap: 6px; }
 
 .bar-btn {
-    width: 38px; height: 38px; border-radius: 50%;
-    border: none; background: #f1f5f9; color: #64748b; cursor: pointer;
+    width: 38px; height: 38px; border-radius: 50%; border: none;
+    background: #f1f5f9; color: #64748b; cursor: pointer;
     display: flex; align-items: center; justify-content: center;
     transition: 0.2s; flex-shrink: 0;
 }
@@ -578,10 +541,7 @@ form {
     transition: 0.2s; color: #1e293b;
 }
 
-.msg-input:focus {
-    border-color: #6366f1; background: white;
-    box-shadow: 0 0 0 3px rgba(99,102,241,0.1);
-}
+.msg-input:focus { border-color: #6366f1; background: white; box-shadow: 0 0 0 3px rgba(99,102,241,0.1); }
 
 .send-btn {
     width: 40px; height: 40px; border-radius: 50%; border: none;
@@ -600,9 +560,8 @@ form {
 }
 
 .preview-close {
-    position: absolute; top: 4px; right: 4px;
-    background: #dc2626; color: white; border-radius: 50%;
-    width: 22px; height: 22px;
+    position: absolute; top: 4px; right: 4px; background: #dc2626; color: white;
+    border-radius: 50%; width: 22px; height: 22px;
     display: flex; align-items: center; justify-content: center;
     cursor: pointer; font-size: 12px; font-weight: 700;
 }
@@ -622,11 +581,7 @@ form {
     font-size: 13px; font-weight: 600; cursor: pointer; transition: 0.2s;
 }
 
-.btn-send-audio {
-    background: linear-gradient(135deg, #6366f1, #4f46e5);
-    color: white; flex: 1;
-}
-
+.btn-send-audio { background: linear-gradient(135deg, #6366f1, #4f46e5); color: white; flex: 1; }
 .btn-cancel-audio { background: #fee2e2; color: #dc2626; }
 
 body.bg-dark .chat-page { background: #0f172a !important; }
@@ -646,6 +601,7 @@ body.bg-dark .reaction-btns button:hover { background: #334155 !important; }
 body.bg-dark .msg-reaction-badge { background: #1e293b !important; }
 body.bg-dark .preview-container, body.bg-dark .audio-preview { background: #0f172a !important; border-color: #334155 !important; }
 body.bg-dark .recording-status { background: #3f0f0f !important; border-color: #7f1d1d !important; }
+body.bg-dark .header-menu-dropdown { background: #0f172a !important; border-color: #334155 !important; }
 </style>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
@@ -671,7 +627,6 @@ function makeTime() {
 }
 
 function scrollBottom(wrap) {
-    // 🔥 scroll inteligente: espera imágenes antes de hacer scroll
     const imgs = wrap ? wrap.querySelectorAll("img") : [];
     if (imgs.length > 0) {
         imgs[0].onload = () => { chatBox.scrollTop = chatBox.scrollHeight; };
@@ -679,6 +634,98 @@ function scrollBottom(wrap) {
     }
     chatBox.scrollTop = chatBox.scrollHeight;
 }
+
+// 🔥 ENVÍO AJAX — sin recargar
+document.getElementById("chatForm").addEventListener("submit", async function(e) {
+    e.preventDefault();
+
+    const content = document.getElementById("messageInput").value.trim();
+    const fileInput = document.getElementById("fileInput");
+    const file = fileInput.files[0];
+
+    if (!content && !file) return;
+
+    const tempId = "temp-" + Date.now();
+    const wrap = document.createElement("div");
+    wrap.className = "msg-wrap msg-mine";
+    wrap.id = tempId;
+
+    let mediaHTML = "";
+    if (file) {
+        const url = URL.createObjectURL(file);
+        if (file.type.startsWith("image")) {
+            mediaHTML = `<img src="${url}" class="msg-media" />`;
+        } else if (file.type.startsWith("video")) {
+            mediaHTML = `<video controls class="msg-media"><source src="${url}" /></video>`;
+        }
+    }
+
+    const textHTML = content ? `<span class="msg-text">${content}</span>` : "";
+
+    wrap.innerHTML = `
+        <div class="msg-content-wrap">
+            <div class="msg-bubble bubble-mine">
+                ${textHTML}${mediaHTML}
+                <div class="msg-footer">
+                    <span class="msg-time">${makeTime()}</span>
+                    <span class="msg-check pending" id="check-${tempId}">🕐</span>
+                </div>
+            </div>
+        </div>`;
+
+    chatBox.insertBefore(wrap, document.getElementById("typingIndicator"));
+    scrollBottom(wrap);
+
+    document.getElementById("messageInput").value = "";
+    sendBtn.disabled = true;
+    closeEmoji();
+    fileInput.value = "";
+    document.getElementById("previewContainer").style.display = "none";
+    document.getElementById("previewImage").style.display = "none";
+    document.getElementById("previewVideo").style.display = "none";
+
+    const formData = new FormData();
+    formData.append("receiverId", receiverId);
+    if (content) formData.append("content", content);
+    if (file) formData.append("file", file);
+    const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+    formData.append("__RequestVerificationToken", token);
+
+    try {
+        const res = await fetch('/Message/Send', { method: 'POST', body: formData });
+        const data = await res.json();
+
+        if (data.success) {
+            const check = document.getElementById("check-" + tempId);
+            if (check) {
+                check.textContent = "✔";
+                check.className = "msg-check sent";
+                check.setAttribute("data-message-id", data.messageId);
+            }
+            wrap.id = "msg-" + data.messageId;
+
+            // 🔥 si hay archivo, actualizar src con la URL real del servidor
+            if (data.filePath && data.filePath !== "") {
+                const ext = data.filePath.split('.').pop().toLowerCase();
+                const mediaEl = wrap.querySelector(".msg-media");
+                if (mediaEl) {
+                    if (["jpg","jpeg","png","gif"].includes(ext)) {
+                        mediaEl.src = data.filePath;
+                    } else if (["mp4","webm"].includes(ext)) {
+                        mediaEl.querySelector("source").src = data.filePath;
+                        mediaEl.load();
+                    }
+                }
+            }
+        } else {
+            wrap.remove();
+            if (data.error) alert(data.error);
+        }
+    } catch (err) {
+        wrap.remove();
+        alert("Error de conexión");
+    }
+});
 
 connection.on("ReceiveMessage", (senderId, rcvId, senderName, message, fileUrl) => {
     const cc = localStorage.getItem("currentChatUserId");
@@ -695,7 +742,7 @@ connection.on("ReceiveMessage", (senderId, rcvId, senderName, message, fileUrl) 
         }
     }
 
-    let textHTML = (message && message.trim() !== "") ? `<span class="msg-text">${message}</span>` : "";
+    const textHTML = (message && message.trim() !== "") ? `<span class="msg-text">${message}</span>` : "";
 
     const wrap = document.createElement("div");
     wrap.className = "msg-wrap msg-theirs";
@@ -813,14 +860,6 @@ document.getElementById("messageInput").addEventListener("input", function() {
     sendBtn.disabled = this.value.trim() === "";
 });
 
-document.getElementById("chatForm").addEventListener("submit", function() {
-    setTimeout(() => {
-        document.getElementById("messageInput").value = "";
-        sendBtn.disabled = true;
-        closeEmoji();
-    }, 50);
-});
-
 function toggleEmoji() {
     const panel = document.getElementById("emojiPanel");
     const btn = document.querySelector(".emoji-toggle");
@@ -832,7 +871,7 @@ function toggleEmoji() {
 
 function closeEmoji() {
     document.getElementById("emojiPanel").style.display = "none";
-    document.querySelector(".emoji-toggle").classList.remove("active");
+    document.querySelector(".emoji-toggle")?.classList.remove("active");
 }
 
 function addEmoji(emoji) {
@@ -842,13 +881,31 @@ function addEmoji(emoji) {
     sendBtn.disabled = input.value.trim() === "";
 }
 
-// ── LLAMADAS WebRTC (arreglado audio) ────────
+function toggleHeaderMenu() {
+    const menu = document.getElementById("headerMenu");
+    menu.style.display = menu.style.display === "none" ? "block" : "none";
+}
+
+function silenciarNotificaciones() { alert("🔕 Próximamente"); toggleHeaderMenu(); }
+function crearGrupo() { alert("👥 Próximamente"); toggleHeaderMenu(); }
+function anclarChat() { alert("📌 Próximamente"); toggleHeaderMenu(); }
+function denunciarUsuario() { if(confirm("¿Denunciar este usuario?")) alert("✅ Reporte enviado"); toggleHeaderMenu(); }
+function bloquearUsuario() { if(confirm("¿Bloquear este usuario?")) alert("✅ Usuario bloqueado"); toggleHeaderMenu(); }
+
+document.addEventListener("click", (e) => {
+    if (!e.target.closest(".header-menu-wrap")) {
+        const menu = document.getElementById("headerMenu");
+        if (menu) menu.style.display = "none";
+    }
+    if (!e.target.closest(".emoji-toggle") && !e.target.closest("#emojiPanel")) {
+        closeEmoji();
+    }
+});
+
+// ── LLAMADAS WebRTC ──────────────────────
 window.peerConnection = null;
 window.localStream = null;
-let callerId = null;
-let callTimerInterval = null;
-let callSeconds = 0;
-let pendingOffer = null; // 🔥 guardar offer hasta que el receptor acepte
+let callerId = null, callTimerInterval = null, callSeconds = 0, pendingOffer = null;
 
 function createPeerConnection(targetId) {
     const pc = new RTCPeerConnection({
@@ -862,41 +919,26 @@ function createPeerConnection(targetId) {
     });
 
     pc.ontrack = (event) => {
-        console.log("🔊 Track recibido:", event.track.kind, event.streams.length);
         let audio = document.getElementById("remoteAudio");
         if (!audio) {
             audio = document.createElement("audio");
-            audio.id = "remoteAudio";
-            audio.autoplay = true;
-            audio.setAttribute("playsinline", "");
-            audio.setAttribute("controls", "");
-            audio.style.display = "none";
+            audio.id = "remoteAudio"; audio.autoplay = true;
+            audio.setAttribute("playsinline", ""); audio.style.display = "none";
             document.body.appendChild(audio);
         }
-        if (event.streams && event.streams[0]) {
+        if (event.streams?.[0]) {
             audio.srcObject = event.streams[0];
-            audio.play().catch(e => console.warn("play error:", e));
         } else {
-            // 🔥 fallback: crear stream desde el track
-            const stream = new MediaStream([event.track]);
-            audio.srcObject = stream;
-            audio.play().catch(e => console.warn("play error:", e));
+            audio.srcObject = new MediaStream([event.track]);
         }
+        audio.play().catch(e => console.warn(e));
     };
 
     pc.onicecandidate = (e) => {
-        if (e.candidate) {
-            console.log("🧊 ICE candidate enviado");
-            connection.invoke("SendIceCandidate", targetId, JSON.stringify(e.candidate));
-        }
-    };
-
-    pc.oniceconnectionstatechange = () => {
-        console.log("🧊 ICE state:", pc.iceConnectionState);
+        if (e.candidate) connection.invoke("SendIceCandidate", targetId, JSON.stringify(e.candidate));
     };
 
     pc.onconnectionstatechange = () => {
-        console.log("📡 Connection state:", pc.connectionState);
         if (pc.connectionState === "connected") {
             document.getElementById("callStatus").textContent = "En llamada";
             startCallTimer();
@@ -923,116 +965,76 @@ function startCallTimer() {
 
 async function startCall() {
     try {
-        // 🔥 1. pedir micrófono primero
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
         window.localStream = stream;
-        console.log("🎤 Micrófono obtenido, tracks:", stream.getTracks().length);
-
         document.getElementById("callModal").style.display = "flex";
         document.getElementById("callStatus").textContent = "Llamando...";
-        document.getElementById("callBtn").classList.add("calling");
-
-        // 🔥 2. crear PC y agregar tracks
         const pc = createPeerConnection(receiverId);
-        stream.getTracks().forEach(t => {
-            pc.addTrack(t, stream);
-            console.log("➕ Track agregado al emisor:", t.kind);
-        });
-
-        // 🔥 3. crear offer
+        stream.getTracks().forEach(t => pc.addTrack(t, stream));
         const offer = await pc.createOffer({ offerToReceiveAudio: true });
         await pc.setLocalDescription(offer);
-
-        // 🔥 4. notificar y enviar offer
         await connection.invoke("CallUser", receiverId);
         await connection.invoke("SendOffer", receiverId, JSON.stringify(offer));
-        console.log("📤 Offer enviado");
-
     } catch (err) {
-        console.error("Error startCall:", err);
-        alert("❌ Error al iniciar llamada: " + err.message);
+        alert("❌ " + err.message);
         document.getElementById("callModal").style.display = "none";
-        document.getElementById("callBtn").classList.remove("calling");
     }
 }
 
 connection.on("IncomingCall", (cId) => {
     callerId = cId;
-    console.log("📞 Llamada entrante de:", cId);
     document.getElementById("incomingCallModal").style.display = "flex";
 });
 
-// 🔥 guardar offer hasta que el receptor acepte
-connection.on("ReceiveOffer", async (offer) => {
-    console.log("📨 Offer recibido, guardando...");
-    pendingOffer = offer;
-});
+connection.on("ReceiveOffer", (offer) => { pendingOffer = offer; });
 
 async function acceptCall() {
     document.getElementById("incomingCallModal").style.display = "none";
     document.getElementById("callModal").style.display = "flex";
     document.getElementById("callStatus").textContent = "Conectando...";
-
     try {
-        // 🔥 1. pedir micrófono
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
         window.localStream = stream;
-        console.log("🎤 Micrófono receptor obtenido, tracks:", stream.getTracks().length);
-
-        // 🔥 2. crear PC y agregar tracks ANTES del offer
         const pc = createPeerConnection(callerId);
-        stream.getTracks().forEach(t => {
-            pc.addTrack(t, stream);
-            console.log("➕ Track agregado al receptor:", t.kind);
-        });
-
-        // 🔥 3. procesar el offer guardado
+        stream.getTracks().forEach(t => pc.addTrack(t, stream));
         if (pendingOffer) {
             await pc.setRemoteDescription(new RTCSessionDescription(JSON.parse(pendingOffer)));
             const answer = await pc.createAnswer();
             await pc.setLocalDescription(answer);
             await connection.invoke("SendAnswer", callerId, JSON.stringify(answer));
-            console.log("📤 Answer enviado");
-            pendingOffer = null;
-        } else {
-            console.warn("⚠️ No hay offer pendiente");
-        }
 
-    } catch (err) {
-        console.error("Error acceptCall:", err);
-        alert("❌ Error al aceptar llamada: " + err.message);
-        endCall();
-    }
+            // 🔥 aplicar ICE candidates pendientes
+            if (window.pendingCandidates?.length) {
+                for (const c of window.pendingCandidates) {
+                    await pc.addIceCandidate(new RTCIceCandidate(JSON.parse(c)));
+                }
+                window.pendingCandidates = [];
+            }
+            pendingOffer = null;
+        }
+    } catch (err) { alert("❌ " + err.message); endCall(); }
 }
 
 function rejectCall() {
     document.getElementById("incomingCallModal").style.display = "none";
     connection.invoke("HangUp", callerId);
-    pendingOffer = null;
-    callerId = null;
+    pendingOffer = null; callerId = null;
 }
 
 connection.on("ReceiveAnswer", async (answer) => {
-    console.log("📨 Answer recibido");
-    if (window.peerConnection) {
+    if (window.peerConnection)
         await window.peerConnection.setRemoteDescription(new RTCSessionDescription(JSON.parse(answer)));
-    }
 });
 
 connection.on("ReceiveIceCandidate", async (candidate) => {
     try {
-        if (window.peerConnection) {
-            if (window.peerConnection.remoteDescription) {
-                await window.peerConnection.addIceCandidate(new RTCIceCandidate(JSON.parse(candidate)));
-                console.log("🧊 ICE candidate agregado");
-            } else {
-                // 🔥 guardar candidates que llegan antes del remoteDescription
-                if (!window.pendingCandidates) window.pendingCandidates = [];
-                window.pendingCandidates.push(candidate);
-                console.log("🧊 ICE candidate guardado para después");
-            }
+        if (window.peerConnection?.remoteDescription) {
+            await window.peerConnection.addIceCandidate(new RTCIceCandidate(JSON.parse(candidate)));
+        } else {
+            if (!window.pendingCandidates) window.pendingCandidates = [];
+            window.pendingCandidates.push(candidate);
         }
-    } catch (e) { console.warn("ICE error:", e); }
+    } catch (e) { console.warn("ICE:", e); }
 });
 
 connection.on("CallEnded", () => endCall());
@@ -1040,7 +1042,6 @@ connection.on("CallEnded", () => endCall());
 function endCall() {
     document.getElementById("callModal").style.display = "none";
     document.getElementById("incomingCallModal").style.display = "none";
-    document.getElementById("callBtn").classList.remove("calling");
     if (callTimerInterval) { clearInterval(callTimerInterval); callTimerInterval = null; }
     const timerEl = document.getElementById("callTimer");
     if (timerEl) { timerEl.style.display = "none"; timerEl.textContent = "00:00"; }
@@ -1048,20 +1049,17 @@ function endCall() {
     if (audio) { audio.pause(); audio.srcObject = null; audio.remove(); }
     if (window.localStream) { window.localStream.getTracks().forEach(t => t.stop()); window.localStream = null; }
     if (window.peerConnection) { window.peerConnection.close(); window.peerConnection = null; }
-    window.pendingCandidates = [];
-    pendingOffer = null;
+    window.pendingCandidates = []; pendingOffer = null;
     try { connection.invoke("HangUp", callerId ?? receiverId); } catch(e) {}
     callerId = null;
 }
 
-// ── GRABACIÓN ──────────────────────────────
+// ── GRABACIÓN ──────────────────────────
 var mediaRecorder = null, audioChunks = [], isRecording = false;
 
 async function startRecording() {
     if (isRecording && mediaRecorder?.state === "recording") {
-        mediaRecorder.requestData();
-        mediaRecorder.stop();
-        isRecording = false;
+        mediaRecorder.requestData(); mediaRecorder.stop(); isRecording = false;
         const rb = document.getElementById("recordBtn");
         rb.classList.remove("recording");
         rb.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2M12 19v4M8 23h8"/></svg>`;
@@ -1121,8 +1119,7 @@ async function sendAudio() {
                 </div>
             </div>`;
         chatBox.insertBefore(wrap, document.getElementById("typingIndicator"));
-        scrollBottom(null);
-        cancelAudio();
+        scrollBottom(null); cancelAudio();
     }
     btn.textContent = "Enviar audio"; btn.disabled = false;
 }
@@ -1161,10 +1158,4 @@ function reactToMessage(messageId, reaction) {
         if (el) { el.textContent = reaction; el.style.display = "block"; }
     });
 }
-
-document.addEventListener("click", (e) => {
-    if (!e.target.closest(".emoji-toggle") && !e.target.closest("#emojiPanel")) {
-        closeEmoji();
-    }
-});
 </script>

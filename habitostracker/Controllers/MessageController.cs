@@ -89,20 +89,14 @@ namespace HabitTrackerApp.Controllers
             var currentUser = GetCurrentUser();
 
             if (currentUser.Role == "Guest")
-            {
-                TempData["Error"] = "✨ Debes crear una cuenta para enviar mensajes.";
-                return RedirectToAction("Chat", new { userId = receiverId });
-            }
+                return Json(new { success = false, error = "Debes crear una cuenta para enviar mensajes." });
 
             var senderId = int.Parse(User.FindFirst("UserId").Value);
             var senderName = User.Identity?.Name ?? "Usuario";
 
             var receiverExists = _context.Users.Any(u => u.Id == receiverId);
             if (!receiverExists)
-            {
-                TempData["Error"] = "El usuario ya no existe.";
-                return RedirectToAction("Inbox");
-            }
+                return Json(new { success = false, error = "El usuario ya no existe." });
 
             string filePath = null;
 
@@ -118,7 +112,7 @@ namespace HabitTrackerApp.Controllers
             }
 
             if (string.IsNullOrWhiteSpace(content) && file == null)
-                return RedirectToAction("Chat", new { userId = receiverId });
+                return Json(new { success = false });
 
             var message = new Message
             {
@@ -148,15 +142,18 @@ namespace HabitTrackerApp.Controllers
             await _context.SaveChangesAsync();
 
             await _hubContext.Clients.Group(receiverId.ToString())
-         .SendAsync("ReceiveMessage", senderId, receiverId, senderName, content ?? "", filePath ?? "");
+                .SendAsync("ReceiveMessage", senderId, receiverId, senderName, content ?? "", filePath ?? "");
 
             await _hubContext.Clients.Group(receiverId.ToString())
                 .SendAsync("ReceiveNotification", senderId, "💬 Nuevo mensaje", senderName,
                     sender?.ProfileImage ?? "", "/Message/Chat?userId=" + senderId);
 
-            return RedirectToAction("Chat", new { userId = receiverId });
-        }
+            // 🔥 también notificar al emisor para que vea su propio mensaje
+            await _hubContext.Clients.Group(senderId.ToString())
+                .SendAsync("MessageSentConfirm", message.Id, filePath ?? "");
 
+            return Json(new { success = true, messageId = message.Id, filePath = filePath ?? "" });
+        }
         private User GetCurrentUser()
         {
             var username = User.Identity.Name;
