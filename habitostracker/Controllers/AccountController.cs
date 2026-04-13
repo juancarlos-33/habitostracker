@@ -1,4 +1,6 @@
 ﻿using BCrypt.Net;
+using CloudinaryDotNet;
+using CloudinaryDotNet.Actions;
 using HabitTrackerApp.Data;
 using HabitTrackerApp.Hubs;
 using HabitTrackerApp.Models;
@@ -28,20 +30,23 @@ namespace HabitTrackerApp.Controllers
         private readonly EmailService _emailService;
         private readonly IWebHostEnvironment _environment;
 
+        private readonly CloudinaryService _cloudinaryService;
+
         public AccountController(
            HabitDbContext context,
            EmailService emailService,
            IWebHostEnvironment environment,
-           IHubContext<ChatHub> hubContext)
+           IHubContext<ChatHub> hubContext,
+           CloudinaryService cloudinaryService)
         {
             _context = context;
             _emailService = emailService;
             _environment = environment;
             _hubContext = hubContext;
-            
+            _cloudinaryService = cloudinaryService;
         }
 
-      
+
 
         // =====================================================
         // 🔐 LOGIN
@@ -828,12 +833,12 @@ namespace HabitTrackerApp.Controllers
 
             return View("~/Views/User/Profile.cshtml", user); // 🔵 SOLO VISUAL
         }
+
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Profile(User updatedUser, IFormFile profilePhoto, string croppedImage)
         {
             var userId = int.Parse(User.FindFirst("UserId").Value);
-
             var user = _context.Users.FirstOrDefault(u => u.Id == userId);
 
             if (user == null)
@@ -845,80 +850,39 @@ namespace HabitTrackerApp.Controllers
                 return View("~/Views/Account/Profile.cshtml", user);
             }
 
-            bool emailChanged = user.Email != updatedUser.Email;
-
             user.FullName = updatedUser.FullName;
             user.Bio = updatedUser.Bio;
 
             if (croppedImage == "REMOVE")
             {
-                if (!string.IsNullOrEmpty(user.ProfileImage))
-                {
-                    var oldPath = Path.Combine(_environment.WebRootPath, user.ProfileImage.TrimStart('/'));
-
-                    if (System.IO.File.Exists(oldPath))
-                        System.IO.File.Delete(oldPath);
-                }
-
                 user.ProfileImage = null;
             }
-
             else if (!string.IsNullOrEmpty(croppedImage))
             {
-                var base64Data = croppedImage.Split(',')[1];
+                var base64Data = croppedImage.Contains(',') ? croppedImage.Split(',')[1] : croppedImage;
                 byte[] imageBytes = Convert.FromBase64String(base64Data);
 
-                string uploadsFolder = Path.Combine(_environment.WebRootPath, "profiles");
+                using var ms = new MemoryStream(imageBytes);
+                var formFile = new FormFile(ms, 0, imageBytes.Length, "croppedImage", "profile.png")
+                {
+                    Headers = new HeaderDictionary(),
+                    ContentType = "image/png"
+                };
 
-                if (!Directory.Exists(uploadsFolder))
-                    Directory.CreateDirectory(uploadsFolder);
-
-                string fileName = "user_" + userId + ".png";
-
-                string filePath = Path.Combine(uploadsFolder, fileName);
-
-                await System.IO.File.WriteAllBytesAsync(filePath, imageBytes);
-
-                user.ProfileImage = "/profiles/" + fileName;
+                var imageUrl = await _cloudinaryService.UploadImageAsync(formFile, "habitostracker/profiles");
+                user.ProfileImage = imageUrl;
             }
-
             else if (profilePhoto != null && profilePhoto.Length > 0)
             {
-                string uploadsFolder = Path.Combine(_environment.WebRootPath, "profiles");
-
-                if (!Directory.Exists(uploadsFolder))
-                    Directory.CreateDirectory(uploadsFolder);
-
-                string fileName = "user_" + userId + Path.GetExtension(profilePhoto.FileName);
-
-                string filePath = Path.Combine(uploadsFolder, fileName);
-
-                using (var stream = new FileStream(filePath, FileMode.Create))
-                {
-                    await profilePhoto.CopyToAsync(stream);
-                }
-
-                user.ProfileImage = "/profiles/" + fileName;
+                var imageUrl = await _cloudinaryService.UploadImageAsync(profilePhoto, "habitostracker/profiles");
+                user.ProfileImage = imageUrl;
             }
 
-          
-
             _context.SaveChanges();
-
             await SignInUser(user);
 
             TempData["Success"] = "Perfil actualizado correctamente.";
-
             return RedirectToAction("Profile", "Account");
-        }
-
-        // =====================================================
-        // 🔐 CAMBIAR CONTRASEÑA
-        // =====================================================
-        [HttpGet]
-        public IActionResult ChangePassword()
-        {
-            return View();
         }
 
         [HttpPost]
