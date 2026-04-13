@@ -12,6 +12,21 @@
     }
     var otherImg = ViewBag.OtherUserProfileImage as string;
     var otherName = (ViewBag.OtherUsername as string) ?? "Cuenta eliminada";
+    var lastOnline = ViewBag.OtherLastOnline as DateTime?;
+
+    string lastOnlineText = "Offline";
+    if (isOnline) lastOnlineText = "En línea";
+    else if (lastOnline.HasValue)
+    {
+        var diff = DateTime.Now - lastOnline.Value;
+        if (diff.TotalMinutes < 60) lastOnlineText = $"Hace {(int)diff.TotalMinutes} min";
+        else if (diff.TotalHours < 24) lastOnlineText = $"Hoy a las {lastOnline.Value:hh:mm tt}";
+        else if (diff.TotalDays < 2) lastOnlineText = $"Ayer a las {lastOnline.Value:hh:mm tt}";
+        else lastOnlineText = lastOnline.Value.ToString("dd/MM/yyyy");
+    }
+
+    // agrupar mensajes por fecha
+    var grouped = Model.GroupBy(m => m.SentAt.Date).OrderBy(g => g.Key).ToList();
 }
 
 <div class="chat-page">
@@ -23,13 +38,12 @@
                 { <img src="@otherImg" class="chat-header-avatar" /> }
                 else
                 { <div class="chat-header-avatar avatar-letter">@otherName.Substring(0,1).ToUpper()</div> }
-                @if (isOnline)
-                { <span class="online-dot"></span> }
+                <span class="online-dot" id="onlineDot" style="@(isOnline ? "" : "display:none;")"></span>
             </div>
             <div>
                 <div class="chat-header-name">@otherName</div>
                 <div class="chat-header-status @(isOnline ? "online" : "offline")" id="onlineStatus">
-                    @(isOnline ? "● En línea" : "○ Offline")
+                    @(isOnline ? "● En línea" : "○ " + lastOnlineText)
                 </div>
             </div>
         </a>
@@ -40,6 +54,7 @@
                 </svg>
             </button>
             <div id="headerMenu" class="header-menu-dropdown" style="display:none;">
+                <button onclick="iniciarLlamada()">📞 Llamar</button>
                 <button onclick="silenciarNotificaciones()">🔕 Silenciar notificaciones</button>
                 <button onclick="crearGrupo()">👥 Crear grupo</button>
                 <button onclick="anclarChat()">📌 Anclar chat</button>
@@ -100,74 +115,98 @@
         </div>
     </div>
 
+    <!-- MENÚ CONTEXTUAL MENSAJE -->
+    <div id="msgContextMenu" class="msg-context-menu" style="display:none;">
+        <button id="ctxDeleteMe" onclick="ctxDelete('me')">🗑 Eliminar para mí</button>
+        <button id="ctxDeleteAll" onclick="ctxDelete('all')" style="display:none;">❌ Eliminar para todos</button>
+        <button onclick="ctxClose()">✕ Cancelar</button>
+    </div>
+    <div id="ctxOverlay" onclick="ctxClose()" style="display:none;position:fixed;inset:0;z-index:8999;"></div>
+
     <div id="chatBox" class="chat-box">
-        @foreach (var msg in Model)
+
+        @foreach (var group in grouped)
         {
-            bool isMe = msg.SenderId == myId;
-            <div class="msg-wrap @(isMe ? "msg-mine" : "msg-theirs")" id="msg-@msg.Id">
-                <div class="msg-content-wrap">
-                    <div class="msg-bubble @(isMe ? "bubble-mine" : "bubble-theirs")">
-                        @if (!string.IsNullOrEmpty(msg.Content))
-                        {
-                            if (msg.Content.EndsWith(".jpg") || msg.Content.EndsWith(".png") || msg.Content.EndsWith(".jpeg"))
-                            { <img src="@msg.Content" class="msg-media" /> }
-                            else if (msg.Content.EndsWith(".mp4"))
-                            { <video controls class="msg-media"><source src="@msg.Content" type="video/mp4" /></video> }
-                            else if (msg.Content.EndsWith(".webm"))
-                            { <audio controls class="msg-audio"><source src="@msg.Content" type="audio/webm" /></audio> }
-                            else
-                            { <span class="msg-text">@msg.Content</span> }
-                        }
-                        @if (!string.IsNullOrEmpty(msg.FileUrl))
-                        {
-                            var ext = System.IO.Path.GetExtension(msg.FileUrl).ToLower();
-                            if (ext == ".jpg" || ext == ".jpeg" || ext == ".png" || ext == ".gif")
-                            { <img src="@msg.FileUrl" class="msg-media" /> }
-                            else if (ext == ".mp4" || ext == ".webm")
-                            { <video controls class="msg-media"><source src="@msg.FileUrl" /></video> }
-                        }
-                        <div class="msg-footer">
-                            <span class="msg-time">@msg.SentAt.ToString("hh:mm tt")</span>
-                            @if (isMe)
+            var dateLabel = "";
+            var today = DateTime.Today;
+            var yesterday = today.AddDays(-1);
+            if (group.Key == today) dateLabel = "Hoy";
+            else if (group.Key == yesterday) dateLabel = "Ayer";
+            else dateLabel = group.Key.ToString("dd MMMM yyyy", new System.Globalization.CultureInfo("es-ES"));
+
+            <div class="date-separator">
+                <span>@dateLabel</span>
+            </div>
+
+            @foreach (var msg in group.OrderBy(m => m.SentAt))
+            {
+                bool isMe = msg.SenderId == myId;
+                <div class="msg-wrap @(isMe ? "msg-mine" : "msg-theirs")" id="msg-@msg.Id"
+                     data-is-mine="@isMe.ToString().ToLower()"
+                     oncontextmenu="openMsgMenu(event, @msg.Id, @isMe.ToString().ToLower())">
+                    <div class="msg-content-wrap">
+                        <div class="msg-bubble @(isMe ? "bubble-mine" : "bubble-theirs")">
+                            @if (!string.IsNullOrEmpty(msg.Content))
                             {
-                                @if (msg.IsRead)
-                                { <span class="msg-check seen" title="Visto">✔✔</span> }
+                                if (msg.Content.EndsWith(".jpg") || msg.Content.EndsWith(".png") || msg.Content.EndsWith(".jpeg"))
+                                { <img src="@msg.Content" class="msg-media" /> }
+                                else if (msg.Content.EndsWith(".mp4"))
+                                { <video controls class="msg-media"><source src="@msg.Content" type="video/mp4" /></video> }
+                                else if (msg.Content.EndsWith(".webm") && !msg.Content.Contains("cloudinary"))
+                                { <audio controls class="msg-audio"><source src="@msg.Content" type="audio/webm" /></audio> }
+                                else if (msg.Content.StartsWith("http") && (msg.Content.Contains("cloudinary") || msg.Content.Contains("/audios/")))
+                                { <audio controls class="msg-audio"><source src="@msg.Content" /></audio> }
                                 else
-                                { <span class="msg-check sent" data-message-id="@msg.Id" title="Enviado">✔</span> }
+                                { <span class="msg-text">@msg.Content</span> }
                             }
+                            @if (!string.IsNullOrEmpty(msg.FileUrl))
+                            {
+                                var ext = System.IO.Path.GetExtension(msg.FileUrl).ToLower();
+                                if (ext == ".jpg" || ext == ".jpeg" || ext == ".png" || ext == ".gif" || msg.FileUrl.Contains("/image/upload/"))
+                                { <img src="@msg.FileUrl" class="msg-media" /> }
+                                else if (ext == ".mp4" || ext == ".webm" || msg.FileUrl.Contains("/video/upload/"))
+                                { <video controls class="msg-media"><source src="@msg.FileUrl" /></video> }
+                            }
+                            <div class="msg-footer">
+                                <span class="msg-time">@msg.SentAt.ToString("hh:mm tt")</span>
+                                @if (isMe)
+                                {
+                                    @if (msg.IsRead)
+                                    { <span class="msg-check seen" title="Visto">✔✔</span> }
+                                    else
+                                    { <span class="msg-check delivered" data-message-id="@msg.Id" title="Entregado">✔✔</span> }
+                                }
+                            </div>
                         </div>
-                    </div>
-                    @if (!string.IsNullOrEmpty(msg.Reaction))
-                    { <span class="msg-reaction-badge" id="reaction-@msg.Id">@msg.Reaction</span> }
-                    else
-                    { <span class="msg-reaction-badge" id="reaction-@msg.Id" style="display:none;"></span> }
-                    <div class="reaction-btns">
-                        <button onclick="reactToMessage(@msg.Id, '🔥')">🔥</button>
-                        <button onclick="reactToMessage(@msg.Id, '❤️')">❤️</button>
-                        <button onclick="reactToMessage(@msg.Id, '😂')">😂</button>
-                        <button onclick="reactToMessage(@msg.Id, '👍')">👍</button>
-                        <button onclick="reactToMessage(@msg.Id, '😮')">😮</button>
-                        @if (isMe)
-                        {
-                            <button onclick="deleteMessage(@msg.Id, 'me')" title="Eliminar para mí">🗑</button>
-                            <button onclick="deleteMessage(@msg.Id, 'all')" title="Eliminar para todos">❌</button>
-                        }
+                        @if (!string.IsNullOrEmpty(msg.Reaction))
+                        { <span class="msg-reaction-badge" id="reaction-@msg.Id">@msg.Reaction</span> }
                         else
-                        {
-                            <button onclick="deleteMessage(@msg.Id, 'me')" title="Eliminar para mí">🗑</button>
-                        }
+                        { <span class="msg-reaction-badge" id="reaction-@msg.Id" style="display:none;"></span> }
                     </div>
                 </div>
-            </div>
+            }
         }
+
         <div id="typingIndicator" class="typing-indicator" style="display:none;">
             <span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span>
         </div>
     </div>
 
     <div id="emojiPanel" class="emoji-panel" style="display:none;">
-        <div class="emoji-grid">
-            @foreach (var e in new[]{"😀","😂","🥹","😍","🥰","😎","🤩","🤗","😏","😒","😭","😤","😡","🥺","😱","🤯","🤔","🫡","🤫","😴","🤢","🤮","🤧","🥵","🥶","😵","🤠","🥳","😺","👻","💀","☠️","🤡","👾","🔥","❤️","🧡","💛","💚","💙","💜","🖤","💔","❣️","💕","💯","✨","🎉","🏆","⚡","🌈","👍","👎","👏","🙏","💪","🫶","✌️","🤙","👋","🤝","🫂","💆","🧠","👀","💬","🎵","🎶","🍕","🍺","🎮","⚽","🏀","🎯"})
+        <div class="emoji-search-wrap">
+            <input type="text" id="emojiSearch" placeholder="Buscar emoji..." oninput="filterEmojis(this.value)" />
+        </div>
+        <div class="emoji-grid" id="emojiGrid">
+            @foreach (var e in new[]{
+                "😀","😃","😄","😁","😆","😅","🤣","😂","🙂","🙃","🫠","😉","😊","😇","🥰","😍","🤩","😘","😗","😚","😙","🥲","😋","😛","😜","🤪","😝","🤑","🤗","🤭","🫢","🫣","🤫","🤔","🫡","🤐","🤨","😐","😑","😶","🫥","😏","😒","🙄","😬","🤥","🫨","😌","😔","😪","🤤","😴","😷","🤒","🤕","🤢","🤮","🤧","🥵","🥶","🥴","😵","🤯","🤠","🥳","🥸","😎","🤓","🧐","😕","🫤","😟","🙁","☹️","😮","😯","😲","😳","🥺","🥹","😦","😧","😨","😰","😥","😢","😭","😱","😖","😣","😞","😓","😩","😫","🤬","😤","😠","😡","🤡","👹","👺","💀","☠️","👻","👽","🤖","🎃","😺","😸","😹","😻","😼","😽","🙀","😿","😾",
+                "👋","🤚","🖐️","✋","🖖","🫱","🫲","🫳","🫴","👌","🤌","🤏","✌️","🤞","🫰","🤟","🤘","🤙","👈","👉","👆","🖕","👇","☝️","🫵","👍","👎","✊","👊","🤛","🤜","👏","🙌","🫶","👐","🤲","🤝","🙏","✍️","💅","🤳","💪","🦾","🦿","🦵","🦶","👂","🦻","👃","🫀","🫁","🧠","🦷","🦴","👀","👁️","👅","👄","🫦","💋",
+                "❤️","🧡","💛","💚","💙","💜","🖤","🤍","🤎","💔","❤️‍🔥","❤️‍🩹","❣️","💕","💞","💓","💗","💖","💘","💝","💟","☮️","✝️","☪️","🕉️","✡️","🔯","🛐","⛎","♈","♉","♊","♋","♌","♍","♎","♏","♐","♑","♒","♓","🆔","⚛️","🉑","☢️","☣️","📴","📳","🈶","🈚","🈸","🈺","🈷️","✴️","🆚","💮","🉐","㊙️","㊗️","🈴","🈵","🈹","🈲","🅰️","🅱️","🆎","🆑","🅾️","🆘","❌","⭕","🛑","⛔","📛","🚫","💯","💢","♨️","🚷","🚯","🚳","🚱","🔞","📵","🔕",
+                "🎉","🎊","🎈","🎁","🎀","🎗️","🎟️","🎫","🏆","🥇","🥈","🥉","🏅","🎖️","🏵️","🎗️","🎪","🤹","🎭","🎨","🎬","🎤","🎧","🎼","🎵","🎶","🎙️","🎚️","🎛️","📻","🎷","🪗","🎸","🎹","🥁","🪘","🎺","🎻","🪕","🎮","🕹️","🎲","🎯","🎳","🎰","🧩",
+                "🔥","⚡","🌈","☀️","🌤️","⛅","🌥️","🌦️","🌧️","⛈️","🌩️","🌨️","❄️","🌬️","💨","🌪️","🌫️","🌊","💧","💦","🫧","🌙","⭐","🌟","💫","✨","☄️","🌍","🌎","🌏","🪐","🌑","🌒","🌓","🌔","🌕","🌖","🌗","🌘","🌚","🌛","🌜","🌝","🌞",
+                "🍕","🍔","🌮","🌯","🥪","🥗","🍜","🍝","🍣","🍱","🍛","🍲","🥘","🫕","🥫","🍿","🧂","🥓","🥚","🍳","🧇","🥞","🧈","🍞","🥐","🥖","🫓","🥨","🥯","🧀","🍖","🍗","🥩","🌭","🥚","🍦","🍧","🍨","🍩","🍪","🎂","🍰","🧁","🥧","🍫","🍬","🍭","🍮","🍯","🍺","🍻","🥂","🍷","🫗","🥃","🍸","🍹","🧃","🥤","🧋","☕","🫖","🍵","🧉","🍶",
+                "⚽","🏀","🏈","⚾","🥎","🎾","🏐","🏉","🎱","🏓","🏸","🏒","🏑","🥍","🏏","🪃","🥅","⛳","🪁","🏹","🎣","🤿","🥊","🥋","🎽","🛹","🛼","🛷","⛸️","🥌","🎿","⛷️","🏂","🪂","🏋️","🤼","🤸","⛹️","🤺","🏇","🧘","🏄","🏊","🤽","🚣","🧗","🚵","🚴","🏆","🥇",
+                "😂","👍","❤️","🔥","💯","✨","🎉","😭","🙏","😍","🥰","😊","🤣","😘","💪","🫶","👏","🥺","😎","🤔","💀","☠️","🫡","🤯","😤","🚀","💥","🌟","🎯","🏆"
+            })
             { <span onclick="addEmoji('@e')">@e</span> }
         </div>
     </div>
@@ -248,8 +287,7 @@
 
 .chat-header {
     display: flex; align-items: center; justify-content: space-between;
-    padding: 12px 16px;
-    background: linear-gradient(135deg, #1e293b, #334155);
+    padding: 12px 16px; background: linear-gradient(135deg, #1e293b, #334155);
     flex-shrink: 0; z-index: 2;
 }
 
@@ -286,14 +324,12 @@
 .chat-header-status { font-size: 11px; margin-top: 1px; color: rgba(255,255,255,0.5); }
 .chat-header-status.online { color: #4ade80; }
 
-/* 🔥 MENÚ 3 PUNTOS */
 .header-menu-wrap { position: relative; flex-shrink: 0; }
 
 .header-menu-btn {
     width: 38px; height: 38px; border-radius: 50%; border: none;
     background: rgba(255,255,255,0.1); color: white; cursor: pointer;
-    display: flex; align-items: center; justify-content: center;
-    transition: 0.2s;
+    display: flex; align-items: center; justify-content: center; transition: 0.2s;
 }
 
 .header-menu-btn:hover { background: rgba(255,255,255,0.2); }
@@ -301,7 +337,7 @@
 .header-menu-dropdown {
     position: absolute; top: 46px; right: 0;
     background: #1e293b; border-radius: 14px; padding: 6px;
-    min-width: 210px; box-shadow: 0 12px 40px rgba(0,0,0,0.5);
+    min-width: 220px; box-shadow: 0 12px 40px rgba(0,0,0,0.5);
     border: 1px solid rgba(255,255,255,0.08); z-index: 9999;
     animation: menuFadeIn 0.15s ease;
 }
@@ -313,9 +349,8 @@
 
 .header-menu-dropdown button {
     display: flex; align-items: center; gap: 10px;
-    width: 100%; padding: 10px 14px;
-    background: none; border: none; color: #f1f5f9;
-    font-size: 14px; font-weight: 500; cursor: pointer;
+    width: 100%; padding: 10px 14px; background: none; border: none;
+    color: #f1f5f9; font-size: 14px; font-weight: 500; cursor: pointer;
     border-radius: 10px; text-align: left; transition: 0.15s;
 }
 
@@ -323,7 +358,6 @@
 .header-menu-dropdown .menu-danger { color: #f87171 !important; }
 .menu-divider { margin: 4px 8px; border: none; border-top: 1px solid rgba(255,255,255,0.08); }
 
-/* MODALES LLAMADA */
 #callModal, #incomingCallModal {
     position: fixed; inset: 0; background: rgba(15,23,42,0.92);
     z-index: 99999; display: flex; align-items: center; justify-content: center;
@@ -371,8 +405,7 @@
 
 .call-end-btn, .call-reject-btn, .call-accept-btn {
     width: 64px; height: 64px; border-radius: 50%; border: none;
-    cursor: pointer; transition: 0.2s;
-    display: flex; align-items: center; justify-content: center; color: white;
+    cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; color: white;
 }
 
 .call-end-btn, .call-reject-btn { background: linear-gradient(135deg,#dc2626,#b91c1c); box-shadow: 0 6px 20px rgba(220,38,38,0.4); }
@@ -384,6 +417,37 @@
     padding: 8px; font-size: 12px; font-weight: 600; flex-shrink: 0;
     border-bottom: 1px solid #fde047;
 }
+
+/* 🔥 SEPARADOR DE FECHA */
+.date-separator {
+    display: flex; align-items: center; justify-content: center;
+    margin: 12px 0 8px; gap: 10px;
+}
+
+.date-separator span {
+    background: #cbd5e1; color: #475569;
+    padding: 3px 14px; border-radius: 20px;
+    font-size: 11px; font-weight: 600;
+}
+
+/* 🔥 MENÚ CONTEXTUAL MENSAJE */
+.msg-context-menu {
+    position: fixed; z-index: 9000;
+    background: #1e293b; border-radius: 14px; padding: 6px;
+    min-width: 200px; box-shadow: 0 12px 40px rgba(0,0,0,0.5);
+    border: 1px solid rgba(255,255,255,0.08);
+    animation: menuFadeIn 0.15s ease;
+}
+
+.msg-context-menu button {
+    display: flex; align-items: center; gap: 10px;
+    width: 100%; padding: 10px 14px; background: none; border: none;
+    color: #f1f5f9; font-size: 14px; font-weight: 500; cursor: pointer;
+    border-radius: 10px; text-align: left; transition: 0.15s;
+}
+
+.msg-context-menu button:hover { background: rgba(255,255,255,0.08); }
+.msg-context-menu button:last-child { color: #94a3b8; }
 
 .chat-box {
     flex: 1; overflow-y: auto; overflow-x: hidden;
@@ -400,7 +464,7 @@
 }
 .chat-box::-webkit-scrollbar-thumb:hover { background: linear-gradient(180deg, #4f46e5, #7c3aed); }
 
-.msg-wrap { display: flex; max-width: 78%; margin-bottom: 1px; }
+.msg-wrap { display: flex; max-width: 78%; margin-bottom: 1px; cursor: context-menu; }
 .msg-mine { align-self: flex-end; }
 .msg-theirs { align-self: flex-start; }
 
@@ -436,9 +500,11 @@
 .bubble-mine .msg-time { color: rgba(255,255,255,0.6); }
 .bubble-theirs .msg-time { color: #94a3b8; }
 
+/* 🔥 CHULOS */
 .msg-check { font-size: 11px; }
 .msg-check.pending { font-size: 13px; opacity: 0.6; }
-.msg-check.sent { color: rgba(255,255,255,0.7); }
+.msg-check.sent { color: rgba(255,255,255,0.6); }
+.msg-check.delivered { color: rgba(255,255,255,0.6); font-weight: 400; }
 .msg-check.seen { color: #a5f3fc; font-weight: 700; }
 
 .msg-media { max-width: 200px; border-radius: 12px; display: block; margin-top: 6px; }
@@ -448,20 +514,6 @@
     font-size: 16px; margin-top: 3px; background: white; border-radius: 20px;
     padding: 1px 6px; box-shadow: 0 1px 4px rgba(0,0,0,0.1); width: fit-content;
 }
-
-.reaction-btns {
-    display: none; background: white; border-radius: 24px; padding: 5px 8px;
-    box-shadow: 0 8px 24px rgba(0,0,0,0.15); gap: 2px; margin-top: 4px;
-    flex-wrap: wrap; z-index: 10; border: 1px solid rgba(0,0,0,0.05);
-}
-
-.reaction-btns button {
-    background: none; border: none; cursor: pointer;
-    font-size: 18px; padding: 3px 4px; border-radius: 10px; transition: transform 0.15s;
-}
-
-.reaction-btns button:hover { transform: scale(1.35); background: #f1f5f9; }
-.msg-wrap:hover .reaction-btns { display: flex; }
 
 .typing-indicator {
     display: flex; gap: 5px; align-items: center; padding: 10px 16px;
@@ -483,19 +535,30 @@
     30% { transform: translateY(-7px); }
 }
 
+/* 🔥 EMOJI PANEL CON BÚSQUEDA */
 .emoji-panel {
     flex-shrink: 0; background: white; border-top: 1px solid #e2e8f0;
-    padding: 10px 12px; max-height: 200px; overflow-y: auto;
+    padding: 8px 12px 10px; max-height: 220px; overflow-y: auto;
 }
 
-.emoji-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(36px, 1fr)); gap: 4px; }
+.emoji-search-wrap { margin-bottom: 8px; }
+
+.emoji-search-wrap input {
+    width: 100%; padding: 7px 14px; border: 1.5px solid #e2e8f0;
+    border-radius: 20px; font-size: 13px; outline: none; background: #f8fafc;
+    transition: 0.2s; color: #1e293b;
+}
+
+.emoji-search-wrap input:focus { border-color: #6366f1; background: white; }
+
+.emoji-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(34px, 1fr)); gap: 2px; }
 
 .emoji-grid span {
     font-size: 22px; cursor: pointer; text-align: center;
-    padding: 4px; border-radius: 10px; transition: 0.15s; user-select: none;
+    padding: 4px; border-radius: 8px; transition: 0.15s; user-select: none;
 }
 
-.emoji-grid span:hover { background: #f1f5f9; transform: scale(1.25); }
+.emoji-grid span:hover { background: #f1f5f9; transform: scale(1.2); }
 
 form {
     flex-shrink: 0; padding: 8px 12px 10px;
@@ -551,7 +614,7 @@ form {
     flex-shrink: 0; box-shadow: 0 4px 14px rgba(99,102,241,0.4);
 }
 
-.send-btn:hover { transform: scale(1.08); box-shadow: 0 6px 20px rgba(99,102,241,0.5); }
+.send-btn:hover { transform: scale(1.08); }
 .send-btn:disabled { background: #cbd5e1; cursor: not-allowed; transform: none; box-shadow: none; }
 
 .preview-container {
@@ -568,11 +631,7 @@ form {
 
 .preview-container img, .preview-container video { max-width: 130px; border-radius: 10px; }
 
-.audio-preview {
-    padding: 8px; margin-bottom: 8px;
-    background: #f8fafc; border-radius: 12px; border: 1px solid #e2e8f0;
-}
-
+.audio-preview { padding: 8px; margin-bottom: 8px; background: #f8fafc; border-radius: 12px; border: 1px solid #e2e8f0; }
 .audio-preview audio { width: 100%; margin-bottom: 8px; }
 .audio-btns { display: flex; gap: 8px; }
 
@@ -584,6 +643,7 @@ form {
 .btn-send-audio { background: linear-gradient(135deg, #6366f1, #4f46e5); color: white; flex: 1; }
 .btn-cancel-audio { background: #fee2e2; color: #dc2626; }
 
+/* DARK MODE */
 body.bg-dark .chat-page { background: #0f172a !important; }
 body.bg-dark .chat-header { background: linear-gradient(135deg,#0f172a,#1e293b) !important; }
 body.bg-dark .chat-box { background: #0f172a !important; }
@@ -594,14 +654,15 @@ body.bg-dark .msg-input { background: #0f172a !important; border-color: #334155 
 body.bg-dark .bar-btn { background: #334155 !important; color: #94a3b8 !important; }
 body.bg-dark .bar-btn:hover { background: #475569 !important; color: #f1f5f9 !important; }
 body.bg-dark .emoji-panel { background: #1e293b !important; border-color: #334155 !important; }
+body.bg-dark .emoji-search-wrap input { background: #0f172a !important; border-color: #334155 !important; color: #f1f5f9 !important; }
 body.bg-dark .emoji-grid span:hover { background: #334155 !important; }
 body.bg-dark .typing-indicator { background: #1e293b !important; }
-body.bg-dark .reaction-btns { background: #1e293b !important; border-color: #334155 !important; }
-body.bg-dark .reaction-btns button:hover { background: #334155 !important; }
 body.bg-dark .msg-reaction-badge { background: #1e293b !important; }
 body.bg-dark .preview-container, body.bg-dark .audio-preview { background: #0f172a !important; border-color: #334155 !important; }
 body.bg-dark .recording-status { background: #3f0f0f !important; border-color: #7f1d1d !important; }
 body.bg-dark .header-menu-dropdown { background: #0f172a !important; border-color: #334155 !important; }
+body.bg-dark .date-separator span { background: #334155 !important; color: #94a3b8 !important; }
+body.bg-dark .msg-context-menu { background: #0f172a !important; border-color: #334155 !important; }
 </style>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
@@ -635,14 +696,54 @@ function scrollBottom(wrap) {
     chatBox.scrollTop = chatBox.scrollHeight;
 }
 
-// 🔥 ENVÍO AJAX — sin recargar
+// 🔥 MENÚ CONTEXTUAL POR MENSAJE
+let ctxMessageId = null, ctxIsMine = false;
+
+function openMsgMenu(e, msgId, isMine) {
+    e.preventDefault();
+    ctxMessageId = msgId;
+    ctxIsMine = isMine;
+    const menu = document.getElementById("msgContextMenu");
+    const overlay = document.getElementById("ctxOverlay");
+    document.getElementById("ctxDeleteAll").style.display = isMine ? "flex" : "none";
+    menu.style.display = "block";
+    overlay.style.display = "block";
+    const x = Math.min(e.clientX, window.innerWidth - 220);
+    const y = Math.min(e.clientY, window.innerHeight - 120);
+    menu.style.left = x + "px";
+    menu.style.top = y + "px";
+}
+
+function ctxClose() {
+    document.getElementById("msgContextMenu").style.display = "none";
+    document.getElementById("ctxOverlay").style.display = "none";
+    ctxMessageId = null;
+}
+
+async function ctxDelete(scope) {
+    ctxClose();
+    if (!ctxMessageId) return;
+    if (!confirm(scope === "all" ? "¿Eliminar para todos?" : "¿Eliminar para ti?")) return;
+    const res = await fetch(`/Message/Delete?messageId=${ctxMessageId}&scope=${scope}`, { method: "POST" });
+    if (res.ok) {
+        if (scope === "all") {
+            const el = document.getElementById("msg-" + ctxMessageId);
+            if (el) {
+                el.querySelector(".msg-bubble").innerHTML = `<span style="font-style:italic;opacity:0.6;font-size:13px;">Mensaje eliminado</span>`;
+            }
+        } else {
+            const el = document.getElementById("msg-" + ctxMessageId);
+            if (el) { el.style.opacity = "0"; el.style.transition = "0.3s"; setTimeout(() => el.remove(), 300); }
+        }
+    }
+}
+
+// 🔥 ENVÍO AJAX
 document.getElementById("chatForm").addEventListener("submit", async function(e) {
     e.preventDefault();
-
     const content = document.getElementById("messageInput").value.trim();
     const fileInput = document.getElementById("fileInput");
     const file = fileInput.files[0];
-
     if (!content && !file) return;
 
     const tempId = "temp-" + Date.now();
@@ -653,11 +754,8 @@ document.getElementById("chatForm").addEventListener("submit", async function(e)
     let mediaHTML = "";
     if (file) {
         const url = URL.createObjectURL(file);
-        if (file.type.startsWith("image")) {
-            mediaHTML = `<img src="${url}" class="msg-media" />`;
-        } else if (file.type.startsWith("video")) {
-            mediaHTML = `<video controls class="msg-media"><source src="${url}" /></video>`;
-        }
+        if (file.type.startsWith("image")) mediaHTML = `<img src="${url}" class="msg-media" />`;
+        else if (file.type.startsWith("video")) mediaHTML = `<video controls class="msg-media"><source src="${url}" /></video>`;
     }
 
     const textHTML = content ? `<span class="msg-text">${content}</span>` : "";
@@ -688,13 +786,11 @@ document.getElementById("chatForm").addEventListener("submit", async function(e)
     formData.append("receiverId", receiverId);
     if (content) formData.append("content", content);
     if (file) formData.append("file", file);
-    const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
-    formData.append("__RequestVerificationToken", token);
+    formData.append("__RequestVerificationToken", document.querySelector('input[name="__RequestVerificationToken"]').value);
 
     try {
         const res = await fetch('/Message/Send', { method: 'POST', body: formData });
         const data = await res.json();
-
         if (data.success) {
             const check = document.getElementById("check-" + tempId);
             if (check) {
@@ -703,17 +799,15 @@ document.getElementById("chatForm").addEventListener("submit", async function(e)
                 check.setAttribute("data-message-id", data.messageId);
             }
             wrap.id = "msg-" + data.messageId;
-
-            // 🔥 si hay archivo, actualizar src con la URL real del servidor
             if (data.filePath && data.filePath !== "") {
                 const ext = data.filePath.split('.').pop().toLowerCase();
                 const mediaEl = wrap.querySelector(".msg-media");
                 if (mediaEl) {
-                    if (["jpg","jpeg","png","gif"].includes(ext)) {
+                    if (["jpg","jpeg","png","gif"].includes(ext) || data.filePath.includes("/image/upload/")) {
                         mediaEl.src = data.filePath;
-                    } else if (["mp4","webm"].includes(ext)) {
-                        mediaEl.querySelector("source").src = data.filePath;
-                        mediaEl.load();
+                    } else {
+                        const src = mediaEl.querySelector("source");
+                        if (src) { src.src = data.filePath; mediaEl.load(); }
                     }
                 }
             }
@@ -734,12 +828,10 @@ connection.on("ReceiveMessage", (senderId, rcvId, senderName, message, fileUrl) 
 
     let mediaHTML = "";
     if (fileUrl && fileUrl.trim() !== "") {
-        const ext = fileUrl.split('.').pop().toLowerCase();
-        if (["jpg","jpeg","png","gif"].includes(ext)) {
-            mediaHTML = `<img src="${fileUrl}" class="msg-media" />`;
-        } else if (["mp4","webm"].includes(ext)) {
-            mediaHTML = `<video controls class="msg-media"><source src="${fileUrl}" /></video>`;
-        }
+        const isImg = fileUrl.includes("/image/upload/") || /\.(jpg|jpeg|png|gif)$/i.test(fileUrl);
+        const isVid = fileUrl.includes("/video/upload/") || /\.(mp4|webm)$/i.test(fileUrl);
+        if (isImg) mediaHTML = `<img src="${fileUrl}" class="msg-media" />`;
+        else if (isVid) mediaHTML = `<video controls class="msg-media"><source src="${fileUrl}" /></video>`;
     }
 
     const textHTML = (message && message.trim() !== "") ? `<span class="msg-text">${message}</span>` : "";
@@ -768,7 +860,7 @@ connection.on("ReceiveAudio", (senderId, audioUrl) => {
     wrap.innerHTML = `
         <div class="msg-content-wrap">
             <div class="msg-bubble bubble-theirs">
-                <audio controls class="msg-audio"><source src="${audioUrl}" type="audio/webm"/></audio>
+                <audio controls class="msg-audio"><source src="${audioUrl}" /></audio>
                 <div class="msg-footer"><span class="msg-time">${makeTime()}</span></div>
             </div>
         </div>`;
@@ -781,8 +873,7 @@ connection.on("UserRecording", () => {
     ind.innerHTML = `
         <span style="width:8px;height:8px;border-radius:50%;background:#dc2626;animation:recPulse 1s infinite;display:inline-block;flex-shrink:0;"></span>
         <span style="font-size:12px;color:#dc2626;font-weight:600;margin-left:6px;">Grabando audio...</span>`;
-    ind.style.display = "flex";
-    ind.setAttribute("data-recording", "true");
+    ind.style.display = "flex"; ind.setAttribute("data-recording", "true");
     chatBox.scrollTop = chatBox.scrollHeight;
 });
 
@@ -790,38 +881,55 @@ connection.on("UserStoppedRecording", () => {
     const ind = document.getElementById("typingIndicator");
     if (ind.getAttribute("data-recording") === "true") {
         ind.innerHTML = `<span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span>`;
-        ind.style.display = "none";
-        ind.removeAttribute("data-recording");
+        ind.style.display = "none"; ind.removeAttribute("data-recording");
     }
 });
 
 connection.on("MessageDeleted", (messageId) => {
     const el = document.getElementById("msg-" + messageId);
-    if (el) { el.style.opacity = "0"; el.style.transition = "0.3s"; setTimeout(() => el.remove(), 300); }
+    if (el) {
+        const bubble = el.querySelector(".msg-bubble");
+        if (bubble) bubble.innerHTML = `<span style="font-style:italic;opacity:0.6;font-size:13px;">Mensaje eliminado</span>`;
+    }
 });
 
+// 🔥 CHULOS: ✔ enviado → ✔✔ gris entregado → ✔✔ azul visto
 connection.on("MessageSeen", (messageId) => {
     const s = document.querySelector(`[data-message-id='${messageId}']`);
-    if (s) { s.textContent = "✔✔"; s.classList.replace("sent","seen"); }
+    if (s) { s.textContent = "✔✔"; s.className = "msg-check seen"; }
 });
 
 connection.on("ForceSeenUpdate", () => {
-    document.querySelectorAll(".msg-check.sent").forEach(m => {
-        m.textContent = "✔✔"; m.classList.replace("sent","seen");
+    // cuando el receptor abre el chat → todos los ✔✔ grises se vuelven azules
+    document.querySelectorAll(".msg-check.delivered, .msg-check.sent").forEach(m => {
+        m.textContent = "✔✔"; m.className = "msg-check seen";
     });
 });
 
+// 🔥 cuando llega notificación al receptor → ✔ → ✔✔ gris
+connection.on("MessageDelivered", (messageId) => {
+    const s = document.querySelector(`[data-message-id='${messageId}']`);
+    if (s && s.classList.contains("sent")) {
+        s.textContent = "✔✔"; s.className = "msg-check delivered";
+    }
+});
+
+// 🔥 ONLINE/OFFLINE — nunca marca offline mientras navega
 connection.on("UserOnline", (uid) => {
     if (uid == receiverId) {
         document.getElementById("onlineStatus").textContent = "● En línea";
         document.getElementById("onlineStatus").className = "chat-header-status online";
+        const dot = document.getElementById("onlineDot");
+        if (dot) dot.style.display = "block";
     }
 });
 
 connection.on("UserOffline", (uid) => {
     if (uid == receiverId) {
-        document.getElementById("onlineStatus").textContent = "○ Offline";
+        document.getElementById("onlineStatus").textContent = "○ Desconectado";
         document.getElementById("onlineStatus").className = "chat-header-status offline";
+        const dot = document.getElementById("onlineDot");
+        if (dot) dot.style.display = "none";
     }
 });
 
@@ -847,26 +955,18 @@ connection.on("ReceiveReaction", (messageId, reaction) => {
     if (el) { el.textContent = reaction; el.style.display = "block"; }
 });
 
-async function deleteMessage(messageId, scope) {
-    if (!confirm(scope === "all" ? "¿Eliminar para todos?" : "¿Eliminar para ti?")) return;
-    const res = await fetch(`/Message/Delete?messageId=${messageId}&scope=${scope}`, { method: "POST" });
-    if (res.ok) {
-        const el = document.getElementById("msg-" + messageId);
-        if (el) { el.style.opacity = "0"; el.style.transition = "0.3s"; setTimeout(() => el.remove(), 300); }
-    }
-}
-
 document.getElementById("messageInput").addEventListener("input", function() {
     sendBtn.disabled = this.value.trim() === "";
 });
 
+// 🔥 EMOJI CON BÚSQUEDA
 function toggleEmoji() {
     const panel = document.getElementById("emojiPanel");
     const btn = document.querySelector(".emoji-toggle");
     const open = panel.style.display === "none" || panel.style.display === "";
     panel.style.display = open ? "block" : "none";
     btn.classList.toggle("active", open);
-    if (open) { panel.scrollTop = 0; chatBox.scrollTop = chatBox.scrollHeight; }
+    if (open) { document.getElementById("emojiSearch").value = ""; filterEmojis(""); chatBox.scrollTop = chatBox.scrollHeight; }
 }
 
 function closeEmoji() {
@@ -881,11 +981,20 @@ function addEmoji(emoji) {
     sendBtn.disabled = input.value.trim() === "";
 }
 
+function filterEmojis(q) {
+    const spans = document.querySelectorAll("#emojiGrid span");
+    spans.forEach(s => {
+        s.style.display = (!q || s.textContent.includes(q)) ? "inline-block" : "none";
+    });
+}
+
+// 🔥 MENÚ HEADER
 function toggleHeaderMenu() {
     const menu = document.getElementById("headerMenu");
     menu.style.display = menu.style.display === "none" ? "block" : "none";
 }
 
+function iniciarLlamada() { toggleHeaderMenu(); startCall(); }
 function silenciarNotificaciones() { alert("🔕 Próximamente"); toggleHeaderMenu(); }
 function crearGrupo() { alert("👥 Próximamente"); toggleHeaderMenu(); }
 function anclarChat() { alert("📌 Próximamente"); toggleHeaderMenu(); }
@@ -897,23 +1006,18 @@ document.addEventListener("click", (e) => {
         const menu = document.getElementById("headerMenu");
         if (menu) menu.style.display = "none";
     }
-    if (!e.target.closest(".emoji-toggle") && !e.target.closest("#emojiPanel")) {
-        closeEmoji();
-    }
+    if (!e.target.closest(".emoji-toggle") && !e.target.closest("#emojiPanel")) closeEmoji();
 });
 
-// ── LLAMADAS WebRTC ──────────────────────
-window.peerConnection = null;
-window.localStream = null;
+// ── LLAMADAS ──────────────────────────────
+window.peerConnection = null; window.localStream = null;
 let callerId = null, callTimerInterval = null, callSeconds = 0, pendingOffer = null;
 
 function createPeerConnection(targetId) {
     const pc = new RTCPeerConnection({
         iceServers: [
-            { urls: "stun:stun.l.google.com:19302" },
-            { urls: "stun:stun1.l.google.com:19302" },
-            { urls: "stun:stun2.l.google.com:19302" },
-            { urls: "stun:stun3.l.google.com:19302" },
+            { urls: "stun:stun.l.google.com:19302" }, { urls: "stun:stun1.l.google.com:19302" },
+            { urls: "stun:stun2.l.google.com:19302" }, { urls: "stun:stun3.l.google.com:19302" },
             { urls: "stun:stun.cloudflare.com:3478" },
         ]
     });
@@ -926,11 +1030,7 @@ function createPeerConnection(targetId) {
             audio.setAttribute("playsinline", ""); audio.style.display = "none";
             document.body.appendChild(audio);
         }
-        if (event.streams?.[0]) {
-            audio.srcObject = event.streams[0];
-        } else {
-            audio.srcObject = new MediaStream([event.track]);
-        }
+        audio.srcObject = event.streams?.[0] ?? new MediaStream([event.track]);
         audio.play().catch(e => console.warn(e));
     };
 
@@ -939,27 +1039,22 @@ function createPeerConnection(targetId) {
     };
 
     pc.onconnectionstatechange = () => {
-        if (pc.connectionState === "connected") {
-            document.getElementById("callStatus").textContent = "En llamada";
-            startCallTimer();
-        } else if (["disconnected","failed","closed"].includes(pc.connectionState)) {
-            endCall();
-        }
+        if (pc.connectionState === "connected") { document.getElementById("callStatus").textContent = "En llamada"; startCallTimer(); }
+        else if (["disconnected","failed","closed"].includes(pc.connectionState)) endCall();
     };
 
-    window.peerConnection = pc;
-    return pc;
+    window.peerConnection = pc; return pc;
 }
 
 function startCallTimer() {
     callSeconds = 0;
-    const timerEl = document.getElementById("callTimer");
-    if (timerEl) timerEl.style.display = "block";
+    const t = document.getElementById("callTimer");
+    if (t) t.style.display = "block";
     callTimerInterval = setInterval(() => {
         callSeconds++;
         const m = String(Math.floor(callSeconds/60)).padStart(2,"0");
         const s = String(callSeconds%60).padStart(2,"0");
-        if (timerEl) timerEl.textContent = `${m}:${s}`;
+        if (t) t.textContent = `${m}:${s}`;
     }, 1000);
 }
 
@@ -975,17 +1070,10 @@ async function startCall() {
         await pc.setLocalDescription(offer);
         await connection.invoke("CallUser", receiverId);
         await connection.invoke("SendOffer", receiverId, JSON.stringify(offer));
-    } catch (err) {
-        alert("❌ " + err.message);
-        document.getElementById("callModal").style.display = "none";
-    }
+    } catch (err) { alert("❌ " + err.message); document.getElementById("callModal").style.display = "none"; }
 }
 
-connection.on("IncomingCall", (cId) => {
-    callerId = cId;
-    document.getElementById("incomingCallModal").style.display = "flex";
-});
-
+connection.on("IncomingCall", (cId) => { callerId = cId; document.getElementById("incomingCallModal").style.display = "flex"; });
 connection.on("ReceiveOffer", (offer) => { pendingOffer = offer; });
 
 async function acceptCall() {
@@ -1002,12 +1090,8 @@ async function acceptCall() {
             const answer = await pc.createAnswer();
             await pc.setLocalDescription(answer);
             await connection.invoke("SendAnswer", callerId, JSON.stringify(answer));
-
-            // 🔥 aplicar ICE candidates pendientes
             if (window.pendingCandidates?.length) {
-                for (const c of window.pendingCandidates) {
-                    await pc.addIceCandidate(new RTCIceCandidate(JSON.parse(c)));
-                }
+                for (const c of window.pendingCandidates) await pc.addIceCandidate(new RTCIceCandidate(JSON.parse(c)));
                 window.pendingCandidates = [];
             }
             pendingOffer = null;
@@ -1022,18 +1106,13 @@ function rejectCall() {
 }
 
 connection.on("ReceiveAnswer", async (answer) => {
-    if (window.peerConnection)
-        await window.peerConnection.setRemoteDescription(new RTCSessionDescription(JSON.parse(answer)));
+    if (window.peerConnection) await window.peerConnection.setRemoteDescription(new RTCSessionDescription(JSON.parse(answer)));
 });
 
 connection.on("ReceiveIceCandidate", async (candidate) => {
     try {
-        if (window.peerConnection?.remoteDescription) {
-            await window.peerConnection.addIceCandidate(new RTCIceCandidate(JSON.parse(candidate)));
-        } else {
-            if (!window.pendingCandidates) window.pendingCandidates = [];
-            window.pendingCandidates.push(candidate);
-        }
+        if (window.peerConnection?.remoteDescription) await window.peerConnection.addIceCandidate(new RTCIceCandidate(JSON.parse(candidate)));
+        else { if (!window.pendingCandidates) window.pendingCandidates = []; window.pendingCandidates.push(candidate); }
     } catch (e) { console.warn("ICE:", e); }
 });
 
@@ -1043,8 +1122,8 @@ function endCall() {
     document.getElementById("callModal").style.display = "none";
     document.getElementById("incomingCallModal").style.display = "none";
     if (callTimerInterval) { clearInterval(callTimerInterval); callTimerInterval = null; }
-    const timerEl = document.getElementById("callTimer");
-    if (timerEl) { timerEl.style.display = "none"; timerEl.textContent = "00:00"; }
+    const t = document.getElementById("callTimer");
+    if (t) { t.style.display = "none"; t.textContent = "00:00"; }
     const audio = document.getElementById("remoteAudio");
     if (audio) { audio.pause(); audio.srcObject = null; audio.remove(); }
     if (window.localStream) { window.localStream.getTracks().forEach(t => t.stop()); window.localStream = null; }
@@ -1054,7 +1133,7 @@ function endCall() {
     callerId = null;
 }
 
-// ── GRABACIÓN ──────────────────────────
+// ── GRABACIÓN ──────────────────────────────
 var mediaRecorder = null, audioChunks = [], isRecording = false;
 
 async function startRecording() {
@@ -1064,8 +1143,7 @@ async function startRecording() {
         rb.classList.remove("recording");
         rb.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2M12 19v4M8 23h8"/></svg>`;
         document.getElementById("recordingStatus").style.display = "none";
-        connection.invoke("StopRecording", receiverId);
-        return;
+        connection.invoke("StopRecording", receiverId); return;
     }
     try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -1081,8 +1159,7 @@ async function startRecording() {
         const ri = setInterval(() => {
             if (!isRecording) { clearInterval(ri); return; }
             recSec++;
-            const m = Math.floor(recSec/60), s = String(recSec%60).padStart(2,"0");
-            document.getElementById("recTimer").textContent = `${m}:${s}`;
+            document.getElementById("recTimer").textContent = `${Math.floor(recSec/60)}:${String(recSec%60).padStart(2,"0")}`;
         }, 1000);
 
         mediaRecorder.ondataavailable = e => { if (e.data?.size > 0) audioChunks.push(e.data); };
@@ -1114,7 +1191,7 @@ async function sendAudio() {
         wrap.innerHTML = `
             <div class="msg-content-wrap">
                 <div class="msg-bubble bubble-mine">
-                    <audio controls class="msg-audio"><source src="${data.audioUrl}" type="audio/webm"/></audio>
+                    <audio controls class="msg-audio"><source src="${data.audioUrl}" /></audio>
                     <div class="msg-footer"><span class="msg-time">${makeTime()}</span><span class="msg-check sent">✔</span></div>
                 </div>
             </div>`;
@@ -1150,12 +1227,20 @@ function removePreview() {
 
 function reactToMessage(messageId, reaction) {
     fetch('/Message/React', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ messageId, reaction })
     }).then(() => {
         const el = document.getElementById("reaction-" + messageId);
         if (el) { el.textContent = reaction; el.style.display = "block"; }
     });
+}
+
+async function deleteMessage(messageId, scope) {
+    if (!confirm(scope === "all" ? "¿Eliminar para todos?" : "¿Eliminar para ti?")) return;
+    const res = await fetch(`/Message/Delete?messageId=${messageId}&scope=${scope}`, { method: "POST" });
+    if (res.ok) {
+        const el = document.getElementById("msg-" + messageId);
+        if (el) { el.style.opacity = "0"; el.style.transition = "0.3s"; setTimeout(() => el.remove(), 300); }
+    }
 }
 </script>

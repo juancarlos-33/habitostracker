@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using HabitTrackerApp.Hubs;
 using Microsoft.AspNetCore.Authorization;
 using System.Threading.Tasks;
+using HabitTrackerApp.Services;
 
 namespace HabitTrackerApp.Controllers
 {
@@ -14,11 +15,13 @@ namespace HabitTrackerApp.Controllers
     {
         private readonly HabitDbContext _context;
         private readonly IHubContext<ChatHub> _hubContext;
+        private readonly CloudinaryService _cloudinaryService;
 
-        public MessageController(HabitDbContext context, IHubContext<ChatHub> hubContext)
+        public MessageController(HabitDbContext context, IHubContext<ChatHub> hubContext, CloudinaryService cloudinaryService)
         {
             _context = context;
             _hubContext = hubContext;
+            _cloudinaryService = cloudinaryService;
         }
 
         public IActionResult Inbox()
@@ -102,13 +105,13 @@ namespace HabitTrackerApp.Controllers
 
             if (file != null && file.Length > 0)
             {
-                var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/uploads");
-                if (!Directory.Exists(uploadsFolder)) Directory.CreateDirectory(uploadsFolder);
-                var fileName = Guid.NewGuid().ToString() + Path.GetExtension(file.FileName);
-                var fullPath = Path.Combine(uploadsFolder, fileName);
-                using (var stream = new FileStream(fullPath, FileMode.Create))
-                    await file.CopyToAsync(stream);
-                filePath = "/uploads/" + fileName;
+                var ext = Path.GetExtension(file.FileName).ToLower();
+                var videoExts = new[] { ".mp4", ".webm", ".mov", ".avi" };
+
+                if (videoExts.Contains(ext))
+                    filePath = await _cloudinaryService.UploadVideoAsync(file);
+                else
+                    filePath = await _cloudinaryService.UploadImageAsync(file, "habitostracker/messages");
             }
 
             if (string.IsNullOrWhiteSpace(content) && file == null)
@@ -148,12 +151,12 @@ namespace HabitTrackerApp.Controllers
                 .SendAsync("ReceiveNotification", senderId, "💬 Nuevo mensaje", senderName,
                     sender?.ProfileImage ?? "", "/Message/Chat?userId=" + senderId);
 
-            // 🔥 también notificar al emisor para que vea su propio mensaje
             await _hubContext.Clients.Group(senderId.ToString())
                 .SendAsync("MessageSentConfirm", message.Id, filePath ?? "");
 
             return Json(new { success = true, messageId = message.Id, filePath = filePath ?? "" });
         }
+
         private User GetCurrentUser()
         {
             var username = User.Identity.Name;
@@ -197,7 +200,6 @@ namespace HabitTrackerApp.Controllers
             return View();
         }
 
-
         [HttpPost]
         public async Task<IActionResult> Delete(int messageId, string scope)
         {
@@ -207,16 +209,13 @@ namespace HabitTrackerApp.Controllers
 
             if (scope == "all" && msg.SenderId == myId)
             {
-                // eliminar para todos
                 _context.Messages.Remove(msg);
                 await _context.SaveChangesAsync();
-                // notificar al receptor
                 await _hubContext.Clients.Group(msg.ReceiverId.ToString())
                     .SendAsync("MessageDeleted", messageId);
             }
             else
             {
-                // eliminar solo para mí — marcamos como eliminado
                 if (msg.SenderId == myId) msg.DeletedBySender = true;
                 else msg.DeletedByReceiver = true;
                 await _context.SaveChangesAsync();
@@ -231,17 +230,25 @@ namespace HabitTrackerApp.Controllers
             var senderId = int.Parse(User.FindFirst("UserId").Value);
             if (audio == null || audio.Length == 0) return BadRequest();
 
-            var folderPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/audios");
-            if (!Directory.Exists(folderPath)) Directory.CreateDirectory(folderPath);
-
-            var fileName = Guid.NewGuid().ToString() + ".webm";
-            var filePath = Path.Combine(folderPath, fileName);
-
-            using (var stream = new FileStream(filePath, FileMode.Create))
-                await audio.CopyToAsync(stream);
+            // 🔥 subir audio a Cloudinary
+            string audioUrl;
+            try
+            {
+                audioUrl = await _cloudinaryService.UploadVideoAsync(audio);
+            }
+            catch
+            {
+                // fallback local si Cloudinary falla
+                var folderPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/audios");
+                if (!Directory.Exists(folderPath)) Directory.CreateDirectory(folderPath);
+                var fileName = Guid.NewGuid().ToString() + ".webm";
+                var filePath = Path.Combine(folderPath, fileName);
+                using (var stream = new FileStream(filePath, FileMode.Create))
+                    await audio.CopyToAsync(stream);
+                audioUrl = "/audios/" + fileName;
+            }
 
             var receiverId = int.Parse(Request.Form["receiverId"]);
-            var audioUrl = "/audios/" + fileName;
 
             var message = new Message
             {
@@ -255,7 +262,6 @@ namespace HabitTrackerApp.Controllers
             _context.Messages.Add(message);
             await _context.SaveChangesAsync();
 
-            // 🔥 notificar en tiempo real al receptor
             await _hubContext.Clients.Group(receiverId.ToString())
                 .SendAsync("ReceiveAudio", senderId, audioUrl);
 
@@ -279,8 +285,6 @@ namespace HabitTrackerApp.Controllers
 
             return Ok();
         }
-
-
 
         public class ReactRequest
         {
