@@ -14,16 +14,16 @@
     var otherName = (ViewBag.OtherUsername as string) ?? "Cuenta eliminada";
     var lastOnline = ViewBag.OtherLastOnline as DateTime?;
 
-    string lastOnlineText = "Offline";
-    if (isOnline) lastOnlineText = "En línea";
-    else if (lastOnline.HasValue)
-    {
-        var diff = DateTime.Now - lastOnline.Value;
-        if (diff.TotalMinutes < 60) lastOnlineText = $"Hace {(int)diff.TotalMinutes} min";
-        else if (diff.TotalHours < 24) lastOnlineText = $"Hoy a las {lastOnline.Value:hh:mm tt}";
-        else if (diff.TotalDays < 2) lastOnlineText = $"Ayer a las {lastOnline.Value:hh:mm tt}";
-        else lastOnlineText = lastOnline.Value.ToString("dd/MM/yyyy");
-    }
+  string lastOnlineText = "Offline";
+if (isOnline) lastOnlineText = "En línea";
+else if (lastOnline.HasValue)
+{
+    var diff = DateTime.UtcNow - lastOnline.Value.ToUniversalTime();
+    if (diff.TotalMinutes < 60) lastOnlineText = $"Hace {(int)diff.TotalMinutes} min";
+    else if (diff.TotalHours < 24) lastOnlineText = $"Hoy a las {lastOnline.Value:hh:mm tt}";
+    else if (diff.TotalDays < 2) lastOnlineText = $"Ayer a las {lastOnline.Value:hh:mm tt}";
+    else lastOnlineText = lastOnline.Value.ToString("dd/MM/yyyy");
+}
 
     // agrupar mensajes por fecha
     var grouped = Model.GroupBy(m => m.SentAt.Date).OrderBy(g => g.Key).ToList();
@@ -54,7 +54,7 @@
                 </svg>
             </button>
             <div id="headerMenu" class="header-menu-dropdown" style="display:none;">
-                <button onclick="iniciarLlamada()">📞 Llamar</button>
+             
                 <button onclick="silenciarNotificaciones()">🔕 Silenciar notificaciones</button>
                 <button onclick="crearGrupo()">👥 Crear grupo</button>
                 <button onclick="anclarChat()">📌 Anclar chat</button>
@@ -152,21 +152,32 @@
                                 { <img src="@msg.Content" class="msg-media" /> }
                                 else if (msg.Content.EndsWith(".mp4"))
                                 { <video controls class="msg-media"><source src="@msg.Content" type="video/mp4" /></video> }
-                                else if (msg.Content.EndsWith(".webm") && !msg.Content.Contains("cloudinary"))
-                                { <audio controls class="msg-audio"><source src="@msg.Content" type="audio/webm" /></audio> }
+                               else if (msg.Content.EndsWith(".webm") && !msg.Content.Contains("cloudinary"))
+{ <audio controls class="msg-audio"><source src="@msg.Content" type="audio/webm" /></audio> }
+else if (msg.Content.StartsWith("http") && (msg.Content.Contains("cloudinary") || msg.Content.Contains("/audios/")))
+{ <audio controls class="msg-audio"><source src="@msg.Content" /></audio> }
                                 else if (msg.Content.StartsWith("http") && (msg.Content.Contains("cloudinary") || msg.Content.Contains("/audios/")))
                                 { <audio controls class="msg-audio"><source src="@msg.Content" /></audio> }
                                 else
                                 { <span class="msg-text">@msg.Content</span> }
                             }
-                            @if (!string.IsNullOrEmpty(msg.FileUrl))
+                          @if (!string.IsNullOrEmpty(msg.FileUrl))
                             {
                                 var ext = System.IO.Path.GetExtension(msg.FileUrl).ToLower();
-                                if (ext == ".jpg" || ext == ".jpeg" || ext == ".png" || ext == ".gif" || msg.FileUrl.Contains("/image/upload/"))
-                                { <img src="@msg.FileUrl" class="msg-media" /> }
-                                else if (ext == ".mp4" || ext == ".webm" || msg.FileUrl.Contains("/video/upload/"))
-                                { <video controls class="msg-media"><source src="@msg.FileUrl" /></video> }
+                                var isCloudinaryImg = msg.FileUrl.Contains("/image/upload/");
+                                var isCloudinaryVid = msg.FileUrl.Contains("/video/upload/");
+                                if (ext == ".jpg" || ext == ".jpeg" || ext == ".png" || ext == ".gif" || isCloudinaryImg)
+                                {
+                                    <img src="@msg.FileUrl
+                                    " class="msg-media" />                         
+                                }
+                                else if (ext == ".mp4" || ext == ".webm" || isCloudinaryVid)
+                                {
+                                    <video controls class="msg-media"><source src="@msg.FileUrl
+                                        " /></video>                         
+                                }
                             }
+
                             <div class="msg-footer">
                                 <span class="msg-time">@msg.SentAt.ToString("hh:mm tt")</span>
                                 @if (isMe)
@@ -383,6 +394,11 @@
 @@keyframes ripple {
     0% { transform: scale(0.9); opacity: 1; }
     100% { transform: scale(1.4); opacity: 0; }
+}
+.msg-check.delivered { 
+    color: rgba(255,255,255,0.6); 
+    font-weight: 400;
+    letter-spacing: -1px;
 }
 
 .call-avatar-img { width: 100px; height: 100px; border-radius: 50%; object-fit: cover; border: 3px solid #6366f1; display: block; }
@@ -904,6 +920,16 @@ connection.on("ForceSeenUpdate", () => {
     document.querySelectorAll(".msg-check.delivered, .msg-check.sent").forEach(m => {
         m.textContent = "✔✔"; m.className = "msg-check seen";
     });
+});
+
+// 🔥 cuando el servidor confirma que el mensaje llegó → ✔ → ✔✔ gris
+connection.on("MessageSentConfirm", (messageId, filePath) => {
+    // buscar el check pendiente o enviado y cambiarlo a ✔✔ gris
+    const check = document.querySelector(`[data-message-id='${messageId}']`);
+    if (check) {
+        check.textContent = "✔✔";
+        check.className = "msg-check delivered";
+    }
 });
 
 // 🔥 cuando llega notificación al receptor → ✔ → ✔✔ gris
