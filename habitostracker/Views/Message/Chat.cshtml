@@ -878,14 +878,21 @@ document.getElementById("chatForm").addEventListener("submit", async function(e)
     try {
         const res = await fetch('/Message/Send', { method: 'POST', body: formData });
         const data = await res.json();
-        if (data.success) {
-            const check = document.getElementById("check-" + tempId);
-            if (check) {
-                check.textContent = "✔";
-                check.className = "msg-check sent";
-                check.setAttribute("data-message-id", data.messageId);
-            }
-            wrap.id = "msg-" + data.messageId;
+     if (data.success) {
+    const check = document.getElementById("check-" + tempId);
+    if (check) {
+        check.textContent = "✔";
+        check.className = "msg-check sent";
+        check.setAttribute("data-message-id", data.messageId);
+
+        // 🔥 aplicar confirm si ya llegó antes del fetch
+        if (pendingConfirms.has(data.messageId)) {
+            check.textContent = "✔✔";
+            check.className = "msg-check delivered";
+            pendingConfirms.delete(data.messageId);
+        }
+    }
+    wrap.id = "msg-" + data.messageId;
             if (data.filePath && data.filePath !== "") {
                 const mediaEl = wrap.querySelector(".msg-media");
                 if (mediaEl) {
@@ -980,9 +987,18 @@ connection.on("MessageDeleted", (messageId) => {
 });
 
 // 🔥 CHULOS
+// 🔥 buffer para confirms que llegan antes de que el fetch responda
+const pendingConfirms = new Set();
+
 connection.on("MessageSentConfirm", (messageId) => {
     const check = document.querySelector(`[data-message-id='${messageId}']`);
-    if (check) { check.textContent = "✔✔"; check.className = "msg-check delivered"; }
+    if (check) {
+        check.textContent = "✔✔";
+        check.className = "msg-check delivered";
+    } else {
+        // aún no tiene data-message-id, guardarlo para aplicar después
+        pendingConfirms.add(messageId);
+    }
 });
 
 connection.on("MessageSeen", (messageId) => {
