@@ -747,19 +747,37 @@ function makeTime() {
     return new Date().toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' });
 }
 
-connection.on("ReceiveMessage", (senderId, rcvId, senderName, message) => {
+connection.on("ReceiveMessage", (senderId, rcvId, senderName, message, fileUrl) => {
     const cc = localStorage.getItem("currentChatUserId");
     if (senderId != cc && rcvId != cc) return;
     document.getElementById("typingIndicator").style.display = "none";
+
     const wrap = document.createElement("div");
     wrap.className = "msg-wrap msg-theirs";
+
+    let mediaHTML = "";
+    if (fileUrl && fileUrl.trim() !== "") {
+        const ext = fileUrl.split('.').pop().toLowerCase();
+        if (["jpg","jpeg","png","gif"].includes(ext)) {
+            mediaHTML = `<img src="${fileUrl}" class="msg-media" />`;
+        } else if (["mp4","webm"].includes(ext)) {
+            mediaHTML = `<video controls class="msg-media"><source src="${fileUrl}" /></video>`;
+        }
+    }
+
+    let textHTML = "";
+    if (message && message.trim() !== "") {
+        textHTML = `<span class="msg-text">${message}</span>`;
+    }
+
     wrap.innerHTML = `
         <div class="msg-content-wrap">
             <div class="msg-bubble bubble-theirs">
-                <span class="msg-text">${message}</span>
+                ${textHTML}${mediaHTML}
                 <div class="msg-footer"><span class="msg-time">${makeTime()}</span></div>
             </div>
         </div>`;
+
     chatBox.insertBefore(wrap, document.getElementById("typingIndicator"));
     chatBox.scrollTop = chatBox.scrollHeight;
     fetch("/Message/MarkAsSeen?senderId=" + senderId, { method: "POST" });

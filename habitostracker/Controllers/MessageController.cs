@@ -148,7 +148,7 @@ namespace HabitTrackerApp.Controllers
             await _context.SaveChangesAsync();
 
             await _hubContext.Clients.Group(receiverId.ToString())
-                .SendAsync("ReceiveMessage", senderId, receiverId, senderName, content ?? "");
+         .SendAsync("ReceiveMessage", senderId, receiverId, senderName, content ?? "", filePath ?? "");
 
             await _hubContext.Clients.Group(receiverId.ToString())
                 .SendAsync("ReceiveNotification", senderId, "💬 Nuevo mensaje", senderName,
