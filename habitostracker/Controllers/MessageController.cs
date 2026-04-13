@@ -131,11 +131,16 @@ namespace HabitTrackerApp.Controllers
 
             var sender = _context.Users.FirstOrDefault(u => u.Id == senderId);
 
+            // 🔥 notificación con tipo de contenido
+            var notifMsg = !string.IsNullOrEmpty(filePath)
+                ? (filePath.Contains("/video/upload/") ? "📹 Video" : "📷 Foto")
+                : $"💬 {content}";
+
             _context.Notifications.Add(new Notification
             {
                 UserId = receiverId,
                 FromUserId = senderId,
-                Message = "💬 Nuevo mensaje de " + senderName,
+                Message = notifMsg,
                 CreatedAt = DateTime.Now,
                 IsRead = false,
                 FromUserImage = sender?.ProfileImage ?? "",
@@ -148,7 +153,7 @@ namespace HabitTrackerApp.Controllers
                 .SendAsync("ReceiveMessage", senderId, receiverId, senderName, content ?? "", filePath ?? "");
 
             await _hubContext.Clients.Group(receiverId.ToString())
-                .SendAsync("ReceiveNotification", senderId, "💬 Nuevo mensaje", senderName,
+                .SendAsync("ReceiveNotification", senderId, notifMsg, senderName,
                     sender?.ProfileImage ?? "", "/Message/Chat?userId=" + senderId);
 
             await _hubContext.Clients.Group(senderId.ToString())
@@ -156,7 +161,6 @@ namespace HabitTrackerApp.Controllers
 
             return Json(new { success = true, messageId = message.Id, filePath = filePath ?? "" });
         }
-
         private User GetCurrentUser()
         {
             var username = User.Identity.Name;
@@ -230,7 +234,6 @@ namespace HabitTrackerApp.Controllers
             var senderId = int.Parse(User.FindFirst("UserId").Value);
             if (audio == null || audio.Length == 0) return BadRequest();
 
-            // 🔥 subir audio a Cloudinary
             string audioUrl;
             try
             {
@@ -238,7 +241,6 @@ namespace HabitTrackerApp.Controllers
             }
             catch
             {
-                // fallback local si Cloudinary falla
                 var folderPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/audios");
                 if (!Directory.Exists(folderPath)) Directory.CreateDirectory(folderPath);
                 var fileName = Guid.NewGuid().ToString() + ".webm";
@@ -249,6 +251,8 @@ namespace HabitTrackerApp.Controllers
             }
 
             var receiverId = int.Parse(Request.Form["receiverId"]);
+            var senderName = User.Identity?.Name ?? "Usuario";
+            var sender = _context.Users.FirstOrDefault(u => u.Id == senderId);
 
             var message = new Message
             {
@@ -260,12 +264,51 @@ namespace HabitTrackerApp.Controllers
             };
 
             _context.Messages.Add(message);
+
+            // 🔥 notificación de voz
+            _context.Notifications.Add(new Notification
+            {
+                UserId = receiverId,
+                FromUserId = senderId,
+                Message = "🎤 Mensaje de voz",
+                CreatedAt = DateTime.Now,
+                IsRead = false,
+                FromUserImage = sender?.ProfileImage ?? sender?.ProfilePicture ?? "",
+                FromUsername = senderName
+            });
+
             await _context.SaveChangesAsync();
 
             await _hubContext.Clients.Group(receiverId.ToString())
                 .SendAsync("ReceiveAudio", senderId, audioUrl);
 
+            await _hubContext.Clients.Group(receiverId.ToString())
+                .SendAsync("ReceiveNotification", senderId, "🎤 Mensaje de voz", senderName,
+                    sender?.ProfileImage ?? sender?.ProfilePicture ?? "", "/Message/Chat?userId=" + senderId);
+
             return Json(new { audioUrl });
+        }
+
+        [HttpGet]
+        public IActionResult GetNewMessages(int senderId, int lastId)
+        {
+            var myId = int.Parse(User.FindFirst("UserId").Value);
+            var messages = _context.Messages
+                .Where(m => ((m.SenderId == senderId && m.ReceiverId == myId) ||
+                             (m.SenderId == myId && m.ReceiverId == senderId)) &&
+                            m.Id > lastId)
+                .OrderBy(m => m.SentAt)
+                .Select(m => new {
+                    id = m.Id,
+                    senderId = m.SenderId,
+                    content = m.Content,
+                    fileUrl = m.FileUrl,
+                    isRead = m.IsRead,
+                    time = m.SentAt.ToString("hh:mm tt")
+                })
+                .ToList();
+
+            return Json(messages);
         }
 
         [HttpPost]
