@@ -931,13 +931,35 @@ connection.on("ReceiveMessage", (senderId, rcvId, senderName, message, fileUrl) 
 
     const wrap = document.createElement("div");
     wrap.className = "msg-wrap msg-theirs";
-    wrap.innerHTML = `
-        <div class="msg-content-wrap">
-            <div class="msg-bubble bubble-theirs">
-                ${textHTML}${mediaHTML}
-                <div class="msg-footer"><span class="msg-time">${makeTime()}</span></div>
+  const audioTempCheck = "audio-check-" + Date.now();
+wrap.innerHTML = `
+    <div class="msg-content-wrap">
+        <div class="msg-bubble bubble-mine">
+            <audio controls class="msg-audio"><source src="${data.audioUrl}" /></audio>
+            <div class="msg-footer">
+                <span class="msg-time">${makeTime()}</span>
+                <span class="msg-check sent" id="${audioTempCheck}">✔</span>
             </div>
-        </div>`;
+        </div>
+    </div>`;
+
+chatBox.insertBefore(wrap, document.getElementById("typingIndicator"));
+scrollBottom(null);
+cancelAudio();
+
+// 🔥 asignar data-message-id y aplicar confirm pendiente
+if (data.messageId) {
+    const check = document.getElementById(audioTempCheck);
+    if (check) {
+        check.setAttribute("data-message-id", data.messageId);
+        wrap.id = "msg-" + data.messageId;
+        if (pendingConfirms.has(data.messageId)) {
+            check.textContent = "✔✔";
+            check.className = "msg-check delivered";
+            pendingConfirms.delete(data.messageId);
+        }
+    }
+}
 
     chatBox.insertBefore(wrap, document.getElementById("typingIndicator"));
     scrollBottom(wrap);
@@ -1288,8 +1310,7 @@ async function sendAudio() {
                     <div class="msg-footer"><span class="msg-time">${makeTime()}</span><span class="msg-check sent">✔</span></div>
                 </div>
             </div>`;
-        chatBox.insertBefore(wrap, document.getElementById("typingIndicator"));
-        scrollBottom(null); cancelAudio();
+      
     }
     btn.textContent = "Enviar audio"; btn.disabled = false;
 }

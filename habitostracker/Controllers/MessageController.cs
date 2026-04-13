@@ -280,13 +280,17 @@ namespace HabitTrackerApp.Controllers
             await _context.SaveChangesAsync();
 
             await _hubContext.Clients.Group(receiverId.ToString())
-                .SendAsync("ReceiveAudio", senderId, audioUrl);
+      .SendAsync("ReceiveAudio", senderId, audioUrl);
 
             await _hubContext.Clients.Group(receiverId.ToString())
                 .SendAsync("ReceiveNotification", senderId, "🎤 Mensaje de voz", senderName,
                     sender?.ProfileImage ?? sender?.ProfilePicture ?? "", "/Message/Chat?userId=" + senderId);
 
-            return Json(new { audioUrl });
+            // 🔥 confirmar al emisor que llegó
+            await _hubContext.Clients.Group(senderId.ToString())
+                .SendAsync("MessageSentConfirm", message.Id, audioUrl);
+
+            return Json(new { audioUrl, messageId = message.Id });
         }
 
         [HttpGet]
