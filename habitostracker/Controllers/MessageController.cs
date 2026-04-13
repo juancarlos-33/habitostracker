@@ -14,7 +14,6 @@ namespace HabitTrackerApp.Controllers
     {
         private readonly HabitDbContext _context;
         private readonly IHubContext<ChatHub> _hubContext;
-        private readonly CloudinaryService _cloudinaryService;
 
         public MessageController(HabitDbContext context, IHubContext<ChatHub> hubContext)
         {
@@ -103,17 +102,13 @@ namespace HabitTrackerApp.Controllers
 
             if (file != null && file.Length > 0)
             {
-                var ext = Path.GetExtension(file.FileName).ToLower();
-                var videoExts = new[] { ".mp4", ".webm", ".mov", ".avi" };
-
-                if (videoExts.Contains(ext))
-                {
-                    filePath = await _cloudinaryService.UploadVideoAsync(file);
-                }
-                else
-                {
-                    filePath = await _cloudinaryService.UploadImageAsync(file, "habitostracker/messages");
-                }
+                var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/uploads");
+                if (!Directory.Exists(uploadsFolder)) Directory.CreateDirectory(uploadsFolder);
+                var fileName = Guid.NewGuid().ToString() + Path.GetExtension(file.FileName);
+                var fullPath = Path.Combine(uploadsFolder, fileName);
+                using (var stream = new FileStream(fullPath, FileMode.Create))
+                    await file.CopyToAsync(stream);
+                filePath = "/uploads/" + fileName;
             }
 
             if (string.IsNullOrWhiteSpace(content) && file == null)
