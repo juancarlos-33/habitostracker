@@ -157,6 +157,7 @@
             </div>
         }
 
+        <!-- 🔥 typing indicator va AL FINAL del chatBox -->
         <div id="typingIndicator" class="typing-indicator" style="display:none;">
             <span class="typing-dot"></span>
             <span class="typing-dot"></span>
@@ -200,13 +201,14 @@
             <button type="button" class="input-btn" onclick="document.getElementById('fileInput').click()" title="Adjuntar">📎</button>
             <input type="text" id="messageInput" name="content" class="msg-input"
                    placeholder="@(isDeletedUser ? "No puedes enviar mensajes" : "Escribe un mensaje...")"
-                   @(isDeletedUser ? "disabled" : "") />
+                   @(isDeletedUser ? "disabled" : "") autocomplete="off" />
             <button type="submit" class="send-btn" @(isDeletedUser ? "disabled" : "")>➤</button>
         </div>
     </form>
 </div>
 
 <style>
+/* 🔥 MÓVIL: ocupa toda la pantalla */
 .chat-page {
     display: flex;
     flex-direction: column;
@@ -214,6 +216,7 @@
     top: 56px; left: 0; right: 0; bottom: 0;
     background: white;
     z-index: 10;
+    overflow: hidden;
 }
 
 @@media (min-width: 768px) {
@@ -233,7 +236,7 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 12px 16px;
+    padding: 10px 14px;
     background: white;
     border-bottom: 1px solid #f3f4f6;
     flex-shrink: 0;
@@ -249,7 +252,7 @@
 }
 
 .chat-header-avatar {
-    width: 42px; height: 42px;
+    width: 38px; height: 38px;
     border-radius: 50%;
     object-fit: cover;
     border: 2px solid #e5e7eb;
@@ -263,8 +266,8 @@
     align-items: center;
     justify-content: center;
     font-weight: 800;
-    font-size: 16px;
-    width: 42px; height: 42px;
+    font-size: 15px;
+    width: 38px; height: 38px;
     border-radius: 50%;
     flex-shrink: 0;
 }
@@ -276,24 +279,24 @@
     align-items: center;
     justify-content: center;
     font-weight: 700;
-    font-size: 13px;
-    width: 32px; height: 32px;
+    font-size: 12px;
+    width: 28px; height: 28px;
     border-radius: 50%;
     flex-shrink: 0;
 }
 
-.chat-header-name { font-size: 15px; font-weight: 700; color: #111827; }
-.chat-header-status { font-size: 12px; margin-top: 1px; }
+.chat-header-name { font-size: 14px; font-weight: 700; color: #111827; }
+.chat-header-status { font-size: 11px; margin-top: 1px; }
 .chat-header-status.online { color: #16a34a; }
 .chat-header-status.offline { color: #9ca3af; }
 
 .call-btn {
-    width: 42px; height: 42px;
+    width: 38px; height: 38px;
     border-radius: 50%;
     border: none;
     background: #16a34a;
     color: white;
-    font-size: 18px;
+    font-size: 16px;
     cursor: pointer;
     transition: 0.2s;
     display: flex;
@@ -390,42 +393,43 @@
     background: #fef3c7;
     color: #92400e;
     text-align: center;
-    padding: 10px;
-    font-size: 13px;
+    padding: 8px;
+    font-size: 12px;
     font-weight: 500;
     flex-shrink: 0;
 }
 
-/* 🔥 SCROLL ARREGLADO */
+/* 🔥 CHAT BOX - scroll arreglado */
 .chat-box {
     flex: 1;
-    overflow-y: scroll !important;
+    overflow-y: auto;
     overflow-x: hidden;
-    padding: 16px;
+    padding: 12px;
     background: #f0f2f5;
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 3px;
     -webkit-overflow-scrolling: touch;
     min-height: 0;
+    overscroll-behavior: contain;
 }
 
-.chat-box::-webkit-scrollbar { width: 4px; }
+.chat-box::-webkit-scrollbar { width: 3px; }
 .chat-box::-webkit-scrollbar-track { background: transparent; }
 .chat-box::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 10px; }
 
 .msg-wrap {
     display: flex;
     align-items: flex-end;
-    gap: 6px;
-    max-width: 80%;
+    gap: 5px;
+    max-width: 85%;
 }
 
 .msg-mine { align-self: flex-end; flex-direction: row-reverse; }
 .msg-theirs { align-self: flex-start; }
 
 .msg-avatar {
-    width: 28px; height: 28px;
+    width: 26px; height: 26px;
     border-radius: 50%;
     object-fit: cover;
     flex-shrink: 0;
@@ -436,12 +440,12 @@
 .msg-theirs .msg-content-wrap { align-items: flex-start; }
 
 .msg-bubble {
-    padding: 9px 13px;
-    border-radius: 18px;
-    font-size: 14px;
+    padding: 8px 12px;
+    border-radius: 16px;
+    font-size: 13px;
     line-height: 1.5;
     word-break: break-word;
-    max-width: min(320px, 70vw);
+    max-width: min(280px, 72vw);
 }
 
 .bubble-mine {
@@ -454,32 +458,32 @@
     background: white;
     color: #111827;
     border-bottom-left-radius: 4px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.08);
 }
 
-.msg-media { max-width: 180px; border-radius: 10px; display: block; margin-top: 4px; }
-.msg-audio { max-width: 200px; margin-top: 4px; }
+.msg-media { max-width: 160px; border-radius: 10px; display: block; margin-top: 4px; }
+.msg-audio { max-width: 190px; margin-top: 4px; }
 
 .msg-meta {
     display: flex;
     align-items: center;
-    gap: 5px;
+    gap: 4px;
     padding: 0 2px;
 }
 
-.msg-status { font-size: 11px; }
+.msg-status { font-size: 10px; }
 .msg-status.sent { color: #9ca3af; }
 .msg-status.seen { color: #2563eb; }
-.msg-reaction { font-size: 15px; }
+.msg-reaction { font-size: 14px; }
 
 .reaction-btns {
     display: none;
     background: white;
     border-radius: 20px;
-    padding: 4px 8px;
+    padding: 3px 6px;
     box-shadow: 0 2px 12px rgba(0,0,0,0.15);
     gap: 2px;
-    margin-top: 3px;
+    margin-top: 2px;
     flex-wrap: wrap;
 }
 
@@ -487,7 +491,7 @@
     background: none;
     border: none;
     cursor: pointer;
-    font-size: 15px;
+    font-size: 14px;
     padding: 2px 3px;
     border-radius: 8px;
     transition: transform 0.15s;
@@ -500,20 +504,22 @@
 .delete-msg-btn:hover { opacity: 1; }
 .delete-all-btn { color: #dc2626; }
 
+/* 🔥 typing indicator al fondo */
 .typing-indicator {
     display: flex;
     gap: 4px;
     align-items: center;
-    padding: 10px 14px;
+    padding: 8px 12px;
     background: white;
-    border-radius: 18px;
+    border-radius: 16px;
     width: fit-content;
     box-shadow: 0 1px 3px rgba(0,0,0,0.1);
     align-self: flex-start;
+    margin-top: 4px;
 }
 
 .typing-dot {
-    width: 7px; height: 7px;
+    width: 6px; height: 6px;
     border-radius: 50%;
     background: #9ca3af;
     animation: typingBounce 1.2s infinite;
@@ -524,12 +530,12 @@
 
 @@keyframes typingBounce {
     0%, 60%, 100% { transform: translateY(0); }
-    30% { transform: translateY(-6px); }
+    30% { transform: translateY(-5px); }
 }
 
 form {
     flex-shrink: 0;
-    padding: 10px 12px;
+    padding: 8px 10px;
     background: white;
     border-top: 1px solid #f3f4f6;
 }
@@ -537,7 +543,7 @@ form {
 .emoji-row {
     display: flex;
     gap: 2px;
-    margin-bottom: 8px;
+    margin-bottom: 6px;
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
@@ -546,10 +552,10 @@ form {
 .emoji-row::-webkit-scrollbar { display: none; }
 
 .emoji-row span {
-    font-size: 22px;
+    font-size: 20px;
     cursor: pointer;
     transition: transform 0.15s;
-    padding: 2px 4px;
+    padding: 2px 3px;
     flex-shrink: 0;
 }
 
@@ -558,15 +564,15 @@ form {
 .input-row {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 5px;
 }
 
 .input-btn {
-    width: 38px; height: 38px;
+    width: 36px; height: 36px;
     border-radius: 50%;
     border: 1px solid #e5e7eb;
     background: #f9fafb;
-    font-size: 16px;
+    font-size: 15px;
     cursor: pointer;
     transition: 0.15s;
     display: flex;
@@ -581,9 +587,9 @@ form {
 .msg-input {
     flex: 1;
     min-width: 0;
-    padding: 10px 14px;
+    padding: 9px 13px;
     border: 1px solid #e5e7eb;
-    border-radius: 24px;
+    border-radius: 22px;
     font-size: 14px;
     outline: none;
     transition: 0.2s;
@@ -593,12 +599,12 @@ form {
 .msg-input:focus { border-color: #2563eb; background: white; }
 
 .send-btn {
-    width: 40px; height: 40px;
+    width: 38px; height: 38px;
     border-radius: 50%;
     border: none;
     background: #2563eb;
     color: white;
-    font-size: 16px;
+    font-size: 15px;
     cursor: pointer;
     transition: 0.2s;
     display: flex;
@@ -611,8 +617,8 @@ form {
 
 .preview-container {
     position: relative;
-    padding: 8px;
-    margin-bottom: 8px;
+    padding: 6px;
+    margin-bottom: 6px;
 }
 
 .preview-close {
@@ -627,14 +633,14 @@ form {
 }
 
 .preview-container img,
-.preview-container video { max-width: 140px; border-radius: 10px; }
+.preview-container video { max-width: 120px; border-radius: 10px; }
 
-.audio-preview { padding: 8px 0; margin-bottom: 6px; }
-.audio-preview audio { width: 100%; margin-bottom: 8px; }
+.audio-preview { padding: 6px 0; margin-bottom: 4px; }
+.audio-preview audio { width: 100%; margin-bottom: 6px; }
 .audio-preview-btns { display: flex; gap: 8px; }
 
 .btn-send-audio, .btn-cancel-audio {
-    padding: 6px 14px;
+    padding: 5px 12px;
     border-radius: 8px;
     border: none;
     font-size: 13px;
@@ -663,7 +669,6 @@ const myId = "@User.FindFirst("UserId").Value";
 const receiverId = "@ViewBag.OtherUserId";
 const chatBox = document.getElementById("chatBox");
 
-// 🔥 scroll al fondo al cargar
 window.addEventListener("load", () => {
     chatBox.scrollTop = chatBox.scrollHeight;
 });
@@ -679,7 +684,6 @@ connection.start().then(async () => {
     localStorage.setItem("currentChatUserId", receiverId);
 });
 
-// 🔥 RECIBIR MENSAJE EN TIEMPO REAL
 connection.on("ReceiveMessage", (senderId, rcvId, senderName, message) => {
     const currentChat = localStorage.getItem("currentChatUserId");
     if (senderId != currentChat && rcvId != currentChat) return;
@@ -695,14 +699,16 @@ connection.on("ReceiveMessage", (senderId, rcvId, senderName, message) => {
     const wrap = document.createElement("div");
     wrap.className = "msg-wrap msg-theirs";
     wrap.innerHTML = `${avatarHTML}<div class="msg-content-wrap"><div class="msg-bubble bubble-theirs">${message}</div></div>`;
-    chatBox.appendChild(wrap);
+
+    // 🔥 insertar ANTES del typing indicator
+    const typingInd = document.getElementById("typingIndicator");
+    chatBox.insertBefore(wrap, typingInd);
     chatBox.scrollTop = chatBox.scrollHeight;
 
     fetch("/Message/MarkAsSeen?senderId=" + senderId, { method: "POST" });
     connection.invoke("MessagesViewed", senderId);
 });
 
-// 🔥 RECIBIR AUDIO EN TIEMPO REAL (sin recargar)
 connection.on("ReceiveAudio", (senderId, audioUrl) => {
     const currentChat = localStorage.getItem("currentChatUserId");
     if (senderId != currentChat) return;
@@ -724,15 +730,17 @@ connection.on("ReceiveAudio", (senderId, audioUrl) => {
                 </audio>
             </div>
         </div>`;
-    chatBox.appendChild(wrap);
+
+    const typingInd = document.getElementById("typingIndicator");
+    chatBox.insertBefore(wrap, typingInd);
     chatBox.scrollTop = chatBox.scrollHeight;
 });
 
-// 🔥 INDICADOR GRABANDO AUDIO
 connection.on("UserRecording", () => {
     const ind = document.getElementById("typingIndicator");
     ind.style.display = "flex";
     ind.setAttribute("data-recording", "true");
+    chatBox.scrollTop = chatBox.scrollHeight;
 });
 
 connection.on("UserStoppedRecording", () => {
@@ -743,7 +751,6 @@ connection.on("UserStoppedRecording", () => {
     }
 });
 
-// 🔥 ELIMINAR MENSAJE EN TIEMPO REAL
 connection.on("MessageDeleted", (messageId) => {
     const el = document.getElementById("msg-" + messageId);
     if (el) {
@@ -787,8 +794,10 @@ document.getElementById("messageInput").addEventListener("keydown", () => {
 
 connection.on("ShowTyping", () => {
     const ind = document.getElementById("typingIndicator");
-    if (!ind.getAttribute("data-recording"))
+    if (!ind.getAttribute("data-recording")) {
         ind.style.display = "flex";
+        chatBox.scrollTop = chatBox.scrollHeight;
+    }
 });
 
 connection.on("HideTyping", () => {
@@ -802,11 +811,9 @@ connection.on("ReceiveReaction", (messageId, reaction) => {
     if (el) { el.textContent = reaction; el.style.display = "inline"; }
 });
 
-// 🔥 ELIMINAR MENSAJE
 async function deleteMessage(messageId, scope) {
     const msg = scope === "all" ? "¿Eliminar para todos?" : "¿Eliminar para ti?";
     if (!confirm(msg)) return;
-
     const res = await fetch(`/Message/Delete?messageId=${messageId}&scope=${scope}`, { method: "POST" });
     if (res.ok) {
         const el = document.getElementById("msg-" + messageId);
@@ -818,7 +825,13 @@ async function deleteMessage(messageId, scope) {
     }
 }
 
-// ─── LLAMADAS ────────────────────────────
+// 🔥 LIMPIAR INPUT AL ENVIAR
+document.getElementById("chatForm").addEventListener("submit", function() {
+    setTimeout(() => {
+        document.getElementById("messageInput").value = "";
+    }, 50);
+});
+
 window.peerConnection = null;
 window.localStream = null;
 let callerId = null;
@@ -962,7 +975,6 @@ function endCall() {
     callerId = null;
 }
 
-// ─── GRABACIÓN ────────────────────────────
 var mediaRecorder = null;
 var audioChunks = [];
 var isRecording = false;
@@ -979,7 +991,6 @@ async function startRecording() {
         mediaRecorder.stop();
         isRecording = false;
         document.getElementById("recordBtn").classList.remove("recording");
-        // 🔥 avisar que paró de grabar
         connection.invoke("StopRecording", receiverId);
         return;
     }
@@ -989,7 +1000,6 @@ async function startRecording() {
         audioChunks = [];
         isRecording = true;
         document.getElementById("recordBtn").classList.add("recording");
-        // 🔥 avisar que está grabando
         connection.invoke("StartRecording", receiverId);
 
         mediaRecorder.ondataavailable = e => { if (e.data?.size > 0) audioChunks.push(e.data); };
@@ -1004,7 +1014,6 @@ async function startRecording() {
     } catch (err) { alert("Error al acceder al micrófono"); }
 }
 
-// 🔥 ENVIAR AUDIO SIN RECARGAR
 async function sendAudio() {
     if (!window.recordedAudio) return;
     const formData = new FormData();
@@ -1018,7 +1027,6 @@ async function sendAudio() {
     const res = await fetch('/Message/SendAudio', { method: 'POST', body: formData });
     if (res.ok) {
         const data = await res.json();
-        // 🔥 agregar el audio al chat sin recargar
         const myImg = "@(User.FindFirst("ProfileImage")?.Value ?? "")";
         const myInitial = "@User.Identity.Name.Substring(0,1).ToUpper()";
         const avatarHTML = myImg
@@ -1037,7 +1045,9 @@ async function sendAudio() {
                 <div class="msg-meta"><span class="msg-status sent">✔ enviado</span></div>
             </div>
             ${avatarHTML}`;
-        chatBox.appendChild(wrap);
+
+        const typingInd = document.getElementById("typingIndicator");
+        chatBox.insertBefore(wrap, typingInd);
         chatBox.scrollTop = chatBox.scrollHeight;
         cancelAudio();
     }
