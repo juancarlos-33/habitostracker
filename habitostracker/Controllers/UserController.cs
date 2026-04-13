@@ -535,6 +535,87 @@ namespace HabitTrackerApp.Controllers
             return View(ranking);
         }
 
+        // =====================================
+        // 🚫 BLOQUEAR USUARIO
+        // =====================================
+        [HttpPost]
+        public async Task<IActionResult> BlockUser(int blockedId)
+        {
+            var myId = int.Parse(User.FindFirst("UserId").Value);
+
+            if (myId == blockedId) return Json(new { success = false });
+
+            var already = _context.Blocks.Any(b => b.BlockerId == myId && b.BlockedId == blockedId);
+            if (!already)
+            {
+                _context.Blocks.Add(new Block
+                {
+                    BlockerId = myId,
+                    BlockedId = blockedId,
+                    CreatedAt = DateTime.UtcNow
+                });
+                await _context.SaveChangesAsync();
+            }
+
+            return Json(new { success = true });
+        }
+
+        // =====================================
+        // ✅ DESBLOQUEAR USUARIO
+        // =====================================
+        [HttpPost]
+        public async Task<IActionResult> UnblockUser(int blockedId)
+        {
+            var myId = int.Parse(User.FindFirst("UserId").Value);
+
+            var block = _context.Blocks.FirstOrDefault(b => b.BlockerId == myId && b.BlockedId == blockedId);
+            if (block != null)
+            {
+                _context.Blocks.Remove(block);
+                await _context.SaveChangesAsync();
+            }
+
+            return Json(new { success = true });
+        }
+
+        // =====================================
+        // 🚩 DENUNCIAR USUARIO
+        // =====================================
+        [HttpPost]
+        public async Task<IActionResult> ReportUser(int reportedId, string reason)
+        {
+            var myId = int.Parse(User.FindFirst("UserId").Value);
+
+            if (myId == reportedId) return Json(new { success = false });
+
+            // máximo 3 reportes del mismo usuario al mismo objetivo
+            var count = _context.Reports.Count(r => r.ReporterId == myId && r.ReportedId == reportedId);
+            if (count >= 3) return Json(new { success = false, error = "Ya reportaste a este usuario" });
+
+            _context.Reports.Add(new Report
+            {
+                ReporterId = myId,
+                ReportedId = reportedId,
+                Reason = reason ?? "Sin motivo",
+                CreatedAt = DateTime.UtcNow
+            });
+
+            await _context.SaveChangesAsync();
+
+            return Json(new { success = true });
+        }
+
+        // =====================================
+        // 🔍 VERIFICAR SI ESTÁ BLOQUEADO
+        // =====================================
+        [HttpGet]
+        public IActionResult IsBlocked(int userId)
+        {
+            var myId = int.Parse(User.FindFirst("UserId").Value);
+            var blocked = _context.Blocks.Any(b => b.BlockerId == myId && b.BlockedId == userId);
+            return Json(new { blocked });
+        }
+
 
 
 

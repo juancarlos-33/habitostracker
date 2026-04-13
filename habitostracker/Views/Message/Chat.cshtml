@@ -1086,16 +1086,101 @@ function filterEmojis(q) {
     });
 }
 
-function toggleHeaderMenu() {
+async function toggleHeaderMenu() {
     const menu = document.getElementById("headerMenu");
-    menu.style.display = menu.style.display === "none" ? "block" : "none";
+    const isOpen = menu.style.display !== "none";
+    menu.style.display = isOpen ? "none" : "block";
+
+    if (!isOpen) {
+        // 🔥 actualizar texto del botón bloquear
+        const statusRes = await fetch(`/User/IsBlocked?userId=${receiverId}`);
+        const status = await statusRes.json();
+        const btnBloquear = menu.querySelector("[onclick='bloquearUsuario()']");
+        if (btnBloquear) {
+            btnBloquear.textContent = status.blocked ? "✅ Desbloquear" : "🚫 Bloquear";
+        }
+    }
 }
 
 function silenciarNotificaciones() { alert("🔕 Próximamente"); toggleHeaderMenu(); }
 function crearGrupo() { alert("👥 Próximamente"); toggleHeaderMenu(); }
 function anclarChat() { alert("📌 Próximamente"); toggleHeaderMenu(); }
-function denunciarUsuario() { if(confirm("¿Denunciar este usuario?")) alert("✅ Reporte enviado"); toggleHeaderMenu(); }
-function bloquearUsuario() { if(confirm("¿Bloquear este usuario?")) alert("✅ Usuario bloqueado"); toggleHeaderMenu(); }
+async function denunciarUsuario() {
+    toggleHeaderMenu();
+    const motivos = [
+        "Contenido inapropiado",
+        "Acoso o intimidación",
+        "Spam o publicidad",
+        "Lenguaje ofensivo",
+        "Otro"
+    ];
+
+    const motivo = prompt(
+        "¿Por qué quieres denunciar a este usuario?\n\n" +
+        motivos.map((m, i) => `${i + 1}. ${m}`).join("\n") +
+        "\n\nEscribe el número del motivo:"
+    );
+
+    if (!motivo) return;
+    const idx = parseInt(motivo) - 1;
+    const reason = motivos[idx] ?? "Otro";
+
+    const res = await fetch(`/User/ReportUser`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reportedId: parseInt(receiverId), reason })
+    });
+
+    const data = await res.json();
+    if (data.success) {
+        showChatToast("✅ Reporte enviado. Lo revisaremos pronto.");
+    } else {
+        showChatToast(data.error ?? "No se pudo enviar el reporte.");
+    }
+}
+
+async function bloquearUsuario() {
+    toggleHeaderMenu();
+    const statusRes = await fetch(`/User/IsBlocked?userId=${receiverId}`);
+    const status = await statusRes.json();
+
+    if (status.blocked) {
+        if (!confirm("¿Desbloquear a este usuario?")) return;
+        const res = await fetch(`/User/UnblockUser`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ blockedId: parseInt(receiverId) })
+        });
+        const data = await res.json();
+        if (data.success) showChatToast("✅ Usuario desbloqueado.");
+    } else {
+        if (!confirm("¿Bloquear a este usuario? Ya no podrás intercambiar mensajes.")) return;
+        const res = await fetch(`/User/BlockUser`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ blockedId: parseInt(receiverId) })
+        });
+        const data = await res.json();
+        if (data.success) {
+            showChatToast("🚫 Usuario bloqueado.");
+            setTimeout(() => window.location.href = "/Message/Inbox", 1500);
+        }
+    }
+}
+
+function showChatToast(msg) {
+    const t = document.createElement("div");
+    t.style.cssText = `
+        position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%);
+        background: #1e293b; color: white; padding: 10px 20px;
+        border-radius: 20px; font-size: 13px; font-weight: 600;
+        z-index: 99999; box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        animation: fadeIn 0.2s ease;
+    `;
+    t.textContent = msg;
+    document.body.appendChild(t);
+    setTimeout(() => t.remove(), 3000);
+}
 
 document.addEventListener("click", (e) => {
     if (!e.target.closest(".header-menu-wrap")) {
