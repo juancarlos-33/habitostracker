@@ -1123,6 +1123,7 @@ document.getElementById("fileInput").addEventListener("change", function() {
     const img = document.getElementById("previewImage"), vid = document.getElementById("previewVideo");
     if (file.type.startsWith("image")) { img.src = url; img.style.display = "block"; vid.style.display = "none"; }
     else { vid.src = url; vid.style.display = "block"; img.style.display = "none"; }
+    sendBtn.disabled = false; // 🔥 habilitar botón
 });
 
 function removePreview() {
@@ -1130,6 +1131,7 @@ function removePreview() {
     document.getElementById("previewContainer").style.display = "none";
     document.getElementById("previewImage").style.display = "none";
     document.getElementById("previewVideo").style.display = "none";
+    sendBtn.disabled = document.getElementById("messageInput").value.trim() === ""; // 🔥
 }
 
 function reactToMessage(messageId, reaction) {
