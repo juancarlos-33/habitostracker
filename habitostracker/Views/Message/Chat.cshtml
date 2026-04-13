@@ -1310,7 +1310,8 @@ async function sendAudio() {
                     <div class="msg-footer"><span class="msg-time">${makeTime()}</span><span class="msg-check sent">✔</span></div>
                 </div>
             </div>`;
-      
+        chatBox.insertBefore(wrap, document.getElementById("typingIndicator"));
+        scrollBottom(null); cancelAudio();
     }
     btn.textContent = "Enviar audio"; btn.disabled = false;
 }
