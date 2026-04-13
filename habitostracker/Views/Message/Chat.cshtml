@@ -915,11 +915,11 @@ document.getElementById("chatForm").addEventListener("submit", async function(e)
 });
 
 connection.on("ReceiveMessage", (senderId, rcvId, senderName, message, fileUrl) => {
-    // 🔥 mostrar si el mensaje es del usuario con quien estoy chateando
-    const cc = localStorage.getItem("currentChatUserId");
-    if (String(senderId) !== String(cc) && String(rcvId) !== String(cc)) return;
-    // 🔥 no mostrar mis propios mensajes (ya los muestro optimistamente)
+    // 🔥 solo mostrar mensajes de la conversación actual
+    if (String(senderId) !== String(receiverId) && String(rcvId) !== String(receiverId)) return;
+    // 🔥 ignorar mis propios mensajes (ya aparecen optimistamente)
     if (String(senderId) === String(myId)) return;
+
     document.getElementById("typingIndicator").style.display = "none";
 
     let mediaHTML = "";
@@ -934,35 +934,13 @@ connection.on("ReceiveMessage", (senderId, rcvId, senderName, message, fileUrl) 
 
     const wrap = document.createElement("div");
     wrap.className = "msg-wrap msg-theirs";
-  const audioTempCheck = "audio-check-" + Date.now();
-wrap.innerHTML = `
-    <div class="msg-content-wrap">
-        <div class="msg-bubble bubble-mine">
-            <audio controls class="msg-audio"><source src="${data.audioUrl}" /></audio>
-            <div class="msg-footer">
-                <span class="msg-time">${makeTime()}</span>
-                <span class="msg-check sent" id="${audioTempCheck}">✔</span>
+    wrap.innerHTML = `
+        <div class="msg-content-wrap">
+            <div class="msg-bubble bubble-theirs">
+                ${textHTML}${mediaHTML}
+                <div class="msg-footer"><span class="msg-time">${makeTime()}</span></div>
             </div>
-        </div>
-    </div>`;
-
-chatBox.insertBefore(wrap, document.getElementById("typingIndicator"));
-scrollBottom(null);
-cancelAudio();
-
-// 🔥 asignar data-message-id y aplicar confirm pendiente
-if (data.messageId) {
-    const check = document.getElementById(audioTempCheck);
-    if (check) {
-        check.setAttribute("data-message-id", data.messageId);
-        wrap.id = "msg-" + data.messageId;
-        if (pendingConfirms.has(data.messageId)) {
-            check.textContent = "✔✔";
-            check.className = "msg-check delivered";
-            pendingConfirms.delete(data.messageId);
-        }
-    }
-}
+        </div>`;
 
     chatBox.insertBefore(wrap, document.getElementById("typingIndicator"));
     scrollBottom(wrap);
