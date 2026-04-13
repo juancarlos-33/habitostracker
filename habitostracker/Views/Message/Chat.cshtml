@@ -16,7 +16,6 @@
 
 <div class="chat-page">
 
-    <!-- HEADER -->
     <div class="chat-header">
         <a asp-controller="User" asp-action="Profile" asp-route-id="@ViewBag.OtherUserId" class="chat-header-user">
             <div class="chat-avatar-wrap">
@@ -44,7 +43,6 @@
     @if (isDeletedUser)
     { <div class="deleted-alert">⚠️ Esta cuenta fue eliminada</div> }
 
-    <!-- MODAL LLAMADA SALIENTE -->
     <div id="callModal" style="display:none;">
         <div class="call-modal-inner">
             <div class="call-ripple">
@@ -54,7 +52,7 @@
                 { <div class="call-avatar-letter">@otherName.Substring(0,1).ToUpper()</div> }
             </div>
             <div class="call-name">@otherName</div>
-            <div class="call-status" id="callStatus">Conectando...</div>
+            <div class="call-status" id="callStatus">Llamando...</div>
             <div class="call-timer" id="callTimer" style="display:none;">00:00</div>
             <div class="call-actions">
                 <button class="call-end-btn" onclick="endCall()">
@@ -67,7 +65,6 @@
         </div>
     </div>
 
-    <!-- MODAL LLAMADA ENTRANTE -->
     <div id="incomingCallModal" style="display:none;">
         <div class="call-modal-inner">
             <div class="call-ripple">
@@ -93,7 +90,6 @@
         </div>
     </div>
 
-    <!-- CHAT BOX -->
     <div id="chatBox" class="chat-box">
         @foreach (var msg in Model)
         {
@@ -164,7 +160,6 @@
         </div>
     </div>
 
-    <!-- PANEL EMOJI -->
     <div id="emojiPanel" class="emoji-panel" style="display:none;">
         <div class="emoji-grid">
             @foreach (var e in new[]{"😀","😂","🥹","😍","🥰","😎","🤩","🤗","😏","😒","😭","😤","😡","🥺","😱","🤯","🤔","🫡","🤫","😴","🤢","🤮","🤧","🥵","🥶","😵","🤠","🥳","😺","👻","💀","☠️","🤡","👾","🔥","❤️","🧡","💛","💚","💙","💜","🖤","💔","❣️","💕","💯","✨","🎉","🏆","⚡","🌈","👍","👎","👏","🙏","💪","🫶","✌️","🤙","👋","🤝","🫂","💆","🧠","👀","💬","🎵","🎶","🍕","🍺","🎮","⚽","🏀","🎯"})
@@ -174,7 +169,6 @@
         </div>
     </div>
 
-    <!-- FORM -->
     <form id="chatForm" asp-controller="Message" asp-action="Send" method="post"
           enctype="multipart/form-data" data-no-loader="true">
         @Html.AntiForgeryToken()
@@ -234,7 +228,6 @@
 </div>
 
 <style>
-/* ── BASE ─────────────────────────────────── */
 .chat-page {
     display: flex;
     flex-direction: column;
@@ -243,7 +236,7 @@
     background: #f8f9fb;
     z-index: 10;
     overflow: hidden;
-    padding-top: 90px; /* 🔥 más espacio para el navbar en móvil */
+    padding-top: 90px;
 }
 
 @@media (min-width: 768px) {
@@ -260,7 +253,6 @@
     }
 }
 
-/* ── HEADER ───────────────────────────────── */
 .chat-header {
     display: flex;
     align-items: center;
@@ -280,56 +272,40 @@
     min-width: 0;
 }
 
-.chat-avatar-wrap {
-    position: relative;
-    flex-shrink: 0;
-}
+.chat-avatar-wrap { position: relative; flex-shrink: 0; }
 
 .chat-header-avatar {
     width: 42px; height: 42px;
-    border-radius: 50%;
-    object-fit: cover;
+    border-radius: 50%; object-fit: cover;
     border: 2px solid rgba(255,255,255,0.2);
     display: block;
 }
 
 .avatar-letter {
-    width: 42px; height: 42px;
-    border-radius: 50%;
+    width: 42px; height: 42px; border-radius: 50%;
     background: linear-gradient(135deg, #6366f1, #8b5cf6);
-    color: white;
-    display: flex; align-items: center; justify-content: center;
+    color: white; display: flex; align-items: center; justify-content: center;
     font-weight: 800; font-size: 16px;
     border: 2px solid rgba(255,255,255,0.2);
 }
 
 .online-dot {
-    position: absolute;
-    bottom: 1px; right: 1px;
-    width: 11px; height: 11px;
-    border-radius: 50%;
-    background: #22c55e;
-    border: 2px solid #1e293b;
+    position: absolute; bottom: 1px; right: 1px;
+    width: 11px; height: 11px; border-radius: 50%;
+    background: #22c55e; border: 2px solid #1e293b;
 }
 
 .chat-header-name {
-    font-size: 15px; font-weight: 700;
-    color: white; white-space: nowrap;
-    overflow: hidden; text-overflow: ellipsis;
+    font-size: 15px; font-weight: 700; color: white;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 
-.chat-header-status {
-    font-size: 11px; margin-top: 1px;
-    color: rgba(255,255,255,0.5);
-}
-
+.chat-header-status { font-size: 11px; margin-top: 1px; color: rgba(255,255,255,0.5); }
 .chat-header-status.online { color: #4ade80; }
 
 .call-btn {
-    width: 40px; height: 40px;
-    border-radius: 50%; border: none;
-    background: rgba(255,255,255,0.1);
-    color: white; cursor: pointer;
+    width: 40px; height: 40px; border-radius: 50%; border: none;
+    background: rgba(255,255,255,0.1); color: white; cursor: pointer;
     display: flex; align-items: center; justify-content: center;
     transition: 0.2s; flex-shrink: 0;
 }
@@ -337,7 +313,6 @@
 .call-btn:hover { background: rgba(255,255,255,0.2); transform: scale(1.05); }
 .call-btn.calling { background: #dc2626; animation: callPulse 1s infinite; }
 
-/* ── MODALES ──────────────────────────────── */
 #callModal, #incomingCallModal {
     position: fixed; inset: 0;
     background: rgba(15,23,42,0.92);
@@ -355,17 +330,12 @@
 }
 
 .call-ripple {
-    position: relative;
-    width: 100px; height: 100px;
-    margin: 0 auto 20px;
+    position: relative; width: 100px; height: 100px; margin: 0 auto 20px;
 }
 
 .call-ripple::before, .call-ripple::after {
-    content: '';
-    position: absolute;
-    inset: -12px;
-    border-radius: 50%;
-    border: 2px solid rgba(99,102,241,0.3);
+    content: ''; position: absolute; inset: -12px;
+    border-radius: 50%; border: 2px solid rgba(99,102,241,0.3);
     animation: ripple 2s infinite;
 }
 
@@ -377,21 +347,15 @@
 }
 
 .call-avatar-img {
-    width: 100px; height: 100px;
-    border-radius: 50%; object-fit: cover;
-    border: 3px solid #6366f1;
-    display: block;
+    width: 100px; height: 100px; border-radius: 50%;
+    object-fit: cover; border: 3px solid #6366f1; display: block;
 }
 
 .call-avatar-letter {
-    width: 100px; height: 100px;
-    border-radius: 50%;
+    width: 100px; height: 100px; border-radius: 50%;
     background: linear-gradient(135deg, #6366f1, #8b5cf6);
-    color: white; display: flex;
-    align-items: center; justify-content: center;
-    font-size: 38px; font-weight: 800;
-    border: 3px solid #6366f1;
-    margin: 0 auto;
+    color: white; display: flex; align-items: center; justify-content: center;
+    font-size: 38px; font-weight: 800; border: 3px solid #6366f1; margin: 0 auto;
 }
 
 .call-name { font-size: 22px; font-weight: 700; margin-bottom: 8px; }
@@ -406,17 +370,22 @@
 
 .call-end-btn, .call-reject-btn, .call-accept-btn {
     width: 64px; height: 64px; border-radius: 50%; border: none;
-    font-size: 24px; cursor: pointer; transition: 0.2s;
-    display: flex; align-items: center; justify-content: center;
-    color: white;
+    cursor: pointer; transition: 0.2s;
+    display: flex; align-items: center; justify-content: center; color: white;
 }
 
-.call-end-btn, .call-reject-btn { background: linear-gradient(135deg,#dc2626,#b91c1c); box-shadow: 0 6px 20px rgba(220,38,38,0.4); }
-.call-accept-btn { background: linear-gradient(135deg,#22c55e,#16a34a); box-shadow: 0 6px 20px rgba(34,197,94,0.4); }
-.call-end-btn:hover, .call-reject-btn:hover { transform: scale(1.08); }
-.call-accept-btn:hover { transform: scale(1.08); }
+.call-end-btn, .call-reject-btn {
+    background: linear-gradient(135deg,#dc2626,#b91c1c);
+    box-shadow: 0 6px 20px rgba(220,38,38,0.4);
+}
 
-/* ── DELETED ──────────────────────────────── */
+.call-accept-btn {
+    background: linear-gradient(135deg,#22c55e,#16a34a);
+    box-shadow: 0 6px 20px rgba(34,197,94,0.4);
+}
+
+.call-end-btn:hover, .call-reject-btn:hover, .call-accept-btn:hover { transform: scale(1.08); }
+
 .deleted-alert {
     background: #fef9c3; color: #854d0e;
     text-align: center; padding: 8px;
@@ -424,7 +393,7 @@
     border-bottom: 1px solid #fde047;
 }
 
-/* ── CHAT BOX ─────────────────────────────── */
+/* 🔥 SCROLLBAR BONITA */
 .chat-box {
     flex: 1;
     overflow-y: auto;
@@ -439,31 +408,29 @@
     overscroll-behavior: contain;
 }
 
-.chat-box::-webkit-scrollbar { width: 3px; }
-.chat-box::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
-
-/* ── MENSAJES ─────────────────────────────── */
-.msg-wrap {
-    display: flex;
-    max-width: 78%;
-    margin-bottom: 1px;
+.chat-box::-webkit-scrollbar { width: 6px; }
+.chat-box::-webkit-scrollbar-track { background: rgba(0,0,0,0.04); border-radius: 10px; }
+.chat-box::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, #6366f1, #8b5cf6);
+    border-radius: 10px;
+    border: 1px solid rgba(255,255,255,0.2);
+}
+.chat-box::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(180deg, #4f46e5, #7c3aed);
 }
 
+.msg-wrap { display: flex; max-width: 78%; margin-bottom: 1px; }
 .msg-mine { align-self: flex-end; }
 .msg-theirs { align-self: flex-start; }
 
-.msg-content-wrap {
-    display: flex; flex-direction: column;
-}
-
+.msg-content-wrap { display: flex; flex-direction: column; }
 .msg-mine .msg-content-wrap { align-items: flex-end; }
 .msg-theirs .msg-content-wrap { align-items: flex-start; }
 
 .msg-bubble {
     padding: 10px 14px 6px;
     border-radius: 18px;
-    font-size: 14px;
-    line-height: 1.55;
+    font-size: 14px; line-height: 1.55;
     word-break: break-word;
     max-width: min(320px, 74vw);
     position: relative;
@@ -471,14 +438,12 @@
 
 .bubble-mine {
     background: linear-gradient(135deg, #6366f1, #4f46e5);
-    color: white;
-    border-bottom-right-radius: 4px;
+    color: white; border-bottom-right-radius: 4px;
     box-shadow: 0 2px 12px rgba(99,102,241,0.3);
 }
 
 .bubble-theirs {
-    background: white;
-    color: #1e293b;
+    background: white; color: #1e293b;
     border-bottom-left-radius: 4px;
     box-shadow: 0 2px 8px rgba(0,0,0,0.06);
 }
@@ -486,11 +451,8 @@
 .msg-text { display: block; }
 
 .msg-footer {
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    gap: 4px;
-    margin-top: 4px;
+    display: flex; align-items: center; justify-content: flex-end;
+    gap: 4px; margin-top: 4px;
 }
 
 .msg-time { font-size: 10px; }
@@ -513,10 +475,8 @@
 }
 
 .reaction-btns {
-    display: none;
-    background: white;
-    border-radius: 24px;
-    padding: 5px 8px;
+    display: none; background: white;
+    border-radius: 24px; padding: 5px 8px;
     box-shadow: 0 8px 24px rgba(0,0,0,0.15);
     gap: 2px; margin-top: 4px;
     flex-wrap: wrap; z-index: 10;
@@ -532,7 +492,6 @@
 .reaction-btns button:hover { transform: scale(1.35); background: #f1f5f9; }
 .msg-wrap:hover .reaction-btns { display: flex; }
 
-/* ── TYPING ───────────────────────────────── */
 .typing-indicator {
     display: flex; gap: 5px; align-items: center;
     padding: 10px 16px;
@@ -555,14 +514,10 @@
     30% { transform: translateY(-7px); }
 }
 
-/* ── EMOJI PANEL ──────────────────────────── */
 .emoji-panel {
-    flex-shrink: 0;
-    background: white;
+    flex-shrink: 0; background: white;
     border-top: 1px solid #e2e8f0;
-    padding: 10px 12px;
-    max-height: 200px;
-    overflow-y: auto;
+    padding: 10px 12px; max-height: 200px; overflow-y: auto;
 }
 
 .emoji-grid {
@@ -572,35 +527,22 @@
 }
 
 .emoji-grid span {
-    font-size: 22px;
-    cursor: pointer;
-    text-align: center;
-    padding: 4px;
-    border-radius: 10px;
-    transition: 0.15s;
-    user-select: none;
+    font-size: 22px; cursor: pointer; text-align: center;
+    padding: 4px; border-radius: 10px; transition: 0.15s; user-select: none;
 }
 
-.emoji-grid span:hover {
-    background: #f1f5f9;
-    transform: scale(1.25);
-}
+.emoji-grid span:hover { background: #f1f5f9; transform: scale(1.25); }
 
-/* ── FORM / INPUT BAR ─────────────────────── */
 form {
-    flex-shrink: 0;
-    padding: 8px 12px 10px;
-    background: white;
-    border-top: 1px solid #e2e8f0;
+    flex-shrink: 0; padding: 8px 12px 10px;
+    background: white; border-top: 1px solid #e2e8f0;
 }
 
 .recording-status {
     display: flex; align-items: center; gap: 8px;
-    padding: 6px 14px;
-    background: #fef2f2; border-radius: 12px;
+    padding: 6px 14px; background: #fef2f2; border-radius: 12px;
     font-size: 13px; font-weight: 600; color: #dc2626;
-    margin-bottom: 8px;
-    border: 1px solid #fecaca;
+    margin-bottom: 8px; border: 1px solid #fecaca;
 }
 
 .rec-dot {
@@ -616,43 +558,28 @@ form {
     50% { opacity:0.3; transform:scale(0.7); }
 }
 
-.input-bar {
-    display: flex; align-items: center; gap: 6px;
-}
+.input-bar { display: flex; align-items: center; gap: 6px; }
 
 .bar-btn {
     width: 38px; height: 38px; border-radius: 50%;
-    border: none; background: #f1f5f9;
-    color: #64748b; cursor: pointer;
+    border: none; background: #f1f5f9; color: #64748b; cursor: pointer;
     display: flex; align-items: center; justify-content: center;
     transition: 0.2s; flex-shrink: 0;
 }
 
 .bar-btn:hover { background: #e2e8f0; color: #334155; }
-
-.bar-btn.emoji-toggle.active {
-    background: #ede9fe; color: #6366f1;
-}
-
-.rec-btn.recording {
-    background: #fee2e2; color: #dc2626;
-    animation: recPulse 1s infinite;
-}
+.bar-btn.emoji-toggle.active { background: #ede9fe; color: #6366f1; }
+.rec-btn.recording { background: #fee2e2; color: #dc2626; animation: recPulse 1s infinite; }
 
 .msg-input {
-    flex: 1; min-width: 0;
-    padding: 10px 16px;
-    border: 1.5px solid #e2e8f0;
-    border-radius: 24px;
-    font-size: 14px; outline: none;
-    background: #f8fafc;
-    transition: 0.2s;
-    color: #1e293b;
+    flex: 1; min-width: 0; padding: 10px 16px;
+    border: 1.5px solid #e2e8f0; border-radius: 24px;
+    font-size: 14px; outline: none; background: #f8fafc;
+    transition: 0.2s; color: #1e293b;
 }
 
 .msg-input:focus {
-    border-color: #6366f1;
-    background: white;
+    border-color: #6366f1; background: white;
     box-shadow: 0 0 0 3px rgba(99,102,241,0.1);
 }
 
@@ -661,23 +588,21 @@ form {
     background: linear-gradient(135deg, #6366f1, #4f46e5);
     color: white; cursor: pointer; transition: 0.2s;
     display: flex; align-items: center; justify-content: center;
-    flex-shrink: 0;
-    box-shadow: 0 4px 14px rgba(99,102,241,0.4);
+    flex-shrink: 0; box-shadow: 0 4px 14px rgba(99,102,241,0.4);
 }
 
 .send-btn:hover { transform: scale(1.08); box-shadow: 0 6px 20px rgba(99,102,241,0.5); }
 .send-btn:disabled { background: #cbd5e1; cursor: not-allowed; transform: none; box-shadow: none; }
 
 .preview-container {
-    position: relative; padding: 8px;
-    margin-bottom: 8px; background: #f8fafc;
-    border-radius: 12px; border: 1px solid #e2e8f0;
+    position: relative; padding: 8px; margin-bottom: 8px;
+    background: #f8fafc; border-radius: 12px; border: 1px solid #e2e8f0;
 }
 
 .preview-close {
     position: absolute; top: 4px; right: 4px;
-    background: #dc2626; color: white;
-    border-radius: 50%; width: 22px; height: 22px;
+    background: #dc2626; color: white; border-radius: 50%;
+    width: 22px; height: 22px;
     display: flex; align-items: center; justify-content: center;
     cursor: pointer; font-size: 12px; font-weight: 700;
 }
@@ -686,8 +611,7 @@ form {
 
 .audio-preview {
     padding: 8px; margin-bottom: 8px;
-    background: #f8fafc; border-radius: 12px;
-    border: 1px solid #e2e8f0;
+    background: #f8fafc; border-radius: 12px; border: 1px solid #e2e8f0;
 }
 
 .audio-preview audio { width: 100%; margin-bottom: 8px; }
@@ -705,7 +629,6 @@ form {
 
 .btn-cancel-audio { background: #fee2e2; color: #dc2626; }
 
-/* ── DARK MODE ────────────────────────────── */
 body.bg-dark .chat-page { background: #0f172a !important; }
 body.bg-dark .chat-header { background: linear-gradient(135deg,#0f172a,#1e293b) !important; }
 body.bg-dark .chat-box { background: #0f172a !important; }
@@ -747,13 +670,20 @@ function makeTime() {
     return new Date().toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' });
 }
 
+function scrollBottom(wrap) {
+    // 🔥 scroll inteligente: espera imágenes antes de hacer scroll
+    const imgs = wrap ? wrap.querySelectorAll("img") : [];
+    if (imgs.length > 0) {
+        imgs[0].onload = () => { chatBox.scrollTop = chatBox.scrollHeight; };
+        imgs[0].onerror = () => { chatBox.scrollTop = chatBox.scrollHeight; };
+    }
+    chatBox.scrollTop = chatBox.scrollHeight;
+}
+
 connection.on("ReceiveMessage", (senderId, rcvId, senderName, message, fileUrl) => {
     const cc = localStorage.getItem("currentChatUserId");
     if (senderId != cc && rcvId != cc) return;
     document.getElementById("typingIndicator").style.display = "none";
-
-    const wrap = document.createElement("div");
-    wrap.className = "msg-wrap msg-theirs";
 
     let mediaHTML = "";
     if (fileUrl && fileUrl.trim() !== "") {
@@ -765,11 +695,10 @@ connection.on("ReceiveMessage", (senderId, rcvId, senderName, message, fileUrl) 
         }
     }
 
-    let textHTML = "";
-    if (message && message.trim() !== "") {
-        textHTML = `<span class="msg-text">${message}</span>`;
-    }
+    let textHTML = (message && message.trim() !== "") ? `<span class="msg-text">${message}</span>` : "";
 
+    const wrap = document.createElement("div");
+    wrap.className = "msg-wrap msg-theirs";
     wrap.innerHTML = `
         <div class="msg-content-wrap">
             <div class="msg-bubble bubble-theirs">
@@ -779,7 +708,7 @@ connection.on("ReceiveMessage", (senderId, rcvId, senderName, message, fileUrl) 
         </div>`;
 
     chatBox.insertBefore(wrap, document.getElementById("typingIndicator"));
-    chatBox.scrollTop = chatBox.scrollHeight;
+    scrollBottom(wrap);
     fetch("/Message/MarkAsSeen?senderId=" + senderId, { method: "POST" });
     connection.invoke("MessagesViewed", senderId);
 });
@@ -797,7 +726,7 @@ connection.on("ReceiveAudio", (senderId, audioUrl) => {
             </div>
         </div>`;
     chatBox.insertBefore(wrap, document.getElementById("typingIndicator"));
-    chatBox.scrollTop = chatBox.scrollHeight;
+    scrollBottom(null);
 });
 
 connection.on("UserRecording", () => {
@@ -892,7 +821,6 @@ document.getElementById("chatForm").addEventListener("submit", function() {
     }, 50);
 });
 
-// 🔥 EMOJI PANEL
 function toggleEmoji() {
     const panel = document.getElementById("emojiPanel");
     const btn = document.querySelector(".emoji-toggle");
@@ -914,12 +842,13 @@ function addEmoji(emoji) {
     sendBtn.disabled = input.value.trim() === "";
 }
 
-// ── LLAMADAS ──────────────────────────────
+// ── LLAMADAS WebRTC (arreglado audio) ────────
 window.peerConnection = null;
 window.localStream = null;
 let callerId = null;
 let callTimerInterval = null;
 let callSeconds = 0;
+let pendingOffer = null; // 🔥 guardar offer hasta que el receptor acepte
 
 function createPeerConnection(targetId) {
     const pc = new RTCPeerConnection({
@@ -928,25 +857,46 @@ function createPeerConnection(targetId) {
             { urls: "stun:stun1.l.google.com:19302" },
             { urls: "stun:stun2.l.google.com:19302" },
             { urls: "stun:stun3.l.google.com:19302" },
+            { urls: "stun:stun.cloudflare.com:3478" },
         ]
     });
 
     pc.ontrack = (event) => {
+        console.log("🔊 Track recibido:", event.track.kind, event.streams.length);
         let audio = document.getElementById("remoteAudio");
         if (!audio) {
             audio = document.createElement("audio");
-            audio.id = "remoteAudio"; audio.autoplay = true;
+            audio.id = "remoteAudio";
+            audio.autoplay = true;
             audio.setAttribute("playsinline", "");
+            audio.setAttribute("controls", "");
+            audio.style.display = "none";
             document.body.appendChild(audio);
         }
-        if (event.streams?.[0]) audio.srcObject = event.streams[0];
+        if (event.streams && event.streams[0]) {
+            audio.srcObject = event.streams[0];
+            audio.play().catch(e => console.warn("play error:", e));
+        } else {
+            // 🔥 fallback: crear stream desde el track
+            const stream = new MediaStream([event.track]);
+            audio.srcObject = stream;
+            audio.play().catch(e => console.warn("play error:", e));
+        }
     };
 
     pc.onicecandidate = (e) => {
-        if (e.candidate) connection.invoke("SendIceCandidate", targetId, JSON.stringify(e.candidate));
+        if (e.candidate) {
+            console.log("🧊 ICE candidate enviado");
+            connection.invoke("SendIceCandidate", targetId, JSON.stringify(e.candidate));
+        }
+    };
+
+    pc.oniceconnectionstatechange = () => {
+        console.log("🧊 ICE state:", pc.iceConnectionState);
     };
 
     pc.onconnectionstatechange = () => {
+        console.log("📡 Connection state:", pc.connectionState);
         if (pc.connectionState === "connected") {
             document.getElementById("callStatus").textContent = "En llamada";
             startCallTimer();
@@ -973,19 +923,34 @@ function startCallTimer() {
 
 async function startCall() {
     try {
+        // 🔥 1. pedir micrófono primero
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
         window.localStream = stream;
+        console.log("🎤 Micrófono obtenido, tracks:", stream.getTracks().length);
+
         document.getElementById("callModal").style.display = "flex";
         document.getElementById("callStatus").textContent = "Llamando...";
         document.getElementById("callBtn").classList.add("calling");
+
+        // 🔥 2. crear PC y agregar tracks
         const pc = createPeerConnection(receiverId);
-        stream.getTracks().forEach(t => pc.addTrack(t, stream));
+        stream.getTracks().forEach(t => {
+            pc.addTrack(t, stream);
+            console.log("➕ Track agregado al emisor:", t.kind);
+        });
+
+        // 🔥 3. crear offer
         const offer = await pc.createOffer({ offerToReceiveAudio: true });
         await pc.setLocalDescription(offer);
+
+        // 🔥 4. notificar y enviar offer
         await connection.invoke("CallUser", receiverId);
         await connection.invoke("SendOffer", receiverId, JSON.stringify(offer));
+        console.log("📤 Offer enviado");
+
     } catch (err) {
-        alert("❌ Micrófono: " + err.message);
+        console.error("Error startCall:", err);
+        alert("❌ Error al iniciar llamada: " + err.message);
         document.getElementById("callModal").style.display = "none";
         document.getElementById("callBtn").classList.remove("calling");
     }
@@ -993,49 +958,81 @@ async function startCall() {
 
 connection.on("IncomingCall", (cId) => {
     callerId = cId;
+    console.log("📞 Llamada entrante de:", cId);
     document.getElementById("incomingCallModal").style.display = "flex";
+});
+
+// 🔥 guardar offer hasta que el receptor acepte
+connection.on("ReceiveOffer", async (offer) => {
+    console.log("📨 Offer recibido, guardando...");
+    pendingOffer = offer;
 });
 
 async function acceptCall() {
     document.getElementById("incomingCallModal").style.display = "none";
     document.getElementById("callModal").style.display = "flex";
     document.getElementById("callStatus").textContent = "Conectando...";
+
     try {
+        // 🔥 1. pedir micrófono
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
         window.localStream = stream;
+        console.log("🎤 Micrófono receptor obtenido, tracks:", stream.getTracks().length);
+
+        // 🔥 2. crear PC y agregar tracks ANTES del offer
         const pc = createPeerConnection(callerId);
-        stream.getTracks().forEach(t => pc.addTrack(t, stream));
-    } catch (err) { alert("❌ " + err.message); endCall(); }
+        stream.getTracks().forEach(t => {
+            pc.addTrack(t, stream);
+            console.log("➕ Track agregado al receptor:", t.kind);
+        });
+
+        // 🔥 3. procesar el offer guardado
+        if (pendingOffer) {
+            await pc.setRemoteDescription(new RTCSessionDescription(JSON.parse(pendingOffer)));
+            const answer = await pc.createAnswer();
+            await pc.setLocalDescription(answer);
+            await connection.invoke("SendAnswer", callerId, JSON.stringify(answer));
+            console.log("📤 Answer enviado");
+            pendingOffer = null;
+        } else {
+            console.warn("⚠️ No hay offer pendiente");
+        }
+
+    } catch (err) {
+        console.error("Error acceptCall:", err);
+        alert("❌ Error al aceptar llamada: " + err.message);
+        endCall();
+    }
 }
 
 function rejectCall() {
     document.getElementById("incomingCallModal").style.display = "none";
     connection.invoke("HangUp", callerId);
+    pendingOffer = null;
     callerId = null;
 }
 
-connection.on("ReceiveOffer", async (offer) => {
-    if (!window.peerConnection && window.localStream) {
-        const pc = createPeerConnection(callerId ?? receiverId);
-        window.localStream.getTracks().forEach(t => pc.addTrack(t, window.localStream));
-    }
-    if (!window.peerConnection) return;
-    await window.peerConnection.setRemoteDescription(new RTCSessionDescription(JSON.parse(offer)));
-    const answer = await window.peerConnection.createAnswer();
-    await window.peerConnection.setLocalDescription(answer);
-    await connection.invoke("SendAnswer", callerId ?? receiverId, JSON.stringify(answer));
-});
-
 connection.on("ReceiveAnswer", async (answer) => {
-    if (window.peerConnection)
+    console.log("📨 Answer recibido");
+    if (window.peerConnection) {
         await window.peerConnection.setRemoteDescription(new RTCSessionDescription(JSON.parse(answer)));
+    }
 });
 
 connection.on("ReceiveIceCandidate", async (candidate) => {
     try {
-        if (window.peerConnection?.remoteDescription)
-            await window.peerConnection.addIceCandidate(new RTCIceCandidate(JSON.parse(candidate)));
-    } catch (e) { console.warn("ICE:", e); }
+        if (window.peerConnection) {
+            if (window.peerConnection.remoteDescription) {
+                await window.peerConnection.addIceCandidate(new RTCIceCandidate(JSON.parse(candidate)));
+                console.log("🧊 ICE candidate agregado");
+            } else {
+                // 🔥 guardar candidates que llegan antes del remoteDescription
+                if (!window.pendingCandidates) window.pendingCandidates = [];
+                window.pendingCandidates.push(candidate);
+                console.log("🧊 ICE candidate guardado para después");
+            }
+        }
+    } catch (e) { console.warn("ICE error:", e); }
 });
 
 connection.on("CallEnded", () => endCall());
@@ -1051,6 +1048,8 @@ function endCall() {
     if (audio) { audio.pause(); audio.srcObject = null; audio.remove(); }
     if (window.localStream) { window.localStream.getTracks().forEach(t => t.stop()); window.localStream = null; }
     if (window.peerConnection) { window.peerConnection.close(); window.peerConnection = null; }
+    window.pendingCandidates = [];
+    pendingOffer = null;
     try { connection.invoke("HangUp", callerId ?? receiverId); } catch(e) {}
     callerId = null;
 }
@@ -1122,7 +1121,7 @@ async function sendAudio() {
                 </div>
             </div>`;
         chatBox.insertBefore(wrap, document.getElementById("typingIndicator"));
-        chatBox.scrollTop = chatBox.scrollHeight;
+        scrollBottom(null);
         cancelAudio();
     }
     btn.textContent = "Enviar audio"; btn.disabled = false;
@@ -1141,7 +1140,7 @@ document.getElementById("fileInput").addEventListener("change", function() {
     const img = document.getElementById("previewImage"), vid = document.getElementById("previewVideo");
     if (file.type.startsWith("image")) { img.src = url; img.style.display = "block"; vid.style.display = "none"; }
     else { vid.src = url; vid.style.display = "block"; img.style.display = "none"; }
-    sendBtn.disabled = false; // 🔥 habilitar botón
+    sendBtn.disabled = false;
 });
 
 function removePreview() {
@@ -1149,7 +1148,7 @@ function removePreview() {
     document.getElementById("previewContainer").style.display = "none";
     document.getElementById("previewImage").style.display = "none";
     document.getElementById("previewVideo").style.display = "none";
-    sendBtn.disabled = document.getElementById("messageInput").value.trim() === ""; // 🔥
+    sendBtn.disabled = document.getElementById("messageInput").value.trim() === "";
 }
 
 function reactToMessage(messageId, reaction) {
@@ -1163,7 +1162,6 @@ function reactToMessage(messageId, reaction) {
     });
 }
 
-// Cerrar emoji al hacer click fuera
 document.addEventListener("click", (e) => {
     if (!e.target.closest(".emoji-toggle") && !e.target.closest("#emojiPanel")) {
         closeEmoji();
