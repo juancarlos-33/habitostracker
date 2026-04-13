@@ -1298,21 +1298,43 @@ async function sendAudio() {
     formData.append("receiverId", receiverId);
     const btn = document.querySelector(".btn-send-audio");
     btn.textContent = "Enviando..."; btn.disabled = true;
+
     const res = await fetch('/Message/SendAudio', { method: 'POST', body: formData });
     if (res.ok) {
         const data = await res.json();
+        const audioTempCheck = "audio-check-" + Date.now();
         const wrap = document.createElement("div");
         wrap.className = "msg-wrap msg-mine";
         wrap.innerHTML = `
             <div class="msg-content-wrap">
                 <div class="msg-bubble bubble-mine">
                     <audio controls class="msg-audio"><source src="${data.audioUrl}" /></audio>
-                    <div class="msg-footer"><span class="msg-time">${makeTime()}</span><span class="msg-check sent">✔</span></div>
+                    <div class="msg-footer">
+                        <span class="msg-time">${makeTime()}</span>
+                        <span class="msg-check sent" id="${audioTempCheck}">✔</span>
+                    </div>
                 </div>
             </div>`;
+
         chatBox.insertBefore(wrap, document.getElementById("typingIndicator"));
-        scrollBottom(null); cancelAudio();
+        scrollBottom(null);
+        cancelAudio();
+
+        // 🔥 asignar data-message-id y aplicar confirm pendiente
+        if (data.messageId) {
+            const check = document.getElementById(audioTempCheck);
+            if (check) {
+                check.setAttribute("data-message-id", data.messageId);
+                wrap.id = "msg-" + data.messageId;
+                if (pendingConfirms.has(data.messageId)) {
+                    check.textContent = "✔✔";
+                    check.className = "msg-check delivered";
+                    pendingConfirms.delete(data.messageId);
+                }
+            }
+        }
     }
+
     btn.textContent = "Enviar audio"; btn.disabled = false;
 }
 
