@@ -754,6 +754,32 @@ body.bg-dark .modal-content {
     object-fit: cover;
 }
 
+/* 🔥 avatar en navbar móvil */
+.nav-avatar-btn {
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+.nav-avatar-photo {
+    width: 38px; height: 38px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid rgba(255,255,255,0.4);
+}
+
+.nav-avatar-letter {
+    width: 38px; height: 38px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #2563eb, #7c3aed);
+    color: white;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 15px; font-weight: 800;
+    border: 2px solid rgba(255,255,255,0.4);
+}
+
 /* LOADER */
 #globalLoader {
     position: fixed;
@@ -1057,12 +1083,94 @@ function toggleSidebar(){
             }
 
         
-  <div class="d-flex align-items-center w-100 px-2 py-2 navbar-custom">
+ <div class="d-flex align-items-center w-100 px-2 py-2 navbar-custom">
 
-    <!-- ☰ IZQUIERDO -->
-   <button class="nav-icon-btn nav-left-toggle" data-bs-toggle="collapse" data-bs-target="#mainNavbar">
-    ☰
-</button>
+    <!-- 📱 MÓVIL: foto de perfil con dropdown | PC: botón collapse -->
+    @{
+        var navUserName = User.Identity.Name ?? "U";
+        var navFirstLetter = navUserName.Substring(0, 1).ToUpper();
+        var navProfileImage = User.FindFirst("ProfileImage")?.Value;
+        if (string.IsNullOrEmpty(navProfileImage))
+            navProfileImage = User.FindFirst("ProfilePicture")?.Value;
+    }
+
+    <!-- IZQUIERDO MÓVIL: foto/avatar con dropdown -->
+    <div class="dropdown d-lg-none">
+        <button class="nav-avatar-btn" type="button" data-bs-toggle="dropdown" data-bs-display="static">
+            @if (!string.IsNullOrWhiteSpace(navProfileImage))
+            {
+                <img src="@navProfileImage" class="nav-avatar-photo" />
+            }
+            else
+            {
+                <div class="nav-avatar-letter">@navFirstLetter</div>
+            }
+        </button>
+        <ul class="dropdown-menu dropdown-menu-custom">
+            <li class="dropdown-user-header">
+                @if (!string.IsNullOrWhiteSpace(navProfileImage))
+                {
+                    <img src="@navProfileImage" class="dropdown-header-avatar" />
+                }
+                else
+                {
+                    <div class="dropdown-header-letter">@navFirstLetter</div>
+                }
+                <div>
+                    <div class="dropdown-header-name">@navUserName</div>
+                    <div class="dropdown-header-role">
+                        @if (User.IsInRole("SuperAdmin")) { <span>👑 SuperAdmin</span> }
+                        else if (User.IsInRole("Admin")) { <span>🛡️ Admin</span> }
+                        else if (User.IsInRole("Guest")) { <span>👤 Invitado</span> }
+                        else { <span>✨ Usuario</span> }
+                    </div>
+                </div>
+            </li>
+            <li><hr class="dropdown-divider mx-2" /></li>
+            <li>
+                <a class="dropdown-item-custom" asp-controller="Message" asp-action="Inbox">
+                    <span class="di-icon">📨</span><span>Mensajes</span>
+                    @if (ViewBag.NewMessages != null && (int)ViewBag.NewMessages > 0)
+                    { <span class="di-badge">@ViewBag.NewMessages</span> }
+                </a>
+            </li>
+            <li>
+                <a class="dropdown-item-custom" asp-controller="Notification" asp-action="Index">
+                    <span class="di-icon">🔔</span><span>Notificaciones</span>
+                    <span class="di-badge-wrap">@await Component.InvokeAsync("NotificationCount")</span>
+                </a>
+            </li>
+            <li>
+                <a class="dropdown-item-custom" asp-controller="Account" asp-action="Profile">
+                    <span class="di-icon">👤</span><span>Mi Perfil</span>
+                </a>
+            </li>
+            <li>
+                <a class="dropdown-item-custom" asp-controller="Habit" asp-action="Achievements">
+                    <span class="di-icon">🏆</span><span>Logros</span>
+                </a>
+            </li>
+            @if (User.IsInRole("Admin") || User.IsInRole("SuperAdmin"))
+            {
+                <li>
+                    <a class="dropdown-item-custom text-primary" asp-controller="Admin" asp-action="Index">
+                        <span class="di-icon">👑</span><span>Panel Admin</span>
+                    </a>
+                </li>
+            }
+            <li><hr class="dropdown-divider mx-2" /></li>
+            <li>
+                <button class="dropdown-item-custom text-danger" data-bs-toggle="modal" data-bs-target="#logoutModal">
+                    <span class="di-icon">🚪</span><span>Cerrar sesión</span>
+                </button>
+            </li>
+        </ul>
+    </div>
+
+    <!-- IZQUIERDO PC: collapse -->
+    <button class="nav-icon-btn nav-left-toggle d-none d-lg-flex" data-bs-toggle="collapse" data-bs-target="#mainNavbar">
+        ☰
+    </button>
 
     <!-- 🚀 TÍTULO -->
     <a class="navbar-brand mx-auto fw-bold text-gradient" asp-controller="Habit" asp-action="Index">
@@ -1071,22 +1179,11 @@ function toggleSidebar(){
 
     <!-- DERECHA -->
     <div class="d-flex align-items-center gap-2">
-
-        <!-- 🌙 -->
-        <button onclick="toggleDarkMode()" data-no-loader class="theme-btn">
-            🌙
-        </button>
-
-        <!-- ☰ DERECHO -->
-        <button class="nav-icon-btn" data-no-loader onclick="toggleSidebar()">
-            ☰
-        </button>
-
+        <button onclick="toggleDarkMode()" data-no-loader class="theme-btn">🌙</button>
+        <button class="nav-icon-btn" data-no-loader onclick="toggleSidebar()">☰</button>
     </div>
 
-
 </div>
-
          
 
             <div class="collapse navbar-collapse" id="mainNavbar">
