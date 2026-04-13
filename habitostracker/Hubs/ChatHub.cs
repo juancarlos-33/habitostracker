@@ -129,5 +129,16 @@ namespace HabitTrackerApp.Hubs
         {
             await Clients.Group(receiverId).SendAsync("CallEnded");
         }
+
+        public async Task StartRecording(string receiverId)
+        {
+            await Clients.Group(receiverId).SendAsync("UserRecording");
+        }
+
+        public async Task StopRecording(string receiverId)
+        {
+            await Clients.Group(receiverId).SendAsync("UserStoppedRecording");
+        }
     }
+
 }
