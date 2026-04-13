@@ -285,6 +285,138 @@ body.bg-dark .dropdown-menu a:hover {
     box-shadow: 0 8px 25px rgba(0,0,0,0.4);
 }
 
+/* ===== DROPDOWN CUSTOM ===== */
+.dropdown-trigger {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 50px;
+    padding: 6px 14px 6px 6px;
+    cursor: pointer;
+    transition: 0.2s;
+    color: inherit;
+}
+
+.dropdown-trigger:hover {
+    background: rgba(255,255,255,0.2);
+}
+
+.dropdown-username {
+    font-size: 14px;
+    max-width: 100px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.dropdown-chevron {
+    font-size: 12px;
+    opacity: 0.6;
+}
+
+.dropdown-menu-custom {
+    min-width: 240px;
+    border-radius: 18px !important;
+    border: 1px solid rgba(0,0,0,0.08) !important;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.15) !important;
+    padding: 8px !important;
+    margin-top: 8px !important;
+    /* 🔥 fix para móvil — no se corta */
+    position: fixed !important;
+    top: 70px !important;
+    right: 12px !important;
+    left: auto !important;
+    z-index: 99999 !important;
+}
+
+.dropdown-user-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+}
+
+.dropdown-header-avatar {
+    width: 46px; height: 46px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #e5e7eb;
+    flex-shrink: 0;
+}
+
+.dropdown-header-letter {
+    width: 46px; height: 46px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #2563eb, #7c3aed);
+    color: white;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; font-weight: 800;
+    flex-shrink: 0;
+}
+
+.dropdown-header-name {
+    font-weight: 700;
+    font-size: 15px;
+    color: #111827;
+}
+
+.dropdown-header-role {
+    font-size: 12px;
+    color: #9ca3af;
+    margin-top: 2px;
+}
+
+.dropdown-item-custom {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 500;
+    color: #374151;
+    text-decoration: none;
+    transition: 0.15s;
+    width: 100%;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    text-align: left;
+}
+
+.dropdown-item-custom:hover {
+    background: #f3f4f6;
+    color: #111827;
+}
+
+.di-icon { font-size: 18px; flex-shrink: 0; }
+
+.di-badge {
+    margin-left: auto;
+    background: #ef4444;
+    color: white;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 20px;
+}
+
+.di-badge-wrap { margin-left: auto; }
+
+/* DARK MODE */
+body.bg-dark .dropdown-menu-custom {
+    background: #1e1e2e !important;
+    border-color: #2d2d3d !important;
+}
+
+body.bg-dark .dropdown-header-name { color: #f1f5f9 !important; }
+body.bg-dark .dropdown-item-custom { color: #cbd5e1 !important; }
+body.bg-dark .dropdown-item-custom:hover { background: #2d2d3d !important; color: #f1f5f9 !important; }
+body.bg-dark .dropdown-item-custom.text-danger { color: #f87171 !important; }
+body.bg-dark .dropdown-item-custom.text-primary { color: #60a5fa !important; }
+
 /* 🔥 BOTONES ☰ */
 .nav-icon-btn {
     background: rgba(255,255,255,0.08);
@@ -976,118 +1108,106 @@ function toggleSidebar(){
                 
                    
 
-                    <div class="dropdown">
+                 <div class="dropdown">
+    @{
+        var userName = User.Identity.Name ?? "U";
+        var firstLetter = userName.Substring(0, 1).ToUpper();
+        var profileImage = User.FindFirst("ProfileImage")?.Value;
+        if (string.IsNullOrEmpty(profileImage))
+            profileImage = User.FindFirst("ProfilePicture")?.Value;
+    }
 
-                        @{
-    var userName = User.Identity.Name ?? "U";
-    var firstLetter = userName.Substring(0, 1).ToUpper();
-    var profileImage = User.FindFirst("ProfileImage")?.Value;
-    if (string.IsNullOrEmpty(profileImage))
-        profileImage = User.FindFirst("ProfilePicture")?.Value;
-}
+    <button class="dropdown-trigger" type="button" data-bs-toggle="dropdown" data-bs-display="static">
+        @if (!string.IsNullOrWhiteSpace(profileImage))
+        {
+            <img src="@profileImage?v=@DateTime.Now.Ticks" class="user-avatar-img" />
+        }
+        else
+        {
+            <div class="user-avatar">@firstLetter</div>
+        }
+        <span class="fw-semibold dropdown-username">@userName</span>
+        <span class="dropdown-chevron">▾</span>
+    </button>
 
-                        <button class="btn btn-light rounded-pill px-3 d-flex align-items-center gap-2 shadow-sm"
-                                type="button"
-                                data-bs-toggle="dropdown">
+    <ul class="dropdown-menu dropdown-menu-end dropdown-menu-custom">
 
-                            @if (!string.IsNullOrWhiteSpace(profileImage))
-                            {
-                                <img src="@profileImage?v=@DateTime.Now.Ticks" class="user-avatar-img" />
-                            }
-                            else
-                            {
-                                <div class="user-avatar">
-                                    @firstLetter
-                                </div>
-                            }
-
-                            <span class="fw-semibold">@userName</span>
-
-                        </button>
-
-                        <ul class="dropdown-menu dropdown-menu-end shadow border-0 rounded-4">
-
-                            <li>
-
-                                <li class="nav-item">
-                        <a class="nav-link position-relative" asp-controller="Message" asp-action="Inbox">
-                            📨 Mensajes
-
-                            @if (ViewBag.NewMessages != null && ViewBag.NewMessages > 0)
-                            {
-                                <span class="badge bg-danger position-absolute top-0 start-100 translate-middle">
-                                    @ViewBag.NewMessages
-                                </span>
-                            }
-
-                        </a>
-
-                    <li class="nav-item">
-
-
-                            
-                          <a class="dropdown-item d-flex justify-content-between align-items-center"
-   asp-controller="Notification" asp-action="Index">
-    
-    <span>🔔 Notificaciones</span>
-
-    <span>
-        @await Component.InvokeAsync("NotificationCount")
-    </span>
-
-</a>
-
-                            <li>
-                                <a class="dropdown-item"
-                                   asp-controller="Account"
-                                   asp-action="Profile">
-                                    👤 Mi Perfil
-                                </a>
-                            </li>
-
-                            <li>
-                                <a class="dropdown-item"
-                                   asp-controller="Habit"
-                                   asp-action="Achievements">
-                                    🏆 Logros
-                                </a>
-                            </li>
-                            @if (User.IsInRole("Admin") || User.IsInRole("SuperAdmin"))
-                            {
-                                <li>
-                                    <a class="dropdown-item text-primary fw-semibold"
-                                       asp-controller="Admin"
-                                       asp-action="Index">
-                                        👑 Panel Admin
-                                    </a>
-                                </li>
-                            }
-
-                            <li><hr class="dropdown-divider"></li>
-
-                            <li>
-
-                                <button class="dropdown-item text-danger fw-semibold"
-                                        data-bs-toggle="modal"
-                                        data-bs-target="#logoutModal">
-                                    🚪 Cerrar sesión
-                                </button>
-
-                            </li>
-                            
-
-                        </ul>
-                        
-                        
-
-                    </div>
-                    
-
-                
-
-
+        <li class="dropdown-user-header">
+            @if (!string.IsNullOrWhiteSpace(profileImage))
+            {
+                <img src="@profileImage" class="dropdown-header-avatar" />
+            }
+            else
+            {
+                <div class="dropdown-header-letter">@firstLetter</div>
+            }
+            <div>
+                <div class="dropdown-header-name">@userName</div>
+                <div class="dropdown-header-role">
+                    @if (User.IsInRole("SuperAdmin")) { <span>👑 SuperAdmin</span> }
+                    else if (User.IsInRole("Admin")) { <span>🛡️ Admin</span> }
+                    else if (User.IsInRole("Guest")) { <span>👤 Invitado</span> }
+                    else { <span>✨ Usuario</span> }
+                </div>
             </div>
-        </div>
+        </li>
+
+        <li><hr class="dropdown-divider mx-2" /></li>
+
+        <li>
+            <a class="dropdown-item-custom" asp-controller="Message" asp-action="Inbox">
+                <span class="di-icon">📨</span>
+                <span>Mensajes</span>
+                @if (ViewBag.NewMessages != null && (int)ViewBag.NewMessages > 0)
+                {
+                    <span class="di-badge">@ViewBag.NewMessages</span>
+                }
+            </a>
+        </li>
+
+        <li>
+            <a class="dropdown-item-custom" asp-controller="Notification" asp-action="Index">
+                <span class="di-icon">🔔</span>
+                <span>Notificaciones</span>
+                <span class="di-badge-wrap">@await Component.InvokeAsync("NotificationCount")</span>
+            </a>
+        </li>
+
+        <li>
+            <a class="dropdown-item-custom" asp-controller="Account" asp-action="Profile">
+                <span class="di-icon">👤</span>
+                <span>Mi Perfil</span>
+            </a>
+        </li>
+
+        <li>
+            <a class="dropdown-item-custom" asp-controller="Habit" asp-action="Achievements">
+                <span class="di-icon">🏆</span>
+                <span>Logros</span>
+            </a>
+        </li>
+
+        @if (User.IsInRole("Admin") || User.IsInRole("SuperAdmin"))
+        {
+            <li>
+                <a class="dropdown-item-custom text-primary" asp-controller="Admin" asp-action="Index">
+                    <span class="di-icon">👑</span>
+                    <span>Panel Admin</span>
+                </a>
+            </li>
+        }
+
+        <li><hr class="dropdown-divider mx-2" /></li>
+
+        <li>
+            <button class="dropdown-item-custom text-danger" data-bs-toggle="modal" data-bs-target="#logoutModal">
+                <span class="di-icon">🚪</span>
+                <span>Cerrar sesión</span>
+            </button>
+        </li>
+
+    </ul>
+</div>
     </nav>
     }
     <!-- CONTENIDO -->
