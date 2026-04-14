@@ -484,16 +484,34 @@ document.addEventListener("visibilitychange", async () => {
     if (document.visibilityState === "hidden") {
         try { await chatConnection.invoke("LeaveChat", receiverId); } catch(e) {}
     } else {
-        if (chatConnection.state === "Disconnected") {
-            await startConnection();
-        } else {
-            await chatConnection.invoke("JoinUserGroup", myId);
-            await chatConnection.invoke("EnterChat", receiverId);
-        }
-        await fetch("/Message/MarkAsSeen?senderId=" + receiverId, { method: "POST" });
-        await loadNewMessages();
+        await handleAppReturn();
     }
 });
+
+// 🔥 también escuchar focus para cubrir casos donde visibilitychange no dispara
+window.addEventListener("focus", async () => {
+    await handleAppReturn();
+});
+
+// 🔥 también pageshow cubre cuando el navegador restaura la página desde caché
+window.addEventListener("pageshow", async (e) => {
+    if (e.persisted) await handleAppReturn();
+});
+
+async function handleAppReturn() {
+    if (chatConnection.state === "Disconnected") {
+        await startConnection();
+    } else {
+        if (chatConnection.state === "Connected") {
+            try {
+                await chatConnection.invoke("JoinUserGroup", myId);
+                await chatConnection.invoke("EnterChat", receiverId);
+            } catch(e) {}
+        }
+    }
+    await fetch("/Message/MarkAsSeen?senderId=" + receiverId, { method: "POST" });
+    await loadNewMessages();
+}
 
 async function loadNewMessages() {
     const msgWraps = chatBox.querySelectorAll(".msg-wrap[id^='msg-']");
