@@ -51,7 +51,8 @@ namespace HabitTrackerApp.Hubs
 
         public async Task MessagesViewed(string senderId)
         {
-            await Clients.Group(senderId).SendAsync("ForceSeenUpdate");
+            if (!string.IsNullOrEmpty(senderId))
+                await Clients.Group(senderId).SendAsync("ForceSeenUpdate");
         }
 
         public override async Task OnConnectedAsync()

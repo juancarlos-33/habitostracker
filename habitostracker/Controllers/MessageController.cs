@@ -157,12 +157,11 @@ namespace HabitTrackerApp.Controllers
             // 🔥 notificación solo si el receptor NO está online en el chat
             var receiverOnline = _onlineUsers.IsOnline(receiverId.ToString());
 
-            if (!receiverOnline)
-            {
-                await _hubContext.Clients.Group(receiverId.ToString())
-                    .SendAsync("ReceiveNotification", senderId, notifMsg, senderName,
-                        sender?.ProfileImage ?? "", "/Message/Chat?userId=" + senderId);
-            }
+            // 🔥 notificación siempre que no esté en el chat activo
+            // (si está offline igual se guarda en BD, si está online en otra página la ve en tiempo real)
+            await _hubContext.Clients.Group(receiverId.ToString())
+                .SendAsync("ReceiveNotification", senderId, notifMsg, senderName,
+                    sender?.ProfileImage ?? "", "/Message/Chat?userId=" + senderId);
 
             // 🔥 chulos grises solo si el receptor está online
             if (receiverOnline)
@@ -296,12 +295,11 @@ namespace HabitTrackerApp.Controllers
 
             // 🔥 notificación solo si no está online
             var receiverOnline = _onlineUsers.IsOnline(receiverId.ToString());
-            if (!receiverOnline)
-            {
-                await _hubContext.Clients.Group(receiverId.ToString())
-                    .SendAsync("ReceiveNotification", senderId, "🎤 Mensaje de voz", senderName,
-                        sender?.ProfileImage ?? sender?.ProfilePicture ?? "", "/Message/Chat?userId=" + senderId);
-            }
+
+            // 🔥 notificación siempre
+            await _hubContext.Clients.Group(receiverId.ToString())
+                .SendAsync("ReceiveNotification", senderId, "🎤 Mensaje de voz", senderName,
+                    sender?.ProfileImage ?? sender?.ProfilePicture ?? "", "/Message/Chat?userId=" + senderId);
 
             // 🔥 chulos grises solo si está online
             if (receiverOnline)

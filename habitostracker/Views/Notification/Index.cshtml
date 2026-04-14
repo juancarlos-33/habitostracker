@@ -1,202 +1,281 @@
 ﻿@model List<HabitTrackerApp.Models.Notification>
 
-<h3 class="mb-4 fw-bold">🔔 Notificaciones</h3>
-
-@if (Model.Count == 0)
-{
-    <div class="no-notifications">
-        🔕 No tienes notificaciones
-    </div>
+@{
+    ViewData["Title"] = "Notificaciones";
 }
 
-<div class="notifications-list">
-@foreach (var n in Model)
-{
-    var icon = "🔔";
-    if (!string.IsNullOrEmpty(n.Message))
+<div class="notif-page">
+
+    <div class="notif-header">
+        <h2 class="notif-title">🔔 Notificaciones</h2>
+        @if (Model.Count > 0)
+        {
+            <form asp-controller="Notification" asp-action="MarkAllRead" method="post" data-no-loader>
+                @Html.AntiForgeryToken()
+                <button type="submit" class="btn-mark-all">✓ Marcar todas como leídas</button>
+            </form>
+        }
+    </div>
+
+    @if (Model.Count == 0)
     {
-        var m = n.Message.ToLower();
-        if (m.Contains("coment")) icon = "💬";
-        else if (m.Contains("like") || m.Contains("gust")) icon = "❤️";
-        else if (m.Contains("solicitud") || m.Contains("amig")) icon = "👥";
-        else if (m.Contains("mensaje")) icon = "✉️";
+        <div class="notif-empty">
+            <div class="notif-empty-icon">🔕</div>
+            <p>No tienes notificaciones por ahora</p>
+            <span>Cuando alguien interactúe contigo aparecerá aquí</span>
+        </div>
+    }
+    else
+    {
+        <div class="notif-list">
+            @foreach (var n in Model)
+            {
+                var icon = "🔔";
+                if (!string.IsNullOrEmpty(n.Message))
+                {
+                    var m = n.Message.ToLower();
+                    if (m.Contains("coment")) icon = "💬";
+                    else if (m.Contains("like") || m.Contains("gust")) icon = "❤️";
+                    else if (m.Contains("solicitud") || m.Contains("amig")) icon = "👥";
+                    else if (m.Contains("mensaje") || m.Contains("voz") || m.Contains("foto") || m.Contains("video")) icon = "✉️";
+                    else if (m.Contains("siguiendo") || m.Contains("seguirte")) icon = "👤";
+                }
+
+                var link = n.Message.ToLower().Contains("mensaje") || n.Message.ToLower().Contains("voz") || n.Message.ToLower().Contains("foto") || n.Message.ToLower().Contains("video")
+                    ? "/Message/Chat?userId=" + n.FromUserId
+                    : (!string.IsNullOrEmpty(n.Link) ? n.Link : "javascript:void(0)");
+
+                <a href="@link" class="notif-card @(n.IsRead ? "" : "notif-unread")" data-no-loader="true">
+
+                    <div class="notif-avatar-wrap">
+                        @if (!string.IsNullOrEmpty(n.FromUserImage))
+                        {
+                            <img src="@n.FromUserImage" class="notif-avatar-img" />
+                        }
+                        else
+                        {
+                            <div class="notif-avatar-letter">
+                                @((!string.IsNullOrEmpty(n.FromUsername) ? n.FromUsername.Substring(0,1).ToUpper() : "U"))
+                            </div>
+                        }
+                        <div class="notif-icon-badge">@icon</div>
+                    </div>
+
+                    <div class="notif-body">
+                        <div class="notif-username">@n.FromUsername</div>
+                        <div class="notif-message">@n.Message</div>
+                        <div class="notif-time">@GetTimeAgo(n.CreatedAt)</div>
+                    </div>
+
+                    @if (!n.IsRead)
+                    {
+                        <div class="notif-dot"></div>
+                    }
+
+                </a>
+            }
+        </div>
     }
 
-<a href="@(n.Message.Contains("mensaje") 
-    ? "/Message/Chat?userId=" + n.FromUserId 
-    : (!string.IsNullOrEmpty(n.Link) 
-        ? n.Link 
-        : "javascript:void(0)"))"
-   class="notification-card @(n.IsRead ? "" : "unread")"
-   data-no-loader="true">
-
-        <div class="notification-avatar">
-
-            @if (!string.IsNullOrEmpty(n.FromUserImage))
-            {
-                <img src="@n.FromUserImage" />
-            }
-            else
-            {
-                <div class="avatar-placeholder">
-                    @((!string.IsNullOrEmpty(n.FromUsername) ? n.FromUsername.Substring(0,1).ToUpper() : "U"))
-                </div>
-            }
-
-            <div class="action-icon">
-                @icon
-            </div>
-
-        </div>
-
-        <div class="notification-content">
-
-            <div class="notification-message">
-                @n.Message
-            </div>
-
-            <div class="notification-time">
-                @GetTimeAgo(n.CreatedAt)
-            </div>
-
-        </div>
-
-        @if (!n.IsRead)
-        {
-            <div class="notification-dot"></div>
-        }
-
-    </a>
-}
 </div>
 
-@functions{
-
+@functions {
     public string GetTimeAgo(DateTime date)
     {
         var span = DateTime.Now - date;
-
-        if (span.TotalSeconds < 60)
-            return "Hace unos segundos";
-
-        if (span.TotalMinutes < 60)
-            return $"Hace {(int)span.TotalMinutes} min";
-
-        if (span.TotalHours < 24)
-            return $"Hace {(int)span.TotalHours} horas";
-
-        if (span.TotalDays < 7)
-            return $"Hace {(int)span.TotalDays} días";
-
+        if (span.TotalSeconds < 60) return "Hace unos segundos";
+        if (span.TotalMinutes < 60) return $"Hace {(int)span.TotalMinutes} min";
+        if (span.TotalHours < 24) return $"Hace {(int)span.TotalHours} h";
+        if (span.TotalDays < 7) return $"Hace {(int)span.TotalDays} días";
         return date.ToString("dd MMM yyyy");
     }
-
 }
 
 <style>
-
-.notifications-list{
-    animation:fadeIn .35s ease;
+.notif-page {
+    max-width: 680px;
+    margin: 0 auto;
+    padding: 0 16px 40px;
 }
 
-.notification-card{
-    display:flex;
-    align-items:center;
-    gap:14px;
-    padding:14px;
-    background:white;
-    border-radius:16px;
-    text-decoration:none;
-    color:black;
-    margin-bottom:12px;
-    box-shadow:0 6px 18px rgba(0,0,0,0.07);
-    transition:all .18s ease;
-    position:relative;
+.notif-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+    gap: 12px;
 }
 
-.notification-card:hover{
-    transform:translateY(-3px);
-    box-shadow:0 12px 28px rgba(0,0,0,0.12);
-    background:#f9fafb;
+.notif-title {
+    font-size: 22px;
+    font-weight: 800;
+    color: #111827;
+    margin: 0;
 }
 
-.notification-avatar{
-    position:relative;
+.btn-mark-all {
+    background: #f1f5f9;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #2563eb;
+    cursor: pointer;
+    transition: 0.2s;
 }
 
-.notification-avatar img{
-    width:44px;
-    height:44px;
-    border-radius:50%;
-    object-fit:cover;
+.btn-mark-all:hover {
+    background: #dbeafe;
 }
 
-.avatar-placeholder{
-    width:44px;
-    height:44px;
-    border-radius:50%;
-    background:linear-gradient(135deg,#2563eb,#4f46e5);
-    color:white;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    font-weight:bold;
-    font-size:18px;
+.notif-empty {
+    text-align: center;
+    padding: 60px 20px;
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
 }
 
-.action-icon{
-    position:absolute;
-    bottom:-2px;
-    right:-2px;
-    background:white;
-    border-radius:50%;
-    font-size:14px;
-    padding:2px 4px;
-    box-shadow:0 2px 6px rgba(0,0,0,0.2);
+.notif-empty-icon {
+    font-size: 52px;
+    margin-bottom: 16px;
 }
 
-.notification-content{
-    flex:1;
+.notif-empty p {
+    font-size: 16px;
+    font-weight: 700;
+    color: #374151;
+    margin: 0 0 6px;
 }
 
-.notification-message{
-    font-weight:500;
+.notif-empty span {
+    font-size: 13px;
+    color: #9ca3af;
 }
 
-.notification-time{
-    font-size:12px;
-    color:#6b7280;
-    margin-top:2px;
+.notif-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
 }
 
-.notification-dot{
-    width:10px;
-    height:10px;
-    background:#3b82f6;
-    border-radius:50%;
+.notif-card {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 16px;
+    background: white;
+    border-radius: 18px;
+    text-decoration: none;
+    color: #111827;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+    transition: all 0.18s ease;
+    position: relative;
+    border: 1px solid rgba(0,0,0,0.04);
 }
 
-.unread{
-    background:#eff6ff;
+.notif-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.1);
 }
 
-.no-notifications{
-    padding:45px;
-    text-align:center;
-    background:#f1f5f9;
-    border-radius:14px;
-    color:#64748b;
+.notif-unread {
+    background: #eff6ff;
+    border-color: #bfdbfe;
 }
 
-@@keyframes fadeIn{
-    from{
-        opacity:0;
-        transform:translateY(8px);
-    }
-    to{
-        opacity:1;
-        transform:translateY(0);
-    }
+.notif-avatar-wrap {
+    position: relative;
+    flex-shrink: 0;
 }
 
+.notif-avatar-img {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #e5e7eb;
+}
+
+.notif-avatar-letter {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #2563eb, #7c3aed);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 20px;
+    border: 2px solid #e5e7eb;
+}
+
+.notif-icon-badge {
+    position: absolute;
+    bottom: -2px;
+    right: -4px;
+    background: white;
+    border-radius: 50%;
+    font-size: 13px;
+    padding: 2px 3px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+    line-height: 1;
+}
+
+.notif-body {
+    flex: 1;
+    min-width: 0;
+}
+
+.notif-username {
+    font-size: 14px;
+    font-weight: 700;
+    color: #111827;
+    margin-bottom: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.notif-message {
+    font-size: 13px;
+    color: #4b5563;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.notif-time {
+    font-size: 11px;
+    color: #9ca3af;
+    margin-top: 4px;
+}
+
+.notif-dot {
+    width: 10px;
+    height: 10px;
+    background: #2563eb;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+/* DARK MODE */
+body.bg-dark .notif-title { color: #f1f5f9 !important; }
+body.bg-dark .notif-card { background: #1e293b !important; color: #f1f5f9 !important; border-color: #2d2d3d !important; }
+body.bg-dark .notif-unread { background: #1e3a5f !important; border-color: #2563eb !important; }
+body.bg-dark .notif-card:hover { background: #334155 !important; }
+body.bg-dark .notif-username { color: #f1f5f9 !important; }
+body.bg-dark .notif-message { color: #94a3b8 !important; }
+body.bg-dark .notif-icon-badge { background: #1e293b !important; }
+body.bg-dark .btn-mark-all { background: #334155 !important; color: #60a5fa !important; }
+body.bg-dark .btn-mark-all:hover { background: #475569 !important; }
+body.bg-dark .notif-empty { background: #1e293b !important; }
+body.bg-dark .notif-empty p { color: #f1f5f9 !important; }
+body.bg-dark .notif-avatar-img { border-color: #334155 !important; }
+body.bg-dark .notif-avatar-letter { border-color: #334155 !important; }
+
+@@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
 </style>
