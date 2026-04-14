@@ -158,7 +158,12 @@ namespace HabitTrackerApp.Controllers
 
             // 🔥 notificación solo si el receptor NO está en el chat con el emisor
             var receiverInChat = _onlineUsers.IsInChatWith(receiverId.ToString(), senderId.ToString());
-            if (!receiverInChat)
+
+            // 🔥 verificar si el receptor tiene silenciadas las notificaciones
+            var receiverUser = _context.Users.FirstOrDefault(u => u.Id == receiverId);
+            var isMuted = receiverUser?.MutedUntil != null && receiverUser.MutedUntil > DateTime.UtcNow;
+
+            if (!receiverInChat && !isMuted)
             {
                 await _hubContext.Clients.Group(receiverId.ToString())
                     .SendAsync("ReceiveNotification", senderId, notifMsg, senderName,
@@ -299,7 +304,10 @@ namespace HabitTrackerApp.Controllers
 
             // 🔥 notificación solo si el receptor NO está en el chat con el emisor
             var receiverInChat = _onlineUsers.IsInChatWith(receiverId.ToString(), senderId.ToString());
-            if (!receiverInChat)
+            var receiverUser = _context.Users.FirstOrDefault(u => u.Id == receiverId);
+            var isMuted = receiverUser?.MutedUntil != null && receiverUser.MutedUntil > DateTime.UtcNow;
+
+            if (!receiverInChat && !isMuted)
             {
                 await _hubContext.Clients.Group(receiverId.ToString())
                     .SendAsync("ReceiveNotification", senderId, "🎤 Mensaje de voz", senderName,
@@ -355,6 +363,91 @@ namespace HabitTrackerApp.Controllers
 
             return Ok();
         }
+
+        [HttpPost]
+        public async Task<IActionResult> MuteChat([FromBody] MuteChatDto dto)
+        {
+            var myId = int.Parse(User.FindFirst("UserId").Value);
+            var user = _context.Users.FirstOrDefault(u => u.Id == myId);
+            if (user == null) return Json(new { success = false });
+
+            user.MutedUntil = dto.Hours == -1
+                ? DateTime.UtcNow.AddYears(99)  // siempre
+                : DateTime.UtcNow.AddHours(dto.Hours);
+
+            await _context.SaveChangesAsync();
+            return Json(new { success = true, mutedUntil = user.MutedUntil });
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> UnmuteChat()
+        {
+            var myId = int.Parse(User.FindFirst("UserId").Value);
+            var user = _context.Users.FirstOrDefault(u => u.Id == myId);
+            if (user == null) return Json(new { success = false });
+
+            user.MutedUntil = null;
+            await _context.SaveChangesAsync();
+            return Json(new { success = true });
+        }
+
+        [HttpGet]
+        public IActionResult GetMuteStatus()
+        {
+            var myId = int.Parse(User.FindFirst("UserId").Value);
+            var user = _context.Users.FirstOrDefault(u => u.Id == myId);
+            if (user == null) return Json(new { muted = false });
+
+            var muted = user.MutedUntil != null && user.MutedUntil > DateTime.UtcNow;
+            return Json(new { muted, mutedUntil = user.MutedUntil });
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> PinChat([FromBody] PinChatDto dto)
+        {
+            var myId = int.Parse(User.FindFirst("UserId").Value);
+            var user = _context.Users.FirstOrDefault(u => u.Id == myId);
+            if (user == null) return Json(new { success = false });
+
+            var pinned = (user.PinnedChats ?? "").Split(',')
+                .Where(x => !string.IsNullOrEmpty(x)).ToList();
+
+            if (!pinned.Contains(dto.UserId.ToString()))
+                pinned.Add(dto.UserId.ToString());
+
+            user.PinnedChats = string.Join(",", pinned);
+            await _context.SaveChangesAsync();
+            return Json(new { success = true });
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> UnpinChat([FromBody] PinChatDto dto)
+        {
+            var myId = int.Parse(User.FindFirst("UserId").Value);
+            var user = _context.Users.FirstOrDefault(u => u.Id == myId);
+            if (user == null) return Json(new { success = false });
+
+            var pinned = (user.PinnedChats ?? "").Split(',')
+                .Where(x => !string.IsNullOrEmpty(x) && x != dto.UserId.ToString()).ToList();
+
+            user.PinnedChats = string.Join(",", pinned);
+            await _context.SaveChangesAsync();
+            return Json(new { success = true });
+        }
+
+        [HttpGet]
+        public IActionResult IsPinned(int userId)
+        {
+            var myId = int.Parse(User.FindFirst("UserId").Value);
+            var user = _context.Users.FirstOrDefault(u => u.Id == myId);
+            if (user == null) return Json(new { pinned = false });
+
+            var pinned = (user.PinnedChats ?? "").Split(',').Contains(userId.ToString());
+            return Json(new { pinned });
+        }
+
+        public class MuteChatDto { public int Hours { get; set; } }
+        public class PinChatDto { public int UserId { get; set; } }
 
         public class ReactRequest
         {

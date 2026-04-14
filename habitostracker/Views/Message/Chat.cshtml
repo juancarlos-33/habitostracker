@@ -568,7 +568,13 @@ async function loadNewMessages() {
             banner.style.cssText = "text-align:center;padding:8px 16px;margin:6px 12px;background:rgba(99,102,241,0.12);border:1px solid rgba(99,102,241,0.25);border-radius:12px;font-size:13px;color:#6366f1;font-weight:600;cursor:pointer;";
             banner.textContent = `📩 ${unread.length} mensaje${unread.length > 1 ? "s" : ""} nuevo${unread.length > 1 ? "s" : ""}`;
             banner.onclick = () => { chatBox.scrollTop = chatBox.scrollHeight; banner.remove(); };
-            chatBox.appendChild(banner);
+           // 🔥 insertar banner ANTES del primer mensaje nuevo
+const primerMensajeNuevo = document.getElementById("msg-" + msgs[0].id);
+if (primerMensajeNuevo) {
+    chatBox.insertBefore(banner, primerMensajeNuevo);
+} else {
+    chatBox.appendChild(banner);
+}
             setTimeout(() => banner?.remove(), 4000);
         }
         chatBox.scrollTop = chatBox.scrollHeight;
@@ -877,13 +883,30 @@ function cerrarModal(id) { document.getElementById(id).style.display = "none"; }
 
 function silenciarNotificaciones() {
     document.getElementById("headerMenu").style.display = "none";
-    document.getElementById("silenciarModal").style.display = "flex";
+    fetch("/Message/GetMuteStatus")
+        .then(r => r.json())
+        .then(data => {
+            if (data.muted) {
+                if (confirm("🔔 Las notificaciones están silenciadas. ¿Desactivar silencio?")) {
+                    fetch("/Message/UnmuteChat", { method: "POST" })
+                        .then(() => showChatToast("🔔 Notificaciones activadas"));
+                }
+            } else {
+                document.getElementById("silenciarModal").style.display = "flex";
+            }
+        });
 }
 
 function confirmarSilenciar(horas) {
     cerrarModal("silenciarModal");
-    const texto = horas === -1 ? "siempre" : horas === 168 ? "1 semana" : horas === 24 ? "1 día" : "8 horas";
-    showChatToast(`🔕 Notificaciones silenciadas por ${texto}`);
+    fetch("/Message/MuteChat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ hours: horas })
+    }).then(() => {
+        const texto = horas === -1 ? "siempre" : horas === 168 ? "1 semana" : horas === 24 ? "1 día" : "8 horas";
+        showChatToast(`🔕 Notificaciones silenciadas por ${texto}`);
+    });
 }
 
 function crearGrupo() {
@@ -900,12 +923,30 @@ function confirmarGrupo() {
 
 function anclarChat() {
     document.getElementById("headerMenu").style.display = "none";
-    document.getElementById("anclarModal").style.display = "flex";
+    fetch(`/Message/IsPinned?userId=${receiverId}`)
+        .then(r => r.json())
+        .then(data => {
+            if (data.pinned) {
+                if (confirm("📌 Este chat ya está anclado. ¿Desanclarlo?")) {
+                    fetch("/Message/UnpinChat", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ userId: parseInt(receiverId) })
+                    }).then(() => showChatToast("📌 Chat desanclado"));
+                }
+            } else {
+                document.getElementById("anclarModal").style.display = "flex";
+            }
+        });
 }
 
 function confirmarAnclar() {
     cerrarModal("anclarModal");
-    showChatToast("📌 Chat anclado — próximamente");
+    fetch("/Message/PinChat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: parseInt(receiverId) })
+    }).then(() => showChatToast("📌 Chat anclado"));
 }
 
 async function denunciarUsuario() {
