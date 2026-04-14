@@ -55,6 +55,22 @@ namespace HabitTrackerApp.Hubs
                 await Clients.Group(senderId).SendAsync("ForceSeenUpdate");
         }
 
+        public async Task EnterChat(string withUserId)
+        {
+            var userId = Context.UserIdentifier;
+            if (!string.IsNullOrEmpty(userId))
+                _onlineUsers.SetActiveChat(userId, withUserId);
+            await Task.CompletedTask;
+        }
+
+        public async Task LeaveChat(string withUserId)
+        {
+            var userId = Context.UserIdentifier;
+            if (!string.IsNullOrEmpty(userId))
+                _onlineUsers.ClearActiveChat(userId);
+            await Task.CompletedTask;
+        }
+
         public override async Task OnConnectedAsync()
         {
             var userId = Context.UserIdentifier;
@@ -64,8 +80,7 @@ namespace HabitTrackerApp.Hubs
                 await Groups.AddToGroupAsync(Context.ConnectionId, userId);
                 await Clients.All.SendAsync("UserOnline", userId);
 
-                // 🔥 notificar a quienes le enviaron mensajes mientras estaba offline
-                // para que cambien sus chulos de ✔ a ✔✔ grises
+                // 🔥 notificar a emisores que sus mensajes llegaron → ✔✔ grises
                 var pendingSenders = await _context.Messages
                     .Where(m => m.ReceiverId == int.Parse(userId) && !m.IsRead)
                     .Select(m => m.SenderId)
@@ -83,7 +98,6 @@ namespace HabitTrackerApp.Hubs
 
                     foreach (var msgId in pendingMsgIds)
                     {
-                        // 🔥 decirle al emisor que ese mensaje llegó → ✔✔ grises
                         await Clients.Group(senderId.ToString())
                             .SendAsync("MessageSentConfirm", msgId, "");
                     }

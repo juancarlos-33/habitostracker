@@ -10,20 +10,14 @@ using System.IO;
 
 namespace HabitTrackerApp.Controllers
 {
-
     [Authorize]
     public class UserController : Controller
     {
-
         private readonly IHubContext<ChatHub> _hubContext;
         private readonly HabitDbContext _context;
         private readonly OnlineUsersService _onlineUsers;
 
-
-        public UserController(
-    HabitDbContext context,
-    IHubContext<ChatHub> hubContext,
-    OnlineUsersService onlineUsers)
+        public UserController(HabitDbContext context, IHubContext<ChatHub> hubContext, OnlineUsersService onlineUsers)
         {
             _context = context;
             _hubContext = hubContext;
@@ -35,18 +29,16 @@ namespace HabitTrackerApp.Controllers
             var myId = int.Parse(User.FindFirst("UserId").Value);
 
             var users = _context.Users
-      .Where(u => u.Role != "SuperAdmin" && u.Role != "Guest")
-                  .OrderByDescending(u => u.Role == "Admin")
+                .Where(u => u.Role != "SuperAdmin" && u.Role != "Guest")
+                .OrderByDescending(u => u.Role == "Admin")
                 .ThenBy(u => u.Username)
                 .ToList();
 
-            // 🔥 solicitudes ya enviadas por mí
             var sentRequests = _context.FriendRequests
                 .Where(f => f.SenderId == myId && f.Status == "Pending")
                 .Select(f => f.ReceiverId)
                 .ToList();
 
-            // 🔥 amigos ya aceptados
             var friends = _context.FriendRequests
                 .Where(f => (f.SenderId == myId || f.ReceiverId == myId) && f.Status == "Accepted")
                 .Select(f => f.SenderId == myId ? f.ReceiverId : f.SenderId)
@@ -58,36 +50,17 @@ namespace HabitTrackerApp.Controllers
             return View(users);
         }
 
-        // =====================================
-        // 👤 VER PERFIL DE OTRO USUARIO
-        // =====================================
         public IActionResult Profile(int id)
         {
             var user = _context.Users.FirstOrDefault(u => u.Id == id);
+            if (user == null) return NotFound();
+            if (user.Role == "SuperAdmin") return RedirectToAction("Index");
 
-            if (user == null)
-                return NotFound();
-
-            // 🔒 impedir ver el perfil del propietario
-            if (user.Role == "SuperAdmin")
-            {
-                return RedirectToAction("Index");
-            }
-
-            // contar seguidores
-            ViewBag.Followers = _context.Follows
-                .Count(f => f.FollowingId == id);
-
-            // contar a quién sigue
-            ViewBag.Following = _context.Follows
-                .Count(f => f.FollowerId == id);
-
-
-         
+            ViewBag.Followers = _context.Follows.Count(f => f.FollowingId == id);
+            ViewBag.Following = _context.Follows.Count(f => f.FollowerId == id);
 
             return View(user);
         }
-
 
         [HttpPost]
         public IActionResult UploadPayment(IFormFile file)
@@ -100,27 +73,17 @@ namespace HabitTrackerApp.Controllers
 
             var userId = int.Parse(User.FindFirst("UserId").Value);
             var user = _context.Users.FirstOrDefault(u => u.Id == userId);
+            if (user == null) return NotFound();
 
-            if (user == null)
-                return NotFound();
-
-            // 📁 carpeta donde se guardan imágenes
             var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/uploads/payments");
+            if (!Directory.Exists(uploadsFolder)) Directory.CreateDirectory(uploadsFolder);
 
-            if (!Directory.Exists(uploadsFolder))
-                Directory.CreateDirectory(uploadsFolder);
-
-            // 📸 nombre único
             var fileName = Guid.NewGuid().ToString() + Path.GetExtension(file.FileName);
-
             var filePath = Path.Combine(uploadsFolder, fileName);
 
             using (var stream = new FileStream(filePath, FileMode.Create))
-            {
                 file.CopyTo(stream);
-            }
 
-            // guardar en BD
             var payment = new Payment
             {
                 UserId = userId,
@@ -130,12 +93,10 @@ namespace HabitTrackerApp.Controllers
                 IsRejected = false
             };
 
-
             _context.Payments.Add(payment);
             _context.SaveChanges();
 
             TempData["Success"] = "Comprobante enviado. Espera aprobación del admin 😎";
-
             return RedirectToAction("Index", "Habit");
         }
 
@@ -150,18 +111,14 @@ namespace HabitTrackerApp.Controllers
                 return RedirectToAction("Pay");
             }
 
-            // 📁 guardar imagen
             var folder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/payments");
             if (!Directory.Exists(folder)) Directory.CreateDirectory(folder);
             var fileName = Guid.NewGuid().ToString() + Path.GetExtension(screenshot.FileName);
             var path = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/payments", fileName);
 
             using (var stream = new FileStream(path, FileMode.Create))
-            {
                 screenshot.CopyTo(stream);
-            }
 
-            // 💾 guardar en BD
             var payment = new Payment
             {
                 UserId = userId,
@@ -173,24 +130,17 @@ namespace HabitTrackerApp.Controllers
             _context.SaveChanges();
 
             TempData["Success"] = "Comprobante enviado. Espera aprobación 😈";
-
             return RedirectToAction("Index", "Habit");
         }
-        public IActionResult Pay()
-        {
-            return View();
-        }
 
+        public IActionResult Pay() => View();
 
-        // =====================================
-        // 👥 ENVIAR SOLICITUD DE AMISTAD
         [HttpPost]
         public async Task<IActionResult> SendFriendRequest(int receiverId)
         {
             var senderId = int.Parse(User.FindFirst("UserId").Value);
             var currentUser = _context.Users.FirstOrDefault(u => u.Id == senderId);
 
-            // 🚫 BLOQUEAR INVITADOS
             if (currentUser.Role == "Guest")
             {
                 TempData["Error"] = "✨ Debes crear una cuenta para enviar solicitudes de amistad.";
@@ -198,33 +148,18 @@ namespace HabitTrackerApp.Controllers
             }
 
             var receiver = _context.Users.FirstOrDefault(u => u.Id == receiverId);
+            if (receiver != null && receiver.Role == "SuperAdmin") return RedirectToAction("Index");
+            if (senderId == receiverId) return RedirectToAction("Profile", new { id = receiverId });
 
-            if (receiver != null && receiver.Role == "SuperAdmin")
-                return RedirectToAction("Index");
+            var exists = _context.FriendRequests.Any(r => r.SenderId == senderId && r.ReceiverId == receiverId);
+            if (exists) return RedirectToAction("Profile", new { id = receiverId });
 
             var username = User.Identity.Name;
-
-            if (senderId == receiverId)
-                return RedirectToAction("Profile", new { id = receiverId });
-
-            var exists = _context.FriendRequests
-                .Any(r => r.SenderId == senderId && r.ReceiverId == receiverId);
-
-            if (exists)
-                return RedirectToAction("Profile", new { id = receiverId });
-
-            var request = new FriendRequest
-            {
-                SenderId = senderId,
-                ReceiverId = receiverId,
-                Status = "Pending"
-            };
-
+            var request = new FriendRequest { SenderId = senderId, ReceiverId = receiverId, Status = "Pending" };
             _context.FriendRequests.Add(request);
 
             var sender = _context.Users.FirstOrDefault(u => u.Id == senderId);
-
-            var notification = new Notification
+            _context.Notifications.Add(new Notification
             {
                 UserId = receiverId,
                 FromUserId = senderId,
@@ -234,117 +169,71 @@ namespace HabitTrackerApp.Controllers
                 Link = "/User/FriendRequests",
                 IsRead = false,
                 CreatedAt = DateTime.Now
-            };
-
-            _context.Notifications.Add(notification);
+            });
 
             await _hubContext.Clients.Group(receiverId.ToString())
-                .SendAsync(
-                    "ReceiveNotification",
-                    senderId,
-                    username + " te envió una solicitud de amistad",
-                    username,
-                    sender?.ProfileImage ?? "",
-                    "/User/FriendRequests"
-                );
+                .SendAsync("ReceiveNotification", senderId, username + " te envió una solicitud de amistad",
+                    username, sender?.ProfileImage ?? "", "/User/FriendRequests");
 
             _context.SaveChanges();
-
             return RedirectToAction("Profile", new { id = receiverId });
         }
-        // =====================================
-        // 📩 VER SOLICITUDES RECIBIDAS
-        // =====================================
+
         public IActionResult FriendRequests()
         {
             var claim = User.FindFirst("UserId");
-
-            if (claim == null)
-            {
-                return RedirectToAction("Login", "Account");
-            }
+            if (claim == null) return RedirectToAction("Login", "Account");
 
             var userId = int.Parse(claim.Value);
-
             var requests = _context.FriendRequests
                 .Where(r => r.ReceiverId == userId && r.Status == "Pending")
                 .Select(r => new FriendRequestViewModel
                 {
                     Id = r.Id,
                     SenderId = r.SenderId,
-                    SenderUsername = _context.Users
-                        .Where(u => u.Id == r.SenderId)
-                        .Select(u => u.Username)
-                        .FirstOrDefault(),
-
-                    ProfileImage = _context.Users
-                        .Where(u => u.Id == r.SenderId)
-                        .Select(u => u.ProfileImage)
-                        .FirstOrDefault()
+                    SenderUsername = _context.Users.Where(u => u.Id == r.SenderId).Select(u => u.Username).FirstOrDefault(),
+                    ProfileImage = _context.Users.Where(u => u.Id == r.SenderId).Select(u => u.ProfileImage).FirstOrDefault()
                 })
                 .ToList();
 
             return View(requests);
         }
 
-        // =====================================
-        // ✅ ACEPTAR SOLICITUD
-        // =====================================
         [HttpPost]
         public IActionResult AcceptFriendRequest(int requestId)
         {
             var request = _context.FriendRequests.FirstOrDefault(r => r.Id == requestId);
-
-            if (request == null)
-                return NotFound();
-
+            if (request == null) return NotFound();
             request.Status = "Accepted";
-
             _context.SaveChanges();
-
             return RedirectToAction("FriendRequests");
         }
 
-        // =====================================
-        // ❌ RECHAZAR SOLICITUD
-        // =====================================
         [HttpPost]
         public IActionResult RejectFriendRequest(int requestId)
         {
             var request = _context.FriendRequests.FirstOrDefault(r => r.Id == requestId);
-
-            if (request == null)
-                return NotFound();
-
+            if (request == null) return NotFound();
             request.Status = "Rejected";
-
             _context.SaveChanges();
-
             return RedirectToAction("FriendRequests");
         }
 
-        // =====================================
-        // 👥 LISTA DE AMIGOS
-        // =====================================
         public IActionResult Friends()
         {
             var userId = int.Parse(User.FindFirst("UserId").Value);
-
             var friends = _context.FriendRequests
                 .Where(r => (r.SenderId == userId || r.ReceiverId == userId) && r.Status == "Accepted")
                 .ToList();
-
             return View(friends);
         }
 
-        //PARA SEGUIR
         [HttpPost]
         public async Task<IActionResult> Follow(int userId)
         {
             var currentUserId = int.Parse(User.FindFirst("UserId").Value);
             var currentUser = _context.Users.FirstOrDefault(u => u.Id == currentUserId);
 
-            // 🚫 BLOQUEAR INVITADOS
             if (currentUser.Role == "Guest")
             {
                 TempData["Error"] = "✨ Debes crear una cuenta para seguir usuarios.";
@@ -352,29 +241,16 @@ namespace HabitTrackerApp.Controllers
             }
 
             var targetUser = _context.Users.FirstOrDefault(u => u.Id == userId);
+            if (targetUser != null && targetUser.Role == "SuperAdmin") return RedirectToAction("Index");
+            if (currentUserId == userId) return RedirectToAction("Index");
 
-            if (targetUser != null && targetUser.Role == "SuperAdmin")
-                return RedirectToAction("Index");
-
-            if (currentUserId == userId)
-                return RedirectToAction("Index");
-
-            var alreadyFollowing = _context.Follows
-                .FirstOrDefault(f => f.FollowerId == currentUserId && f.FollowingId == userId);
+            var alreadyFollowing = _context.Follows.FirstOrDefault(f => f.FollowerId == currentUserId && f.FollowingId == userId);
 
             if (alreadyFollowing == null)
             {
-                var follow = new Follow
-                {
-                    FollowerId = currentUserId,
-                    FollowingId = userId,
-                    CreatedAt = DateTime.Now
-                };
-
-                _context.Follows.Add(follow);
+                _context.Follows.Add(new Follow { FollowerId = currentUserId, FollowingId = userId, CreatedAt = DateTime.Now });
 
                 var sender = _context.Users.FirstOrDefault(u => u.Id == currentUserId);
-
                 _context.Notifications.Add(new Notification
                 {
                     UserId = userId,
@@ -390,73 +266,38 @@ namespace HabitTrackerApp.Controllers
                 _context.SaveChanges();
 
                 await _hubContext.Clients.Group(userId.ToString())
-                    .SendAsync(
-                        "ReceiveNotification",
-                        currentUserId,
-                        sender?.Username + " empezó a seguirte",
-                        sender?.Username ?? "",
-                        sender?.ProfileImage ?? "",
-                        "/User/Profile/" + currentUserId
-                    );
+                    .SendAsync("ReceiveNotification", currentUserId, sender?.Username + " empezó a seguirte",
+                        sender?.Username ?? "", sender?.ProfileImage ?? "", "/User/Profile/" + currentUserId);
             }
 
             return RedirectToAction("Profile", new { id = userId });
         }
 
-        //DEJAR DE SEGUIR 
         [HttpPost]
         public IActionResult Unfollow(int userId)
         {
             var myId = int.Parse(User.FindFirst("UserId").Value);
-
-            var follow = _context.Follows
-                .FirstOrDefault(f => f.FollowerId == myId && f.FollowingId == userId);
-
-            if (follow != null)
-            {
-                _context.Follows.Remove(follow);
-                _context.SaveChanges();
-            }
-
+            var follow = _context.Follows.FirstOrDefault(f => f.FollowerId == myId && f.FollowingId == userId);
+            if (follow != null) { _context.Follows.Remove(follow); _context.SaveChanges(); }
             return RedirectToAction("Index");
         }
-
 
         [HttpGet]
         public IActionResult GetFollowers(int userId)
         {
             var myId = int.Parse(User.FindFirst("UserId").Value);
-
-            var followers = _context.Follows
-                .Where(f => f.FollowingId == userId && f.FollowerId != myId) // 🔥 NO TE INCLUYE
-                .Select(f => f.Follower)
-                .ToList();
-
-            if (!followers.Any())
-                return Content("<p style='text-align:center;'>Sin seguidores</p>");
+            var followers = _context.Follows.Where(f => f.FollowingId == userId && f.FollowerId != myId).Select(f => f.Follower).ToList();
+            if (!followers.Any()) return Content("<p style='text-align:center;'>Sin seguidores</p>");
 
             var html = "";
-
             foreach (var user in followers)
             {
                 var img = !string.IsNullOrEmpty(user.ProfileImage)
                     ? $"<img src='{user.ProfileImage}' style='width:35px;height:35px;border-radius:50%;object-fit:cover;margin-right:8px;' />"
                     : $"<div style='width:35px;height:35px;border-radius:50%;background:#2563eb;color:white;display:flex;align-items:center;justify-content:center;margin-right:8px;'>{user.Username[0]}</div>";
-
-                html += $@"
-        <div style='display:flex;align-items:center;gap:8px;padding:8px;border-radius:8px;cursor:pointer;'
-             onclick=""window.location='/User/Profile/{user.Id}'"">
-
-            {img}
-
-            <div>
-                <div style='font-weight:600'>{user.Username}</div>
-                <div style='font-size:12px;color:gray'>{user.FullName ?? ""}</div>
-            </div>
-
-        </div>";
+                html += $@"<div style='display:flex;align-items:center;gap:8px;padding:8px;border-radius:8px;cursor:pointer;' onclick=""window.location='/User/Profile/{user.Id}'"">
+                    {img}<div><div style='font-weight:600'>{user.Username}</div><div style='font-size:12px;color:gray'>{user.FullName ?? ""}</div></div></div>";
             }
-
             return Content(html, "text/html");
         }
 
@@ -464,70 +305,35 @@ namespace HabitTrackerApp.Controllers
         public IActionResult GetFollowing(int userId)
         {
             var myId = int.Parse(User.FindFirst("UserId").Value);
-
-            var following = _context.Follows
-                .Where(f => f.FollowerId == userId && f.FollowingId != myId) // 🔥 NO TE INCLUYE
-                .Select(f => f.Following)
-                .ToList();
-
-            if (!following.Any())
-                return Content("<p style='text-align:center;'>No sigue a nadie</p>");
+            var following = _context.Follows.Where(f => f.FollowerId == userId && f.FollowingId != myId).Select(f => f.Following).ToList();
+            if (!following.Any()) return Content("<p style='text-align:center;'>No sigue a nadie</p>");
 
             var html = "";
-
             foreach (var user in following)
             {
                 var img = !string.IsNullOrEmpty(user.ProfileImage)
                     ? $"<img src='{user.ProfileImage}' style='width:35px;height:35px;border-radius:50%;object-fit:cover;margin-right:8px;' />"
                     : $"<div style='width:35px;height:35px;border-radius:50%;background:#2563eb;color:white;display:flex;align-items:center;justify-content:center;margin-right:8px;'>{user.Username[0]}</div>";
-
-                html += $@"
-        <div style='display:flex;align-items:center;gap:8px;padding:8px;border-radius:8px;cursor:pointer;'
-             onclick=""window.location='/User/Profile/{user.Id}'"">
-
-            {img}
-
-            <div>
-                <div style='font-weight:600'>{user.Username}</div>
-                <div style='font-size:12px;color:gray'>{user.FullName ?? ""}</div>
-            </div>
-
-        </div>";
+                html += $@"<div style='display:flex;align-items:center;gap:8px;padding:8px;border-radius:8px;cursor:pointer;' onclick=""window.location='/User/Profile/{user.Id}'"">
+                    {img}<div><div style='font-weight:600'>{user.Username}</div><div style='font-size:12px;color:gray'>{user.FullName ?? ""}</div></div></div>";
             }
-
             return Content(html, "text/html");
         }
 
-
-        // =====================================
-        // 🏆 RANKING DE AMIGOS
-        // =====================================
         public IActionResult Ranking()
         {
             var userId = int.Parse(User.FindFirst("UserId").Value);
-
-            // obtener amigos aceptados
             var friendRequests = _context.FriendRequests
-                .Where(r => (r.SenderId == userId || r.ReceiverId == userId) && r.Status == "Accepted")
-                .ToList();
-
-            var friendIds = friendRequests
-                .Select(r => r.SenderId == userId ? r.ReceiverId : r.SenderId)
-                .ToList();
-
-            // incluir también al usuario actual
+                .Where(r => (r.SenderId == userId || r.ReceiverId == userId) && r.Status == "Accepted").ToList();
+            var friendIds = friendRequests.Select(r => r.SenderId == userId ? r.ReceiverId : r.SenderId).ToList();
             friendIds.Add(userId);
 
             var ranking = _context.Users
-     .Where(u => friendIds.Contains(u.Id) && u.Role != "SuperAdmin")
-                 .Select(u => new
+                .Where(u => friendIds.Contains(u.Id) && u.Role != "SuperAdmin")
+                .Select(u => new
                 {
                     u.Username,
-                    Streak = _context.Habits
-                        .Where(h => h.UserId == u.Id)
-                        .Select(h => h.StreakDays)
-                        .DefaultIfEmpty(0)
-                        .Max()
+                    Streak = _context.Habits.Where(h => h.UserId == u.Id).Select(h => h.StreakDays).DefaultIfEmpty(0).Max()
                 })
                 .OrderByDescending(x => x.Streak)
                 .ToList();
@@ -547,14 +353,14 @@ namespace HabitTrackerApp.Controllers
             var already = _context.Blocks.Any(b => b.BlockerId == myId && b.BlockedId == dto.BlockedId);
             if (!already)
             {
-                _context.Blocks.Add(new Block
-                {
-                    BlockerId = myId,
-                    BlockedId = dto.BlockedId,
-                    CreatedAt = DateTime.UtcNow
-                });
+                _context.Blocks.Add(new Block { BlockerId = myId, BlockedId = dto.BlockedId, CreatedAt = DateTime.UtcNow });
                 await _context.SaveChangesAsync();
             }
+
+            // 🔥 notificar al bloqueado en tiempo real para deshabilitar su chat
+            await _hubContext.Clients.Group(dto.BlockedId.ToString())
+                .SendAsync("UserBlocked", myId.ToString());
+
             return Json(new { success = true });
         }
 
@@ -568,6 +374,11 @@ namespace HabitTrackerApp.Controllers
                 _context.Blocks.Remove(block);
                 await _context.SaveChangesAsync();
             }
+
+            // 🔥 notificar al desbloqueado para recargar
+            await _hubContext.Clients.Group(dto.BlockedId.ToString())
+                .SendAsync("UserUnblocked", myId.ToString());
+
             return Json(new { success = true });
         }
 
@@ -580,6 +391,9 @@ namespace HabitTrackerApp.Controllers
             var count = _context.Reports.Count(r => r.ReporterId == myId && r.ReportedId == dto.ReportedId);
             if (count >= 3) return Json(new { success = false, error = "Ya reportaste a este usuario" });
 
+            var reporter = _context.Users.FirstOrDefault(u => u.Id == myId);
+            var reported = _context.Users.FirstOrDefault(u => u.Id == dto.ReportedId);
+
             _context.Reports.Add(new Report
             {
                 ReporterId = myId,
@@ -588,6 +402,35 @@ namespace HabitTrackerApp.Controllers
                 CreatedAt = DateTime.UtcNow
             });
             await _context.SaveChangesAsync();
+
+            // 🔥 notificar a SuperAdmin y Admins del nuevo reporte
+            var admins = _context.Users
+                .Where(u => u.Role == "SuperAdmin" || u.Role == "Admin")
+                .ToList();
+
+            var reportMsg = $"🚩 {reporter?.Username} reportó a {reported?.Username}: \"{dto.Reason}\"";
+
+            foreach (var admin in admins)
+            {
+                _context.Notifications.Add(new Notification
+                {
+                    UserId = admin.Id,
+                    FromUserId = myId,
+                    FromUsername = reporter?.Username ?? "",
+                    FromUserImage = reporter?.ProfileImage ?? "",
+                    Message = reportMsg,
+                    Link = "/Admin/Reports",
+                    IsRead = false,
+                    CreatedAt = DateTime.UtcNow
+                });
+
+                await _hubContext.Clients.Group(admin.Id.ToString())
+                    .SendAsync("ReceiveNotification", myId, reportMsg,
+                        reporter?.Username ?? "", reporter?.ProfileImage ?? "", "/Admin/Reports");
+            }
+
+            await _context.SaveChangesAsync();
+
             return Json(new { success = true });
         }
 
@@ -599,20 +442,14 @@ namespace HabitTrackerApp.Controllers
             return Json(new { blocked });
         }
 
+        [HttpGet]
+        public IActionResult GetOnlineUsers()
+        {
+            var onlineUsers = _onlineUsers.GetOnlineUsers();
+            return Json(onlineUsers);
+        }
+
         public class BlockDto { public int BlockedId { get; set; } }
         public class ReportDto { public int ReportedId { get; set; } public string Reason { get; set; } }
-        // =====================================
-        // 🔍 VERIFICAR SI ESTÁ BLOQUEADO
-        // =====================================
-    
-
-
-
-        [HttpGet]
-public IActionResult GetOnlineUsers()
-{
-    var onlineUsers = _onlineUsers.GetOnlineUsers();
-    return Json(onlineUsers);
-}
     }
 }

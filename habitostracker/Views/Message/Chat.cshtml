@@ -30,7 +30,6 @@
 }
 
 <div class="chat-page">
-
     <div class="chat-header">
         <a asp-controller="User" asp-action="Profile" asp-route-id="@ViewBag.OtherUserId" class="chat-header-user">
             <div class="chat-avatar-wrap">
@@ -59,7 +58,7 @@
                 <button onclick="anclarChat()">📌 Anclar chat</button>
                 <hr class="menu-divider" />
                 <button onclick="denunciarUsuario()" class="menu-danger">🚩 Denunciar</button>
-                <button onclick="bloquearUsuario()" class="menu-danger">🚫 Bloquear</button>
+                <button onclick="bloquearUsuario()" class="menu-danger" id="btnBloquear">🚫 Bloquear</button>
             </div>
         </div>
     </div>
@@ -121,6 +120,47 @@
     </div>
     <div id="ctxOverlay" onclick="ctxClose()" style="display:none;position:fixed;inset:0;z-index:8999;"></div>
 
+    <!-- 🔥 Modal crear grupo -->
+    <div id="grupoModal" class="modal-overlay" style="display:none;">
+        <div class="modal-box">
+            <div class="modal-title">👥 Crear grupo</div>
+            <input type="text" id="grupoNombre" class="modal-input" placeholder="Nombre del grupo..." />
+            <div class="modal-actions">
+                <button class="modal-btn-cancel" onclick="cerrarModal('grupoModal')">Cancelar</button>
+                <button class="modal-btn-ok" onclick="confirmarGrupo()">Crear</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 🔥 Modal silenciar -->
+    <div id="silenciarModal" class="modal-overlay" style="display:none;">
+        <div class="modal-box">
+            <div class="modal-title">🔕 Silenciar notificaciones</div>
+            <p class="modal-desc">¿Por cuánto tiempo?</p>
+            <div class="modal-options">
+                <button class="modal-opt-btn" onclick="confirmarSilenciar(8)">8 horas</button>
+                <button class="modal-opt-btn" onclick="confirmarSilenciar(24)">1 día</button>
+                <button class="modal-opt-btn" onclick="confirmarSilenciar(168)">1 semana</button>
+                <button class="modal-opt-btn" onclick="confirmarSilenciar(-1)">Siempre</button>
+            </div>
+            <div class="modal-actions">
+                <button class="modal-btn-cancel" onclick="cerrarModal('silenciarModal')">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 🔥 Modal anclar -->
+    <div id="anclarModal" class="modal-overlay" style="display:none;">
+        <div class="modal-box">
+            <div class="modal-title">📌 Anclar chat</div>
+            <p class="modal-desc">Este chat aparecerá fijo en la parte superior de tu bandeja de entrada.</p>
+            <div class="modal-actions">
+                <button class="modal-btn-cancel" onclick="cerrarModal('anclarModal')">Cancelar</button>
+                <button class="modal-btn-ok" onclick="confirmarAnclar()">Anclar</button>
+            </div>
+        </div>
+    </div>
+
     <div id="chatBox" class="chat-box">
         @foreach (var group in grouped)
         {
@@ -169,12 +209,12 @@
                                 <span class="msg-time">@msg.SentAt.ToString("hh:mm tt")</span>
                                 @if (isMe)
                                 {
-                                  @if (msg.IsRead)
-{ <span class="msg-check seen" title="Visto">✔✔</span> }
-else if (ViewBag.ReceiverIsOnline == true)
-{ <span class="msg-check delivered" data-message-id="@msg.Id" title="Entregado">✔✔</span> }
-else
-{ <span class="msg-check sent" data-message-id="@msg.Id" title="Enviado">✔</span> }
+                                    @if (msg.IsRead)
+                                    { <span class="msg-check seen" title="Visto">✔✔</span> }
+                                    else if (ViewBag.ReceiverIsOnline == true)
+                                    { <span class="msg-check delivered" data-message-id="@msg.Id" title="Entregado">✔✔</span> }
+                                    else
+                                    { <span class="msg-check sent" data-message-id="@msg.Id" title="Enviado">✔</span> }
                                 }
                             </div>
                         </div>
@@ -289,6 +329,18 @@ else
 .header-menu-dropdown button:hover { background: rgba(255,255,255,0.08); }
 .header-menu-dropdown .menu-danger { color: #f87171 !important; }
 .menu-divider { margin: 4px 8px; border: none; border-top: 1px solid rgba(255,255,255,0.08); }
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 99999; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(4px); }
+.modal-box { background: #1e293b; border-radius: 20px; padding: 28px 24px; min-width: 300px; max-width: 90vw; box-shadow: 0 20px 60px rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.08); }
+.modal-title { font-size: 17px; font-weight: 700; color: #f1f5f9; margin-bottom: 16px; }
+.modal-desc { font-size: 14px; color: #94a3b8; margin-bottom: 16px; }
+.modal-input { width: 100%; padding: 10px 14px; border-radius: 10px; border: 1.5px solid #334155; background: #0f172a; color: #f1f5f9; font-size: 14px; outline: none; margin-bottom: 16px; box-sizing: border-box; }
+.modal-input:focus { border-color: #6366f1; }
+.modal-options { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 16px; }
+.modal-opt-btn { padding: 10px; border-radius: 10px; border: 1.5px solid #334155; background: #0f172a; color: #f1f5f9; font-size: 13px; font-weight: 600; cursor: pointer; transition: 0.15s; }
+.modal-opt-btn:hover { background: #334155; border-color: #6366f1; color: #818cf8; }
+.modal-actions { display: flex; gap: 8px; justify-content: flex-end; }
+.modal-btn-cancel { padding: 9px 18px; border-radius: 10px; border: none; background: #334155; color: #94a3b8; font-size: 13px; font-weight: 600; cursor: pointer; }
+.modal-btn-ok { padding: 9px 18px; border-radius: 10px; border: none; background: linear-gradient(135deg, #6366f1, #4f46e5); color: white; font-size: 13px; font-weight: 600; cursor: pointer; }
 #callModal, #incomingCallModal { position: fixed; inset: 0; background: rgba(15,23,42,0.92); z-index: 99999; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(16px); }
 .call-modal-inner { background: linear-gradient(160deg, #1e293b 0%, #0f172a 100%); border-radius: 32px; padding: 44px 36px; text-align: center; color: white; min-width: 300px; box-shadow: 0 32px 80px rgba(0,0,0,0.7); border: 1px solid rgba(255,255,255,0.07); }
 .call-ripple { position: relative; width: 100px; height: 100px; margin: 0 auto 20px; }
@@ -415,6 +467,8 @@ const chatConnection = new signalR.HubConnectionBuilder()
 async function startConnection() {
     await chatConnection.start();
     await chatConnection.invoke("JoinUserGroup", myId);
+    // 🔥 registrar que estoy en este chat
+    await chatConnection.invoke("EnterChat", receiverId);
     await fetch("/Message/MarkAsSeen?senderId=" + receiverId, { method: "POST" });
     localStorage.setItem("currentChatUserId", receiverId);
 
@@ -425,12 +479,16 @@ async function startConnection() {
 
 startConnection().catch(err => console.error(err));
 
+// 🔥 visibilitychange — mensajes nuevos al volver + EnterChat/LeaveChat
 document.addEventListener("visibilitychange", async () => {
-    if (document.visibilityState === "visible") {
+    if (document.visibilityState === "hidden") {
+        try { await chatConnection.invoke("LeaveChat", receiverId); } catch(e) {}
+    } else {
         if (chatConnection.state === "Disconnected") {
             await startConnection();
         } else {
             await chatConnection.invoke("JoinUserGroup", myId);
+            await chatConnection.invoke("EnterChat", receiverId);
         }
         await fetch("/Message/MarkAsSeen?senderId=" + receiverId, { method: "POST" });
         await loadNewMessages();
@@ -469,7 +527,7 @@ async function loadNewMessages() {
                 contentHTML = `<span class="msg-text">${msg.content}</span>`;
         }
 
-        const checkHTML = isMe ? `<span class="msg-check ${msg.isRead ? "seen" : "delivered"}">✔✔</span>` : "";
+        const checkHTML = isMe ? `<span class="msg-check ${msg.isRead ? "seen" : "sent"}">✔</span>` : "";
 
         wrap.innerHTML = `
             <div class="msg-content-wrap">
@@ -483,6 +541,18 @@ async function loadNewMessages() {
     });
 
     if (msgs.length > 0) {
+        // 🔥 banner mensajes no leídos
+        const unread = msgs.filter(m => m.senderId != myId);
+        if (unread.length > 0) {
+            document.getElementById("unreadBanner")?.remove();
+            const banner = document.createElement("div");
+            banner.id = "unreadBanner";
+            banner.style.cssText = "text-align:center;padding:8px 16px;margin:6px 12px;background:rgba(99,102,241,0.12);border:1px solid rgba(99,102,241,0.25);border-radius:12px;font-size:13px;color:#6366f1;font-weight:600;cursor:pointer;";
+            banner.textContent = `📩 ${unread.length} mensaje${unread.length > 1 ? "s" : ""} nuevo${unread.length > 1 ? "s" : ""}`;
+            banner.onclick = () => { chatBox.scrollTop = chatBox.scrollHeight; banner.remove(); };
+            chatBox.appendChild(banner);
+            setTimeout(() => banner?.remove(), 4000);
+        }
         chatBox.scrollTop = chatBox.scrollHeight;
         await fetch("/Message/MarkAsSeen?senderId=" + receiverId, { method: "POST" });
     }
@@ -698,7 +768,6 @@ chatConnection.on("UserOffline", (uid) => {
     if (dot) dot.style.display = "none";
     offlineSeconds = 0;
     clearInterval(offlineInterval);
-    // 🔥 actualizar texto cada 60s
     function updateOfflineText() {
         offlineSeconds += 60;
         const mins = Math.floor(offlineSeconds / 60);
@@ -710,11 +779,17 @@ chatConnection.on("UserOffline", (uid) => {
     offlineInterval = setInterval(updateOfflineText, 60000);
 });
 
-// 🔥 bloqueo en tiempo real
+// 🔥 bloqueo en tiempo real — el que fue bloqueado ve el banner y se le deshabilita
 chatConnection.on("UserBlocked", (blockerId) => {
     if (String(blockerId) !== String(receiverId)) return;
     mostrarAnuncioBloqueo(false);
     deshabilitarChat();
+});
+
+// 🔥 cuando me desbloquean, recargar
+chatConnection.on("UserUnblocked", (unblockerId) => {
+    if (String(unblockerId) !== String(receiverId)) return;
+    location.reload();
 });
 
 let typingTimer;
@@ -774,18 +849,49 @@ async function toggleHeaderMenu() {
     if (!isOpen) {
         const statusRes = await fetch(`/User/IsBlocked?userId=${receiverId}`);
         const status = await statusRes.json();
-        const btnBloquear = menu.querySelector("[onclick='bloquearUsuario()']");
-        if (btnBloquear) btnBloquear.textContent = status.blocked ? "✅ Desbloquear" : "🚫 Bloquear";
+        const btn = document.getElementById("btnBloquear");
+        if (btn) btn.textContent = status.blocked ? "✅ Desbloquear" : "🚫 Bloquear";
         if (status.blocked) deshabilitarChat();
     }
 }
 
-function silenciarNotificaciones() { alert("🔕 Próximamente"); toggleHeaderMenu(); }
-function crearGrupo() { alert("👥 Próximamente"); toggleHeaderMenu(); }
-function anclarChat() { alert("📌 Próximamente"); toggleHeaderMenu(); }
+function cerrarModal(id) { document.getElementById(id).style.display = "none"; }
+
+function silenciarNotificaciones() {
+    document.getElementById("headerMenu").style.display = "none";
+    document.getElementById("silenciarModal").style.display = "flex";
+}
+
+function confirmarSilenciar(horas) {
+    cerrarModal("silenciarModal");
+    const texto = horas === -1 ? "siempre" : horas === 168 ? "1 semana" : horas === 24 ? "1 día" : "8 horas";
+    showChatToast(`🔕 Notificaciones silenciadas por ${texto}`);
+}
+
+function crearGrupo() {
+    document.getElementById("headerMenu").style.display = "none";
+    document.getElementById("grupoModal").style.display = "flex";
+}
+
+function confirmarGrupo() {
+    const nombre = document.getElementById("grupoNombre").value.trim();
+    if (!nombre) { showChatToast("⚠️ Escribe un nombre para el grupo"); return; }
+    cerrarModal("grupoModal");
+    showChatToast(`👥 Grupo "${nombre}" — próximamente`);
+}
+
+function anclarChat() {
+    document.getElementById("headerMenu").style.display = "none";
+    document.getElementById("anclarModal").style.display = "flex";
+}
+
+function confirmarAnclar() {
+    cerrarModal("anclarModal");
+    showChatToast("📌 Chat anclado — próximamente");
+}
 
 async function denunciarUsuario() {
-    toggleHeaderMenu();
+    document.getElementById("headerMenu").style.display = "none";
     const motivos = ["Contenido inapropiado", "Acoso o intimidación", "Spam o publicidad", "Lenguaje ofensivo", "Otro"];
     const motivo = prompt("¿Por qué quieres denunciar a este usuario?\n\n" + motivos.map((m, i) => `${i + 1}. ${m}`).join("\n") + "\n\nEscribe el número del motivo:");
     if (!motivo) return;
@@ -801,7 +907,7 @@ async function denunciarUsuario() {
 }
 
 async function bloquearUsuario() {
-    toggleHeaderMenu();
+    document.getElementById("headerMenu").style.display = "none";
     const statusRes = await fetch(`/User/IsBlocked?userId=${receiverId}`);
     const status = await statusRes.json();
 
@@ -832,7 +938,7 @@ function mostrarAnuncioBloqueo(porMi) {
     banner.id = "bloqueoBanner";
     banner.style.cssText = "text-align:center;padding:10px 16px;margin:8px 12px;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.2);border-radius:12px;font-size:13px;color:#ef4444;font-weight:500;";
     banner.textContent = porMi ? "🚫 Bloqueaste a este usuario" : "⛔ Ya no puedes enviarle mensajes a esta persona";
-    chatBox.insertBefore(banner, document.getElementById("typingIndicator"));
+    chatBox.appendChild(banner);
     chatBox.scrollTop = chatBox.scrollHeight;
 }
 
@@ -845,8 +951,8 @@ function deshabilitarChat() {
     if (adjBtn) adjBtn.disabled = true;
     const emojiBtn = document.querySelector(".bar-btn.emoji-toggle");
     if (emojiBtn) emojiBtn.disabled = true;
-    const btnBloquear = document.querySelector("[onclick='bloquearUsuario()']");
-    if (btnBloquear) btnBloquear.textContent = "✅ Desbloquear";
+    const btn = document.getElementById("btnBloquear");
+    if (btn) btn.textContent = "✅ Desbloquear";
 }
 
 function showChatToast(msg) {
@@ -859,6 +965,7 @@ function showChatToast(msg) {
 document.addEventListener("click", (e) => {
     if (!e.target.closest(".header-menu-wrap")) { const menu = document.getElementById("headerMenu"); if (menu) menu.style.display = "none"; }
     if (!e.target.closest(".emoji-toggle") && !e.target.closest("#emojiPanel")) closeEmoji();
+    if (e.target.classList.contains("modal-overlay")) { document.querySelectorAll(".modal-overlay").forEach(m => m.style.display = "none"); }
 });
 
 // ── LLAMADAS ──────────────────────────────
@@ -866,33 +973,22 @@ window.peerConnection = null; window.localStream = null;
 let callerId = null, callTimerInterval = null, callSeconds = 0, pendingOffer = null;
 
 function createPeerConnection(targetId) {
-    const pc = new RTCPeerConnection({
-        iceServers: [
-            { urls: "stun:stun.l.google.com:19302" }, { urls: "stun:stun1.l.google.com:19302" },
-            { urls: "stun:stun2.l.google.com:19302" }, { urls: "stun:stun3.l.google.com:19302" },
-            { urls: "stun:stun.cloudflare.com:3478" },
-        ]
-    });
-
+    const pc = new RTCPeerConnection({ iceServers: [
+        { urls: "stun:stun.l.google.com:19302" }, { urls: "stun:stun1.l.google.com:19302" },
+        { urls: "stun:stun2.l.google.com:19302" }, { urls: "stun:stun3.l.google.com:19302" },
+        { urls: "stun:stun.cloudflare.com:3478" },
+    ]});
     pc.ontrack = (event) => {
         let audio = document.getElementById("remoteAudio");
-        if (!audio) {
-            audio = document.createElement("audio");
-            audio.id = "remoteAudio"; audio.autoplay = true;
-            audio.setAttribute("playsinline", ""); audio.style.display = "none";
-            document.body.appendChild(audio);
-        }
+        if (!audio) { audio = document.createElement("audio"); audio.id = "remoteAudio"; audio.autoplay = true; audio.setAttribute("playsinline", ""); audio.style.display = "none"; document.body.appendChild(audio); }
         audio.srcObject = event.streams?.[0] ?? new MediaStream([event.track]);
         audio.play().catch(e => console.warn(e));
     };
-
     pc.onicecandidate = (e) => { if (e.candidate) chatConnection.invoke("SendIceCandidate", targetId, JSON.stringify(e.candidate)); };
-
     pc.onconnectionstatechange = () => {
         if (pc.connectionState === "connected") { document.getElementById("callStatus").textContent = "En llamada"; startCallTimer(); }
         else if (["disconnected","failed","closed"].includes(pc.connectionState)) endCall();
     };
-
     window.peerConnection = pc; return pc;
 }
 
@@ -1004,14 +1100,12 @@ async function startRecording() {
         rb.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>`;
         document.getElementById("recordingStatus").style.display = "flex";
         chatConnection.invoke("StartRecording", receiverId);
-
         let recSec = 0;
         const ri = setInterval(() => {
             if (!isRecording) { clearInterval(ri); return; }
             recSec++;
             document.getElementById("recTimer").textContent = `${Math.floor(recSec/60)}:${String(recSec%60).padStart(2,"0")}`;
         }, 1000);
-
         mediaRecorder.ondataavailable = e => { if (e.data?.size > 0) audioChunks.push(e.data); };
         mediaRecorder.onstop = () => {
             stream.getTracks().forEach(t => t.stop());
@@ -1033,7 +1127,6 @@ async function sendAudio() {
     formData.append("receiverId", receiverId);
     const btn = document.querySelector(".btn-send-audio");
     btn.textContent = "Enviando..."; btn.disabled = true;
-
     const res = await fetch('/Message/SendAudio', { method: 'POST', body: formData });
     if (res.ok) {
         const data = await res.json();
@@ -1045,10 +1138,8 @@ async function sendAudio() {
                 <audio controls class="msg-audio"><source src="${data.audioUrl}" /></audio>
                 <div class="msg-footer"><span class="msg-time">${makeTime()}</span><span class="msg-check sent" id="${audioTempCheck}">✔</span></div>
             </div></div>`;
-
         chatBox.insertBefore(wrap, document.getElementById("typingIndicator"));
         scrollBottom(null); cancelAudio();
-
         if (data.messageId) {
             const check = document.getElementById(audioTempCheck);
             if (check) {
