@@ -169,10 +169,12 @@
                                 <span class="msg-time">@msg.SentAt.ToString("hh:mm tt")</span>
                                 @if (isMe)
                                 {
-                                    @if (msg.IsRead)
-                                    { <span class="msg-check seen" title="Visto">✔✔</span> }
-                                    else
-                                    { <span class="msg-check delivered" data-message-id="@msg.Id" title="Entregado">✔✔</span> }
+                                  @if (msg.IsRead)
+{ <span class="msg-check seen" title="Visto">✔✔</span> }
+else if (ViewBag.ReceiverIsOnline == true)
+{ <span class="msg-check delivered" data-message-id="@msg.Id" title="Entregado">✔✔</span> }
+else
+{ <span class="msg-check sent" data-message-id="@msg.Id" title="Enviado">✔</span> }
                                 }
                             </div>
                         </div>

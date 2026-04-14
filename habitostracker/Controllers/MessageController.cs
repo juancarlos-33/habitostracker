@@ -85,6 +85,7 @@ namespace HabitTrackerApp.Controllers
             ViewBag.OtherLastOnline = otherUser?.LastOnline;
             ViewBag.OtherUserProfileImage = otherUser?.ProfileImage ?? otherUser?.ProfilePicture;
 
+            ViewBag.ReceiverIsOnline = _onlineUsers.IsOnline(userId.ToString());
             return View(messages);
         }
 
