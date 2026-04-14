@@ -267,21 +267,8 @@
 </div>
 
 <style>
-.chat-page {
-    display: flex; flex-direction: column;
-    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-    background: #f8f9fb; z-index: 10; overflow: hidden; padding-top: 90px;
-}
-
-@@media (min-width: 768px) {
-    .chat-page {
-        position: relative; padding-top: 0;
-        height: calc(100vh - 130px); max-width: 860px; margin: 0 auto;
-        border-radius: 20px; box-shadow: 0 8px 40px rgba(0,0,0,0.1);
-        overflow: hidden; border: 1px solid rgba(0,0,0,0.06);
-    }
-}
-
+.chat-page { display: flex; flex-direction: column; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: #f8f9fb; z-index: 10; overflow: hidden; padding-top: 90px; }
+@@media (min-width: 768px) { .chat-page { position: relative; padding-top: 0; height: calc(100vh - 130px); max-width: 860px; margin: 0 auto; border-radius: 20px; box-shadow: 0 8px 40px rgba(0,0,0,0.1); overflow: hidden; border: 1px solid rgba(0,0,0,0.06); } }
 .chat-header { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; background: linear-gradient(135deg, #1e293b, #334155); flex-shrink: 0; z-index: 2; }
 .chat-header-user { display: flex; align-items: center; gap: 12px; text-decoration: none; color: white; min-width: 0; flex: 1; }
 .chat-avatar-wrap { position: relative; flex-shrink: 0; }
@@ -420,32 +407,28 @@ const pendingConfirms = new Set();
 
 window.addEventListener("load", () => { chatBox.scrollTop = chatBox.scrollHeight; });
 
-const connection = new signalR.HubConnectionBuilder()
+const chatConnection = new signalR.HubConnectionBuilder()
     .withUrl("/chatHub").withAutomaticReconnect().build();
 
 async function startConnection() {
-    await connection.start();
-    await connection.invoke("JoinUserGroup", myId);
+    await chatConnection.start();
+    await chatConnection.invoke("JoinUserGroup", myId);
     await fetch("/Message/MarkAsSeen?senderId=" + receiverId, { method: "POST" });
     localStorage.setItem("currentChatUserId", receiverId);
 
-    // 🔥 verificar bloqueo al cargar
     const blockCheck = await fetch(`/User/IsBlocked?userId=${receiverId}`);
     const blockStatus = await blockCheck.json();
-    if (blockStatus.blocked) {
-        deshabilitarChat();
-        mostrarAnuncioBloqueo(true);
-    }
+    if (blockStatus.blocked) { deshabilitarChat(); mostrarAnuncioBloqueo(true); }
 }
 
 startConnection().catch(err => console.error(err));
 
 document.addEventListener("visibilitychange", async () => {
     if (document.visibilityState === "visible") {
-        if (connection.state === "Disconnected") {
+        if (chatConnection.state === "Disconnected") {
             await startConnection();
         } else {
-            await connection.invoke("JoinUserGroup", myId);
+            await chatConnection.invoke("JoinUserGroup", myId);
         }
         await fetch("/Message/MarkAsSeen?senderId=" + receiverId, { method: "POST" });
         await loadNewMessages();
@@ -455,10 +438,7 @@ document.addEventListener("visibilitychange", async () => {
 async function loadNewMessages() {
     const msgWraps = chatBox.querySelectorAll(".msg-wrap[id^='msg-']");
     let lastId = 0;
-    msgWraps.forEach(w => {
-        const id = parseInt(w.id.replace("msg-", ""));
-        if (id > lastId) lastId = id;
-    });
+    msgWraps.forEach(w => { const id = parseInt(w.id.replace("msg-", "")); if (id > lastId) lastId = id; });
 
     const res = await fetch(`/Message/GetNewMessages?senderId=${receiverId}&lastId=${lastId}`);
     if (!res.ok) return;
@@ -481,25 +461,19 @@ async function loadNewMessages() {
 
         let contentHTML = "";
         if (msg.content && msg.content.trim() !== "") {
-            if (msg.content.startsWith("http") && (msg.content.includes("cloudinary") || msg.content.includes("/audios/"))) {
+            if (msg.content.startsWith("http") && (msg.content.includes("cloudinary") || msg.content.includes("/audios/")))
                 contentHTML = `<audio controls class="msg-audio"><source src="${msg.content}" /></audio>`;
-            } else if (!msg.fileUrl) {
+            else if (!msg.fileUrl)
                 contentHTML = `<span class="msg-text">${msg.content}</span>`;
-            }
         }
 
-        const checkHTML = isMe
-            ? `<span class="msg-check ${msg.isRead ? "seen" : "delivered"}">✔✔</span>`
-            : "";
+        const checkHTML = isMe ? `<span class="msg-check ${msg.isRead ? "seen" : "delivered"}">✔✔</span>` : "";
 
         wrap.innerHTML = `
             <div class="msg-content-wrap">
                 <div class="msg-bubble ${isMe ? "bubble-mine" : "bubble-theirs"}">
                     ${contentHTML}${mediaHTML}
-                    <div class="msg-footer">
-                        <span class="msg-time">${msg.time}</span>
-                        ${checkHTML}
-                    </div>
+                    <div class="msg-footer"><span class="msg-time">${msg.time}</span>${checkHTML}</div>
                 </div>
             </div>`;
 
@@ -512,48 +486,33 @@ async function loadNewMessages() {
     }
 }
 
-function makeTime() {
-    return new Date().toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' });
-}
+function makeTime() { return new Date().toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' }); }
 
 function scrollBottom(wrap) {
     const imgs = wrap ? wrap.querySelectorAll("img") : [];
-    if (imgs.length > 0) {
-        imgs[0].onload = () => { chatBox.scrollTop = chatBox.scrollHeight; };
-        imgs[0].onerror = () => { chatBox.scrollTop = chatBox.scrollHeight; };
-    }
+    if (imgs.length > 0) { imgs[0].onload = () => chatBox.scrollTop = chatBox.scrollHeight; imgs[0].onerror = () => chatBox.scrollTop = chatBox.scrollHeight; }
     chatBox.scrollTop = chatBox.scrollHeight;
 }
 
 let longPressTimer = null;
-
 function startLongPress(e, msgId, isMine) {
     longPressTimer = setTimeout(() => {
         const touch = e.touches[0];
-        const fakeEvent = { preventDefault: () => {}, clientX: touch.clientX, clientY: touch.clientY };
-        openMsgMenu(fakeEvent, msgId, isMine);
+        openMsgMenu({ preventDefault: () => {}, clientX: touch.clientX, clientY: touch.clientY }, msgId, isMine);
     }, 600);
 }
-
-function cancelLongPress() {
-    if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; }
-}
+function cancelLongPress() { if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; } }
 
 let ctxMessageId = null, ctxIsMine = false;
-
 function openMsgMenu(e, msgId, isMine) {
     e.preventDefault();
-    ctxMessageId = msgId;
-    ctxIsMine = isMine;
+    ctxMessageId = msgId; ctxIsMine = isMine;
     const menu = document.getElementById("msgContextMenu");
     const overlay = document.getElementById("ctxOverlay");
     document.getElementById("ctxDeleteAll").style.display = isMine ? "flex" : "none";
-    menu.style.display = "block";
-    overlay.style.display = "block";
-    const x = Math.min(e.clientX, window.innerWidth - 220);
-    const y = Math.min(e.clientY, window.innerHeight - 120);
-    menu.style.left = x + "px";
-    menu.style.top = y + "px";
+    menu.style.display = "block"; overlay.style.display = "block";
+    menu.style.left = Math.min(e.clientX, window.innerWidth - 220) + "px";
+    menu.style.top = Math.min(e.clientY, window.innerHeight - 120) + "px";
 }
 
 function ctxClose() {
@@ -563,21 +522,15 @@ function ctxClose() {
 }
 
 async function ctxDelete(scope) {
-    const msgId = ctxMessageId;
-    ctxClose();
+    const msgId = ctxMessageId; ctxClose();
     if (!msgId) return;
     if (!confirm(scope === "all" ? "¿Eliminar para todos?" : "¿Eliminar para ti?")) return;
     const res = await fetch(`/Message/Delete?messageId=${msgId}&scope=${scope}`, { method: "POST" });
     if (res.ok) {
         const el = document.getElementById("msg-" + msgId);
         if (el) {
-            if (scope === "all") {
-                const bubble = el.querySelector(".msg-bubble");
-                if (bubble) bubble.innerHTML = `<span style="font-style:italic;opacity:0.6;font-size:13px;">Mensaje eliminado</span>`;
-            } else {
-                el.style.opacity = "0"; el.style.transition = "0.3s";
-                setTimeout(() => el.remove(), 300);
-            }
+            if (scope === "all") { const b = el.querySelector(".msg-bubble"); if(b) b.innerHTML = `<span style="font-style:italic;opacity:0.6;font-size:13px;">Mensaje eliminado</span>`; }
+            else { el.style.opacity = "0"; el.style.transition = "0.3s"; setTimeout(() => el.remove(), 300); }
         }
     }
 }
@@ -591,8 +544,7 @@ document.getElementById("chatForm").addEventListener("submit", async function(e)
 
     const tempId = "temp-" + Date.now();
     const wrap = document.createElement("div");
-    wrap.className = "msg-wrap msg-mine";
-    wrap.id = tempId;
+    wrap.className = "msg-wrap msg-mine"; wrap.id = tempId;
 
     let mediaHTML = "";
     if (file) {
@@ -601,25 +553,17 @@ document.getElementById("chatForm").addEventListener("submit", async function(e)
         else if (file.type.startsWith("video")) mediaHTML = `<video controls class="msg-media"><source src="${url}" /></video>`;
     }
 
-    const textHTML = content ? `<span class="msg-text">${content}</span>` : "";
-
     wrap.innerHTML = `
-        <div class="msg-content-wrap">
-            <div class="msg-bubble bubble-mine">
-                ${textHTML}${mediaHTML}
-                <div class="msg-footer">
-                    <span class="msg-time">${makeTime()}</span>
-                    <span class="msg-check pending" id="check-${tempId}">🕐</span>
-                </div>
-            </div>
-        </div>`;
+        <div class="msg-content-wrap"><div class="msg-bubble bubble-mine">
+            ${content ? `<span class="msg-text">${content}</span>` : ""}${mediaHTML}
+            <div class="msg-footer"><span class="msg-time">${makeTime()}</span><span class="msg-check pending" id="check-${tempId}">🕐</span></div>
+        </div></div>`;
 
     chatBox.insertBefore(wrap, document.getElementById("typingIndicator"));
     scrollBottom(wrap);
 
     document.getElementById("messageInput").value = "";
-    sendBtn.disabled = true;
-    closeEmoji();
+    sendBtn.disabled = true; closeEmoji();
     fileInput.value = "";
     document.getElementById("previewContainer").style.display = "none";
     document.getElementById("previewImage").style.display = "none";
@@ -637,12 +581,10 @@ document.getElementById("chatForm").addEventListener("submit", async function(e)
         if (data.success) {
             const check = document.getElementById("check-" + tempId);
             if (check) {
-                check.textContent = "✔";
-                check.className = "msg-check sent";
+                check.textContent = "✔"; check.className = "msg-check sent";
                 check.setAttribute("data-message-id", data.messageId);
                 if (pendingConfirms.has(data.messageId)) {
-                    check.textContent = "✔✔";
-                    check.className = "msg-check delivered";
+                    check.textContent = "✔✔"; check.className = "msg-check delivered";
                     pendingConfirms.delete(data.messageId);
                 }
             }
@@ -650,29 +592,18 @@ document.getElementById("chatForm").addEventListener("submit", async function(e)
             if (data.filePath && data.filePath !== "") {
                 const mediaEl = wrap.querySelector(".msg-media");
                 if (mediaEl) {
-                    if (data.filePath.includes("/image/upload/") || /\.(jpg|jpeg|png|gif)$/i.test(data.filePath)) {
-                        mediaEl.src = data.filePath;
-                    } else {
-                        const src = mediaEl.querySelector("source");
-                        if (src) { src.src = data.filePath; mediaEl.load(); }
-                    }
+                    if (data.filePath.includes("/image/upload/") || /\.(jpg|jpeg|png|gif)$/i.test(data.filePath)) mediaEl.src = data.filePath;
+                    else { const src = mediaEl.querySelector("source"); if (src) { src.src = data.filePath; mediaEl.load(); } }
                 }
             }
-        } else {
-            wrap.remove();
-            if (data.error) alert(data.error);
-        }
-    } catch (err) {
-        wrap.remove();
-        alert("Error de conexión");
-    }
+        } else { wrap.remove(); if (data.error) alert(data.error); }
+    } catch (err) { wrap.remove(); alert("Error de conexión"); }
 });
 
 // 🔥 SIGNALR LISTENERS
-connection.on("ReceiveMessage", (senderId, rcvId, senderName, message, fileUrl) => {
+chatConnection.on("ReceiveMessage", (senderId, rcvId, senderName, message, fileUrl) => {
     if (String(senderId) !== String(receiverId) && String(rcvId) !== String(receiverId)) return;
     if (String(senderId) === String(myId)) return;
-
     document.getElementById("typingIndicator").style.display = "none";
 
     let mediaHTML = "";
@@ -683,49 +614,41 @@ connection.on("ReceiveMessage", (senderId, rcvId, senderName, message, fileUrl) 
         else if (isVid) mediaHTML = `<video controls class="msg-media"><source src="${fileUrl}" /></video>`;
     }
 
-    const textHTML = (message && message.trim() !== "") ? `<span class="msg-text">${message}</span>` : "";
-
     const wrap = document.createElement("div");
     wrap.className = "msg-wrap msg-theirs";
     wrap.innerHTML = `
-        <div class="msg-content-wrap">
-            <div class="msg-bubble bubble-theirs">
-                ${textHTML}${mediaHTML}
-                <div class="msg-footer"><span class="msg-time">${makeTime()}</span></div>
-            </div>
-        </div>`;
+        <div class="msg-content-wrap"><div class="msg-bubble bubble-theirs">
+            ${(message && message.trim() !== "") ? `<span class="msg-text">${message}</span>` : ""}${mediaHTML}
+            <div class="msg-footer"><span class="msg-time">${makeTime()}</span></div>
+        </div></div>`;
 
     chatBox.insertBefore(wrap, document.getElementById("typingIndicator"));
     scrollBottom(wrap);
     fetch("/Message/MarkAsSeen?senderId=" + senderId, { method: "POST" });
-    connection.invoke("MessagesViewed", senderId);
+    chatConnection.invoke("MessagesViewed", senderId);
 });
 
-connection.on("ReceiveAudio", (senderId, audioUrl) => {
+chatConnection.on("ReceiveAudio", (senderId, audioUrl) => {
     if (String(senderId) !== String(receiverId)) return;
     const wrap = document.createElement("div");
     wrap.className = "msg-wrap msg-theirs";
     wrap.innerHTML = `
-        <div class="msg-content-wrap">
-            <div class="msg-bubble bubble-theirs">
-                <audio controls class="msg-audio"><source src="${audioUrl}" /></audio>
-                <div class="msg-footer"><span class="msg-time">${makeTime()}</span></div>
-            </div>
-        </div>`;
+        <div class="msg-content-wrap"><div class="msg-bubble bubble-theirs">
+            <audio controls class="msg-audio"><source src="${audioUrl}" /></audio>
+            <div class="msg-footer"><span class="msg-time">${makeTime()}</span></div>
+        </div></div>`;
     chatBox.insertBefore(wrap, document.getElementById("typingIndicator"));
     scrollBottom(null);
 });
 
-connection.on("UserRecording", () => {
+chatConnection.on("UserRecording", () => {
     const ind = document.getElementById("typingIndicator");
-    ind.innerHTML = `
-        <span style="width:8px;height:8px;border-radius:50%;background:#dc2626;animation:recPulse 1s infinite;display:inline-block;flex-shrink:0;"></span>
-        <span style="font-size:12px;color:#dc2626;font-weight:600;margin-left:6px;">Grabando audio...</span>`;
+    ind.innerHTML = `<span style="width:8px;height:8px;border-radius:50%;background:#dc2626;animation:recPulse 1s infinite;display:inline-block;flex-shrink:0;"></span><span style="font-size:12px;color:#dc2626;font-weight:600;margin-left:6px;">Grabando audio...</span>`;
     ind.style.display = "flex"; ind.setAttribute("data-recording", "true");
     chatBox.scrollTop = chatBox.scrollHeight;
 });
 
-connection.on("UserStoppedRecording", () => {
+chatConnection.on("UserStoppedRecording", () => {
     const ind = document.getElementById("typingIndicator");
     if (ind.getAttribute("data-recording") === "true") {
         ind.innerHTML = `<span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span>`;
@@ -733,55 +656,60 @@ connection.on("UserStoppedRecording", () => {
     }
 });
 
-connection.on("MessageDeleted", (messageId) => {
+chatConnection.on("MessageDeleted", (messageId) => {
     const el = document.getElementById("msg-" + messageId);
-    if (el) {
-        const bubble = el.querySelector(".msg-bubble");
-        if (bubble) bubble.innerHTML = `<span style="font-style:italic;opacity:0.6;font-size:13px;">Mensaje eliminado</span>`;
-    }
+    if (el) { const b = el.querySelector(".msg-bubble"); if(b) b.innerHTML = `<span style="font-style:italic;opacity:0.6;font-size:13px;">Mensaje eliminado</span>`; }
 });
 
-connection.on("MessageSentConfirm", (messageId) => {
+chatConnection.on("MessageSentConfirm", (messageId) => {
     const check = document.querySelector(`[data-message-id='${messageId}']`);
-    if (check) {
-        check.textContent = "✔✔";
-        check.className = "msg-check delivered";
-    } else {
-        pendingConfirms.add(messageId);
-    }
+    if (check) { check.textContent = "✔✔"; check.className = "msg-check delivered"; }
+    else pendingConfirms.add(messageId);
 });
 
-connection.on("MessageSeen", (messageId) => {
+chatConnection.on("MessageSeen", (messageId) => {
     const s = document.querySelector(`[data-message-id='${messageId}']`);
     if (s) { s.textContent = "✔✔"; s.className = "msg-check seen"; }
 });
 
-connection.on("ForceSeenUpdate", () => {
-    document.querySelectorAll(".msg-check.delivered, .msg-check.sent").forEach(m => {
-        m.textContent = "✔✔"; m.className = "msg-check seen";
-    });
+chatConnection.on("ForceSeenUpdate", () => {
+    document.querySelectorAll(".msg-check.delivered, .msg-check.sent").forEach(m => { m.textContent = "✔✔"; m.className = "msg-check seen"; });
 });
 
-connection.on("UserOnline", (uid) => {
-    if (uid == receiverId) {
-        document.getElementById("onlineStatus").textContent = "● En línea";
-        document.getElementById("onlineStatus").className = "chat-header-status online";
-        const dot = document.getElementById("onlineDot");
-        if (dot) dot.style.display = "block";
+// 🔥 online/offline con contador en tiempo real
+let offlineSeconds = 0;
+let offlineInterval = null;
+
+chatConnection.on("UserOnline", (uid) => {
+    if (uid != receiverId) return;
+    clearInterval(offlineInterval); offlineSeconds = 0;
+    document.getElementById("onlineStatus").textContent = "● En línea";
+    document.getElementById("onlineStatus").className = "chat-header-status online";
+    const dot = document.getElementById("onlineDot");
+    if (dot) dot.style.display = "block";
+});
+
+chatConnection.on("UserOffline", (uid) => {
+    if (uid != receiverId) return;
+    document.getElementById("onlineStatus").className = "chat-header-status offline";
+    const dot = document.getElementById("onlineDot");
+    if (dot) dot.style.display = "none";
+    offlineSeconds = 0;
+    clearInterval(offlineInterval);
+    // 🔥 actualizar texto cada 60s
+    function updateOfflineText() {
+        offlineSeconds += 60;
+        const mins = Math.floor(offlineSeconds / 60);
+        const hours = Math.floor(mins / 60);
+        let text = mins < 2 ? "Hace un momento" : mins < 60 ? `Hace ${mins} min` : hours < 24 ? `Hace ${hours} h` : "Hace más de un día";
+        document.getElementById("onlineStatus").textContent = "○ " + text;
     }
+    document.getElementById("onlineStatus").textContent = "○ Hace un momento";
+    offlineInterval = setInterval(updateOfflineText, 60000);
 });
 
-connection.on("UserOffline", (uid) => {
-    if (uid == receiverId) {
-        document.getElementById("onlineStatus").textContent = "○ Hace un momento";
-        document.getElementById("onlineStatus").className = "chat-header-status offline";
-        const dot = document.getElementById("onlineDot");
-        if (dot) dot.style.display = "none";
-    }
-});
-
-// 🔥 bloqueo en tiempo real — el receptor ve el banner
-connection.on("UserBlocked", (blockerId) => {
+// 🔥 bloqueo en tiempo real
+chatConnection.on("UserBlocked", (blockerId) => {
     if (String(blockerId) !== String(receiverId)) return;
     mostrarAnuncioBloqueo(false);
     deshabilitarChat();
@@ -789,29 +717,27 @@ connection.on("UserBlocked", (blockerId) => {
 
 let typingTimer;
 document.getElementById("messageInput").addEventListener("keydown", () => {
-    connection.invoke("UserTyping", receiverId, "@User.Identity.Name");
+    chatConnection.invoke("UserTyping", receiverId, "@User.Identity.Name");
     clearTimeout(typingTimer);
-    typingTimer = setTimeout(() => connection.invoke("StopTyping", receiverId), 1500);
+    typingTimer = setTimeout(() => chatConnection.invoke("StopTyping", receiverId), 1500);
 });
 
-connection.on("ShowTyping", () => {
+chatConnection.on("ShowTyping", () => {
     const ind = document.getElementById("typingIndicator");
     if (!ind.getAttribute("data-recording")) { ind.style.display = "flex"; chatBox.scrollTop = chatBox.scrollHeight; }
 });
 
-connection.on("HideTyping", () => {
+chatConnection.on("HideTyping", () => {
     const ind = document.getElementById("typingIndicator");
     if (!ind.getAttribute("data-recording")) ind.style.display = "none";
 });
 
-connection.on("ReceiveReaction", (messageId, reaction) => {
+chatConnection.on("ReceiveReaction", (messageId, reaction) => {
     const el = document.getElementById("reaction-" + messageId);
     if (el) { el.textContent = reaction; el.style.display = "block"; }
 });
 
-document.getElementById("messageInput").addEventListener("input", function() {
-    sendBtn.disabled = this.value.trim() === "";
-});
+document.getElementById("messageInput").addEventListener("input", function() { sendBtn.disabled = this.value.trim() === ""; });
 
 function toggleEmoji() {
     const panel = document.getElementById("emojiPanel");
@@ -829,8 +755,7 @@ function closeEmoji() {
 
 function addEmoji(emoji) {
     const input = document.getElementById("messageInput");
-    input.value += emoji;
-    input.focus();
+    input.value += emoji; input.focus();
     sendBtn.disabled = input.value.trim() === "";
 }
 
@@ -840,19 +765,15 @@ function filterEmojis(q) {
     });
 }
 
-// 🔥 MENÚ HEADER — una sola definición
 async function toggleHeaderMenu() {
     const menu = document.getElementById("headerMenu");
     const isOpen = menu.style.display !== "none";
     menu.style.display = isOpen ? "none" : "block";
-
     if (!isOpen) {
         const statusRes = await fetch(`/User/IsBlocked?userId=${receiverId}`);
         const status = await statusRes.json();
         const btnBloquear = menu.querySelector("[onclick='bloquearUsuario()']");
-        if (btnBloquear) {
-            btnBloquear.textContent = status.blocked ? "✅ Desbloquear" : "🚫 Bloquear";
-        }
+        if (btnBloquear) btnBloquear.textContent = status.blocked ? "✅ Desbloquear" : "🚫 Bloquear";
         if (status.blocked) deshabilitarChat();
     }
 }
@@ -864,15 +785,11 @@ function anclarChat() { alert("📌 Próximamente"); toggleHeaderMenu(); }
 async function denunciarUsuario() {
     toggleHeaderMenu();
     const motivos = ["Contenido inapropiado", "Acoso o intimidación", "Spam o publicidad", "Lenguaje ofensivo", "Otro"];
-    const motivo = prompt(
-        "¿Por qué quieres denunciar a este usuario?\n\n" +
-        motivos.map((m, i) => `${i + 1}. ${m}`).join("\n") +
-        "\n\nEscribe el número del motivo:"
-    );
+    const motivo = prompt("¿Por qué quieres denunciar a este usuario?\n\n" + motivos.map((m, i) => `${i + 1}. ${m}`).join("\n") + "\n\nEscribe el número del motivo:");
     if (!motivo) return;
     const idx = parseInt(motivo.trim()) - 1;
     const reason = (idx >= 0 && idx < motivos.length) ? motivos[idx] : "Otro";
-    const res = await fetch(`/User/ReportUser`, {
+    const res = await fetch("/User/ReportUser", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ reportedId: parseInt(receiverId), reason })
@@ -888,7 +805,7 @@ async function bloquearUsuario() {
 
     if (status.blocked) {
         if (!confirm("¿Desbloquear a este usuario?")) return;
-        const res = await fetch(`/User/UnblockUser`, {
+        const res = await fetch("/User/UnblockUser", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ blockedId: parseInt(receiverId) })
@@ -897,7 +814,7 @@ async function bloquearUsuario() {
         if (data.success) { showChatToast("✅ Usuario desbloqueado."); setTimeout(() => location.reload(), 1500); }
     } else {
         if (!confirm("¿Bloquear a este usuario?")) return;
-        const res = await fetch(`/User/BlockUser`, {
+        const res = await fetch("/User/BlockUser", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ blockedId: parseInt(receiverId) })
@@ -911,7 +828,7 @@ function mostrarAnuncioBloqueo(porMi) {
     document.getElementById("bloqueoBanner")?.remove();
     const banner = document.createElement("div");
     banner.id = "bloqueoBanner";
-    banner.style.cssText = `text-align:center;padding:10px 16px;margin:8px 12px;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.2);border-radius:12px;font-size:13px;color:#ef4444;font-weight:500;`;
+    banner.style.cssText = "text-align:center;padding:10px 16px;margin:8px 12px;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.2);border-radius:12px;font-size:13px;color:#ef4444;font-weight:500;";
     banner.textContent = porMi ? "🚫 Bloqueaste a este usuario" : "⛔ Ya no puedes enviarle mensajes a esta persona";
     chatBox.insertBefore(banner, document.getElementById("typingIndicator"));
     chatBox.scrollTop = chatBox.scrollHeight;
@@ -932,17 +849,13 @@ function deshabilitarChat() {
 
 function showChatToast(msg) {
     const t = document.createElement("div");
-    t.style.cssText = `position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:#1e293b;color:white;padding:10px 20px;border-radius:20px;font-size:13px;font-weight:600;z-index:99999;box-shadow:0 4px 20px rgba(0,0,0,0.3);`;
-    t.textContent = msg;
-    document.body.appendChild(t);
+    t.style.cssText = "position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:#1e293b;color:white;padding:10px 20px;border-radius:20px;font-size:13px;font-weight:600;z-index:99999;box-shadow:0 4px 20px rgba(0,0,0,0.3);";
+    t.textContent = msg; document.body.appendChild(t);
     setTimeout(() => t.remove(), 3000);
 }
 
 document.addEventListener("click", (e) => {
-    if (!e.target.closest(".header-menu-wrap")) {
-        const menu = document.getElementById("headerMenu");
-        if (menu) menu.style.display = "none";
-    }
+    if (!e.target.closest(".header-menu-wrap")) { const menu = document.getElementById("headerMenu"); if (menu) menu.style.display = "none"; }
     if (!e.target.closest(".emoji-toggle") && !e.target.closest("#emojiPanel")) closeEmoji();
 });
 
@@ -971,9 +884,7 @@ function createPeerConnection(targetId) {
         audio.play().catch(e => console.warn(e));
     };
 
-    pc.onicecandidate = (e) => {
-        if (e.candidate) connection.invoke("SendIceCandidate", targetId, JSON.stringify(e.candidate));
-    };
+    pc.onicecandidate = (e) => { if (e.candidate) chatConnection.invoke("SendIceCandidate", targetId, JSON.stringify(e.candidate)); };
 
     pc.onconnectionstatechange = () => {
         if (pc.connectionState === "connected") { document.getElementById("callStatus").textContent = "En llamada"; startCallTimer(); }
@@ -1005,13 +916,13 @@ async function startCall() {
         stream.getTracks().forEach(t => pc.addTrack(t, stream));
         const offer = await pc.createOffer({ offerToReceiveAudio: true });
         await pc.setLocalDescription(offer);
-        await connection.invoke("CallUser", receiverId);
-        await connection.invoke("SendOffer", receiverId, JSON.stringify(offer));
+        await chatConnection.invoke("CallUser", receiverId);
+        await chatConnection.invoke("SendOffer", receiverId, JSON.stringify(offer));
     } catch (err) { alert("❌ " + err.message); document.getElementById("callModal").style.display = "none"; }
 }
 
-connection.on("IncomingCall", (cId) => { callerId = cId; document.getElementById("incomingCallModal").style.display = "flex"; });
-connection.on("ReceiveOffer", (offer) => { pendingOffer = offer; });
+chatConnection.on("IncomingCall", (cId) => { callerId = cId; document.getElementById("incomingCallModal").style.display = "flex"; });
+chatConnection.on("ReceiveOffer", (offer) => { pendingOffer = offer; });
 
 async function acceptCall() {
     document.getElementById("incomingCallModal").style.display = "none";
@@ -1026,7 +937,7 @@ async function acceptCall() {
             await pc.setRemoteDescription(new RTCSessionDescription(JSON.parse(pendingOffer)));
             const answer = await pc.createAnswer();
             await pc.setLocalDescription(answer);
-            await connection.invoke("SendAnswer", callerId, JSON.stringify(answer));
+            await chatConnection.invoke("SendAnswer", callerId, JSON.stringify(answer));
             if (window.pendingCandidates?.length) {
                 for (const c of window.pendingCandidates) await pc.addIceCandidate(new RTCIceCandidate(JSON.parse(c)));
                 window.pendingCandidates = [];
@@ -1038,22 +949,22 @@ async function acceptCall() {
 
 function rejectCall() {
     document.getElementById("incomingCallModal").style.display = "none";
-    connection.invoke("HangUp", callerId);
+    chatConnection.invoke("HangUp", callerId);
     pendingOffer = null; callerId = null;
 }
 
-connection.on("ReceiveAnswer", async (answer) => {
+chatConnection.on("ReceiveAnswer", async (answer) => {
     if (window.peerConnection) await window.peerConnection.setRemoteDescription(new RTCSessionDescription(JSON.parse(answer)));
 });
 
-connection.on("ReceiveIceCandidate", async (candidate) => {
+chatConnection.on("ReceiveIceCandidate", async (candidate) => {
     try {
         if (window.peerConnection?.remoteDescription) await window.peerConnection.addIceCandidate(new RTCIceCandidate(JSON.parse(candidate)));
         else { if (!window.pendingCandidates) window.pendingCandidates = []; window.pendingCandidates.push(candidate); }
     } catch (e) { console.warn("ICE:", e); }
 });
 
-connection.on("CallEnded", () => endCall());
+chatConnection.on("CallEnded", () => endCall());
 
 function endCall() {
     document.getElementById("callModal").style.display = "none";
@@ -1066,7 +977,7 @@ function endCall() {
     if (window.localStream) { window.localStream.getTracks().forEach(t => t.stop()); window.localStream = null; }
     if (window.peerConnection) { window.peerConnection.close(); window.peerConnection = null; }
     window.pendingCandidates = []; pendingOffer = null;
-    try { connection.invoke("HangUp", callerId ?? receiverId); } catch(e) {}
+    try { chatConnection.invoke("HangUp", callerId ?? receiverId); } catch(e) {}
     callerId = null;
 }
 
@@ -1080,7 +991,7 @@ async function startRecording() {
         rb.classList.remove("recording");
         rb.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2M12 19v4M8 23h8"/></svg>`;
         document.getElementById("recordingStatus").style.display = "none";
-        connection.invoke("StopRecording", receiverId); return;
+        chatConnection.invoke("StopRecording", receiverId); return;
     }
     try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -1090,7 +1001,7 @@ async function startRecording() {
         rb.classList.add("recording");
         rb.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>`;
         document.getElementById("recordingStatus").style.display = "flex";
-        connection.invoke("StartRecording", receiverId);
+        chatConnection.invoke("StartRecording", receiverId);
 
         let recSec = 0;
         const ri = setInterval(() => {
@@ -1128,19 +1039,13 @@ async function sendAudio() {
         const wrap = document.createElement("div");
         wrap.className = "msg-wrap msg-mine";
         wrap.innerHTML = `
-            <div class="msg-content-wrap">
-                <div class="msg-bubble bubble-mine">
-                    <audio controls class="msg-audio"><source src="${data.audioUrl}" /></audio>
-                    <div class="msg-footer">
-                        <span class="msg-time">${makeTime()}</span>
-                        <span class="msg-check sent" id="${audioTempCheck}">✔</span>
-                    </div>
-                </div>
-            </div>`;
+            <div class="msg-content-wrap"><div class="msg-bubble bubble-mine">
+                <audio controls class="msg-audio"><source src="${data.audioUrl}" /></audio>
+                <div class="msg-footer"><span class="msg-time">${makeTime()}</span><span class="msg-check sent" id="${audioTempCheck}">✔</span></div>
+            </div></div>`;
 
         chatBox.insertBefore(wrap, document.getElementById("typingIndicator"));
-        scrollBottom(null);
-        cancelAudio();
+        scrollBottom(null); cancelAudio();
 
         if (data.messageId) {
             const check = document.getElementById(audioTempCheck);
@@ -1148,8 +1053,7 @@ async function sendAudio() {
                 check.setAttribute("data-message-id", data.messageId);
                 wrap.id = "msg-" + data.messageId;
                 if (pendingConfirms.has(data.messageId)) {
-                    check.textContent = "✔✔";
-                    check.className = "msg-check delivered";
+                    check.textContent = "✔✔"; check.className = "msg-check delivered";
                     pendingConfirms.delete(data.messageId);
                 }
             }
