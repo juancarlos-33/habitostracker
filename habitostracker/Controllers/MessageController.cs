@@ -44,6 +44,10 @@ namespace HabitTrackerApp.Controllers
                 msg.Receiver = _context.Users.FirstOrDefault(u => u.Id == msg.ReceiverId);
             }
 
+            // 🔥 pasar usuario actual para PinnedChats
+            var me = _context.Users.FirstOrDefault(u => u.Id == myId);
+            ViewBag.MyUser = me;
+
             return View(conversations);
         }
 
@@ -155,11 +159,7 @@ namespace HabitTrackerApp.Controllers
                 .SendAsync("ReceiveMessage", senderId, receiverId, senderName, content ?? "", filePath ?? "");
 
             var receiverOnline = _onlineUsers.IsOnline(receiverId.ToString());
-
-            // 🔥 notificación solo si el receptor NO está en el chat con el emisor
             var receiverInChat = _onlineUsers.IsInChatWith(receiverId.ToString(), senderId.ToString());
-
-            // 🔥 verificar si el receptor tiene silenciadas las notificaciones
             var receiverUser = _context.Users.FirstOrDefault(u => u.Id == receiverId);
             var isMuted = receiverUser?.MutedUntil != null && receiverUser.MutedUntil > DateTime.UtcNow;
 
@@ -170,7 +170,6 @@ namespace HabitTrackerApp.Controllers
                         sender?.ProfileImage ?? "", "/Message/Chat?userId=" + senderId);
             }
 
-            // 🔥 chulos grises solo si el receptor está online
             if (receiverOnline)
             {
                 await _hubContext.Clients.Group(senderId.ToString())
@@ -301,8 +300,6 @@ namespace HabitTrackerApp.Controllers
                 .SendAsync("ReceiveAudio", senderId, audioUrl);
 
             var receiverOnline = _onlineUsers.IsOnline(receiverId.ToString());
-
-            // 🔥 notificación solo si el receptor NO está en el chat con el emisor
             var receiverInChat = _onlineUsers.IsInChatWith(receiverId.ToString(), senderId.ToString());
             var receiverUser = _context.Users.FirstOrDefault(u => u.Id == receiverId);
             var isMuted = receiverUser?.MutedUntil != null && receiverUser.MutedUntil > DateTime.UtcNow;
@@ -314,7 +311,6 @@ namespace HabitTrackerApp.Controllers
                         sender?.ProfileImage ?? sender?.ProfilePicture ?? "", "/Message/Chat?userId=" + senderId);
             }
 
-            // 🔥 chulos grises solo si está online
             if (receiverOnline)
             {
                 await _hubContext.Clients.Group(senderId.ToString())
@@ -372,7 +368,7 @@ namespace HabitTrackerApp.Controllers
             if (user == null) return Json(new { success = false });
 
             user.MutedUntil = dto.Hours == -1
-                ? DateTime.UtcNow.AddYears(99)  // siempre
+                ? DateTime.UtcNow.AddYears(99)
                 : DateTime.UtcNow.AddHours(dto.Hours);
 
             await _context.SaveChangesAsync();

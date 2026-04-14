@@ -3,6 +3,14 @@
 @{
     ViewData["Title"] = "Mensajes";
     var myId = int.Parse(User.FindFirst("UserId").Value);
+    var myUser = ViewBag.MyUser as HabitTrackerApp.Models.User;
+    var pinnedIds = (myUser?.PinnedChats ?? "").Split(',')
+        .Where(x => !string.IsNullOrEmpty(x))
+        .Select(int.Parse).ToList();
+
+    var pinned = Model.Where(m => pinnedIds.Contains(m.SenderId == myId ? (m.ReceiverId ?? 0) : (m.SenderId ?? 0))).ToList();
+    var unpinned = Model.Where(m => !pinnedIds.Contains(m.SenderId == myId ? (m.ReceiverId ?? 0) : (m.SenderId ?? 0))).ToList();
+    var ordered = pinned.Concat(unpinned).ToList();
 }
 
 <div class="inbox-page">
@@ -22,8 +30,12 @@
     }
     else
     {
+        @if (pinned.Any())
+        {
+            <div class="inbox-section-label">📌 Anclados</div>
+        }
         <div class="inbox-list">
-            @foreach (var msg in Model)
+            @foreach (var msg in ordered)
             {
                 var otherUserId = msg.SenderId == myId ? msg.ReceiverId : msg.SenderId;
                 var otherUser = msg.SenderId == myId ? msg.Receiver : msg.Sender;
@@ -32,8 +44,14 @@
                 var firstLetter = username.Substring(0, 1).ToUpper();
                 var isUnread = !msg.IsRead && msg.ReceiverId == myId;
                 var isMe = msg.SenderId == myId;
+                var isPinned = pinnedIds.Contains(otherUserId ?? 0);
 
-                <a href="/Message/Chat?userId=@otherUserId" class="inbox-item @(isUnread ? "unread" : "")">
+                @if (isPinned && ordered.IndexOf(msg) == pinned.Count)
+                {
+                    <div class="inbox-section-divider"></div>
+                }
+
+                <a href="/Message/Chat?userId=@otherUserId" class="inbox-item @(isUnread ? "unread" : "") @(isPinned ? "pinned" : "")">
                     <div class="inbox-avatar-wrap">
                         @if (!string.IsNullOrEmpty(profileImage))
                         {
@@ -47,10 +65,16 @@
                     </div>
 
                     <div class="inbox-info">
-                        <div class="inbox-name">@username</div>
+                        <div class="inbox-name">
+                            @username
+                            @if (isPinned)
+                            {
+                                <span class="pin-icon">📌</span>
+                            }
+                        </div>
                         <div class="inbox-preview">
                             @if (isMe) { <span class="inbox-you">Tú: </span> }
-                            @if (!string.IsNullOrEmpty(msg.Content) && msg.Content.EndsWith(".webm"))
+                            @if (!string.IsNullOrEmpty(msg.Content) && (msg.Content.EndsWith(".webm") || msg.Content.Contains("cloudinary")))
                             { <span>🎤 Audio</span> }
                             else if (!string.IsNullOrEmpty(msg.FileUrl))
                             { <span>📎 Archivo</span> }
@@ -83,12 +107,19 @@
 .inbox-title { font-size: 24px; font-weight: 800; color: #111827; margin: 0 0 4px; }
 .inbox-subtitle { font-size: 14px; color: #9ca3af; margin: 0; }
 
+.inbox-section-label {
+    font-size: 12px; font-weight: 700; color: #6366f1;
+    padding: 0 4px 8px; letter-spacing: 0.5px;
+}
+
+.inbox-section-divider {
+    height: 1px; background: #e5e7eb;
+    margin: 4px 0 4px;
+}
+
 .inbox-empty {
-    text-align: center;
-    padding: 60px 20px;
-    background: white;
-    border-radius: 20px;
-    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    text-align: center; padding: 60px 20px; background: white;
+    border-radius: 20px; box-shadow: 0 2px 12px rgba(0,0,0,0.06);
     border: 1px solid rgba(0,0,0,0.04);
 }
 
@@ -97,22 +128,15 @@
 .inbox-empty p { font-size: 14px; color: #9ca3af; margin: 0; }
 
 .inbox-list {
-    background: white;
-    border-radius: 20px;
+    background: white; border-radius: 20px;
     box-shadow: 0 2px 12px rgba(0,0,0,0.06);
-    border: 1px solid rgba(0,0,0,0.04);
-    overflow: hidden;
+    border: 1px solid rgba(0,0,0,0.04); overflow: hidden;
 }
 
 .inbox-item {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    padding: 14px 18px;
-    text-decoration: none;
-    color: inherit;
-    border-bottom: 1px solid #f9fafb;
-    transition: background 0.15s;
+    display: flex; align-items: center; gap: 14px;
+    padding: 14px 18px; text-decoration: none; color: inherit;
+    border-bottom: 1px solid #f9fafb; transition: background 0.15s;
     position: relative;
 }
 
@@ -120,68 +144,53 @@
 .inbox-item:hover { background: #f9fafb; }
 .inbox-item.unread { background: #eff6ff; }
 .inbox-item.unread:hover { background: #dbeafe; }
+.inbox-item.pinned { border-left: 3px solid #6366f1; }
 
 .inbox-avatar-wrap { position: relative; flex-shrink: 0; }
 
 .inbox-avatar {
-    width: 52px; height: 52px;
-    border-radius: 50%;
-    object-fit: cover;
-    border: 2px solid #e5e7eb;
+    width: 52px; height: 52px; border-radius: 50%;
+    object-fit: cover; border: 2px solid #e5e7eb;
 }
 
 .avatar-letter {
-    background: linear-gradient(135deg, #2563eb, #7c3aed);
-    color: white;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: 800;
-    font-size: 20px;
+    background: linear-gradient(135deg, #2563eb, #7c3aed); color: white;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 800; font-size: 20px;
+    width: 52px; height: 52px; border-radius: 50%;
 }
 
 .inbox-online-dot {
-    position: absolute;
-    bottom: 2px; right: 2px;
-    width: 12px; height: 12px;
-    border-radius: 50%;
-    background: #16a34a;
-    border: 2px solid white;
+    position: absolute; bottom: 2px; right: 2px;
+    width: 12px; height: 12px; border-radius: 50%;
+    background: #16a34a; border: 2px solid white;
 }
 
 .inbox-info { flex: 1; min-width: 0; }
 
 .inbox-name {
-    font-size: 15px;
-    font-weight: 700;
-    color: #111827;
-    margin-bottom: 3px;
+    font-size: 15px; font-weight: 700; color: #111827;
+    margin-bottom: 3px; display: flex; align-items: center; gap: 6px;
 }
 
+.pin-icon { font-size: 11px; }
+
 .inbox-preview {
-    font-size: 13px;
-    color: #9ca3af;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    font-size: 13px; color: #9ca3af;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     max-width: 220px;
 }
 
 .inbox-item.unread .inbox-preview { color: #374151; font-weight: 500; }
-
 .inbox-you { color: #6b7280; }
 
 .inbox-right {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 4px;
-    flex-shrink: 0;
+    display: flex; flex-direction: column;
+    align-items: flex-end; gap: 4px; flex-shrink: 0;
 }
 
 .inbox-time { font-size: 12px; color: #9ca3af; }
 .inbox-item.unread .inbox-time { color: #2563eb; font-weight: 600; }
-
 .inbox-unread-badge { color: #2563eb; font-size: 18px; }
 .inbox-seen { font-size: 12px; color: #2563eb; }
 
@@ -192,8 +201,11 @@ body.bg-dark .inbox-empty { background: #1e1e2e !important; border-color: #2d2d3
 body.bg-dark .inbox-item { border-color: #2d2d3d !important; color: #f1f5f9 !important; }
 body.bg-dark .inbox-item:hover { background: #2d2d3d !important; }
 body.bg-dark .inbox-item.unread { background: #1e3a5f !important; }
+body.bg-dark .inbox-item.pinned { border-left-color: #818cf8 !important; }
 body.bg-dark .inbox-name { color: #f1f5f9 !important; }
 body.bg-dark .inbox-empty h5 { color: #f1f5f9 !important; }
+body.bg-dark .inbox-section-label { color: #818cf8 !important; }
+body.bg-dark .inbox-section-divider { background: #2d2d3d !important; }
 </style>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
