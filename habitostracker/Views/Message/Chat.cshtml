@@ -676,6 +676,14 @@ async function startConnection() {
     await connection.invoke("JoinUserGroup", myId);
     await fetch("/Message/MarkAsSeen?senderId=" + receiverId, { method: "POST" });
     localStorage.setItem("currentChatUserId", receiverId);
+
+    // 🔥 verificar bloqueo al cargar
+    const blockCheck = await fetch(`/User/IsBlocked?userId=${receiverId}`);
+    const blockStatus = await blockCheck.json();
+    if (blockStatus.blocked) {
+        deshabilitarChat();
+        mostrarAnuncioBloqueo(true);
+    }
 }
 
 startConnection().catch(err => console.error(err));
@@ -1109,7 +1117,7 @@ async function denunciarUsuario() {
     toggleHeaderMenu();
     const motivos = [
         "Contenido inapropiado",
-        "Acoso o intimidación",
+        "Acoso o intimidación", 
         "Spam o publicidad",
         "Lenguaje ofensivo",
         "Otro"
@@ -1122,8 +1130,8 @@ async function denunciarUsuario() {
     );
 
     if (!motivo) return;
-    const idx = parseInt(motivo) - 1;
-    const reason = motivos[idx] ?? "Otro";
+    const idx = parseInt(motivo.trim()) - 1;
+    const reason = (idx >= 0 && idx < motivos.length) ? motivos[idx] : "Otro";
 
     const res = await fetch(`/User/ReportUser`, {
         method: "POST",
@@ -1152,9 +1160,12 @@ async function bloquearUsuario() {
             body: JSON.stringify({ blockedId: parseInt(receiverId) })
         });
         const data = await res.json();
-        if (data.success) showChatToast("✅ Usuario desbloqueado.");
+        if (data.success) {
+            showChatToast("✅ Usuario desbloqueado.");
+            setTimeout(() => location.reload(), 1500);
+        }
     } else {
-        if (!confirm("¿Bloquear a este usuario? Ya no podrás intercambiar mensajes.")) return;
+        if (!confirm("¿Bloquear a este usuario?")) return;
         const res = await fetch(`/User/BlockUser`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -1162,9 +1173,60 @@ async function bloquearUsuario() {
         });
         const data = await res.json();
         if (data.success) {
-            showChatToast("🚫 Usuario bloqueado.");
-            setTimeout(() => window.location.href = "/Message/Inbox", 1500);
+            // 🔥 mostrar anuncio en el chat
+            mostrarAnuncioBloqueo(true);
+            // 🔥 deshabilitar todo
+            deshabilitarChat();
         }
+    }
+}
+
+function mostrarAnuncioBloqueo(porMi) {
+    // quitar anuncio anterior si hay
+    document.getElementById("bloqueoBanner")?.remove();
+
+    const banner = document.createElement("div");
+    banner.id = "bloqueoBanner";
+    banner.style.cssText = `
+        text-align: center; padding: 10px 16px; margin: 8px 12px;
+        background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.2);
+        border-radius: 12px; font-size: 13px; color: #ef4444; font-weight: 500;
+    `;
+    banner.textContent = porMi
+        ? "🚫 Bloqueaste a este usuario"
+        : "⛔ Ya no puedes enviarle mensajes a esta persona";
+
+    chatBox.insertBefore(banner, document.getElementById("typingIndicator"));
+    chatBox.scrollTop = chatBox.scrollHeight;
+}
+
+function deshabilitarChat() {
+    // deshabilitar input y botones
+    document.getElementById("messageInput").disabled = true;
+    document.getElementById("messageInput").placeholder = "No puedes enviar mensajes";
+    document.getElementById("sendBtn").disabled = true;
+    document.getElementById("recordBtn").disabled = true;
+    document.querySelector(".bar-btn[onclick*='fileInput']").disabled = true;
+    document.querySelector(".bar-btn.emoji-toggle").disabled = true;
+
+    // actualizar botón del menú
+    const btnBloquear = document.querySelector("[onclick='bloquearUsuario()']");
+    if (btnBloquear) btnBloquear.textContent = "✅ Desbloquear";
+}
+
+async function toggleHeaderMenu() {
+    const menu = document.getElementById("headerMenu");
+    const isOpen = menu.style.display !== "none";
+    menu.style.display = isOpen ? "none" : "block";
+
+    if (!isOpen) {
+        const statusRes = await fetch(`/User/IsBlocked?userId=${receiverId}`);
+        const status = await statusRes.json();
+        const btnBloquear = menu.querySelector("[onclick='bloquearUsuario()']");
+        if (btnBloquear) {
+            btnBloquear.textContent = status.blocked ? "✅ Desbloquear" : "🚫 Bloquear";
+        }
+        if (status.blocked) deshabilitarChat();
     }
 }
 
@@ -1175,7 +1237,6 @@ function showChatToast(msg) {
         background: #1e293b; color: white; padding: 10px 20px;
         border-radius: 20px; font-size: 13px; font-weight: 600;
         z-index: 99999; box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-        animation: fadeIn 0.2s ease;
     `;
     t.textContent = msg;
     document.body.appendChild(t);

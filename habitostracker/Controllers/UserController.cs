@@ -539,75 +539,58 @@ namespace HabitTrackerApp.Controllers
         // 🚫 BLOQUEAR USUARIO
         // =====================================
         [HttpPost]
-        public async Task<IActionResult> BlockUser(int blockedId)
+        public async Task<IActionResult> BlockUser([FromBody] BlockDto dto)
         {
             var myId = int.Parse(User.FindFirst("UserId").Value);
+            if (myId == dto.BlockedId) return Json(new { success = false });
 
-            if (myId == blockedId) return Json(new { success = false });
-
-            var already = _context.Blocks.Any(b => b.BlockerId == myId && b.BlockedId == blockedId);
+            var already = _context.Blocks.Any(b => b.BlockerId == myId && b.BlockedId == dto.BlockedId);
             if (!already)
             {
                 _context.Blocks.Add(new Block
                 {
                     BlockerId = myId,
-                    BlockedId = blockedId,
+                    BlockedId = dto.BlockedId,
                     CreatedAt = DateTime.UtcNow
                 });
                 await _context.SaveChangesAsync();
             }
-
             return Json(new { success = true });
         }
 
-        // =====================================
-        // ✅ DESBLOQUEAR USUARIO
-        // =====================================
         [HttpPost]
-        public async Task<IActionResult> UnblockUser(int blockedId)
+        public async Task<IActionResult> UnblockUser([FromBody] BlockDto dto)
         {
             var myId = int.Parse(User.FindFirst("UserId").Value);
-
-            var block = _context.Blocks.FirstOrDefault(b => b.BlockerId == myId && b.BlockedId == blockedId);
+            var block = _context.Blocks.FirstOrDefault(b => b.BlockerId == myId && b.BlockedId == dto.BlockedId);
             if (block != null)
             {
                 _context.Blocks.Remove(block);
                 await _context.SaveChangesAsync();
             }
-
             return Json(new { success = true });
         }
 
-        // =====================================
-        // 🚩 DENUNCIAR USUARIO
-        // =====================================
         [HttpPost]
-        public async Task<IActionResult> ReportUser(int reportedId, string reason)
+        public async Task<IActionResult> ReportUser([FromBody] ReportDto dto)
         {
             var myId = int.Parse(User.FindFirst("UserId").Value);
+            if (myId == dto.ReportedId) return Json(new { success = false });
 
-            if (myId == reportedId) return Json(new { success = false });
-
-            // máximo 3 reportes del mismo usuario al mismo objetivo
-            var count = _context.Reports.Count(r => r.ReporterId == myId && r.ReportedId == reportedId);
+            var count = _context.Reports.Count(r => r.ReporterId == myId && r.ReportedId == dto.ReportedId);
             if (count >= 3) return Json(new { success = false, error = "Ya reportaste a este usuario" });
 
             _context.Reports.Add(new Report
             {
                 ReporterId = myId,
-                ReportedId = reportedId,
-                Reason = reason ?? "Sin motivo",
+                ReportedId = dto.ReportedId,
+                Reason = dto.Reason ?? "Sin motivo",
                 CreatedAt = DateTime.UtcNow
             });
-
             await _context.SaveChangesAsync();
-
             return Json(new { success = true });
         }
 
-        // =====================================
-        // 🔍 VERIFICAR SI ESTÁ BLOQUEADO
-        // =====================================
         [HttpGet]
         public IActionResult IsBlocked(int userId)
         {
@@ -616,6 +599,12 @@ namespace HabitTrackerApp.Controllers
             return Json(new { blocked });
         }
 
+        public class BlockDto { public int BlockedId { get; set; } }
+        public class ReportDto { public int ReportedId { get; set; } public string Reason { get; set; } }
+        // =====================================
+        // 🔍 VERIFICAR SI ESTÁ BLOQUEADO
+        // =====================================
+    
 
 
 
