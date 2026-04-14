@@ -89,7 +89,7 @@ options.ClientSecret = builder.Configuration["Google:ClientSecret"];
             builder.Services.AddSignalR();
             builder.Services.AddSingleton<OnlineUsersService>();
             builder.Services.AddSingleton<IUserIdProvider, HabitTrackerApp.Hubs.CustomUserIdProvider>();
-            builder.Services.AddSingleton<Microsoft.AspNetCore.SignalR.IUserIdProvider, HabitTrackerApp.UserIdProvider>();
+         
 
             // 🔥 Email
             builder.Services.AddScoped<EmailService>();
