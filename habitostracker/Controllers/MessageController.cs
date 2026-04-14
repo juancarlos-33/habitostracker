@@ -16,12 +16,14 @@ namespace HabitTrackerApp.Controllers
         private readonly HabitDbContext _context;
         private readonly IHubContext<ChatHub> _hubContext;
         private readonly CloudinaryService _cloudinaryService;
+        private readonly OnlineUsersService _onlineUsers;
 
-        public MessageController(HabitDbContext context, IHubContext<ChatHub> hubContext, CloudinaryService cloudinaryService)
+        public MessageController(HabitDbContext context, IHubContext<ChatHub> hubContext, CloudinaryService cloudinaryService, OnlineUsersService onlineUsers)
         {
             _context = context;
             _hubContext = hubContext;
             _cloudinaryService = cloudinaryService;
+            _onlineUsers = onlineUsers;
         }
 
         public IActionResult Inbox()
@@ -131,7 +133,6 @@ namespace HabitTrackerApp.Controllers
 
             var sender = _context.Users.FirstOrDefault(u => u.Id == senderId);
 
-            // 🔥 notificación con tipo de contenido
             var notifMsg = !string.IsNullOrEmpty(filePath)
                 ? (filePath.Contains("/video/upload/") ? "📹 Video" : "📷 Foto")
                 : $"💬 {content}";
@@ -152,15 +153,26 @@ namespace HabitTrackerApp.Controllers
             await _hubContext.Clients.Group(receiverId.ToString())
                 .SendAsync("ReceiveMessage", senderId, receiverId, senderName, content ?? "", filePath ?? "");
 
-            await _hubContext.Clients.Group(receiverId.ToString())
-                .SendAsync("ReceiveNotification", senderId, notifMsg, senderName,
-                    sender?.ProfileImage ?? "", "/Message/Chat?userId=" + senderId);
+            // 🔥 notificación solo si el receptor NO está online en el chat
+            var receiverOnline = _onlineUsers.IsOnline(receiverId.ToString());
 
-            await _hubContext.Clients.Group(senderId.ToString())
-                .SendAsync("MessageSentConfirm", message.Id, filePath ?? "");
+            if (!receiverOnline)
+            {
+                await _hubContext.Clients.Group(receiverId.ToString())
+                    .SendAsync("ReceiveNotification", senderId, notifMsg, senderName,
+                        sender?.ProfileImage ?? "", "/Message/Chat?userId=" + senderId);
+            }
+
+            // 🔥 chulos grises solo si el receptor está online
+            if (receiverOnline)
+            {
+                await _hubContext.Clients.Group(senderId.ToString())
+                    .SendAsync("MessageSentConfirm", message.Id, filePath ?? "");
+            }
 
             return Json(new { success = true, messageId = message.Id, filePath = filePath ?? "" });
         }
+
         private User GetCurrentUser()
         {
             var username = User.Identity.Name;
@@ -265,7 +277,6 @@ namespace HabitTrackerApp.Controllers
 
             _context.Messages.Add(message);
 
-            // 🔥 notificación de voz
             _context.Notifications.Add(new Notification
             {
                 UserId = receiverId,
@@ -280,15 +291,23 @@ namespace HabitTrackerApp.Controllers
             await _context.SaveChangesAsync();
 
             await _hubContext.Clients.Group(receiverId.ToString())
-      .SendAsync("ReceiveAudio", senderId, audioUrl);
+                .SendAsync("ReceiveAudio", senderId, audioUrl);
 
-            await _hubContext.Clients.Group(receiverId.ToString())
-                .SendAsync("ReceiveNotification", senderId, "🎤 Mensaje de voz", senderName,
-                    sender?.ProfileImage ?? sender?.ProfilePicture ?? "", "/Message/Chat?userId=" + senderId);
+            // 🔥 notificación solo si no está online
+            var receiverOnline = _onlineUsers.IsOnline(receiverId.ToString());
+            if (!receiverOnline)
+            {
+                await _hubContext.Clients.Group(receiverId.ToString())
+                    .SendAsync("ReceiveNotification", senderId, "🎤 Mensaje de voz", senderName,
+                        sender?.ProfileImage ?? sender?.ProfilePicture ?? "", "/Message/Chat?userId=" + senderId);
+            }
 
-            // 🔥 confirmar al emisor que llegó
-            await _hubContext.Clients.Group(senderId.ToString())
-                .SendAsync("MessageSentConfirm", message.Id, audioUrl);
+            // 🔥 chulos grises solo si está online
+            if (receiverOnline)
+            {
+                await _hubContext.Clients.Group(senderId.ToString())
+                    .SendAsync("MessageSentConfirm", message.Id, audioUrl);
+            }
 
             return Json(new { audioUrl, messageId = message.Id });
         }
