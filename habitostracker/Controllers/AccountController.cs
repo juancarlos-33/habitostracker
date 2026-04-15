@@ -69,7 +69,7 @@ namespace HabitTrackerApp.Controllers
 
         // ===== SEGURIDAD =====
         [HttpGet]
-        public IActionResult Security()
+        public async Task<IActionResult> Security()
         {
             var userIdClaim = User.FindFirst("UserId");
             if (userIdClaim == null) return RedirectToAction("Login");
@@ -86,9 +86,32 @@ namespace HabitTrackerApp.Controllers
 
             // 🔥 sesiones activas
             var activeSessions = _context.UserSessions
-                .Where(s => s.UserId == userId && s.IsActive)
-                .OrderByDescending(s => s.CreatedAt)
-                .ToList();
+       .Where(s => s.UserId == userId && s.IsActive)
+       .OrderByDescending(s => s.CreatedAt)
+       .ToList();
+
+            // 🔥 si no hay sesiones activas, crear una para la sesión actual
+            var currentToken = User.FindFirst("SessionToken")?.Value;
+            if (!string.IsNullOrEmpty(currentToken))
+            {
+                var exists = activeSessions.Any(s => s.SessionToken == currentToken);
+                if (!exists)
+                {
+                    var newSession = new UserSession
+                    {
+                        UserId = userId,
+                        SessionToken = currentToken,
+                        Device = user.Device,
+                        Browser = user.Browser,
+                        IpAddress = user.LastIp,
+                        CreatedAt = DateTime.UtcNow,
+                        IsActive = true
+                    };
+                    _context.UserSessions.Add(newSession);
+                    await _context.SaveChangesAsync();
+                    activeSessions.Insert(0, newSession);
+                }
+            }
 
             ViewBag.ActiveSessions = activeSessions;
 
