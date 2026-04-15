@@ -61,7 +61,6 @@
     background: white; border-radius: 20px; padding: 22px; margin-bottom: 14px;
     box-shadow: 0 2px 12px rgba(0,0,0,0.06); border: 1px solid rgba(0,0,0,0.05); transition: 0.2s;
 }
-.sec-card:hover { box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
 .sec-card.danger-card { border-color: rgba(239,68,68,0.2); }
 .sec-card.questions-card { border-color: rgba(99,102,241,0.2); }
 
@@ -69,14 +68,14 @@
 .sec-card-icon {
     width: 40px; height: 40px; border-radius: 12px;
     display: flex; align-items: center; justify-content: center;
-    font-size: 18px; flex-shrink: 0;
+    font-size: 18px; flex-shrink: 0; pointer-events: none;
 }
 .sec-card-icon.blue { background: rgba(37,99,235,0.1); }
 .sec-card-icon.green { background: rgba(34,197,94,0.1); }
 .sec-card-icon.purple { background: rgba(99,102,241,0.1); }
 .sec-card-icon.red { background: rgba(239,68,68,0.1); }
-.sec-card-title { font-size: 15px; font-weight: 700; color: #111827; margin: 0 0 2px; }
-.sec-card-desc { font-size: 12px; color: #9ca3af; margin: 0; }
+.sec-card-title { font-size: 15px; font-weight: 700; color: #111827; margin: 0 0 2px; pointer-events: none; }
+.sec-card-desc { font-size: 12px; color: #9ca3af; margin: 0; pointer-events: none; }
 
 .sec-info-grid { display: flex; flex-direction: column; gap: 8px; }
 .sec-info-item {
@@ -100,20 +99,21 @@
 
 .sec-toggle-row {
     display: flex; justify-content: space-between; align-items: center;
-    cursor: pointer; padding: 0; border: none; background: none; width: 100%; text-align: left;
+    cursor: pointer; padding: 0; border: none; background: none;
+    width: 100%; text-align: left; border-radius: 0;
 }
+.sec-toggle-inner { display: flex; align-items: center; gap: 12px; pointer-events: none; }
 .sec-toggle-arrow {
     width: 28px; height: 28px; border-radius: 8px; background: #f3f4f6;
     display: flex; align-items: center; justify-content: center;
-    font-size: 11px; color: #9ca3af; transition: 0.2s; flex-shrink: 0;
+    font-size: 11px; color: #9ca3af; transition: transform 0.2s, background 0.2s;
+    flex-shrink: 0; pointer-events: none;
 }
 .sec-toggle-row.open .sec-toggle-arrow { transform: rotate(180deg); background: #ede9fe; color: #6366f1; }
 
 .sec-box {
     display: none; margin-top: 18px; padding-top: 18px; border-top: 1px solid #f3f4f6;
-    animation: slideDown 0.2s ease;
 }
-@@keyframes slideDown { from{opacity:0;transform:translateY(-6px);} to{opacity:1;transform:translateY(0);} }
 
 .sec-field { margin-bottom: 12px; }
 .sec-field label {
@@ -165,7 +165,6 @@
 }
 .field-feedback.ok { background: #f0fdf4; color: #16a34a; border: 1px solid #86efac; }
 .field-feedback.err { background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; }
-
 .verify-pwd-note {
     font-size: 12px; color: #6b7280; background: #f9fafb;
     border: 1px solid #e5e7eb; border-radius: 10px;
@@ -180,7 +179,6 @@ body.bg-dark .sec-card-title { color: #f1f5f9 !important; }
 body.bg-dark .sec-info-item { background: #2d3748 !important; }
 body.bg-dark .sec-info-label { color: #64748b !important; }
 body.bg-dark .sec-info-value { color: #f1f5f9 !important; }
-body.bg-dark .sec-toggle-label { color: #f1f5f9 !important; }
 body.bg-dark .sec-toggle-arrow { background: #334155 !important; }
 body.bg-dark .sec-box { border-color: #2d3748 !important; }
 body.bg-dark .sec-input, body.bg-dark .sec-select { background: #2d3748 !important; border-color: #3d4d60 !important; color: #f1f5f9 !important; }
@@ -190,7 +188,34 @@ body.bg-dark .security-q-display { background: rgba(99,102,241,0.1) !important; 
 body.bg-dark .session-row { background: #14532d !important; border-color: #166534 !important; }
 body.bg-dark .sec-btn.danger-outline { background: #3f1010 !important; color: #f87171 !important; border-color: #7f1d1d !important; }
 body.bg-dark .verify-pwd-note { background: #1a2535 !important; border-color: #2d3748 !important; color: #64748b !important; }
+body.bg-dark .session-device { color: #4ade80 !important; }
 </style>
+
+<!-- MODAL CONFIRMAR ELIMINAR -->
+<div id="confirmDeleteModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:99999;align-items:center;justify-content:center;backdrop-filter:blur(6px);">
+    <div style="background:#1e293b;border-radius:22px;padding:32px 28px;max-width:360px;width:90%;border:1px solid rgba(255,255,255,0.08);box-shadow:0 24px 60px rgba(0,0,0,0.6);text-align:center;">
+        <div style="font-size:44px;margin-bottom:14px;">⚠️</div>
+        <h4 style="color:white;font-weight:800;margin:0 0 10px;font-size:17px;">¿Eliminar tu cuenta?</h4>
+        <p style="color:rgba(255,255,255,0.45);font-size:13px;margin:0 0 24px;line-height:1.6;">Esta acción es permanente. Todos tus datos serán eliminados para siempre.</p>
+        <div style="display:flex;gap:10px;">
+            <button type="button" onclick="cerrarConfirmDelete()" style="flex:1;padding:12px;border-radius:12px;border:1px solid #334155;background:#334155;color:#94a3b8;font-weight:700;font-size:13px;cursor:pointer;">Cancelar</button>
+            <button type="button" onclick="confirmarEliminar()" style="flex:1;padding:12px;border-radius:12px;border:none;background:#dc2626;color:white;font-weight:700;font-size:13px;cursor:pointer;">Sí, eliminar</button>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL CERRAR SESIONES -->
+<div id="logoutAllModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:99999;align-items:center;justify-content:center;backdrop-filter:blur(6px);">
+    <div style="background:#1e293b;border-radius:22px;padding:32px 28px;max-width:360px;width:90%;border:1px solid rgba(255,255,255,0.08);box-shadow:0 24px 60px rgba(0,0,0,0.6);text-align:center;">
+        <div style="font-size:44px;margin-bottom:14px;">🚪</div>
+        <h4 style="color:white;font-weight:800;margin:0 0 10px;font-size:17px;">¿Cerrar todas las sesiones?</h4>
+        <p style="color:rgba(255,255,255,0.45);font-size:13px;margin:0 0 24px;line-height:1.6;">Se cerrará la sesión en todos los dispositivos incluyendo este. Tendrás que volver a iniciar sesión.</p>
+        <div style="display:flex;gap:10px;">
+            <button type="button" onclick="cerrarLogoutModal()" style="flex:1;padding:12px;border-radius:12px;border:1px solid #334155;background:#334155;color:#94a3b8;font-weight:700;font-size:13px;cursor:pointer;">Cancelar</button>
+            <button type="button" onclick="confirmarLogoutAll()" style="flex:1;padding:12px;border-radius:12px;border:none;background:#dc2626;color:white;font-weight:700;font-size:13px;cursor:pointer;">Sí, cerrar todo</button>
+        </div>
+    </div>
+</div>
 
 <div class="sec-page">
 
@@ -267,16 +292,16 @@ body.bg-dark .verify-pwd-note { background: #1a2535 !important; border-color: #2
                 <div class="session-ip">@(Model.LastIp ?? "No disponible") · @(Model.Country ?? "")</div>
             </div>
         </div>
-        <button class="sec-btn danger-outline" data-no-loader onclick="logoutAll()">
+        <button type="button" class="sec-btn danger-outline" data-no-loader onclick="mostrarLogoutModal()">
             🚪 Cerrar todas las sesiones
         </button>
     </div>
 
     <!-- PREGUNTAS DE SEGURIDAD -->
     <div class="sec-card questions-card">
-        <button class="sec-toggle-row @(hasQuestions ? "" : "open")" data-no-loader
-                onclick="toggleSection('questions', this)">
-            <div class="sec-card-header" style="margin:0;gap:12px;">
+        <button type="button" class="sec-toggle-row @(hasQuestions ? "" : "open")"
+                data-no-loader data-section="questions">
+            <div class="sec-toggle-inner">
                 <div class="sec-card-icon purple">🛡️</div>
                 <div>
                     <div class="sec-card-title">Preguntas de seguridad</div>
@@ -287,17 +312,14 @@ body.bg-dark .verify-pwd-note { background: #1a2535 !important; border-color: #2
         </button>
 
         <div id="section-questions" class="sec-box" style="@(hasQuestions ? "" : "display:block;")">
-
             @if (hasQuestions)
             {
                 <div class="verify-pwd-note">
-                    🔒 Para actualizar tus preguntas de seguridad debes confirmar tu identidad con tu contraseña actual.
+                    🔒 Para actualizar tus preguntas debes confirmar tu identidad.
                 </div>
             }
-
             <form asp-controller="Account" asp-action="SaveSecurityQuestions" method="post">
                 @Html.AntiForgeryToken()
-
                 @for (int i = 1; i <= 3; i++)
                 {
                     var currentQ = i == 1 ? Model.SecurityQuestion1 :
@@ -311,13 +333,9 @@ body.bg-dark .verify-pwd-note { background: #1a2535 !important; border-color: #2
                                 @foreach (var q in questions)
                                 {
                                     if (currentQ == q)
-                                    {
-                                        <option value="@q" selected>@q</option>
-                                    }
+                                    { <option value="@q" selected>@q</option> }
                                     else
-                                    {
-                                        <option value="@q">@q</option>
-                                    }
+                                    { <option value="@q">@q</option> }
                                 }
                             </select>
                         </div>
@@ -328,34 +346,29 @@ body.bg-dark .verify-pwd-note { background: #1a2535 !important; border-color: #2
                         </div>
                     </div>
                 }
-
-              @if (hasQuestions)
-{
-    if (!Model.IsGoogleAccount)
-    {
-        <div class="sec-field" style="margin-top:4px;">
-            <label>🔑 Confirma tu contraseña para guardar cambios</label>
-            <input name="verifyPassword" type="password" class="sec-input"
-                   placeholder="Contraseña actual" autocomplete="off" />
-        </div>
-    }
-    else
-    {
-        var vQNum = new Random().Next(1, 4);
-        var vQText = vQNum == 1 ? Model.SecurityQuestion1 :
-                     vQNum == 2 ? Model.SecurityQuestion2 : Model.SecurityQuestion3;
-        <input type="hidden" name="verifySecurityQNum" value="@vQNum" />
-        <div class="verify-pwd-note">
-            🔒 Para actualizar tus preguntas debes verificar tu identidad.
-        </div>
-        <div class="sec-field">
-            <label>🔐 @vQText</label>
-            <input name="verifySecurityAnswer" type="text" class="sec-input"
-                   placeholder="Tu respuesta..." autocomplete="off" />
-        </div>
-    }
-}
-
+                @if (hasQuestions)
+                {
+                    if (!Model.IsGoogleAccount)
+                    {
+                        <div class="sec-field" style="margin-top:4px;">
+                            <label>🔑 Confirma tu contraseña para guardar cambios</label>
+                            <input name="verifyPassword" type="password" class="sec-input"
+                                   placeholder="Contraseña actual" autocomplete="off" />
+                        </div>
+                    }
+                    else
+                    {
+                        var vQNum = new Random().Next(1, 4);
+                        var vQText = vQNum == 1 ? Model.SecurityQuestion1 :
+                                     vQNum == 2 ? Model.SecurityQuestion2 : Model.SecurityQuestion3;
+                        <input type="hidden" name="verifySecurityQNum" value="@vQNum" />
+                        <div class="sec-field">
+                            <label>🔐 @vQText</label>
+                            <input name="verifySecurityAnswer" type="text" class="sec-input"
+                                   placeholder="Tu respuesta..." autocomplete="off" />
+                        </div>
+                    }
+                }
                 <button type="submit" class="sec-btn primary">
                     💾 @(hasQuestions ? "Actualizar preguntas" : "Guardar preguntas de seguridad")
                 </button>
@@ -367,8 +380,8 @@ body.bg-dark .verify-pwd-note { background: #1a2535 !important; border-color: #2
     @if (!Model.IsGoogleAccount)
     {
         <div class="sec-card">
-            <button class="sec-toggle-row" data-no-loader onclick="toggleSection('pwd', this)">
-                <div class="sec-card-header" style="margin:0;gap:12px;">
+            <button type="button" class="sec-toggle-row" data-no-loader data-section="pwd">
+                <div class="sec-toggle-inner">
                     <div class="sec-card-icon blue">🔑</div>
                     <div>
                         <div class="sec-card-title">Cambiar contraseña</div>
@@ -400,8 +413,8 @@ body.bg-dark .verify-pwd-note { background: #1a2535 !important; border-color: #2
 
     <!-- ELIMINAR CUENTA -->
     <div class="sec-card danger-card">
-        <button class="sec-toggle-row" data-no-loader onclick="toggleSection('del', this)">
-            <div class="sec-card-header" style="margin:0;gap:12px;">
+        <button type="button" class="sec-toggle-row" data-no-loader data-section="del">
+            <div class="sec-toggle-inner">
                 <div class="sec-card-icon red">⚠️</div>
                 <div>
                     <div class="sec-card-title" style="color:#dc2626;">Eliminar cuenta</div>
@@ -414,11 +427,9 @@ body.bg-dark .verify-pwd-note { background: #1a2535 !important; border-color: #2
             <div class="delete-warning">
                 ⚠️ Esta acción eliminará permanentemente tu cuenta, hábitos, mensajes y todos tus datos. No hay marcha atrás.
             </div>
-
             <form asp-controller="Account" asp-action="DeleteAccount" method="post"
                   onsubmit="return validarEliminar()">
                 @Html.AntiForgeryToken()
-
                 @if (hasQuestions && !string.IsNullOrEmpty(qText))
                 {
                     <div class="security-q-display">
@@ -432,7 +443,6 @@ body.bg-dark .verify-pwd-note { background: #1a2535 !important; border-color: #2
                         <div class="field-feedback" id="sec-feedback"></div>
                     </div>
                 }
-
                 @if (!Model.IsGoogleAccount)
                 {
                     <div class="sec-field">
@@ -451,7 +461,6 @@ body.bg-dark .verify-pwd-note { background: #1a2535 !important; border-color: #2
                                class="sec-input" placeholder="ELIMINAR" />
                     </div>
                 }
-
                 <button type="submit" class="sec-btn danger-solid">🗑️ Eliminar mi cuenta</button>
             </form>
         </div>
@@ -462,23 +471,61 @@ body.bg-dark .verify-pwd-note { background: #1a2535 !important; border-color: #2
 <script>
 let passwordValida = false;
 let securityValida = @(hasQuestions ? "false" : "true");
+let formEliminarPendiente = null;
 
-function toggleSection(id, btn) {
-    const el = document.getElementById("section-" + id);
-    if (!el) return;
-    const isOpen = el.style.display === "block";
-    el.style.display = isOpen ? "none" : "block";
-    // buscar el botón toggle más cercano
-    const toggleBtn = btn ? btn.closest(".sec-toggle-row") : null;
-    if (toggleBtn) toggleBtn.classList.toggle("open", !isOpen);
+// 🔥 toggleSection usando data-section en vez de onclick
+document.querySelectorAll(".sec-toggle-row[data-section]").forEach(btn => {
+    btn.addEventListener("click", function(e) {
+        e.stopPropagation();
+        const id = this.getAttribute("data-section");
+        const el = document.getElementById("section-" + id);
+        if (!el) return;
+        const isOpen = el.style.display === "block";
+        el.style.display = isOpen ? "none" : "block";
+        this.classList.toggle("open", !isOpen);
+    });
+});
+
+// abrir sección si no tiene preguntas
+@if (!hasQuestions)
+{
+    <text>
+    document.addEventListener("DOMContentLoaded", () => {
+        const el = document.getElementById("section-questions");
+        const btn = document.querySelector("[data-section='questions']");
+        if (el) el.style.display = "block";
+        if (btn) btn.classList.add("open");
+    });
+    </text>
 }
 
-function logoutAll() {
+// abrir sección del si hay error
+@if (TempData["Error"] != null)
+{
+    <text>
+    document.addEventListener("DOMContentLoaded", () => {
+        const el = document.getElementById("section-del");
+        const btn = document.querySelector("[data-section='del']");
+        if (el) el.style.display = "block";
+        if (btn) btn.classList.add("open");
+    });
+    </text>
+}
+
+function mostrarLogoutModal() {
+    document.getElementById("logoutAllModal").style.display = "flex";
+}
+
+function cerrarLogoutModal() {
+    document.getElementById("logoutAllModal").style.display = "none";
+}
+
+function confirmarLogoutAll() {
+    cerrarLogoutModal();
     fetch("/Account/LogoutAll", { method: "POST" })
         .then(() => window.location.href = "/Account/Login");
 }
 
-// 🔥 mostrar error inline sin alert ni bloqueo
 function mostrarErrorSec(msg) {
     const existing = document.getElementById("sec-error-inline");
     if (existing) existing.remove();
@@ -554,10 +601,10 @@ function validarEliminar() {
             return false;
         }
     }
-      // 🔥 mostrar modal en vez de confirm()
+
     formEliminarPendiente = document.querySelector("#section-del form");
     document.getElementById("confirmDeleteModal").style.display = "flex";
-    return false; // siempre detener el submit aquí
+    return false;
 }
 
 function cerrarConfirmDelete() {
@@ -571,31 +618,5 @@ function confirmarEliminar() {
         formEliminarPendiente.removeAttribute("onsubmit");
         formEliminarPendiente.submit();
     }
-}
-
-    <!-- MODAL CONFIRMAR ELIMINAR -->
-<div id="confirmDeleteModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:99999;align-items:center;justify-content:center;backdrop-filter:blur(4px);">
-    <div style="background:#1e293b;border-radius:20px;padding:32px 28px;max-width:380px;width:90%;border:1px solid rgba(255,255,255,0.08);box-shadow:0 20px 60px rgba(0,0,0,0.5);text-align:center;">
-        <div style="font-size:44px;margin-bottom:12px;">⚠️</div>
-        <h4 style="color:white;font-weight:800;margin:0 0 10px;">¿Eliminar tu cuenta?</h4>
-        <p style="color:rgba(255,255,255,0.5);font-size:13px;margin:0 0 24px;line-height:1.6;">Esta acción es permanente e irreversible. Todos tus datos serán eliminados para siempre.</p>
-        <div style="display:flex;gap:10px;">
-            <button onclick="cerrarConfirmDelete()" style="flex:1;padding:12px;border-radius:12px;border:1px solid #334155;background:#334155;color:#94a3b8;font-weight:700;font-size:14px;cursor:pointer;">Cancelar</button>
-            <button onclick="confirmarEliminar()" style="flex:1;padding:12px;border-radius:12px;border:none;background:#dc2626;color:white;font-weight:700;font-size:14px;cursor:pointer;">Sí, eliminar</button>
-        </div>
-    </div>
-</div>
-}
-
-@if (TempData["Error"] != null)
-{
-    <text>
-    document.addEventListener("DOMContentLoaded", () => {
-        const delSection = document.getElementById("section-del");
-        const delBtn = document.querySelector("[onclick=\"toggleSection('del', this)\"]");
-        if (delSection) { delSection.style.display = "block"; }
-        if (delBtn) delBtn.classList.add("open");
-    });
-    </text>
 }
 </script>
