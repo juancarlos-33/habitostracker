@@ -84,6 +84,13 @@ namespace HabitTrackerApp.Models
 
         // 🔕 silenciar notificaciones de chat
         public DateTime? MutedUntil { get; set; }
+        // 🔐 Preguntas de seguridad
+        public string? SecurityQuestion1 { get; set; }
+        public string? SecurityAnswer1 { get; set; }
+        public string? SecurityQuestion2 { get; set; }
+        public string? SecurityAnswer2 { get; set; }
+        public string? SecurityQuestion3 { get; set; }
+        public string? SecurityAnswer3 { get; set; }
 
         // 📌 chats anclados (IDs separados por coma)
         public string? PinnedChats { get; set; }

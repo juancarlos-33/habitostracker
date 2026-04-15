@@ -78,28 +78,126 @@ namespace HabitTrackerApp.Controllers
             var user = _context.Users.FirstOrDefault(u => u.Id == userId);
             if (user == null) return RedirectToAction("Login");
 
+            // 🔥 si no tiene preguntas de seguridad, redirigir a configurarlas
+            bool hasQuestions = !string.IsNullOrEmpty(user.SecurityQuestion1) &&
+                                !string.IsNullOrEmpty(user.SecurityQuestion2) &&
+                                !string.IsNullOrEmpty(user.SecurityQuestion3);
+
+            ViewBag.HasSecurityQuestions = hasQuestions;
+
+            // 🔥 elegir pregunta aleatoria y guardarla en sesión
+            if (hasQuestions)
+            {
+                var rng = new Random();
+                int qNum = rng.Next(1, 4);
+                HttpContext.Session.SetInt32("SecurityQuestionNum", qNum);
+                ViewBag.SecurityQuestionNum = qNum;
+            }
+
+            return View(user);
+
             return View(user);
         }
 
-        // ===== ELIMINAR CUENTA =====
+        // 🔥 GUARDAR PREGUNTAS DE SEGURIDAD
         [HttpPost]
-        public async Task<IActionResult> DeleteAccount(string password, string confirmText)
+        public async Task<IActionResult> SaveSecurityQuestions(
+            string q1, string a1,
+            string q2, string a2,
+            string q3, string a3)
         {
             var userIdClaim = User.FindFirst("UserId");
-            if (userIdClaim == null)
-                return RedirectToAction("Login");
+            if (userIdClaim == null) return RedirectToAction("Login");
 
             var userId = int.Parse(userIdClaim.Value);
             var user = _context.Users.FirstOrDefault(u => u.Id == userId);
+            if (user == null) return RedirectToAction("Login");
 
-            if (user == null)
-                return NotFound();
+            if (string.IsNullOrWhiteSpace(q1) || string.IsNullOrWhiteSpace(a1) ||
+                string.IsNullOrWhiteSpace(q2) || string.IsNullOrWhiteSpace(a2) ||
+                string.IsNullOrWhiteSpace(q3) || string.IsNullOrWhiteSpace(a3))
+            {
+                TempData["Error"] = "Debes completar todas las preguntas y respuestas.";
+                return RedirectToAction("Security");
+            }
 
-            // 🔥 SI ES GOOGLE
+            user.SecurityQuestion1 = q1.Trim();
+            user.SecurityAnswer1 = BCrypt.Net.BCrypt.HashPassword(a1.Trim().ToLower());
+            user.SecurityQuestion2 = q2.Trim();
+            user.SecurityAnswer2 = BCrypt.Net.BCrypt.HashPassword(a2.Trim().ToLower());
+            user.SecurityQuestion3 = q3.Trim();
+            user.SecurityAnswer3 = BCrypt.Net.BCrypt.HashPassword(a3.Trim().ToLower());
+
+            await _context.SaveChangesAsync();
+
+            TempData["Success"] = "✅ Preguntas de seguridad guardadas correctamente.";
+            return RedirectToAction("Security");
+        }
+
+        // 🔥 VERIFICAR RESPUESTA DE SEGURIDAD (para eliminar cuenta)
+        [HttpPost]
+        public IActionResult VerifySecurityAnswer([FromBody] SecurityAnswerDto dto)
+        {
+            var userIdClaim = User.FindFirst("UserId");
+            if (userIdClaim == null) return Json(new { valid = false });
+
+            var userId = int.Parse(userIdClaim.Value);
+            var user = _context.Users.FirstOrDefault(u => u.Id == userId);
+            if (user == null) return Json(new { valid = false });
+
+            string? storedHash = dto.QuestionNumber switch
+            {
+                1 => user.SecurityAnswer1,
+                2 => user.SecurityAnswer2,
+                3 => user.SecurityAnswer3,
+                _ => null
+            };
+
+            if (string.IsNullOrEmpty(storedHash))
+                return Json(new { valid = false });
+
+            var isValid = BCrypt.Net.BCrypt.Verify(dto.Answer.Trim().ToLower(), storedHash);
+            return Json(new { valid = isValid });
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> DeleteAccount(string password, string confirmText, string securityAnswer)
+        {
+            var userIdClaim = User.FindFirst("UserId");
+            if (userIdClaim == null) return RedirectToAction("Login");
+
+            var userId = int.Parse(userIdClaim.Value);
+            var user = _context.Users.FirstOrDefault(u => u.Id == userId);
+            if (user == null) return NotFound();
+
+            // 🔥 verificar pregunta de seguridad desde sesión
+            bool hasQuestions = !string.IsNullOrEmpty(user.SecurityAnswer1) &&
+                                !string.IsNullOrEmpty(user.SecurityAnswer2) &&
+                                !string.IsNullOrEmpty(user.SecurityAnswer3);
+
+            if (hasQuestions)
+            {
+                var securityQuestionNumber = HttpContext.Session.GetInt32("SecurityQuestionNum") ?? 1;
+
+                string? storedHash = securityQuestionNumber switch
+                {
+                    1 => user.SecurityAnswer1,
+                    2 => user.SecurityAnswer2,
+                    3 => user.SecurityAnswer3,
+                    _ => null
+                };
+
+                if (string.IsNullOrWhiteSpace(securityAnswer) || string.IsNullOrEmpty(storedHash) ||
+                    !BCrypt.Net.BCrypt.Verify(securityAnswer.Trim().ToLower(), storedHash))
+                {
+                    TempData["Error"] = "Respuesta de seguridad incorrecta.";
+                    return RedirectToAction("Security");
+                }
+            }
+
             if (user.IsGoogleAccount)
             {
-                if (string.IsNullOrWhiteSpace(confirmText) ||
-                    confirmText.Trim().ToUpper() != "ELIMINAR")
+                if (string.IsNullOrWhiteSpace(confirmText) || confirmText.Trim().ToUpper() != "ELIMINAR")
                 {
                     TempData["Error"] = "Debes escribir ELIMINAR para confirmar.";
                     return RedirectToAction("Security");
@@ -107,13 +205,11 @@ namespace HabitTrackerApp.Controllers
             }
             else
             {
-                // 🔥 USUARIO NORMAL
                 if (string.IsNullOrWhiteSpace(password))
                 {
                     TempData["Error"] = "Por favor ingresa tu contraseña para confirmar.";
                     return RedirectToAction("Security");
                 }
-
                 if (!BCrypt.Net.BCrypt.Verify(password, user.PasswordHash))
                 {
                     TempData["Error"] = "Contraseña incorrecta. Intenta de nuevo.";
@@ -121,14 +217,11 @@ namespace HabitTrackerApp.Controllers
                 }
             }
 
-            // 🔥 ELIMINAR DATOS
-
             var habits = _context.Habits.Where(h => h.UserId == userId);
             _context.Habits.RemoveRange(habits);
 
             var messages = _context.Messages
-                .Where(m => m.SenderId == userId || m.ReceiverId == userId)
-                .ToList();
+                .Where(m => m.SenderId == userId || m.ReceiverId == userId).ToList();
 
             foreach (var msg in messages)
             {
@@ -138,19 +231,23 @@ namespace HabitTrackerApp.Controllers
 
             var follows = _context.Follows
                 .Where(f => f.FollowerId == userId || f.FollowingId == userId);
-
             _context.Follows.RemoveRange(follows);
 
             await SendGoodbyeEmail(user);
-
             _context.Users.Remove(user);
-
             await _context.SaveChangesAsync();
 
             await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-
             return RedirectToAction("Login");
         }
+
+        public class SecurityAnswerDto
+        {
+            public int QuestionNumber { get; set; }
+            public string Answer { get; set; } = "";
+        }
+        // ===== ELIMINAR CUENTA =====
+      
 
         [HttpPost]
         public IActionResult VerifyPassword(string password)
