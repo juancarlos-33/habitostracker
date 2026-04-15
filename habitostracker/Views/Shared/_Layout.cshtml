@@ -7,366 +7,401 @@
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
 <style>
-body { font-family: 'Inter', sans-serif; transition: background 0.3s ease, color 0.3s ease; }
+:root {
+    --primary: #2563eb;
+    --primary-dark: #1d4ed8;
+    --accent: #7c3aed;
+    --surface: #ffffff;
+    --surface-2: #f8fafc;
+    --border: rgba(0,0,0,0.07);
+    --text: #111827;
+    --text-muted: #6b7280;
+    --nav-bg: rgba(255,255,255,0.88);
+    --sidebar-bg: linear-gradient(180deg, #0f172a 0%, #1e293b 100%);
+    --radius: 16px;
+    --shadow: 0 8px 32px rgba(0,0,0,0.08);
+}
 
-.chat-bubble { padding:10px 14px; border-radius:18px; font-size:14px; line-height:1.4; display:inline-block; max-width:70%; word-wrap:break-word; box-shadow:0 2px 6px rgba(0,0,0,0.08); }
-.me-bubble { background:linear-gradient(135deg,#2563eb,#3b82f6); color:white; border-bottom-right-radius:4px; }
-.other-bubble { background:#f1f5f9; color:#111827; border-bottom-left-radius:4px; }
+body.bg-dark {
+    --surface: #0f172a;
+    --surface-2: #1e293b;
+    --border: rgba(255,255,255,0.07);
+    --text: #f1f5f9;
+    --text-muted: #64748b;
+    --nav-bg: rgba(15,23,42,0.92);
+}
 
-.navbar-brand { color: #000 !important; font-weight: 700; letter-spacing: 0.5px; }
-.navbar-brand:hover { color: #000 !important; }
-body.bg-dark .navbar-brand { color: #fff !important; }
-body.bg-dark .navbar-brand:hover { color: #fff !important; }
+* { box-sizing: border-box; }
+body { font-family: 'Plus Jakarta Sans', sans-serif; transition: background 0.3s, color 0.3s; background: var(--surface-2); color: var(--text); }
 
+/* ── NAVBAR ─────────────────────────────── */
+.ht-navbar {
+    position: sticky; top: 0; z-index: 1000;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 20px;
+    margin: 10px 12px;
+    border-radius: 18px;
+    background: var(--nav-bg);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow);
+    transition: background 0.3s, border 0.3s;
+}
+
+.ht-nav-left { display: flex; align-items: center; gap: 10px; }
+.ht-nav-center { position: absolute; left: 50%; transform: translateX(-50%); }
+.ht-nav-right { display: flex; align-items: center; gap: 8px; }
+
+.ht-brand {
+    font-size: 17px; font-weight: 800; letter-spacing: -0.3px;
+    background: linear-gradient(135deg, var(--primary), var(--accent));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    text-decoration: none;
+}
+
+/* ── AVATAR ─────────────────────────────── */
+.ht-avatar-btn { background: none; border: none; padding: 0; cursor: pointer; flex-shrink: 0; position: relative; }
+.ht-avatar-img { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; border: 2px solid rgba(99,102,241,0.4); transition: 0.2s; }
+.ht-avatar-letter {
+    width: 36px; height: 36px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--primary), var(--accent));
+    color: white; display: flex; align-items: center; justify-content: center;
+    font-size: 14px; font-weight: 800; border: 2px solid rgba(99,102,241,0.4);
+    transition: 0.2s;
+}
+.ht-avatar-btn:hover .ht-avatar-img,
+.ht-avatar-btn:hover .ht-avatar-letter { transform: scale(1.05); box-shadow: 0 0 0 3px rgba(99,102,241,0.3); }
+
+/* ── ICON BTNS ──────────────────────────── */
+.ht-icon-btn {
+    width: 36px; height: 36px; border-radius: 10px;
+    border: none; background: transparent; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 17px; transition: 0.15s; color: var(--text);
+    position: relative;
+}
+.ht-icon-btn:hover { background: rgba(99,102,241,0.1); transform: scale(1.05); }
+.ht-icon-btn .notif-dot {
+    position: absolute; top: 4px; right: 4px;
+    width: 8px; height: 8px; border-radius: 50%;
+    background: #ef4444; border: 2px solid var(--nav-bg);
+    animation: pulseDot 2s infinite;
+}
+@@keyframes pulseDot { 0%,100%{transform:scale(1);} 50%{transform:scale(1.3);} }
+
+/* ── DROPDOWN ───────────────────────────── */
+.ht-dropdown { position: relative; }
+.ht-dropdown-menu {
+    position: absolute; top: calc(100% + 10px); right: 0;
+    min-width: 260px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 8px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+    opacity: 0; transform: translateY(-8px) scale(0.97);
+    pointer-events: none;
+    transition: opacity 0.18s, transform 0.18s;
+    z-index: 9999;
+}
+.ht-dropdown.open .ht-dropdown-menu { opacity: 1; transform: translateY(0) scale(1); pointer-events: all; }
+
+.ht-dropdown-header {
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px 14px 10px; border-bottom: 1px solid var(--border); margin-bottom: 6px;
+}
+.ht-dh-avatar { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; flex-shrink: 0; border: 2px solid var(--border); }
+.ht-dh-letter {
+    width: 44px; height: 44px; border-radius: 50%; flex-shrink: 0;
+    background: linear-gradient(135deg, var(--primary), var(--accent));
+    color: white; display: flex; align-items: center; justify-content: center;
+    font-size: 17px; font-weight: 800;
+}
+.ht-dh-name { font-weight: 700; font-size: 14px; color: var(--text); }
+.ht-dh-role { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+
+.ht-menu-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 12px; border-radius: 12px;
+    font-size: 13px; font-weight: 600; color: var(--text);
+    text-decoration: none; transition: 0.15s;
+    width: 100%; border: none; background: transparent; cursor: pointer; text-align: left;
+}
+.ht-menu-item:hover { background: rgba(99,102,241,0.08); color: var(--primary); }
+.ht-menu-item.danger { color: #ef4444; }
+.ht-menu-item.danger:hover { background: rgba(239,68,68,0.08); }
+.ht-menu-item .mi-icon { font-size: 16px; flex-shrink: 0; width: 22px; text-align: center; }
+.ht-menu-item .mi-badge {
+    margin-left: auto; background: #ef4444; color: white;
+    font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 20px;
+}
+.ht-menu-divider { height: 1px; background: var(--border); margin: 6px 8px; }
+
+/* ── SIDEBAR ────────────────────────────── */
+.ht-sidebar {
+    width: 250px; height: 100vh;
+    background: var(--sidebar-bg);
+    padding: 24px 14px;
+    position: fixed; left: -270px; top: 0;
+    display: flex; flex-direction: column; gap: 4px;
+    transition: left 0.3s cubic-bezier(0.34,1.56,0.64,1);
+    z-index: 9999; overflow-y: auto;
+}
+.ht-sidebar.show { left: 0; }
+
+.ht-sidebar-logo {
+    font-size: 16px; font-weight: 800; color: white;
+    padding: 12px 14px; border-radius: 14px;
+    background: linear-gradient(135deg, var(--primary), var(--accent));
+    box-shadow: 0 4px 20px rgba(37,99,235,0.4);
+    margin-bottom: 16px; text-align: center;
+    letter-spacing: -0.3px;
+}
+
+.ht-sidebar-section {
+    font-size: 10px; font-weight: 700; color: rgba(255,255,255,0.3);
+    text-transform: uppercase; letter-spacing: 1px;
+    padding: 8px 14px 4px;
+}
+
+.ht-sidebar-link {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 14px; border-radius: 12px;
+    color: rgba(255,255,255,0.65); text-decoration: none;
+    font-size: 13px; font-weight: 600;
+    transition: all 0.15s;
+}
+.ht-sidebar-link:hover {
+    background: rgba(255,255,255,0.08);
+    color: white; transform: translateX(4px);
+}
+.ht-sidebar-link.active {
+    background: linear-gradient(135deg, var(--primary), var(--accent));
+    color: white; box-shadow: 0 4px 14px rgba(37,99,235,0.35);
+}
+.ht-sidebar-link .sl-icon { font-size: 16px; width: 20px; text-align: center; flex-shrink: 0; }
+
+/* ── OVERLAY ────────────────────────────── */
+#ht-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.4); backdrop-filter: blur(3px);
+    opacity: 0; visibility: hidden; transition: 0.3s; z-index: 9998;
+}
+#ht-overlay.show { opacity: 1; visibility: visible; }
+
+/* ── LOADER ─────────────────────────────── */
+#ht-loader {
+    position: fixed; inset: 0; z-index: 99999;
+    display: none; flex-direction: column;
+    align-items: center; justify-content: center;
+    background: rgba(0,0,0,0.08); backdrop-filter: blur(8px);
+    animation: fadeIn 0.2s ease;
+}
+@@keyframes fadeIn { from{opacity:0;} to{opacity:1;} }
+@@keyframes bounce { 0%,100%{transform:translateY(0);} 50%{transform:translateY(-12px);} }
+@@keyframes fadeText { 0%,100%{opacity:0.4;} 50%{opacity:1;} }
+
+.ht-loader-gif { width: 160px; height: 160px; animation: bounce 1.4s infinite; filter: drop-shadow(0 8px 20px rgba(0,0,0,0.2)); }
+.ht-loader-text { margin-top: 12px; font-size: 13px; font-weight: 600; color: white; animation: fadeText 1.4s infinite; }
+.ht-loader-bar-wrap { width: 180px; height: 4px; background: rgba(255,255,255,0.2); border-radius: 10px; margin-top: 10px; overflow: hidden; }
+.ht-loader-bar { height: 100%; background: linear-gradient(90deg, #4ade80, #22c55e); border-radius: 10px; transition: width 0.2s; width: 0%; }
+
+/* ── NOTIF CONTAINER ────────────────────── */
+#ht-notifs { position: fixed; top: 76px; right: 16px; z-index: 999999; display: flex; flex-direction: column; gap: 10px; pointer-events: none; max-width: 340px; width: calc(100vw - 32px); }
+
+/* ── CONTENT ────────────────────────────── */
+.ht-content { padding: 24px 20px; min-height: 100vh; }
+
+/* ── DARK MODE ──────────────────────────── */
+body.bg-dark .ht-navbar { background: var(--nav-bg); border-color: var(--border); }
+body.bg-dark .ht-dropdown-menu { background: #0f172a; border-color: rgba(255,255,255,0.08); }
+body.bg-dark .ht-menu-item:hover { background: rgba(99,102,241,0.12); }
+body.bg-dark .ht-menu-divider { background: rgba(255,255,255,0.07); }
+body.bg-dark .ht-dropdown-header { border-color: rgba(255,255,255,0.07); }
+
+/* legacy compat */
 body.bg-dark { color: #e4e6eb; }
-body.bg-dark h1, body.bg-dark h2, body.bg-dark h3, body.bg-dark h4, body.bg-dark h5 { color: #fff; }
+body.bg-dark h1,body.bg-dark h2,body.bg-dark h3,body.bg-dark h4,body.bg-dark h5 { color: #fff; }
 body.bg-dark label { color: #ccc !important; }
-body.bg-dark input, body.bg-dark textarea, body.bg-dark select { background-color: #1e1e1e !important; color: #fff !important; border: 1px solid #444 !important; }
+body.bg-dark input,body.bg-dark textarea,body.bg-dark select { background-color: #1e1e1e !important; color: #fff !important; border: 1px solid #444 !important; }
 body.bg-dark ::placeholder { color: #bbb !important; }
 body.bg-dark table { color: #fff; }
 body.bg-dark th { background-color: #2a2a2a; color: #fff; }
-body.bg-dark .card, body.bg-dark .shadow-sm, body.bg-dark .p-3, body.bg-dark .p-4 { background-color: #1e1e1e !important; color: #fff !important; border: 1px solid #333 !important; }
-body.bg-dark .card { background-color: #1f1f2e !important; color: white !important; }
-body.bg-dark .table { color: white !important; }
-body.bg-dark .table thead { background-color: #2a2a3d !important; }
+body.bg-dark .card,body.bg-dark .shadow-sm { background-color: #1e1e2e !important; color: #fff !important; border: 1px solid #2d2d3d !important; }
 body.bg-dark .modal-content { background-color: #1f1f2e; color: white; }
-body.bg-dark .sec-card { background: #1e1e1e !important; color: #fff !important; border: 1px solid #333; }
-body.bg-dark .sec-card * { color: #fff; }
-body.bg-dark .sec-container > div { background-color: #1e1e1e !important; color: #fff !important; }
-body.bg-dark .sec-toggle { background-color: #2a2a2a !important; color: #fff !important; }
-body.bg-dark .sec-danger { background-color: #3a1a1a !important; color: #ffb3b3 !important; }
-body.bg-dark .sec-btn.danger { background: #842029 !important; color: #fff !important; border: none; }
-body.bg-dark .sec-btn.danger:hover { background: #a52834 !important; }
-body.bg-dark #chatBox { background-color: #121212 !important; }
-body.bg-dark #chatBox > div > div { color: #fff !important; }
-body.bg-dark #chatBox > div[style*="flex-start"] > div { background-color: #2a2a2a !important; color: #fff !important; }
-body.bg-dark #chatBox > div[style*="flex-end"] > div { background: linear-gradient(135deg, #4e73df, #224abe); color: #fff !important; }
 body.bg-dark .post-card { background-color: #1e1e1e !important; color: #fff !important; border: 1px solid #333; }
-body.bg-dark .post-description, body.bg-dark .post-header { color: #fff !important; }
-body.bg-dark .post-image, body.bg-dark .post-image-container { background-color: #121212 !important; }
-body.bg-dark .help-card { background-color: #1e1e1e !important; color: #fff !important; border: 1px solid #333; box-shadow: 0 8px 20px rgba(0,0,0,0.5); }
-body.bg-dark .help-card * { color: #fff; }
-body.bg-dark .help-card .text-muted { color: #bbb !important; }
-body.bg-dark .help-contact { background-color: #1e1e1e !important; color: #fff !important; border: 1px solid #333; }
-body.bg-dark .help-contact p, body.bg-dark .help-contact a { color: #fff !important; }
-body.bg-dark .help-contact:hover { background-color: #2a2a2a; }
-body.bg-dark .guest-container { background-color: #1e1e1e !important; color: #fff !important; border: 1px solid #333; }
-body.bg-dark .guest-info { background-color: #2a2a2a !important; color: #fff !important; }
-body.bg-dark .guest-container input { background-color: #121212 !important; color: #fff !important; border: 1px solid #444; }
-body.bg-dark .guest-container p, body.bg-dark .guest-container label, body.bg-dark .guest-container li { color: #ddd !important; }
-body.bg-dark .guest-container .btn-primary { background: linear-gradient(135deg, #4e73df, #224abe); border: none; }
-body.bg-dark .dropdown-menu { background-color: #1e1e1e; border: 1px solid #333; }
-body.bg-dark .dropdown-menu a { color: #fff !important; }
-body.bg-dark .dropdown-menu a:hover { background-color: #2a2a2a; }
-body.bg-dark .dropdown-menu-custom { background: #1e1e2e !important; border-color: #2d2d3d !important; }
-body.bg-dark .dropdown-header-name { color: #f1f5f9 !important; }
-body.bg-dark .dropdown-item-custom { color: #cbd5e1 !important; }
-body.bg-dark .dropdown-item-custom:hover { background: #2d2d3d !important; color: #f1f5f9 !important; }
-body.bg-dark .dropdown-item-custom.text-danger { color: #f87171 !important; }
-body.bg-dark .dropdown-item-custom.text-primary { color: #60a5fa !important; }
-body.bg-dark .notification-card { background: #1e293b !important; color: #fff !important; border: 1px solid rgba(255,255,255,0.1); }
-body.bg-dark .notification-card:hover { background: #334155 !important; transform: scale(1.01); }
+body.bg-dark .notification-card { background: #1e293b !important; color: #fff !important; }
+body.bg-dark .notification-card:hover { background: #334155 !important; }
 body.bg-dark .notification-message { color: #f1f5f9 !important; }
 body.bg-dark .notification-time { color: #94a3b8 !important; }
-body.bg-dark .navbar { background-color: #121212 !important; border-bottom: 1px solid #2a2a2a; }
-body.bg-dark .navbar * { color: #fff !important; }
-body.bg-dark .custom-navbar { background-color: #121212 !important; }
-body.bg-dark .custom-navbar * { color: #fff !important; }
-body.bg-dark .bg-dark .card, body.bg-dark .bg-dark .list-group-item { background-color: #1e1e1e !important; color: #fff !important; }
+body.bg-dark .dropdown-menu { background-color: #1e1e1e; border: 1px solid #333; }
+body.bg-dark .dropdown-menu a { color: #fff !important; }
+body.bg-dark .sec-card { background: #1e1e1e !important; color: #fff !important; border: 1px solid #333; }
+body.bg-dark .help-card { background-color: #1e1e1e !important; color: #fff !important; border: 1px solid #333; }
+body.bg-dark .guest-container { background-color: #1e1e1e !important; color: #fff !important; border: 1px solid #333; }
+body.bg-dark .table { color: white !important; }
+body.bg-dark .table thead { background-color: #2a2a3d !important; }
 
-.navbar-custom { background: linear-gradient(145deg, #0f172a, #1e293b); border-radius: 20px; box-shadow: 0 8px 25px rgba(0,0,0,0.4); }
-
-.navbar { border-radius: 14px; margin: 12px; padding: 10px 20px; backdrop-filter: blur(10px); background: rgba(255,255,255,0.85) !important; box-shadow: 0 8px 25px rgba(0,0,0,0.08); display: flex; align-items: center; justify-content: space-between; }
-.navbar .d-flex { flex-direction: row !important; flex-wrap: nowrap !important; }
-.navbar-light, .bg-white { background-color: #ffffff !important; }
-.custom-navbar { background-color: #ffffff; }
-
-@@media (min-width: 992px) {
-    .navbar-toggler { display: none !important; }
-    .nav-left-toggle { display: none !important; }
+/* ── TOAST NOTIF ────────────────────────── */
+.ht-notif-card {
+    background: rgba(15,23,42,0.94);
+    backdrop-filter: blur(14px);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 18px; padding: 14px 16px;
+    display: flex; align-items: center; gap: 12px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    cursor: pointer; pointer-events: all;
+    transform: translateX(120%);
+    transition: transform 0.4s cubic-bezier(0.34,1.56,0.64,1), opacity 0.3s;
+    opacity: 0; position: relative; overflow: hidden;
+}
+.ht-notif-card.show { transform: translateX(0); opacity: 1; }
+.ht-notif-card.hide { transform: translateX(120%); opacity: 0; }
+.ht-notif-progress {
+    position: absolute; bottom: 0; left: 0; height: 3px;
+    background: linear-gradient(90deg, var(--primary), var(--accent));
+    border-radius: 0 0 18px 18px; width: 100%;
+    transition: width 4s linear;
 }
 
-.dropdown-trigger { display: flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.15); border-radius: 50px; padding: 6px 14px 6px 6px; cursor: pointer; transition: 0.2s; color: inherit; }
-.dropdown-trigger:hover { background: rgba(255,255,255,0.2); }
-.dropdown-username { font-size: 14px; max-width: 100px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.dropdown-chevron { font-size: 12px; opacity: 0.6; }
+@@keyframes spin { 0%{transform:rotate(0deg);} 100%{transform:rotate(360deg);} }
 
-.dropdown-menu-custom { min-width: 240px; border-radius: 18px !important; border: 1px solid rgba(0,0,0,0.08) !important; box-shadow: 0 12px 40px rgba(0,0,0,0.15) !important; padding: 8px !important; margin-top: 8px !important; position: fixed !important; top: 70px !important; right: 12px !important; left: auto !important; z-index: 99999 !important; }
-.dropdown-user-header { display: flex; align-items: center; gap: 12px; padding: 12px 14px; }
-.dropdown-header-avatar { width: 46px; height: 46px; border-radius: 50%; object-fit: cover; border: 2px solid #e5e7eb; flex-shrink: 0; }
-.dropdown-header-letter { width: 46px; height: 46px; border-radius: 50%; background: linear-gradient(135deg, #2563eb, #7c3aed); color: white; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 800; flex-shrink: 0; }
-.dropdown-header-name { font-weight: 700; font-size: 15px; color: #111827; }
-.dropdown-header-role { font-size: 12px; color: #9ca3af; margin-top: 2px; }
-.dropdown-item-custom { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-radius: 12px; font-size: 14px; font-weight: 500; color: #374151; text-decoration: none; transition: 0.15s; width: 100%; border: none; background: transparent; cursor: pointer; text-align: left; }
-.dropdown-item-custom:hover { background: #f3f4f6; color: #111827; }
-.di-icon { font-size: 18px; flex-shrink: 0; }
-.di-badge { margin-left: auto; background: #ef4444; color: white; font-size: 11px; font-weight: 700; padding: 2px 7px; border-radius: 20px; }
-.di-badge-wrap { margin-left: auto; }
+/* ── MOBILE ─────────────────────────────── */
+@@media (max-width: 768px) {
+    .ht-content { padding: 16px 14px; }
+    .ht-navbar { margin: 8px; padding: 8px 14px; }
+}
 
-.nav-icon-btn { background: none; border: none; color: white; font-size: 20px; padding: 6px 10px; border-radius: 10px; transition: 0.2s; cursor: pointer; }
-.nav-icon-btn:hover { background: rgba(255,255,255,0.1); }
-
-.theme-btn { background: none; border: none; color: #facc15; padding: 6px 10px; border-radius: 10px; font-size: 20px; transition: 0.2s; cursor: pointer; }
-.theme-btn:hover { background: rgba(255,255,255,0.1); transform: scale(1.1); }
-
-.text-gradient { background: linear-gradient(90deg, #60a5fa, #a78bfa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-
-.nav-avatar-btn { background: none; border: none; padding: 0; cursor: pointer; flex-shrink: 0; }
-.nav-avatar-photo { width: 38px; height: 38px; border-radius: 50%; object-fit: cover; border: 2px solid rgba(255,255,255,0.4); }
-.nav-avatar-letter { width: 38px; height: 38px; border-radius: 50%; background: linear-gradient(135deg, #2563eb, #7c3aed); color: white; display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 800; border: 2px solid rgba(255,255,255,0.4); }
-
-.user-avatar { width: 34px; height: 34px; border-radius: 50%; background: linear-gradient(135deg,#2563eb,#7c3aed); color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 14px; }
-.user-avatar-img { width: 34px; height: 34px; border-radius: 50%; object-fit: cover; }
-
-.sidebar { width: 240px; height: 100vh; background: linear-gradient(180deg, #0f172a, #1e293b); padding: 20px 15px; position: fixed; left: -260px; top: 0; color: white; display: flex; flex-direction: column; transition: 0.3s ease; z-index: 9999; overflow-y: auto; }
-.sidebar.show { left: 0; }
-.sidebar-logo { font-size: 1.3rem; font-weight: 800; margin-bottom: 25px; display: flex; align-items: center; gap: 8px; color: white; padding: 10px 12px; border-radius: 10px; background: linear-gradient(135deg,#2563eb,#4f46e5); box-shadow: 0 4px 15px rgba(37,99,235,0.4); text-align: center; }
-.sidebar-link { display: flex; align-items: center; gap: 10px; padding: 12px 14px; margin-bottom: 8px; border-radius: 10px; color: #cbd5f5; text-decoration: none; font-weight: 500; transition: all 0.2s ease; }
-.sidebar-link span { font-size: 1.2rem; }
-.sidebar-link:hover { background: rgba(255,255,255,0.08); color: white; transform: translateX(5px); }
-.sidebar-link.active { background: linear-gradient(135deg,#2563eb,#4f46e5); color: white; box-shadow: 0 4px 15px rgba(37,99,235,0.4); }
-
-.main-content { margin-left: 0; padding: 30px; width: 100%; }
-.menu-toggle { border: none; background: transparent; font-size: 24px; margin-right: 10px; cursor: pointer; width: auto !important; display: inline-block !important; white-space: nowrap; padding: 6px 10px; flex-shrink: 0; }
-
-.notification-card { border-radius: 15px; padding: 12px; transition: all 0.2s ease; }
-
-.dropdown-menu { animation: dropdownFade 0.2s ease; }
-.dropdown-item { border-radius: 8px; transition: all .2s; }
-.dropdown-item:hover { background: #f1f5f9; transform: translateX(3px); }
-.dropdown-item span:last-child { color: white; border-radius: 999px; padding: 2px 8px; font-size: 12px; }
-
-.modal-backdrop { pointer-events: none !important; }
-.modal { z-index: 1055 !important; }
-
-#globalLoader { position: fixed; top: 0; left: 0; height: 100%; background: white; z-index: 99999; display: none; align-items: center; justify-content: center; flex-direction: column; }
-.loader-circle { width: 70px; height: 70px; border: 6px solid #e5e7eb; border-top: 6px solid #2563eb; border-radius: 50%; animation: spin 1s linear infinite; }
-.loader-text { font-weight: 600; margin-top: 15px; letter-spacing: 1px; color: #111827; }
-.loader-sub { font-size: 14px; color: #6b7280; }
-
-#overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); backdrop-filter: blur(3px); opacity: 0; visibility: hidden; transition: all .3s ease; z-index: 999; }
-#overlay.show { opacity: 1; visibility: visible; }
-
-.bg-dark .card, .bg-dark .list-group-item { background-color: #1e1e1e !important; color: #fff !important; }
-.bg-dark .card a, .bg-dark .list-group-item a { color: #fff !important; }
-.bg-dark .text-dark { color: #fff !important; }
-.bg-dark .username { color: #fff !important; font-weight: 500; }
-
-@@keyframes dropdownFade { from { opacity:0; transform:translateY(-6px); } to { opacity:1; transform:translateY(0); } }
-@@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-@@keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
-@@keyframes bounce { 0%,100% { transform:translateY(0); } 50% { transform:translateY(-10px); } }
-@@keyframes fadeText { 0%,100% { opacity:0.4; } 50% { opacity:1; } }
+/* ── MODAL ──────────────────────────────── */
+.modal-content { border-radius: 20px !important; }
+body.bg-dark .modal-content { background: #1e293b !important; color: #f1f5f9 !important; border: 1px solid rgba(255,255,255,0.08) !important; }
+body.bg-dark .modal-content .text-muted { color: #94a3b8 !important; }
+body.bg-dark .modal-content .btn-outline-secondary { border-color: #475569; color: #94a3b8; }
+body.bg-dark .modal-content .btn-outline-secondary:hover { background: #334155; color: #f1f5f9; }
 </style>
 </head>
 
-<body data-is-guest="@(User.FindFirst("IsGuest")?.Value ?? "false")">
+<body>
 
-<div id="overlay"></div>
+<div id="ht-overlay"></div>
 
 <!-- SIDEBAR -->
-<div class="sidebar" id="sidebar">
-    <div class="sidebar-logo">🚀 HabitTracker</div>
-    <a class="sidebar-link" asp-controller="Habit" asp-action="Index"><span>🏠</span> Inicio</a>
-    <a class="sidebar-link" asp-controller="Habit" asp-action="History"><span>📊</span> Historial</a>
-    <a class="sidebar-link" asp-controller="Habit" asp-action="Calendar"><span>📅</span> Calendario</a>
-    <a class="sidebar-link guest-block" asp-controller="Post" asp-action="Index"><span>📸</span> Publicaciones</a>
-    <a class="sidebar-link guest-block" asp-controller="User" asp-action="Index"><span>👥</span> Amigos</a>
-    <a class="sidebar-link guest-block" asp-controller="Support" asp-action="Chat"><span>😔</span> Me siento mal</a>
-    <a class="sidebar-link guest-block" asp-controller="User" asp-action="FriendRequests"><span>📩</span> Solicitudes</a>
-    <a class="sidebar-link guest-block" asp-controller="Post" asp-action="SavedPosts"><span>🔖</span> Guardados</a>
-    <a class="sidebar-link guest-block" asp-controller="Account" asp-action="Security"><span>🔐</span> Seguridad</a>
-    <a class="sidebar-link guest-block" asp-controller="Help" asp-action="Index"><span>🆘</span> Mesa de ayuda</a>
+<div class="ht-sidebar" id="ht-sidebar">
+    <div class="ht-sidebar-logo">🚀 HabitTracker Pro</div>
+
+    <div class="ht-sidebar-section">Principal</div>
+    <a class="ht-sidebar-link" asp-controller="Habit" asp-action="Index"><span class="sl-icon">🏠</span> Inicio</a>
+    <a class="ht-sidebar-link" asp-controller="Habit" asp-action="History"><span class="sl-icon">📊</span> Historial</a>
+    <a class="ht-sidebar-link" asp-controller="Habit" asp-action="Calendar"><span class="sl-icon">📅</span> Calendario</a>
+
+    <div class="ht-sidebar-section">Social</div>
+    <a class="ht-sidebar-link guest-block" asp-controller="Post" asp-action="Index"><span class="sl-icon">📸</span> Publicaciones</a>
+    <a class="ht-sidebar-link guest-block" asp-controller="User" asp-action="Index"><span class="sl-icon">👥</span> Amigos</a>
+    <a class="ht-sidebar-link guest-block" asp-controller="User" asp-action="FriendRequests"><span class="sl-icon">📩</span> Solicitudes</a>
+    <a class="ht-sidebar-link guest-block" asp-controller="Post" asp-action="SavedPosts"><span class="sl-icon">🔖</span> Guardados</a>
+
+    <div class="ht-sidebar-section">Más</div>
+    <a class="ht-sidebar-link guest-block" asp-controller="Support" asp-action="Chat"><span class="sl-icon">😔</span> Me siento mal</a>
+    <a class="ht-sidebar-link guest-block" asp-controller="Account" asp-action="Security"><span class="sl-icon">🔐</span> Seguridad</a>
+    <a class="ht-sidebar-link guest-block" asp-controller="Help" asp-action="Index"><span class="sl-icon">🆘</span> Mesa de ayuda</a>
+
     @if (User.IsInRole("SuperAdmin"))
     {
-        <a class="sidebar-link" asp-controller="Admin" asp-action="Index"><span>🛡️</span> Centro de Seguridad</a>
-        <a class="sidebar-link" asp-controller="Admin" asp-action="Payments"><span>💰</span> Pagos Premium</a>
+        <div class="ht-sidebar-section">Admin</div>
+        <a class="ht-sidebar-link" asp-controller="Admin" asp-action="Index"><span class="sl-icon">🛡️</span> Centro de Seguridad</a>
+        <a class="ht-sidebar-link" asp-controller="Admin" asp-action="Payments"><span class="sl-icon">💰</span> Pagos Premium</a>
     }
 </div>
 
 <!-- NOTIFICACIONES -->
-<div id="notifContainer" style="position:fixed;top:80px;right:16px;z-index:999999;display:flex;flex-direction:column;gap:10px;pointer-events:none;max-width:340px;width:calc(100vw - 32px);"></div>
+<div id="ht-notifs"></div>
 
-<!-- LOADER GLOBAL -->
-<div id="globalLoader" style="position:fixed;top:0;left:0;width:100%;height:100%;display:none;flex-direction:column;justify-content:center;align-items:center;z-index:9999;backdrop-filter:blur(6px);background:rgba(0,0,0,0.1);animation:fadeIn 0.3s ease;">
-    <img src="https://media.tenor.com/N5fU8iyU9F4AAAAj/shigure-ui-dance.gif" style="width:180px;height:180px;filter:drop-shadow(0 0 15px rgba(0,0,0,0.25));animation:bounce 1.5s infinite;" />
-    <span style="margin-top:10px;font-size:14px;opacity:0.9;animation:fadeText 1.5s infinite;">Cargando...</span>
-    <div style="width:200px;height:6px;background:rgba(255,255,255,0.2);border-radius:10px;margin-top:10px;overflow:hidden;">
-        <div id="loaderBar" style="width:0%;height:100%;background:linear-gradient(90deg,#4ade80,#22c55e);transition:width 0.2s;"></div>
-    </div>
+<!-- LOADER -->
+<div id="ht-loader">
+    <img src="https://media.tenor.com/N5fU8iyU9F4AAAAj/shigure-ui-dance.gif" class="ht-loader-gif" />
+    <span class="ht-loader-text">Cargando...</span>
+    <div class="ht-loader-bar-wrap"><div class="ht-loader-bar" id="ht-loader-bar"></div></div>
 </div>
 
 <!-- NAVBAR -->
 @if (User.Identity.IsAuthenticated && Context.Request.Query["blocked"] != "true")
 {
-    <nav class="navbar navbar-expand-lg border-bottom px-4 shadow-sm sticky-top custom-navbar">
-        <div class="container-fluid">
-            <div class="d-flex align-items-center w-100 px-2 py-2 navbar-custom">
+    var navUserName = User.Identity.Name ?? "U";
+    var navFirstLetter = navUserName.Substring(0, 1).ToUpper();
+    var navProfileImage = User.FindFirst("ProfileImage")?.Value;
+    if (string.IsNullOrEmpty(navProfileImage))
+        navProfileImage = User.FindFirst("ProfilePicture")?.Value;
+    var navRole = User.IsInRole("SuperAdmin") ? "👑 SuperAdmin" :
+                  User.IsInRole("Admin") ? "🛡️ Admin" :
+                  User.IsInRole("Guest") ? "👤 Invitado" : "✨ Usuario";
 
-                @{
-                    var navUserName = User.Identity.Name ?? "U";
-                    var navFirstLetter = navUserName.Substring(0, 1).ToUpper();
-                    var navProfileImage = User.FindFirst("ProfileImage")?.Value;
-                    if (string.IsNullOrEmpty(navProfileImage))
-                        navProfileImage = User.FindFirst("ProfilePicture")?.Value;
-                }
 
-                <!-- MÓVIL: foto con dropdown -->
-                <div class="dropdown d-lg-none">
-                    <button class="nav-avatar-btn" type="button" data-bs-toggle="dropdown" data-bs-display="static">
+    <nav class="ht-navbar">
+        <!-- IZQUIERDA -->
+        <div class="ht-nav-left">
+            <button class="ht-icon-btn" data-no-loader onclick="toggleSidebar()" title="Menú">☰</button>
+        </div>
+
+        <!-- CENTRO -->
+        <a class="ht-brand" asp-controller="Habit" asp-action="Index">🚀 HabitTracker</a>
+
+        <!-- DERECHA -->
+        <div class="ht-nav-right">
+            <button onclick="toggleDarkMode()" data-no-loader class="ht-icon-btn" title="Tema">🌙</button>
+
+            <!-- Dropdown usuario -->
+            <div class="ht-dropdown" id="ht-user-dropdown">
+                <button class="ht-avatar-btn" data-no-loader onclick="toggleUserDropdown()" type="button">
+                    @if (!string.IsNullOrWhiteSpace(navProfileImage))
+                    { <img src="@navProfileImage" class="ht-avatar-img" /> }
+                    else
+                    { <div class="ht-avatar-letter">@navFirstLetter</div> }
+                </button>
+
+                <div class="ht-dropdown-menu" id="ht-user-menu">
+                    <!-- Header -->
+                    <div class="ht-dropdown-header">
                         @if (!string.IsNullOrWhiteSpace(navProfileImage))
-                        { <img src="@navProfileImage" class="nav-avatar-photo" /> }
+                        { <img src="@navProfileImage" class="ht-dh-avatar" /> }
                         else
-                        { <div class="nav-avatar-letter">@navFirstLetter</div> }
-                    </button>
-                    <ul class="dropdown-menu dropdown-menu-custom">
-                        <li class="dropdown-user-header">
-                            @if (!string.IsNullOrWhiteSpace(navProfileImage))
-                            { <img src="@navProfileImage" class="dropdown-header-avatar" /> }
-                            else
-                            { <div class="dropdown-header-letter">@navFirstLetter</div> }
-                            <div>
-                                <div class="dropdown-header-name">@navUserName</div>
-                                <div class="dropdown-header-role">
-                                    @if (User.IsInRole("SuperAdmin")) { <span>👑 SuperAdmin</span> }
-                                    else if (User.IsInRole("Admin")) { <span>🛡️ Admin</span> }
-                                    else if (User.IsInRole("Guest")) { <span>👤 Invitado</span> }
-                                    else { <span>✨ Usuario</span> }
-                                </div>
-                            </div>
-                        </li>
-                        <li><hr class="dropdown-divider mx-2" /></li>
-                        <li>
-                            <a class="dropdown-item-custom" asp-controller="Account" asp-action="Profile">
-                                <span class="di-icon">👤</span><span>Mi Perfil</span>
-                            </a>
-                        </li>
-                        <li>
-                            <a class="dropdown-item-custom" asp-controller="Notification" asp-action="Index">
-                                <span class="di-icon">🔔</span><span>Notificaciones</span>
-                                <span class="di-badge-wrap">@await Component.InvokeAsync("NotificationCount")</span>
-                            </a>
-                        </li>
-                        <li>
-                            <a class="dropdown-item-custom" asp-controller="Message" asp-action="Inbox">
-                                <span class="di-icon">📨</span><span>Mensajes</span>
-                                @if (ViewBag.NewMessages != null && (int)ViewBag.NewMessages > 0)
-                                { <span class="di-badge">@ViewBag.NewMessages</span> }
-                            </a>
-                        </li>
-                        <li>
-                            <a class="dropdown-item-custom" asp-controller="Habit" asp-action="Achievements">
-                                <span class="di-icon">🏆</span><span>Logros</span>
-                            </a>
-                        </li>
-                        @if (User.IsInRole("Admin") || User.IsInRole("SuperAdmin"))
-                        {
-                            <li>
-                                <a class="dropdown-item-custom text-primary" asp-controller="Admin" asp-action="Index">
-                                    <span class="di-icon">👑</span><span>Panel Admin</span>
-                                </a>
-                            </li>
-                        }
-                        <li><hr class="dropdown-divider mx-2" /></li>
-                        <li>
-                            <button class="dropdown-item-custom text-danger" data-bs-toggle="modal" data-bs-target="#logoutModal">
-                                <span class="di-icon">🚪</span><span>Cerrar sesión</span>
-                            </button>
-                        </li>
-                    </ul>
-                </div>
-
-                <!-- PC: botón collapse -->
-                <button class="nav-icon-btn nav-left-toggle d-none d-lg-flex" data-bs-toggle="collapse" data-bs-target="#mainNavbar">☰</button>
-
-                <!-- TÍTULO -->
-                <a class="navbar-brand mx-auto fw-bold text-gradient" asp-controller="Habit" asp-action="Index">🚀 HabitTracker</a>
-
-                <!-- DERECHA -->
-                <div class="d-flex align-items-center gap-2">
-                    <button onclick="toggleDarkMode()" data-no-loader class="theme-btn">🌙</button>
-                    <button class="nav-icon-btn" data-no-loader onclick="toggleSidebar()">☰</button>
-                </div>
-            </div>
-
-            <!-- PC: dropdown completo -->
-            <div class="collapse navbar-collapse" id="mainNavbar">
-                <div class="d-flex align-items-center gap-2 ms-auto flex-nowrap">
-                    @{
-                        var userName = User.Identity.Name ?? "U";
-                        var firstLetter = userName.Substring(0, 1).ToUpper();
-                        var profileImage = User.FindFirst("ProfileImage")?.Value;
-                        if (string.IsNullOrEmpty(profileImage))
-                            profileImage = User.FindFirst("ProfilePicture")?.Value;
-                    }
-                    <div class="dropdown">
-                        <button class="dropdown-trigger" type="button" data-bs-toggle="dropdown" data-bs-display="static">
-                            @if (!string.IsNullOrWhiteSpace(profileImage))
-                            { <img src="@profileImage?v=@DateTime.Now.Ticks" class="user-avatar-img" /> }
-                            else
-                            { <div class="user-avatar">@firstLetter</div> }
-                            <span class="fw-semibold dropdown-username">@userName</span>
-                            <span class="dropdown-chevron">▾</span>
-                        </button>
-                        <ul class="dropdown-menu dropdown-menu-end dropdown-menu-custom">
-                            <li class="dropdown-user-header">
-                                @if (!string.IsNullOrWhiteSpace(profileImage))
-                                { <img src="@profileImage" class="dropdown-header-avatar" /> }
-                                else
-                                { <div class="dropdown-header-letter">@firstLetter</div> }
-                                <div>
-                                    <div class="dropdown-header-name">@userName</div>
-                                    <div class="dropdown-header-role">
-                                        @if (User.IsInRole("SuperAdmin")) { <span>👑 SuperAdmin</span> }
-                                        else if (User.IsInRole("Admin")) { <span>🛡️ Admin</span> }
-                                        else if (User.IsInRole("Guest")) { <span>👤 Invitado</span> }
-                                        else { <span>✨ Usuario</span> }
-                                    </div>
-                                </div>
-                            </li>
-                            <li><hr class="dropdown-divider mx-2" /></li>
-                            <li>
-                                <a class="dropdown-item-custom" asp-controller="Account" asp-action="Profile">
-                                    <span class="di-icon">👤</span><span>Mi Perfil</span>
-                                </a>
-                            </li>
-                            <li>
-                                <a class="dropdown-item-custom" asp-controller="Notification" asp-action="Index">
-                                    <span class="di-icon">🔔</span><span>Notificaciones</span>
-                                    <span class="di-badge-wrap">@await Component.InvokeAsync("NotificationCount")</span>
-                                </a>
-                            </li>
-                            <li>
-                                <a class="dropdown-item-custom" asp-controller="Message" asp-action="Inbox">
-                                    <span class="di-icon">📨</span><span>Mensajes</span>
-                                    @if (ViewBag.NewMessages != null && (int)ViewBag.NewMessages > 0)
-                                    { <span class="di-badge">@ViewBag.NewMessages</span> }
-                                </a>
-                            </li>
-                            <li>
-                                <a class="dropdown-item-custom" asp-controller="Habit" asp-action="Achievements">
-                                    <span class="di-icon">🏆</span><span>Logros</span>
-                                </a>
-                            </li>
-                            @if (User.IsInRole("Admin") || User.IsInRole("SuperAdmin"))
-                            {
-                                <li>
-                                    <a class="dropdown-item-custom text-primary" asp-controller="Admin" asp-action="Index">
-                                        <span class="di-icon">👑</span><span>Panel Admin</span>
-                                    </a>
-                                </li>
-                            }
-                            <li><hr class="dropdown-divider mx-2" /></li>
-                            <li>
-                                <button class="dropdown-item-custom text-danger" data-bs-toggle="modal" data-bs-target="#logoutModal">
-                                    <span class="di-icon">🚪</span><span>Cerrar sesión</span>
-                                </button>
-                            </li>
-                        </ul>
+                        { <div class="ht-dh-letter">@navFirstLetter</div> }
+                        <div>
+                            <div class="ht-dh-name">@navUserName</div>
+                            <div class="ht-dh-role">@navRole</div>
+                        </div>
                     </div>
+
+                    <!-- Items -->
+                    <a class="ht-menu-item guest-block" asp-controller="Account" asp-action="Profile">
+                        <span class="mi-icon">👤</span><span>Mi Perfil</span>
+                    </a>
+                    <a class="ht-menu-item guest-block" asp-controller="Notification" asp-action="Index">
+                        <span class="mi-icon">🔔</span><span>Notificaciones</span>
+                        <span class="mi-badge-wrap">@await Component.InvokeAsync("NotificationCount")</span>
+                    </a>
+                    <a class="ht-menu-item guest-block" asp-controller="Message" asp-action="Inbox">
+                        <span class="mi-icon">📨</span><span>Mensajes</span>
+                        @if (ViewBag.NewMessages != null && (int)ViewBag.NewMessages > 0)
+                        { <span class="mi-badge">@ViewBag.NewMessages</span> }
+                    </a>
+                    <a class="ht-menu-item guest-block" asp-controller="Habit" asp-action="Achievements">
+                        <span class="mi-icon">🏆</span><span>Logros</span>
+                    </a>
+                    @if (User.IsInRole("Admin") || User.IsInRole("SuperAdmin"))
+                    {
+                        <div class="ht-menu-divider"></div>
+                        <a class="ht-menu-item" asp-controller="Admin" asp-action="Index">
+                            <span class="mi-icon">👑</span><span>Panel Admin</span>
+                        </a>
+                    }
+                    <div class="ht-menu-divider"></div>
+                    <button class="ht-menu-item danger" data-bs-toggle="modal" data-bs-target="#logoutModal" data-no-loader>
+                        <span class="mi-icon">🚪</span><span>Cerrar sesión</span>
+                    </button>
                 </div>
             </div>
         </div>
@@ -374,25 +409,23 @@ body.bg-dark .bg-dark .card, body.bg-dark .bg-dark .list-group-item { background
 }
 
 <!-- CONTENIDO -->
-<div class="layout">
-    <div class="main-content">
-        @RenderBody()
-    </div>
+<div class="ht-content">
+    @RenderBody()
 </div>
 
 <!-- MODAL LOGOUT -->
 <div class="modal fade" id="logoutModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content rounded-4 shadow-lg border-0">
+        <div class="modal-content border-0 shadow-lg">
             <div class="modal-body text-center p-5">
-                <div style="font-size:50px;">🚪</div>
-                <h5 class="fw-bold mt-3">¿Seguro que deseas cerrar sesión, @User.Identity.Name?</h5>
-                <p class="text-muted small">Tendrás que volver a ingresar tus datos.</p>
+                <div style="font-size:48px;margin-bottom:12px;">🚪</div>
+                <h5 class="fw-bold">¿Cerrar sesión, @User.Identity.Name?</h5>
+                <p class="text-muted small mt-1">Tendrás que volver a ingresar tus datos.</p>
                 <div class="d-flex justify-content-center gap-3 mt-4">
                     <button type="button" class="btn btn-secondary rounded-pill px-4" data-bs-dismiss="modal">Cancelar</button>
                     <form asp-controller="Account" asp-action="Logout" method="post" class="d-inline">
                         @Html.AntiForgeryToken()
-                        <button type="submit" class="btn btn-danger rounded-pill px-4 shadow">Sí, salir</button>
+                        <button type="submit" class="btn btn-danger rounded-pill px-4">Sí, salir</button>
                     </form>
                 </div>
             </div>
@@ -403,27 +436,25 @@ body.bg-dark .bg-dark .card, body.bg-dark .bg-dark .list-group-item { background
 <!-- MODAL GUEST -->
 <div class="modal fade" id="guestModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content rounded-4 shadow">
+        <div class="modal-content border-0 shadow-lg">
             <div class="modal-body text-center p-4">
-                <h4 class="mb-3">🔐 Accede para continuar</h4>
-                <p class="text-muted">✨ Inicia sesión o crea una cuenta para desbloquear todas las funciones.</p>
-                <a asp-controller="Account" asp-action="UpgradeAccount" onclick="cleanUI()" class="btn btn-primary w-100 mb-2">Iniciar sesión o crear cuenta</a>
-                <button id="closeGuestModal" type="button" class="btn btn-outline-secondary w-100 d-flex align-items-center justify-content-center gap-2 py-2 fw-semibold guest-continue-btn">
-                    <span>👤</span><span>Seguir como invitado</span>
+                <div style="font-size:44px;margin-bottom:12px;">🔐</div>
+                <h4 class="fw-bold mb-2">Accede para continuar</h4>
+                <p class="text-muted small">Crea una cuenta para desbloquear todas las funciones.</p>
+                <a asp-controller="Account" asp-action="UpgradeAccount" class="btn btn-primary w-100 mb-2 rounded-pill py-2 fw-semibold">
+                    Iniciar sesión o crear cuenta
+                </a>
+                <button id="closeGuestModal" type="button" class="btn btn-outline-secondary w-100 rounded-pill py-2 fw-semibold">
+                    👤 Seguir como invitado
                 </button>
             </div>
         </div>
     </div>
 </div>
 
-<!-- LOADER SPINNER -->
-<div id="loader" style="display:none;position:fixed;z-index:99999;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.4);justify-content:center;align-items:center;">
-    <div style="width:50px;height:50px;border:5px solid #fff;border-top:5px solid #2563eb;border-radius:50%;animation:spin 1s linear infinite;"></div>
-</div>
-
 @if (TempData["Error"] != null)
 {
-    <div class="alert alert-warning text-center">@TempData["Error"]</div>
+    <div class="alert alert-warning text-center mx-3 mt-2">@TempData["Error"]</div>
 }
 
 <!-- SCRIPTS -->
@@ -435,37 +466,18 @@ body.bg-dark .bg-dark .card, body.bg-dark .bg-dark .list-group-item { background
 <script>
 const isSuperAdmin = @(User.IsInRole("SuperAdmin").ToString().ToLower());
 
-const connectionGlobal = new signalR.HubConnectionBuilder()
-    .withUrl("/chatHub")
-    .build();
+// ── SIGNALR GLOBAL ───────────────────────
+const connectionGlobal = new signalR.HubConnectionBuilder().withUrl("/chatHub").build();
 
 connectionGlobal.on("ForceLogout", function(message) {
-    document.body.innerHTML = `
-        <div style="height:100vh;display:flex;align-items:center;justify-content:center;background:#0f172a;font-family:Inter;color:white;text-align:center;">
-            <div style="background:#1e293b;padding:50px;border-radius:14px;box-shadow:0 15px 40px rgba(0,0,0,0.6);">
-                <h2 style="color:#f59e0b">⚠ Atención</h2>
-                <p>${message}</p>
-                <div style="margin-top:20px;border:4px solid #334155;border-top:4px solid #f59e0b;border-radius:50%;width:30px;height:30px;animation:spin 1s linear infinite;margin-left:auto;margin-right:auto;"></div>
-                <p style="margin-top:10px;font-size:13px;opacity:0.7">Cerrando sesión...</p>
-            </div>
-        </div>
-        <style>@@keyframes spin{0%{transform:rotate(0deg);}100%{transform:rotate(360deg);}}</style>`;
+    document.body.innerHTML = `<div style="height:100vh;display:flex;align-items:center;justify-content:center;background:#0f172a;font-family:sans-serif;color:white;text-align:center;"><div style="background:#1e293b;padding:50px;border-radius:14px;"><h2 style="color:#f59e0b">⚠ Atención</h2><p>${message}</p><p style="opacity:0.6">Cerrando sesión...</p></div></div>`;
     setTimeout(() => window.location.href="/Account/Logout", 2500);
 });
 
 connectionGlobal.on("IPBlocked", function(blockedIp) {
     fetch("/Home/GetMyIP").then(r => r.text()).then(myIp => {
         if (myIp === blockedIp) {
-            document.body.innerHTML = `
-                <div style="height:100vh;display:flex;align-items:center;justify-content:center;background:#0f172a;font-family:Inter;color:white;text-align:center;">
-                    <div style="background:#1e293b;padding:50px;border-radius:14px;box-shadow:0 15px 40px rgba(0,0,0,0.6);">
-                        <h2 style="color:#ef4444">🚫 IP bloqueada</h2>
-                        <p>Tu dirección IP ha sido bloqueada</p>
-                        <div style="margin-top:20px;border:4px solid #334155;border-top:4px solid #ef4444;border-radius:50%;width:30px;height:30px;animation:spin 1s linear infinite;margin-left:auto;margin-right:auto;"></div>
-                        <p style="margin-top:10px;font-size:13px;opacity:0.7">Cerrando conexión...</p>
-                    </div>
-                </div>
-                <style>@@keyframes spin{0%{transform:rotate(0deg);}100%{transform:rotate(360deg);}}</style>`;
+            document.body.innerHTML = `<div style="height:100vh;display:flex;align-items:center;justify-content:center;background:#0f172a;font-family:sans-serif;color:white;text-align:center;"><div style="background:#1e293b;padding:50px;border-radius:14px;"><h2 style="color:#ef4444">🚫 IP bloqueada</h2><p>Tu IP ha sido bloqueada</p></div></div>`;
             setTimeout(() => window.location.href="/Account/Login?ipblocked=true", 2500);
         }
     });
@@ -478,88 +490,72 @@ connectionGlobal.on("ConnectionBlocked", function(message) {
 });
 
 connectionGlobal.on("IPBlockedNow", function(message) {
-    document.body.innerHTML = `
-        <div style="height:100vh;display:flex;align-items:center;justify-content:center;background:#020617;color:white;font-family:Inter;text-align:center;">
-            <div style="background:#1e293b;padding:50px;border-radius:16px;box-shadow:0 20px 60px rgba(0,0,0,0.7);">
-                <h2 style="color:#ef4444">🚫 Acceso bloqueado</h2>
-                <p>${message}</p>
-                <p style="opacity:0.6">Redirigiendo...</p>
-            </div>
-        </div>`;
+    document.body.innerHTML = `<div style="height:100vh;display:flex;align-items:center;justify-content:center;background:#020617;color:white;font-family:sans-serif;text-align:center;"><div style="background:#1e293b;padding:50px;border-radius:16px;"><h2 style="color:#ef4444">🚫 Acceso bloqueado</h2><p>${message}</p><p style="opacity:0.6">Redirigiendo...</p></div></div>`;
     setTimeout(() => window.location.href="/Account/Login?ipblocked=true", 2000);
 });
 
-connectionGlobal.on("UserDeleted", function(userId, username) {
+connectionGlobal.on("UserDeleted", function(userId) {
     const myId = '@User.FindFirst("UserId")?.Value';
-    if (myId == userId) {
-        alert("⚠ Esta cuenta fue eliminada.");
-        setTimeout(() => window.location.href="/Account/Login", 1500);
-    }
+    if (myId == userId) { alert("⚠ Esta cuenta fue eliminada."); setTimeout(() => window.location.href="/Account/Login", 1500); }
 });
 
 connectionGlobal.on("UserConnectedNotification", function(username) {
-    const box = document.createElement("div");
-    box.innerHTML = `<div style="background:#111827;color:white;padding:14px 18px;border-radius:12px;box-shadow:0 10px 25px rgba(0,0,0,0.3);font-size:14px;min-width:220px;"><strong>${username}</strong><br><span style="color:#22c55e;">● En línea</span></div>`;
-    box.style.cssText = "position:fixed;top:20px;right:20px;z-index:9999;";
-    document.body.appendChild(box);
-    setTimeout(() => box.remove(), 4000);
+    showToastNotif(username, "● En línea", "", null);
 });
 
-connectionGlobal.start()
-    .then(() => console.log("SignalR conectado"))
-    .catch(err => console.error("Error SignalR:", err.toString()));
+connectionGlobal.start().catch(err => console.error("SignalR global:", err));
 </script>
 
 <script>
-const connection = new signalR.HubConnectionBuilder()
-    .withUrl("/chatHub")
-    .build();
+// ── SIGNALR NOTIFICACIONES ───────────────
+const connection = new signalR.HubConnectionBuilder().withUrl("/chatHub").build();
 
 connection.start().then(function() {
     const userId = '@(User.Identity.IsAuthenticated ? User.FindFirst("UserId")?.Value : "")';
     if (userId) connection.invoke("JoinUserGroup", userId);
 
-    connection.on("ReceiveNotification", function(userId, message, username, userImage, link) {
-        const firstLetter = username ? username.charAt(0).toUpperCase() : "?";
-        const avatarHTML = (userImage && userImage.trim() !== "")
-            ? `<img src="${userImage}" style="width:42px;height:42px;border-radius:50%;object-fit:cover;flex-shrink:0;border:2px solid rgba(255,255,255,0.2);" onerror="this.outerHTML='<div style=width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,#2563eb,#7c3aed);color:white;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:17px;flex-shrink:0>${firstLetter}</div>'" />`
-            : `<div style="width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,#2563eb,#7c3aed);color:white;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:17px;flex-shrink:0;">${firstLetter}</div>`;
-
-        const card = document.createElement("div");
-        card.style.cssText = "background:rgba(15,23,42,0.92);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,0.08);border-radius:18px;padding:14px 16px;display:flex;align-items:center;gap:12px;box-shadow:0 8px 32px rgba(0,0,0,0.4);cursor:pointer;pointer-events:all;transform:translateX(120%);transition:transform 0.4s cubic-bezier(0.34,1.56,0.64,1),opacity 0.3s;opacity:0;position:relative;";
-        card.innerHTML = `
-            ${avatarHTML}
-            <div style="flex:1;min-width:0;">
-                <div style="font-weight:700;font-size:14px;color:#f1f5f9;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${username}</div>
-                <div style="font-size:13px;color:#94a3b8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${message}</div>
-            </div>
-            <button onclick="event.stopPropagation();this.parentElement.remove();" style="background:none;border:none;color:#64748b;font-size:16px;cursor:pointer;padding:0;line-height:1;flex-shrink:0;">✕</button>`;
-
-        card.addEventListener("click", () => window.location.href = link);
-        document.getElementById("notifContainer").appendChild(card);
-
-        requestAnimationFrame(() => requestAnimationFrame(() => {
-            card.style.transform = "translateX(0)";
-            card.style.opacity = "1";
-        }));
-
-        const progress = document.createElement("div");
-        progress.style.cssText = "position:absolute;bottom:0;left:0;height:3px;background:linear-gradient(90deg,#2563eb,#7c3aed);border-radius:0 0 18px 18px;width:100%;transition:width 4s linear;";
-        card.appendChild(progress);
-        requestAnimationFrame(() => requestAnimationFrame(() => progress.style.width = "0%"));
-
-        setTimeout(() => {
-            card.style.transform = "translateX(120%)";
-            card.style.opacity = "0";
-            setTimeout(() => card.remove(), 400);
-        }, 4000);
+    connection.on("ReceiveNotification", function(uid, message, username, userImage, link) {
+        showToastNotif(username, message, userImage, link);
     });
 
-    // 🔥 solo log, el chat maneja su propio online/offline
-    connection.on("UserOnline", (uid) => {});
-    connection.on("UserOffline", (uid) => {});
+    connection.on("UserOnline", () => {});
+    connection.on("UserOffline", () => {});
+}).catch(err => console.error("SignalR notif:", err));
 
-}).catch(err => console.error(err.toString()));
+function showToastNotif(username, message, userImage, link) {
+    const firstLetter = username ? username.charAt(0).toUpperCase() : "?";
+    const avatarHTML = (userImage && userImage.trim() !== "")
+        ? `<img src="${userImage}" style="width:40px;height:40px;border-radius:50%;object-fit:cover;flex-shrink:0;" />`
+        : `<div style="width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#2563eb,#7c3aed);color:white;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:16px;flex-shrink:0;">${firstLetter}</div>`;
+
+    const card = document.createElement("div");
+    card.className = "ht-notif-card";
+    card.innerHTML = `
+        ${avatarHTML}
+        <div style="flex:1;min-width:0;">
+            <div style="font-weight:700;font-size:13px;color:#f1f5f9;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${username}</div>
+            <div style="font-size:12px;color:#94a3b8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${message}</div>
+        </div>
+        <button onclick="event.stopPropagation();this.closest('.ht-notif-card').remove();" style="background:none;border:none;color:#64748b;font-size:15px;cursor:pointer;padding:0;flex-shrink:0;">✕</button>`;
+
+    const progress = document.createElement("div");
+    progress.className = "ht-notif-progress";
+    card.appendChild(progress);
+
+    if (link) card.addEventListener("click", () => window.location.href = link);
+
+    document.getElementById("ht-notifs").appendChild(card);
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+        card.classList.add("show");
+        progress.style.width = "0%";
+    }));
+
+    setTimeout(() => {
+        card.classList.remove("show");
+        card.classList.add("hide");
+        setTimeout(() => card.remove(), 400);
+    }, 4000);
+}
 
 function handleNotificationClick(message, senderId, habitId, commentId) {
     if (message.toLowerCase().includes("coment")) window.location = `/Post/Details/${habitId}#comment-${commentId}`;
@@ -568,137 +564,146 @@ function handleNotificationClick(message, senderId, habitId, commentId) {
 </script>
 
 <script>
-const loader = document.getElementById("globalLoader");
+// ── LOADER ───────────────────────────────
+const htLoader = document.getElementById("ht-loader");
+const htBar = document.getElementById("ht-loader-bar");
 const isChatPage = window.location.pathname.toLowerCase().includes("/message");
+let loaderProgress = 0;
 
 if (!isChatPage) {
     document.querySelectorAll("a").forEach(link => {
         link.addEventListener("click", function() {
             if (link.hasAttribute("data-no-loader")) return;
-            if (loader) loader.style.display = "flex";
+            if (htLoader) htLoader.style.display = "flex";
         });
     });
-
-    document.querySelectorAll("button").forEach(btn => {
-        btn.addEventListener("click", function() {
-            const form = btn.closest("form");
-            if (form && !form.checkValidity()) return;
-            if (!btn.hasAttribute("data-bs-toggle") && !btn.hasAttribute("data-bs-dismiss") && !btn.hasAttribute("data-no-loader"))
-                loader.style.display = "flex";
-        });
-    });
-
     document.querySelectorAll("form").forEach(form => {
         form.addEventListener("submit", function() {
-            if (!form.hasAttribute("data-no-loader")) loader.style.display = "flex";
+            if (!form.hasAttribute("data-no-loader")) { if(htLoader) htLoader.style.display = "flex"; }
         });
     });
 }
 
+const loaderInterval = setInterval(() => {
+    if (loaderProgress < 88) { loaderProgress += Math.random() * 12; if(htBar) htBar.style.width = loaderProgress + "%"; }
+}, 200);
+
+window.addEventListener("load", function() {
+    if(htBar) htBar.style.width = "100%";
+    setTimeout(() => {
+        if(htLoader) { htLoader.style.opacity = "0"; htLoader.style.transition = "opacity 0.4s"; }
+        setTimeout(() => { if(htLoader) htLoader.style.display = "none"; clearInterval(loaderInterval); }, 400);
+    }, 500);
+});
+
+window.addEventListener("pageshow", function(e) {
+    if (e.persisted && htLoader) htLoader.style.display = "none";
+});
+</script>
+
+<script>
+// ── DARK MODE ────────────────────────────
 const body = document.body;
-const navbar = document.querySelector(".navbar");
 
 function toggleDarkMode() {
-    if (body.classList.contains("bg-dark")) disableDarkMode(); else enableDarkMode();
+    body.classList.contains("bg-dark") ? disableDarkMode() : enableDarkMode();
 }
 
 function enableDarkMode() {
     body.classList.remove("bg-light","text-dark");
     body.classList.add("bg-dark","text-light");
-    if (navbar) { navbar.classList.remove("navbar-light","bg-white"); navbar.classList.add("navbar-dark","bg-dark"); }
     localStorage.setItem("darkMode","enabled");
 }
 
 function disableDarkMode() {
     body.classList.remove("bg-dark","text-light");
     body.classList.add("bg-light","text-dark");
-    if (navbar) { navbar.classList.remove("navbar-dark","bg-dark"); navbar.classList.add("navbar-light","bg-white"); }
     localStorage.setItem("darkMode","disabled");
 }
+
+if (localStorage.getItem("darkMode") === "enabled") enableDarkMode();
 
 document.addEventListener("DOMContentLoaded", function() {
     if (localStorage.getItem("darkMode") === "enabled") enableDarkMode();
 });
-
-if (localStorage.getItem("darkMode") === "enabled") enableDarkMode();
-
-window.addEventListener("pageshow", function(event) {
-    if (event.persisted && loader) loader.style.display = "none";
-});
 </script>
 
 <script>
-if ("Notification" in window) Notification.requestPermission();
-
+// ── SIDEBAR ──────────────────────────────
 function toggleSidebar() {
-    const sidebar = document.getElementById("sidebar");
+    const sidebar = document.getElementById("ht-sidebar");
+    const overlay = document.getElementById("ht-overlay");
+    const isOpen = sidebar.classList.contains("show");
     sidebar.classList.toggle("show");
-    document.body.style.overflow = sidebar.classList.contains("show") ? "hidden" : "";
+    overlay.classList.toggle("show", !isOpen);
+    document.body.style.overflow = !isOpen ? "hidden" : "";
 }
 
-document.querySelectorAll(".sidebar a").forEach(link => {
+document.getElementById("ht-overlay").addEventListener("click", () => {
+    document.getElementById("ht-sidebar").classList.remove("show");
+    document.getElementById("ht-overlay").classList.remove("show");
+    document.body.style.overflow = "";
+});
+
+document.querySelectorAll(".ht-sidebar-link").forEach(link => {
     link.addEventListener("click", () => {
-        document.getElementById("sidebar").classList.remove("show");
-        document.getElementById("overlay").classList.remove("show");
+        document.getElementById("ht-sidebar").classList.remove("show");
+        document.getElementById("ht-overlay").classList.remove("show");
         document.body.style.overflow = "";
     });
 });
+</script>
+
+<script>
+// ── USER DROPDOWN ────────────────────────
+function toggleUserDropdown() {
+    document.getElementById("ht-user-dropdown").classList.toggle("open");
+}
 
 document.addEventListener("click", function(e) {
-    const sidebar = document.getElementById("sidebar");
-    const toggle = document.querySelector(".menu-toggle");
-    const overlay = document.getElementById("overlay");
-    if (toggle && !sidebar.contains(e.target) && !toggle.contains(e.target)) {
-        sidebar.classList.remove("show");
-        if (overlay) overlay.classList.remove("show");
-    }
+    const dd = document.getElementById("ht-user-dropdown");
+    if (dd && !dd.contains(e.target)) dd.classList.remove("open");
 });
 </script>
 
 <script>
-let progress = 0;
-const bar = document.getElementById("loaderBar");
-const interval = setInterval(() => {
-    if (progress < 90) { progress += Math.random() * 10; if(bar) bar.style.width = progress + "%"; }
-}, 200);
-
+// ── GEOLOCATION ──────────────────────────
 window.addEventListener("load", function() {
-    progress = 100;
-    if(bar) bar.style.width = "100%";
-    setTimeout(() => {
-        const loader = document.getElementById("globalLoader");
-        if(loader) loader.style.opacity = "0";
-        setTimeout(() => { if(loader) loader.style.display = "none"; clearInterval(interval); }, 1400);
-    }, 1400);
-});
-</script>
-
-<script>
-window.onload = function() {
     if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(function(position) {
+        navigator.geolocation.getCurrentPosition(function(pos) {
             fetch("/Account/SaveLocation", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ latitude: position.coords.latitude, longitude: position.coords.longitude })
+                body: JSON.stringify({ latitude: pos.coords.latitude, longitude: pos.coords.longitude })
             });
         });
     }
-};
+});
 </script>
 
 <script>
+// ── GUEST MODAL ──────────────────────────
 document.addEventListener("DOMContentLoaded", function() {
     const modalEl = document.getElementById('guestModal');
     const guestModal = new bootstrap.Modal(modalEl, { backdrop: true, keyboard: true });
 
-    modalEl.addEventListener('hidden.bs.modal', function() {
-        document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
-        document.body.classList.remove('modal-open');
-        document.body.style.overflow = '';
-        document.body.style.paddingRight = '';
-    });
+    function cleanBackdrop() {
+        setTimeout(() => {
+            document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
+            document.body.classList.remove('modal-open');
+            document.body.style.removeProperty('overflow');
+            document.body.style.removeProperty('padding-right');
+        }, 300);
+    }
 
+    modalEl.addEventListener('hidden.bs.modal', cleanBackdrop);
+
+    // 🔥 auto-abrir si viene del filtro
+    if (window.location.search.includes("showGuestModal=true")) {
+        setTimeout(() => guestModal.show(), 300);
+    }
+
+    // 🔥 interceptar clicks en elementos guest-block
     document.addEventListener("click", function(e) {
         if (!isGuest) return;
         const target = e.target.closest(".guest-block");
@@ -707,31 +712,29 @@ document.addEventListener("DOMContentLoaded", function() {
         if (target.closest("#logoutModal")) return;
         e.preventDefault();
         e.stopImmediatePropagation();
-        const sidebar = document.getElementById("sidebar");
-        const overlay = document.getElementById("overlay");
-        if (sidebar) sidebar.classList.remove("show");
-        if (overlay) overlay.classList.remove("show");
+        document.getElementById("ht-sidebar").classList.remove("show");
+        document.getElementById("ht-overlay").classList.remove("show");
+        document.body.style.overflow = "";
         guestModal.show();
     }, true);
 
     document.addEventListener("submit", function(e) {
         if (!isGuest) return;
-        const form = e.target;
-        if (!form.classList.contains("guest-block-form")) return;
-        if (modalEl.contains(form)) return;
+        if (!e.target.classList.contains("guest-block-form")) return;
+        if (modalEl.contains(e.target)) return;
         e.preventDefault();
         guestModal.show();
     }, true);
-document.getElementById("closeGuestModal").addEventListener("click", function() {
-    guestModal.hide();
-    // 🔥 limpiar backdrop por si queda bloqueado
-    setTimeout(() => {
-        document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
-        document.body.classList.remove('modal-open');
-        document.body.style.removeProperty('overflow');
-        document.body.style.removeProperty('padding-right');
-    }, 300);
+
+    document.getElementById("closeGuestModal").addEventListener("click", function() {
+        guestModal.hide();
+        cleanBackdrop();
+    });
 });
+</script>
+
+<script>
+if ("Notification" in window) Notification.requestPermission();
 </script>
 
 @RenderSection("Scripts", required: false)

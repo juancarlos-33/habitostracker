@@ -9,6 +9,16 @@ namespace HabitTrackerApp.Filters
     {
         private readonly HabitDbContext _context;
 
+        private static readonly HashSet<string> _allowedHabitActions = new(StringComparer.OrdinalIgnoreCase)
+        {
+            "Index", "Create", "History", "Calendar"
+        };
+
+        private static readonly HashSet<string> _allowedAccountActions = new(StringComparer.OrdinalIgnoreCase)
+        {
+            "Login", "Logout", "GuestRegister", "GuestLogin", "GuestLoginExisting", "UpgradeAccount"
+        };
+
         public CheckGuestFilter(HabitDbContext context)
         {
             _context = context;
@@ -16,20 +26,28 @@ namespace HabitTrackerApp.Filters
 
         public void OnActionExecuting(ActionExecutingContext context)
         {
-            // 🔥 DETECTAR INVITADO
             var isGuest = context.HttpContext.User.FindFirst("IsGuest")?.Value == "true";
+            var userIdClaim = context.HttpContext.User.FindFirst("UserId");
 
             if (isGuest)
             {
-                return; // 🚀 NO validar invitados
-            }
+                var controller = context.RouteData.Values["controller"]?.ToString() ?? "";
+                var action = context.RouteData.Values["action"]?.ToString() ?? "";
 
-            var userIdClaim = context.HttpContext.User.FindFirst("UserId");
+                bool allowed =
+                    (controller.Equals("Habit", StringComparison.OrdinalIgnoreCase) && _allowedHabitActions.Contains(action)) ||
+                    (controller.Equals("Account", StringComparison.OrdinalIgnoreCase) && _allowedAccountActions.Contains(action));
+
+                if (!allowed)
+                {
+                    context.Result = new RedirectToActionResult("Index", "Habit", new { showGuestModal = true });
+                }
+                return;
+            }
 
             if (userIdClaim != null)
             {
                 int userId = int.Parse(userIdClaim.Value);
-
                 var user = _context.Users.FirstOrDefault(u => u.Id == userId);
 
                 if (user != null)
@@ -50,9 +68,7 @@ namespace HabitTrackerApp.Filters
                 }
             }
         }
-        
-        public void OnActionExecuted(ActionExecutedContext context)
-        {
-        }
+
+        public void OnActionExecuted(ActionExecutedContext context) { }
     }
 }
