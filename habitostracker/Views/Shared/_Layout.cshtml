@@ -511,7 +511,6 @@ connectionGlobal.start()
 </script>
 
 <script>
-// 🔥 SEGUNDA CONEXIÓN — notificaciones en tiempo real
 const connection = new signalR.HubConnectionBuilder()
     .withUrl("/chatHub")
     .build();
@@ -556,8 +555,9 @@ connection.start().then(function() {
         }, 4000);
     });
 
-    connection.on("UserOnline", (uid) => console.log("Online:", uid));
-    connection.on("UserOffline", (uid) => console.log("Offline:", uid));
+    // 🔥 solo log, el chat maneja su propio online/offline
+    connection.on("UserOnline", (uid) => {});
+    connection.on("UserOffline", (uid) => {});
 
 }).catch(err => console.error(err.toString()));
 

@@ -1011,7 +1011,10 @@ function confirmarAnclar() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userId: parseInt(receiverId) })
-    }).then(() => showChatToast("📌 Chat anclado"));
+    }).then(r => r.json()).then(data => {
+        if (data.success) showChatToast("📌 Chat anclado");
+        else showChatToast("⚠️ " + (data.error ?? "No se pudo anclar"));
+    });
 }
 
 async function denunciarUsuario() {

@@ -35,7 +35,7 @@ namespace HabitTrackerApp.Hubs
 
         public async Task JoinUserGroup(string userId)
         {
-            _onlineUsers.SetOnline(userId);
+            // 🔥 no llamar SetOnline aquí — solo OnConnectedAsync lo maneja
             await Groups.AddToGroupAsync(Context.ConnectionId, userId);
         }
 

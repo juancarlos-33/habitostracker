@@ -409,7 +409,11 @@ namespace HabitTrackerApp.Controllers
                 .Where(x => !string.IsNullOrEmpty(x)).ToList();
 
             if (!pinned.Contains(dto.UserId.ToString()))
+            {
+                if (pinned.Count >= 3)
+                    return Json(new { success = false, error = "Máximo 3 chats anclados" });
                 pinned.Add(dto.UserId.ToString());
+            }
 
             user.PinnedChats = string.Join(",", pinned);
             await _context.SaveChangesAsync();
