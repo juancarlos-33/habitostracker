@@ -1,190 +1,316 @@
 ﻿@model List<HabitTrackerApp.Models.HabitHistory>
 
 @{
-    ViewData["Title"] = "Historial Diario";
+    ViewData["Title"] = "Historial";
 }
 
-<style>
-    /* VARIABLES DINÁMICAS */
-    :root {
-        --hist-bg-card: #ffffff;
-        --hist-bg-filter: #f8f9fa;
-        --hist-text-main: #212529;
-        --hist-text-muted: #6c757d;
-        --hist-border: rgba(0, 0, 0, 0.12);
-        --hist-hover: rgba(0, 0, 0, 0.03);
-    }
+<div class="hist-page">
 
-    /* MODO OSCURO REFORZADO */
-    /* He añadido 'body.dark' y otros selectores comunes para asegurar que enganche */
-    [data-bs-theme="dark"], .dark-mode, .dark, body.dark {
-        --hist-bg-card: #1a1d20 !important;
-        --hist-bg-filter: #212529 !important; /* Aquí estaba el fallo, ahora forzamos el cambio */
-        --hist-text-main: #f8f9fa !important;
-        --hist-text-muted: #adb5bd !important;
-        --hist-border: rgba(255, 255, 255, 0.1) !important;
-        --hist-hover: rgba(255, 255, 255, 0.05) !important;
-    }
-
-    .history-wrapper {
-        color: var(--hist-text-main);
-    }
-
-    /* TARJETA DE FILTROS - Corregida para aceptar variables */
-    .filter-card {
-        background-color: var(--hist-bg-filter) !important;
-        border: 1px solid var(--hist-border) !important;
-        border-radius: 12px;
-        padding: 20px;
-        transition: all 0.3s ease;
-    }
-
-    /* TARJETA DE TABLA */
-    .table-container-card {
-        background-color: var(--hist-bg-card) !important;
-        border: 1px solid var(--hist-border) !important;
-        border-radius: 12px;
-        overflow: hidden;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-    }
-
-    /* Ajuste para los textos dentro de la tarjeta de filtros */
-    .filter-card label, .filter-card h5 {
-        color: var(--hist-text-main) !important;
-    }
-
-    /* TABLA */
-    .table {
-        color: var(--hist-text-main) !important;
-        margin-bottom: 0;
-        background-color: transparent !important;
-    }
-
-        .table thead th {
-            background-color: rgba(120, 120, 120, 0.05) !important;
-            color: var(--hist-text-muted) !important;
-            border-bottom: 1px solid var(--hist-border) !important;
-        }
-
-        .table td {
-            border-bottom: 1px solid var(--hist-border) !important;
-            background-color: transparent !important;
-            color: var(--hist-text-main) !important;
-        }
-
-    /* INPUTS */
-    .custom-date-input {
-        background-color: rgba(120, 120, 120, 0.1) !important;
-        color: var(--hist-text-main) !important;
-        border: 1px solid var(--hist-border) !important;
-    }
-
-    /* Badges */
-    .status-pill {
-        padding: 5px 12px;
-        border-radius: 50px;
-        font-weight: 600;
-        font-size: 0.8rem;
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-    }
-
-    .status-ok {
-        background: rgba(46, 204, 113, 0.2);
-        color: #2ecc71;
-        border: 1px solid rgba(46, 204, 113, 0.3);
-    }
-
-    .status-fail {
-        background: rgba(231, 76, 60, 0.2);
-        color: #e74c3c;
-        border: 1px solid rgba(231, 76, 60, 0.3);
-    }
-</style>
-<div class="container py-4 history-wrapper">
-    <div class="d-flex align-items-center mb-4">
-        <div class="p-3 rounded-circle bg-primary bg-opacity-10 me-3">
-            <i class="bi bi-calendar-check fs-3 text-primary"></i>
-        </div>
+    <div class="hist-header">
+        <div class="hist-icon">📅</div>
         <div>
-            <h2 class="fw-bold mb-0">Historial de Hábitos</h2>
-            <p class="text-muted mb-0 small">Revisa tus logros pasados</p>
+            <h2 class="hist-title">Historial de Hábitos</h2>
+            <p class="hist-subtitle">Revisa tu progreso día a día</p>
         </div>
     </div>
 
-    <div class="filter-card mb-4">
-        <form method="get" class="row g-3 align-items-end">
-            <div class="col-md-4">
-                <label class="form-label small text-uppercase fw-bold opacity-75">Seleccionar Fecha</label>
-                <input type="date" name="date" class="form-control custom-date-input"
+    <div class="hist-filter-card">
+        <form method="get" class="hist-filter-form">
+            <div class="hist-filter-group">
+                <label class="hist-filter-label">Seleccionar fecha</label>
+                <input type="date" name="date" class="hist-date-input"
                        value="@(ViewBag.SelectedDate != null ? ((DateTime)ViewBag.SelectedDate).ToString("yyyy-MM-dd") : "")" />
             </div>
-            <div class="col-md-auto d-flex gap-2">
-                <button type="submit" class="btn btn-primary px-4">
-                    <i class="bi bi-search me-2"></i>Filtrar
-                </button>
-                <a asp-action="History" class="btn btn-outline-secondary">Limpiar</a>
+            <div class="hist-filter-btns">
+                <button type="submit" class="hist-btn-primary">🔍 Filtrar</button>
+                <a asp-action="History" class="hist-btn-secondary">Limpiar</a>
             </div>
         </form>
     </div>
 
     @if (Model == null || Model.Count == 0)
     {
-        <div class="table-container-card p-5 text-center">
-            <i class="bi bi-emoji-expressionless text-muted display-4"></i>
-            <p class="mt-3 text-muted">No encontramos nada para este día.</p>
+        <div class="hist-empty">
+            <div class="hist-empty-icon">😶</div>
+            <p class="hist-empty-text">No hay registros para este día.</p>
         </div>
     }
     else
     {
-        <div class="table-container-card shadow-sm">
-            <div class="table-responsive">
-                <table class="table align-middle">
-                    <thead>
+        <div class="hist-table-card">
+            <table class="hist-table">
+                <thead>
+                    <tr>
+                        <th>Fecha</th>
+                        <th>Hábito</th>
+                        <th class="hist-th-center">Resultado</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model)
+                    {
                         <tr>
-                            <th class="ps-4">Fecha</th>
-                            <th>Hábito</th>
-                            <th class="text-center">Resultado</th>
+                            <td>
+                                <div class="hist-date-main">@item.Date.ToString("dd MMM, yyyy")</div>
+                                <div class="hist-date-day">@item.Date.ToString("dddd")</div>
+                            </td>
+                            <td class="hist-habit-name">@item.HabitName</td>
+                            <td class="hist-th-center">
+                                @if (item.Completed)
+                                {
+                                    <span class="hist-pill hist-pill-ok">✔ Completado</span>
+                                }
+                                else
+                                {
+                                    <span class="hist-pill hist-pill-fail">✕ Fallado</span>
+                                }
+                            </td>
                         </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var item in Model)
-                        {
-                            <tr>
-                                <td class="ps-4">
-                                    <div class="fw-bold">@item.Date.ToString("dd MMM, yyyy")</div>
-                                    <div class="small text-muted text-uppercase">@item.Date.ToString("dddd")</div>
-                                </td>
-                                <td class="fw-semibold fs-5">@item.HabitName</td>
-                                <td class="text-center">
-                                    @if (item.Completed)
-                                    {
-                                        <div class="status-pill status-ok">
-                                            <i class="bi bi-check-lg"></i> Completado
-                                        </div>
-                                    }
-                                    else
-                                    {
-                                        <div class="status-pill status-fail">
-                                            <i class="bi bi-x-lg"></i> Fallado
-                                        </div>
-                                    }
-                                </td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
-            </div>
+                    }
+                </tbody>
+            </table>
         </div>
-        
-        <div class="mt-3 d-flex justify-content-between align-items-center">
-            <span class="small text-muted fw-medium">Registros: @Model.Count</span>
-            <button class="btn btn-sm btn-outline-secondary" onclick="window.print()">
-                <i class="bi bi-printer me-1"></i> Imprimir
-            </button>
+
+        <div class="hist-footer">
+            <span class="hist-count">@Model.Count registro@(Model.Count != 1 ? "s" : "")</span>
+            <button class="hist-btn-secondary" onclick="window.print()">🖨 Imprimir</button>
         </div>
     }
 </div>
 
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+<style>
+.hist-page {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 0 16px 40px;
+}
+
+.hist-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 28px;
+}
+
+.hist-icon {
+    width: 52px; height: 52px;
+    border-radius: 16px;
+    background: linear-gradient(135deg, #2563eb, #7c3aed);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 24px; flex-shrink: 0;
+}
+
+.hist-title {
+    font-size: 22px;
+    font-weight: 800;
+    color: #111827;
+    margin: 0 0 2px;
+}
+
+.hist-subtitle {
+    font-size: 13px;
+    color: #9ca3af;
+    margin: 0;
+}
+
+.hist-filter-card {
+    background: white;
+    border-radius: 18px;
+    padding: 20px 24px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    border: 1px solid rgba(0,0,0,0.05);
+}
+
+.hist-filter-form {
+    display: flex;
+    align-items: flex-end;
+    gap: 14px;
+    flex-wrap: wrap;
+}
+
+.hist-filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex: 1;
+    min-width: 180px;
+}
+
+.hist-filter-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.hist-date-input {
+    padding: 10px 14px;
+    border-radius: 12px;
+    border: 1.5px solid #e5e7eb;
+    background: #f9fafb;
+    color: #111827;
+    font-size: 14px;
+    outline: none;
+    transition: 0.2s;
+}
+
+.hist-date-input:focus {
+    border-color: #6366f1;
+    background: white;
+    box-shadow: 0 0 0 3px rgba(99,102,241,0.1);
+}
+
+.hist-filter-btns {
+    display: flex;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.hist-btn-primary {
+    padding: 10px 20px;
+    border-radius: 12px;
+    border: none;
+    background: linear-gradient(135deg, #2563eb, #4f46e5);
+    color: white;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.2s;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.hist-btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 14px rgba(37,99,235,0.3); }
+
+.hist-btn-secondary {
+    padding: 10px 18px;
+    border-radius: 12px;
+    border: 1.5px solid #e5e7eb;
+    background: white;
+    color: #374151;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.2s;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.hist-btn-secondary:hover { background: #f9fafb; }
+
+.hist-empty {
+    background: white;
+    border-radius: 18px;
+    padding: 60px 20px;
+    text-align: center;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    border: 1px solid rgba(0,0,0,0.05);
+}
+
+.hist-empty-icon { font-size: 48px; margin-bottom: 14px; }
+.hist-empty-text { font-size: 15px; color: #9ca3af; margin: 0; }
+
+.hist-table-card {
+    background: white;
+    border-radius: 18px;
+    overflow: hidden;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    border: 1px solid rgba(0,0,0,0.05);
+    margin-bottom: 16px;
+}
+
+.hist-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.hist-table thead th {
+    padding: 14px 20px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 1px solid #f3f4f6;
+    background: #fafafa;
+}
+
+.hist-th-center { text-align: center; }
+
+.hist-table tbody tr {
+    border-bottom: 1px solid #f3f4f6;
+    transition: background 0.15s;
+}
+
+.hist-table tbody tr:last-child { border-bottom: none; }
+.hist-table tbody tr:hover { background: #fafafa; }
+
+.hist-table td {
+    padding: 14px 20px;
+    vertical-align: middle;
+}
+
+.hist-date-main { font-weight: 700; font-size: 14px; color: #111827; }
+.hist-date-day { font-size: 12px; color: #9ca3af; text-transform: capitalize; margin-top: 2px; }
+.hist-habit-name { font-size: 15px; font-weight: 600; color: #111827; }
+
+.hist-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 14px;
+    border-radius: 50px;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.hist-pill-ok {
+    background: rgba(34,197,94,0.12);
+    color: #16a34a;
+    border: 1px solid rgba(34,197,94,0.25);
+}
+
+.hist-pill-fail {
+    background: rgba(239,68,68,0.1);
+    color: #dc2626;
+    border: 1px solid rgba(239,68,68,0.2);
+}
+
+.hist-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.hist-count {
+    font-size: 13px;
+    color: #9ca3af;
+    font-weight: 500;
+}
+
+/* DARK MODE */
+body.bg-dark .hist-title { color: #f1f5f9 !important; }
+body.bg-dark .hist-filter-card,
+body.bg-dark .hist-empty,
+body.bg-dark .hist-table-card { background: #1e1e2e !important; border-color: #2d2d3d !important; box-shadow: none !important; }
+
+body.bg-dark .hist-filter-card { background: #1e293b !important; }
+body.bg-dark .hist-date-input { background: #0f172a !important; border-color: #334155 !important; color: #f1f5f9 !important; color-scheme: dark; }
+body.bg-dark .hist-date-input { background: #0f172a !important; border-color: #334155 !important; color: #f1f5f9 !important; }
+body.bg-dark .hist-btn-secondary { background: #1e293b !important; border-color: #334155 !important; color: #f1f5f9 !important; }
+body.bg-dark .hist-btn-secondary:hover { background: #334155 !important; }
+body.bg-dark .hist-table thead th { background: #16213e !important; color: #64748b !important; border-color: #2d2d3d !important; }
+body.bg-dark .hist-table tbody tr { border-color: #2d2d3d !important; }
+body.bg-dark .hist-table tbody tr:hover { background: #2d2d3d !important; }
+body.bg-dark .hist-date-main,
+body.bg-dark .hist-habit-name { color: #f1f5f9 !important; }
+body.bg-dark .hist-filter-label { color: #64748b !important; }
+body.bg-dark .hist-empty-text { color: #64748b !important; }
+body.bg-dark .hist-count { color: #64748b !important; }
+</style>
