@@ -2,8 +2,6 @@
 using HabitTrackerApp.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using OpenAI;
-using OpenAI.Chat;
 
 namespace HabitTrackerApp.Controllers
 {
@@ -22,12 +20,10 @@ namespace HabitTrackerApp.Controllers
         public IActionResult Chat()
         {
             var userId = int.Parse(User.FindFirst("UserId").Value);
-
             var messages = _context.SupportMessages
                 .Where(m => m.UserId == userId)
                 .OrderBy(m => m.CreatedAt)
                 .ToList();
-
             return View(messages);
         }
 
@@ -35,14 +31,19 @@ namespace HabitTrackerApp.Controllers
         public async Task<IActionResult> SendMessage(string message)
         {
             if (string.IsNullOrWhiteSpace(message))
-            {
                 return Json(new { response = "No recibí ningún mensaje." });
-            }
 
             var userId = int.Parse(User.FindFirst("UserId").Value);
 
-            // 🔹 Preguntar a la IA real
-            string response = GenerateSmartResponse(message);
+            // 🔥 contexto: últimos 6 mensajes del usuario
+            var historial = _context.SupportMessages
+                .Where(m => m.UserId == userId)
+                .OrderByDescending(m => m.CreatedAt)
+                .Take(6)
+                .OrderBy(m => m.CreatedAt)
+                .ToList();
+
+            string response = GenerateSmartResponse(message, historial);
 
             var msg = new SupportMessage
             {
@@ -55,217 +56,350 @@ namespace HabitTrackerApp.Controllers
             _context.SupportMessages.Add(msg);
             _context.SaveChanges();
 
-            return Json(new { response = response });
+            return Json(new { response });
         }
 
-        private string GenerateSmartResponse(string message)
+        [HttpPost]
+        public IActionResult ClearHistory()
         {
+            var userId = int.Parse(User.FindFirst("UserId").Value);
+            var msgs = _context.SupportMessages.Where(m => m.UserId == userId).ToList();
+            _context.SupportMessages.RemoveRange(msgs);
+            _context.SaveChanges();
+            return Json(new { success = true });
+        }
 
+        private string GenerateSmartResponse(string message, List<SupportMessage> historial)
+        {
             var rnd = new Random();
-            message = message.ToLower();
+            var msg = message.ToLower().Trim();
 
-            // 🔹 SALUDOS
-            if (message.Contains("hola") || message.Contains("buenas") || message.Contains("que mas") || message.Contains("hey"))
+            // 🔥 detectar intensidad emocional
+            bool intenso = msg.Contains("no puedo más") || msg.Contains("ya no aguanto") ||
+                           msg.Contains("quiero morir") || msg.Contains("para qué vivir") ||
+                           msg.Contains("no tiene sentido vivir") || msg.Contains("quiero desaparecer");
+
+            bool muyMal = msg.Contains("horrible") || msg.Contains("devastado") ||
+                          msg.Contains("destrozado") || msg.Contains("odio mi vida") ||
+                          msg.Contains("todo está mal");
+
+            // 🔥 contexto previo
+            string ultimoTema = "";
+            if (historial.Any())
             {
-                return "Que cuentas?";
+                var ultimo = historial.Last().Message.ToLower();
+                if (ultimo.Contains("triste") || ultimo.Contains("deprimido") || ultimo.Contains("solo"))
+                    ultimoTema = "tristeza";
+                else if (ultimo.Contains("ansiedad") || ultimo.Contains("estrés") || ultimo.Contains("nervioso"))
+                    ultimoTema = "ansiedad";
+                else if (ultimo.Contains("novia") || ultimo.Contains("pareja") || ultimo.Contains("amor"))
+                    ultimoTema = "relacion";
             }
 
-            // 🔹 TRISTEZA / BAJÓN
-            if (message.Contains("triste") || message.Contains("solo") || message.Contains("deprimido") || message.Contains("cansado") || message.Contains("mierda") || message.Contains("mal") || message.Contains("vacío"))
+            // 🔥 CRISIS — máxima prioridad
+            if (intenso)
             {
-                return "Siento que te estés sintiendo así 💙. A veces todo pesa, pero hablarlo ya es un paso importante. ¿Qué te tiene así?";
+                var crisis = new[]
+                {
+                    "Lo que sientes ahora es muy pesado, y entiendo que estás en un momento muy difícil 💙. No estás solo/a. ¿Puedes contarme qué pasó exactamente?",
+                    "Ese nivel de dolor que describes es real y merece atención. Aquí estoy contigo. ¿Tienes a alguien cercano con quien puedas estar ahora mismo?",
+                    "Cuando todo se siente tan pesado, es importante no cargarlo solo/a. Cuéntame más, ¿qué está pasando?",
+                    "Estoy aquí y te estoy escuchando de verdad. Ese dolor que sientes importa. ¿Qué es lo que más te está pesando en este momento?"
+                };
+                return crisis[rnd.Next(crisis.Length)];
             }
 
-            // 🔹 ANSIEDAD / ESTRÉS
-            if (message.Contains("ansiedad") || message.Contains("estres") || message.Contains("estresado"))
+            // 🔥 SALUDOS
+            if (msg.Contains("hola") || msg.Contains("buenas") || msg.Contains("que mas") ||
+                msg.Contains("hey") || msg.Contains("buen día") || msg.Contains("buenos días"))
             {
-                var respuestas = new List<string>
-    {
-        "La ansiedad puede ser muy pesada. Intenta respirar profundo unos minutos.",
-        "Respira lento: inhala 4 segundos, sostén 4, exhala 6 🫁",
-        "Tu mente va rápido, pero puedes bajarle el ritmo.",
-        "Haz una pausa, aléjate un momento y vuelve poco a poco."
-    };
-
-                return respuestas[rnd.Next(respuestas.Count)];
+                var saludos = new[]
+                {
+                    "¡Hola! 👋 ¿Cómo estás hoy? Aquí puedes hablar sin filtro.",
+                    "¡Qué bueno que pasaste! ¿Cómo va todo?",
+                    "Hey 👋 ¿Qué está pasando? Cuéntame.",
+                    "Hola, ¿cómo te has sentido hoy?",
+                    "¡Hola! Este es un espacio seguro. ¿Qué tienes en mente?"
+                };
+                return saludos[rnd.Next(saludos.Length)];
             }
 
-            // 🔹 MOTIVACIÓN
-            if (message.Contains("motivacion") || message.Contains("motivado") || message.Contains("ganas") || message.Contains("pereza") || message.Contains("no quiero hacer nada"))
+            // 🔥 TRISTEZA / DEPRESIÓN
+            if (msg.Contains("triste") || msg.Contains("tristeza") || msg.Contains("llorar") ||
+                msg.Contains("lloro") || msg.Contains("deprimido") || msg.Contains("depresión") ||
+                msg.Contains("bajón") || msg.Contains("vacío") || msg.Contains("sin ganas") ||
+                msg.Contains("apagado") || muyMal)
             {
-                return "La motivación no siempre está, pero los hábitos sí. Empieza con algo pequeño hoy, aunque sea 5 minutos 🔥.";
+                if (ultimoTema == "tristeza")
+                {
+                    var followUp = new[]
+                    {
+                        "Sigue contándome... ¿hay algo específico que lo disparó?",
+                        "Entiendo que sigue pesando. ¿Cuánto tiempo llevas sintiéndote así?",
+                        "¿Has podido hablar de esto con alguien cercano a ti?",
+                        "A veces ese peso tiene una raíz. ¿Sabes qué lo está causando?"
+                    };
+                    return followUp[rnd.Next(followUp.Length)];
+                }
+                var tristeza = new[]
+                {
+                    "Siento que estés pasando por eso 💙. La tristeza puede ser muy pesada. ¿Desde cuándo te sientes así?",
+                    "Está bien no estar bien. ¿Qué es lo que más te tiene así?",
+                    "Que lo cuentes ya es un paso. ¿Qué pasó?",
+                    "No tienes que cargar eso solo/a. Cuéntame más.",
+                    "Ese vacío es incómodo y real. ¿Hay algo puntual que lo causó?"
+                };
+                return tristeza[rnd.Next(tristeza.Length)];
             }
 
-            // 🔹 SUEÑO
-            if (message.Contains("dormir") || message.Contains("sueño") || message.Contains("insomnio") || message.Contains("no puedo dormir"))
+            // 🔥 ANSIEDAD / ESTRÉS / NERVIOS
+            if (msg.Contains("ansioso") || msg.Contains("ansiedad") || msg.Contains("estrés") ||
+                msg.Contains("estresado") || msg.Contains("nervioso") || msg.Contains("me cuesta respirar") ||
+                msg.Contains("agitado") || msg.Contains("angustia") || msg.Contains("angustiado") ||
+                msg.Contains("pánico") || msg.Contains("ataque de pánico"))
             {
-                return "Dormir bien es clave. Intenta acostarte a la misma hora y evita el celular antes de dormir. Tu mente necesita descanso 🧠.";
+                var ansiedad = new[]
+                {
+                    "La ansiedad puede ser muy intensa 😮‍💨. Prueba esto: inhala 4 segundos, sostén 4, exhala 6. Repítelo 3 veces. ¿Qué la está disparando?",
+                    "Cuando el cuerpo se acelera así, hay que bajarle el ritmo. Respira profundo y dime: ¿qué está pasando?",
+                    "El estrés acumulado tiene que salir de alguna forma. ¿Qué es lo que más te está pesando?",
+                    "Antes de cualquier cosa, respira. Luego cuéntame qué está pasando 🫁",
+                    "La ansiedad miente mucho — hace todo parecer peor. ¿Qué situación específica te tiene así?"
+                };
+                return ansiedad[rnd.Next(ansiedad.Length)];
             }
 
-            // 🔹 HÁBITOS
-            if (message.Contains("habito") || message.Contains("hábito") || message.Contains("disciplina") || message.Contains("constancia"))
+            // 🔥 SOLEDAD
+            if (msg.Contains("solo") || msg.Contains("soledad") || msg.Contains("nadie me entiende") ||
+                msg.Contains("no tengo amigos") || msg.Contains("nadie me habla") ||
+                msg.Contains("me siento invisible") || msg.Contains("no le importo a nadie"))
             {
-                return "Los hábitos se construyen poco a poco. No busques perfección, busca constancia 💪.";
+                var soledad = new[]
+                {
+                    "Sentirse solo es de lo más duro que existe 💙. Pero aquí te estoy escuchando. ¿Desde cuándo te sientes así?",
+                    "Esa sensación de invisibilidad duele mucho. ¿Hay alguien en tu vida con quien puedas conectar?",
+                    "No estás completamente solo/a — aquí puedes hablar sin filtro. ¿Qué pasó?",
+                    "A veces uno puede estar rodeado de gente y aun así sentirse solo. ¿Es eso lo que pasa?",
+                    "Que lo cuentes ya importa. Aquí te leo 👀 ¿Qué está pasando?"
+                };
+                return soledad[rnd.Next(soledad.Length)];
             }
 
-            // 🔹 AMOR / RELACIONES
-            if (message.Contains("novia") || message.Contains("novio") || message.Contains("pareja") || message.Contains("terminamos") || message.Contains("ruptura") || message.Contains("me dejaron"))
+            // 🔥 RELACIONES / AMOR
+            if (msg.Contains("novia") || msg.Contains("novio") || msg.Contains("pareja") ||
+                msg.Contains("terminamos") || msg.Contains("ruptura") || msg.Contains("me dejaron") ||
+                msg.Contains("me dejó") || msg.Contains("amor") || msg.Contains("enamorado") ||
+                msg.Contains("me rompieron el corazón") || msg.Contains("infiel") || msg.Contains("me traicionó"))
             {
-                return "Las relaciones pueden doler mucho 💔. Date tiempo, no tienes que estar bien de inmediato. ¿Qué pasó exactamente?";
+                if (ultimoTema == "relacion")
+                {
+                    var followUp = new[]
+                    {
+                        "¿Cuánto tiempo estuvieron juntos?",
+                        "¿Fue algo de repente o venía de antes?",
+                        "¿Cómo estás manejando eso día a día?",
+                        "¿Tienes personas cercanas que sepan lo que estás viviendo?"
+                    };
+                    return followUp[rnd.Next(followUp.Length)];
+                }
+                var relaciones = new[]
+                {
+                    "Eso duele mucho 💔. Las relaciones dejan huella. ¿Qué pasó?",
+                    "El corazón tarda en procesar lo que la mente ya entendió. ¿Cuándo pasó?",
+                    "Date tiempo — no tienes que estar bien de inmediato. ¿Qué fue lo que pasó?",
+                    "Ese dolor es real y válido. ¿Quieres contarme más?",
+                    "Las rupturas son un duelo. ¿Cómo te has sentido estos días?"
+                };
+                return relaciones[rnd.Next(relaciones.Length)];
             }
 
-            // 🔹 SOLEDAD
-            if (message.Contains("nadie") || message.Contains("solo en la vida") || message.Contains("no tengo amigos"))
+            // 🔥 AUTOESTIMA / FRACASO
+            if (msg.Contains("no sirvo") || msg.Contains("soy un fracaso") || msg.Contains("no valgo") ||
+                msg.Contains("soy inútil") || msg.Contains("todo me sale mal") || msg.Contains("fallé") ||
+                msg.Contains("soy malo") || msg.Contains("no soy suficiente") || msg.Contains("me odio"))
             {
-                return "Sentirse solo es duro… pero no estás completamente solo. Aquí puedes hablar sin filtro 💙.";
+                var autoestima = new[]
+                {
+                    "No eres lo que piensas en tus peores momentos 💙. ¿Qué pasó que te hace sentir así?",
+                    "Fallaste en algo, no eres un fracaso. Hay diferencia 🔥. ¿Qué ocurrió?",
+                    "Ese diálogo interno tan duro no es la verdad. ¿De dónde viene ese pensamiento?",
+                    "Lo que describes suena a que te estás siendo muy duro/a contigo mismo/a. ¿Qué pasó exactamente?",
+                    "Todos fallamos. Lo que importa es lo que haces después. ¿Qué fue lo que salió mal?"
+                };
+                return autoestima[rnd.Next(autoestima.Length)];
             }
 
-            // 🔹 FRUSTRACIÓN / FRACASO
-            if (message.Contains("fracaso") || message.Contains("fallé") || message.Contains("no sirvo") || message.Contains("todo me sale mal"))
+            // 🔥 IRA / RABIA
+            if (msg.Contains("rabia") || msg.Contains("odio") || msg.Contains("me da ira") ||
+                msg.Contains("quiero explotar") || msg.Contains("estoy furioso") || msg.Contains("me enoja") ||
+                msg.Contains("me tiene harto") || msg.Contains("me tiene hasta la") || msg.Contains("me hartó"))
             {
-                return "Fallar no te define. Literalmente todos fallamos. Lo importante es que lo intentaste, y puedes volver a hacerlo 🔥.";
+                var ira = new[]
+                {
+                    "La rabia es válida, pero hay que manejarla bien. ¿Qué pasó?",
+                    "Antes de reaccionar, toma distancia un momento. ¿Qué te tiene así?",
+                    "Eso que sientes tiene una causa. Cuéntame qué pasó.",
+                    "La ira no resuelta quema por dentro. ¿Qué o quién te tiene así?",
+                    "Ok, respira primero 😤. Ahora cuéntame qué pasó."
+                };
+                return ira[rnd.Next(ira.Length)];
             }
 
-            // 🔹 UNIVERSIDAD / ESTUDIO
-            if (message.Contains("estudio") || message.Contains("universidad") || message.Contains("parcial") || message.Contains("no entiendo nada"))
+            // 🔥 MOTIVACIÓN / PEREZA
+            if (msg.Contains("sin motivación") || msg.Contains("pereza") || msg.Contains("no quiero hacer nada") ||
+                msg.Contains("procrastino") || msg.Contains("no tengo energía") || msg.Contains("agotado") ||
+                msg.Contains("cansado de todo") || msg.Contains("no doy más"))
             {
-                return "Es normal sentirse perdido a veces. Intenta dividir el problema en partes pequeñas y empezar por una sola cosa 📚.";
+                var motivacion = new[]
+                {
+                    "La motivación viene y va — los hábitos se quedan. Empieza con algo pequeño hoy 🔥.",
+                    "Haz lo mínimo hoy, pero hazlo. Eso ya cuenta.",
+                    "El cuerpo y la mente también necesitan descanso real. ¿Llevas mucho tiempo así?",
+                    "A veces la pereza esconde agotamiento real. ¿Estás durmiendo bien?",
+                    "Empieza con 2 minutos, en serio. El arranque es lo más difícil."
+                };
+                return motivacion[rnd.Next(motivacion.Length)];
             }
 
-            // 🔹 DINERO / TRABAJO
-            if (message.Contains("dinero") || message.Contains("trabajo") || message.Contains("sin plata"))
+            // 🔥 SUEÑO / INSOMNIO
+            if (msg.Contains("dormir") || msg.Contains("insomnio") || msg.Contains("no puedo dormir") ||
+                msg.Contains("no duermo") || msg.Contains("me desvelo") || msg.Contains("trasnoche"))
             {
-                return "Las preocupaciones económicas pesan mucho… pero paso a paso puedes mejorar tu situación. No te rindas 💪.";
+                var sueno = new[]
+                {
+                    "El insomnio es agotador 😴. ¿Es algo reciente o llevas tiempo así?",
+                    "No dormir bien afecta todo lo demás. ¿Qué crees que lo está causando?",
+                    "Intenta acostarte a la misma hora y evitar el celular 30 min antes. ¿Tienes mucho en la cabeza?",
+                    "La mente que no descansa no para. ¿Qué te está dando vueltas de noche?"
+                };
+                return sueno[rnd.Next(sueno.Length)];
             }
 
-            // 🔹 BAJA AUTOESTIMA
-            if (message.Contains("no valgo") || message.Contains("soy inútil") || message.Contains("no sirvo para nada"))
+            // 🔥 ESTUDIO / TRABAJO
+            if (msg.Contains("estudio") || msg.Contains("universidad") || msg.Contains("parcial") ||
+                msg.Contains("no entiendo") || msg.Contains("me va mal") || msg.Contains("trabajo") ||
+                msg.Contains("jefe") || msg.Contains("me van a echar") || msg.Contains("despedir"))
             {
-                return "No hables así de ti 😤. Estás pasando un mal momento, pero eso no define quién eres.";
+                var trabajo = new[]
+                {
+                    "Esa presión académica/laboral puede ser muy pesada. ¿Qué está pasando exactamente?",
+                    "No entender algo hoy no significa que no puedas mañana. ¿En qué estás atascado?",
+                    "Divide el problema en partes pequeñas y empieza por una sola cosa 📚.",
+                    "Las preocupaciones del trabajo o estudio pesan mucho. ¿Qué es lo que más te preocupa?"
+                };
+                return trabajo[rnd.Next(trabajo.Length)];
             }
 
-            // 🔹 IRA / RABIA
-            if (message.Contains("rabia") || message.Contains("odio") || message.Contains("me da ira"))
+            // 🔥 HÁBITOS / DISCIPLINA
+            if (msg.Contains("habito") || msg.Contains("hábito") || msg.Contains("disciplina") ||
+                msg.Contains("constancia") || msg.Contains("no soy constante"))
             {
-                return "La rabia también es válida. Respira, aléjate un momento y evita reaccionar impulsivamente.";
+                var habitos = new[]
+                {
+                    "Los hábitos se construyen poco a poco. No busques perfección, busca constancia 💪.",
+                    "La disciplina no es motivación — es decisión. ¿Qué hábito quieres construir?",
+                    "Empieza tan pequeño que sea imposible fallar. ¿Qué quieres cambiar?",
+                    "La constancia supera al talento siempre. ¿Qué te está costando mantener?"
+                };
+                return habitos[rnd.Next(habitos.Length)];
             }
 
-            // 🔹 APOYO GENERAL
-            if (message.Contains("no sé qué hacer") || message.Contains("ayuda"))
+            // 🔥 FAMILIA
+            if (msg.Contains("familia") || msg.Contains("papá") || msg.Contains("mamá") ||
+                msg.Contains("hermano") || msg.Contains("hermana") || msg.Contains("padres") ||
+                msg.Contains("mi casa") || msg.Contains("problemas en casa"))
             {
-                return "Estoy aquí contigo, puedes hablar sin filtro 💙";
+                var familia = new[]
+                {
+                    "Los problemas familiares pesan mucho porque vienen de donde más importa. ¿Qué está pasando?",
+                    "La familia puede ser apoyo o fuente de dolor. ¿Qué ocurrió?",
+                    "Eso en casa es difícil de cargar. ¿Desde cuándo está así la situación?",
+                    "Cuéntame más sobre lo que está pasando en casa."
+                };
+                return familia[rnd.Next(familia.Length)];
             }
 
-            if (message.Contains("no puedo más") || message.Contains("me siento mal"))
+            // 🔥 DINERO
+            if (msg.Contains("dinero") || msg.Contains("plata") || msg.Contains("deudas") ||
+                msg.Contains("económico") || msg.Contains("sin trabajo") || msg.Contains("desempleo"))
             {
-                return "No tienes que cargar todo solo, suéltalo aquí.";
+                var dinero = new[]
+                {
+                    "Las preocupaciones económicas quitan el sueño y el ánimo. ¿Qué está pasando?",
+                    "Ese estrés financiero es muy real. ¿Qué es lo más urgente que tienes encima?",
+                    "Paso a paso se puede mejorar. No te rindas 💪. ¿Cómo está la situación?",
+                    "El dinero afecta todo lo demás. ¿Cómo estás manejando eso emocionalmente?"
+                };
+                return dinero[rnd.Next(dinero.Length)];
             }
 
-            // 🔹 TRISTEZA
-            if (message.Contains("me siento vacío") || message.Contains("sin ganas"))
+            // 🔥 AGRADECIMIENTO / DESPEDIDA
+            if (msg.Contains("gracias") || msg.Contains("me ayudó") || msg.Contains("me sirvió") ||
+                msg.Contains("chao") || msg.Contains("adiós") || msg.Contains("hasta luego"))
             {
-                return "No tienes que estar bien hoy, solo no te rindas.";
+                var despedida = new[]
+                {
+                    "Para eso estoy 💙. Vuelve cuando quieras hablar.",
+                    "Me alegra que haya servido. Cuídate mucho 🙌",
+                    "Aquí estaré cuando lo necesites. ¡Ánimo!",
+                    "Fue un placer escucharte. No olvides cuidarte 💙"
+                };
+                return despedida[rnd.Next(despedida.Length)];
             }
 
-            // 🔹 ANSIEDAD
-            if (message.Contains("me cuesta respirar") || message.Contains("ataque"))
+            // 🔥 BIEN / POSITIVO
+            if (msg.Contains("estoy bien") || msg.Contains("me siento bien") || msg.Contains("feliz") ||
+                msg.Contains("contento") || msg.Contains("genial") || msg.Contains("excelente") ||
+                msg.Contains("lo logré") || msg.Contains("lo hice"))
             {
-                return "Respira conmigo: inhala 4 segundos, sostén 4, exhala 6… repítelo 🫁";
+                var positivo = new[]
+                {
+                    "¡Qué bueno escuchar eso! 🙌 ¿Qué pasó?",
+                    "Me alegra mucho 😊. ¿Qué fue lo que mejoró?",
+                    "Eso se celebra 🔥. Cuéntame.",
+                    "¡Bien! Esos momentos también importan. ¿Qué te tiene así de bien?"
+                };
+                return positivo[rnd.Next(positivo.Length)];
             }
 
-            // 🔹 DESMOTIVACIÓN
-            if (message.Contains("no tengo energía") || message.Contains("sin motivación"))
+            // 🔥 PREGUNTAS EXISTENCIALES
+            if (msg.Contains("para qué") || msg.Contains("no tiene sentido") ||
+                msg.Contains("propósito") || msg.Contains("qué hago con mi vida") ||
+                msg.Contains("no sé qué quiero"))
             {
-                return "Haz lo mínimo hoy, pero hazlo. Eso ya cuenta.";
+                var existencial = new[]
+                {
+                    "Esas preguntas son profundas y válidas. A veces el sentido se construye, no se encuentra.",
+                    "No tener todo claro también es parte del proceso. ¿Qué te está generando esa duda?",
+                    "Pocas personas tienen todo claro. Lo importante es seguir moviéndose. ¿Qué está pasando?",
+                    "Esa búsqueda ya dice mucho de ti. ¿Qué es lo que más te inquieta?"
+                };
+                return existencial[rnd.Next(existencial.Length)];
             }
 
-            // 🔹 PERDIDO
-            if (message.Contains("estoy perdido") || message.Contains("no sé qué hacer con mi vida"))
+            // 🔥 CONTINUAR CONVERSACIÓN — si hay contexto previo
+            if (historial.Count >= 2)
             {
-                return "No tener todo claro también es parte del proceso.";
+                var continuacion = new[]
+                {
+                    "¿Cómo te has sentido después de lo que me contaste antes?",
+                    "Siguiendo lo que me dijiste... ¿cómo vas?",
+                    "¿Ha cambiado algo desde que hablamos?",
+                    "¿Hubo algo que te ayudó o empeoró desde entonces?"
+                };
+                return continuacion[rnd.Next(continuacion.Length)];
             }
 
-            // 🔹 RUPTURAS
-            if (message.Contains("me rompieron") || message.Contains("me terminaron"))
+            // 🔥 DEFAULT MEJORADO
+            var defaults = new[]
             {
-                return "Lo que dolió fue real, por eso duele tanto.";
-            }
-
-            // 🔹 SOLEDAD
-            if (message.Contains("me siento solo") || message.Contains("nadie me habla"))
-            {
-                return "A veces uno se siente invisible… pero aquí te estoy leyendo 👀";
-            }
-
-            // 🔹 FRUSTRACIÓN
-            if (message.Contains("no me sale") || message.Contains("no puedo"))
-            {
-                return "Intentarlo ya te pone por encima de muchos.";
-            }
-
-            // 🔹 AUTOESTIMA
-            if (message.Contains("soy un fracaso") || message.Contains("no valgo"))
-            {
-                return "No eres lo que piensas en tus peores momentos.";
-            }
-
-            // 🔹 IRA
-            if (message.Contains("quiero explotar") || message.Contains("me da mucha rabia"))
-            {
-                return "Antes de reaccionar, toma distancia un momento.";
-            }
-
-            // 🔹 PROCRASTINACIÓN
-            if (message.Contains("lo dejo para después") || message.Contains("no hago nada"))
-            {
-                return "Empieza con 2 minutos, literal.";
-            }
-
-            // 🔹 ESTUDIO
-            if (message.Contains("no entiendo") || message.Contains("me va mal en clase"))
-            {
-                return "No entender algo hoy no significa que no puedas mañana.";
-            }
-
-            // 🔹 CANSANCIO
-            if (message.Contains("estoy agotado") || message.Contains("no doy más"))
-            {
-                return "Tu mente también necesita descanso.";
-            }
-
-            // 🔹 EXISTENCIAL
-            if (message.Contains("no tiene sentido") || message.Contains("para qué vivir"))
-            {
-                return "A veces el sentido se construye, no se encuentra.";
-            }
-
-
-            // 🔹 PROCRASTINACIÓN
-            if (message.Contains("procrastino") || message.Contains("dejo todo para después"))
-            {
-                return "Empieza con algo pequeño. No necesitas hacerlo perfecto, solo empezar 🔥.";
-            }
-
-            // 🔹 GYM / SALUD
-            if (message.Contains("gym") || message.Contains("ejercicio") || message.Contains("entrenar"))
-            {
-                return "El ejercicio ayuda muchísimo a la mente y al cuerpo. Incluso una caminata ya suma 💪.";
-            }
-
-            // 🔹 COMIDA / SALUD
-            if (message.Contains("comer") || message.Contains("comida") || message.Contains("no como bien"))
-            {
-                return "Tu alimentación influye en cómo te sientes. Intenta pequeños cambios poco a poco 🍎.";
-            }
-
-            // 🔹 EXISTENCIAL
-            if (message.Contains("para que vivir") || message.Contains("sentido de la vida"))
-            {
-                return "Esa es una pregunta profunda… a veces no hay una sola respuesta. Pero tu historia aún no termina 💙.";
-            }
-
-            // 🔹 DEFAULT
-            return "No lo entiendo parcero";
+                "Cuéntame más, te estoy escuchando 💙",
+                "No te entendí del todo, ¿puedes contarme más?",
+                "Aquí estoy. ¿Qué está pasando?",
+                "Sigue, te estoy leyendo 👀",
+                "¿Qué más está pasando? Cuéntame."
+            };
+            return defaults[rnd.Next(defaults.Length)];
         }
     }
 }

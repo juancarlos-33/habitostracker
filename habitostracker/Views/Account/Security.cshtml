@@ -551,8 +551,37 @@ function validarEliminar() {
             return false;
         }
     }
+      // 🔥 mostrar modal en vez de confirm()
+    formEliminarPendiente = document.querySelector("#section-del form");
+    document.getElementById("confirmDeleteModal").style.display = "flex";
+    return false; // siempre detener el submit aquí
+}
 
-    return confirm("¿Estás seguro? Tu cuenta se eliminará para siempre.");
+function cerrarConfirmDelete() {
+    document.getElementById("confirmDeleteModal").style.display = "none";
+    formEliminarPendiente = null;
+}
+
+function confirmarEliminar() {
+    document.getElementById("confirmDeleteModal").style.display = "none";
+    if (formEliminarPendiente) {
+        formEliminarPendiente.removeAttribute("onsubmit");
+        formEliminarPendiente.submit();
+    }
+}
+
+    <!-- MODAL CONFIRMAR ELIMINAR -->
+<div id="confirmDeleteModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:99999;align-items:center;justify-content:center;backdrop-filter:blur(4px);">
+    <div style="background:#1e293b;border-radius:20px;padding:32px 28px;max-width:380px;width:90%;border:1px solid rgba(255,255,255,0.08);box-shadow:0 20px 60px rgba(0,0,0,0.5);text-align:center;">
+        <div style="font-size:44px;margin-bottom:12px;">⚠️</div>
+        <h4 style="color:white;font-weight:800;margin:0 0 10px;">¿Eliminar tu cuenta?</h4>
+        <p style="color:rgba(255,255,255,0.5);font-size:13px;margin:0 0 24px;line-height:1.6;">Esta acción es permanente e irreversible. Todos tus datos serán eliminados para siempre.</p>
+        <div style="display:flex;gap:10px;">
+            <button onclick="cerrarConfirmDelete()" style="flex:1;padding:12px;border-radius:12px;border:1px solid #334155;background:#334155;color:#94a3b8;font-weight:700;font-size:14px;cursor:pointer;">Cancelar</button>
+            <button onclick="confirmarEliminar()" style="flex:1;padding:12px;border-radius:12px;border:none;background:#dc2626;color:white;font-weight:700;font-size:14px;cursor:pointer;">Sí, eliminar</button>
+        </div>
+    </div>
+</div>
 }
 
 @if (TempData["Error"] != null)
