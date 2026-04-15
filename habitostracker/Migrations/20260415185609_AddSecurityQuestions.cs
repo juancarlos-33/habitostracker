@@ -13,37 +13,37 @@ namespace habitostracker.Migrations
             migrationBuilder.AddColumn<string>(
                 name: "SecurityAnswer1",
                 table: "Users",
-                type: "nvarchar(max)",
+                type: "text",
                 nullable: true);
 
             migrationBuilder.AddColumn<string>(
                 name: "SecurityAnswer2",
                 table: "Users",
-                type: "nvarchar(max)",
+                type: "text",
                 nullable: true);
 
             migrationBuilder.AddColumn<string>(
                 name: "SecurityAnswer3",
                 table: "Users",
-                type: "nvarchar(max)",
+                type: "text",
                 nullable: true);
 
             migrationBuilder.AddColumn<string>(
                 name: "SecurityQuestion1",
                 table: "Users",
-                type: "nvarchar(max)",
+                type: "text",
                 nullable: true);
 
             migrationBuilder.AddColumn<string>(
                 name: "SecurityQuestion2",
                 table: "Users",
-                type: "nvarchar(max)",
+                type: "text",
                 nullable: true);
 
             migrationBuilder.AddColumn<string>(
                 name: "SecurityQuestion3",
                 table: "Users",
-                type: "nvarchar(max)",
+                type: "text",
                 nullable: true);
         }
 
