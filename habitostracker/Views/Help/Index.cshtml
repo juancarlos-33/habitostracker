@@ -2,274 +2,274 @@
     ViewData["Title"] = "Mesa de ayuda";
 }
 
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
 
-<div class="help-container">
+<style>
+.help-page { max-width: 640px; margin: 0 auto; font-family: 'Plus Jakarta Sans', sans-serif; }
 
-@if (TempData["Success"] != null)
-{
-    var success = TempData["Success"];
-    TempData.Remove("Success");
-
-    <div class="help-success text-center">
-
-        <img src="~/images/otra.jpeg"
-             style="width:70px;height:70px;border-radius:50%;
-             object-fit:cover;margin-bottom:10px;
-             box-shadow:0 0 15px rgba(255,255,255,0.3);" />
-
-        <div style="color:#000 !important;">
-            @success
-        </div>
-
-    </div>
+/* HERO */
+.help-hero {
+    background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+    border-radius: 22px; padding: 32px 28px; margin-bottom: 16px;
+    text-align: center; position: relative; overflow: hidden;
+    border: 1px solid rgba(255,255,255,0.06);
 }
-else if (TempData["Error"] != null)
-{
-    var error = TempData["Error"];
-    TempData.Remove("Error");
-
-    <div class="help-error text-center">
-
-        <img src="~/images/otra.jpeg"
-             style="width:70px;height:70px;border-radius:50%;
-             object-fit:cover;margin-bottom:10px;
-             box-shadow:0 0 15px rgba(255,255,255,0.2);" />
-
-        <div style="color:inherit;">
-            @error
-        </div>
-
-    </div>
+.help-hero::before {
+    content:""; position:absolute; top:-60px; left:50%; transform:translateX(-50%);
+    width:300px; height:200px;
+    background: radial-gradient(ellipse, rgba(99,102,241,0.2), transparent 70%);
 }
-    
+.help-hero-img {
+    width: 90px; height: 90px; border-radius: 20px;
+    object-fit: cover; border: 3px solid rgba(99,102,241,0.4);
+    box-shadow: 0 8px 24px rgba(99,102,241,0.3);
+    margin-bottom: 16px; position: relative; z-index: 1;
+}
+.help-hero-title { font-size: 20px; font-weight: 800; color: white; margin: 0 0 8px; }
+.help-hero-sub { font-size: 13px; color: rgba(255,255,255,0.45); margin: 0; line-height: 1.6; }
 
-    <!-- FOTO FUNDADORES -->
-    <div class="help-card text-center">
-        <img src="~/images/hole.png" class="help-img" />
-        <h4 class="mt-3">Fundadores del proyecto</h4>
-        <p class="text-muted">
-            Estamos construyendo esta app para ayudarte cada día 🚀
+/* ALERT BANNERS */
+.help-banner {
+    display: flex; align-items: center; gap: 12px;
+    padding: 14px 18px; border-radius: 16px; margin-bottom: 16px;
+    font-size: 13px; font-weight: 600;
+}
+.help-banner.success { background: rgba(34,197,94,0.1); border: 1px solid rgba(34,197,94,0.3); color: #16a34a; }
+.help-banner.error { background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3); color: #dc2626; }
+.help-banner-icon { font-size: 20px; flex-shrink: 0; }
+
+/* CARDS */
+.help-card {
+    background: white; border-radius: 20px; padding: 24px;
+    margin-bottom: 14px; border: 1px solid rgba(0,0,0,0.05);
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06); transition: 0.2s;
+}
+.help-card:hover { box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
+
+.help-card-header { display: flex; align-items: center; gap: 14px; margin-bottom: 18px; }
+.help-card-icon {
+    width: 44px; height: 44px; border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px; flex-shrink: 0;
+}
+.help-card-icon.purple { background: rgba(99,102,241,0.1); }
+.help-card-icon.green { background: rgba(34,197,94,0.1); }
+.help-card-icon.blue { background: rgba(37,99,235,0.1); }
+.help-card-title { font-size: 15px; font-weight: 700; color: #111827; margin: 0 0 3px; }
+.help-card-desc { font-size: 12px; color: #9ca3af; margin: 0; }
+
+/* FOUNDERS */
+.founders-text {
+    font-size: 13px; color: #6b7280; line-height: 1.7;
+    background: #f9fafb; border-radius: 14px;
+    padding: 16px 18px; border: 1px solid #f3f4f6;
+}
+.founders-text strong { color: #111827; }
+
+/* STATS */
+.help-stats {
+    display: grid; grid-template-columns: repeat(3, 1fr);
+    gap: 10px; margin-top: 16px;
+}
+.stat-item {
+    background: linear-gradient(135deg, rgba(99,102,241,0.06), rgba(37,99,235,0.06));
+    border: 1px solid rgba(99,102,241,0.12);
+    border-radius: 14px; padding: 14px; text-align: center;
+}
+.stat-num { font-size: 20px; font-weight: 800; color: #6366f1; }
+.stat-label { font-size: 11px; color: #9ca3af; font-weight: 600; margin-top: 2px; }
+
+/* FORM */
+.help-textarea {
+    width: 100%; min-height: 110px; padding: 13px 16px;
+    border: 1.5px solid #e5e7eb; border-radius: 14px;
+    font-size: 14px; font-family: inherit; outline: none;
+    transition: 0.2s; background: #f9fafb; color: #111827;
+    resize: vertical; box-sizing: border-box; line-height: 1.6;
+}
+.help-textarea:focus { border-color: #6366f1; background: white; box-shadow: 0 0 0 3px rgba(99,102,241,0.1); }
+.help-textarea::placeholder { color: #9ca3af; }
+.help-submit-btn {
+    width: 100%; padding: 13px; border: none; border-radius: 14px;
+    background: linear-gradient(135deg, #6366f1, #2563eb);
+    color: white; font-size: 14px; font-weight: 700;
+    font-family: inherit; cursor: pointer; transition: 0.2s;
+    margin-top: 10px; position: relative; overflow: hidden;
+}
+.help-submit-btn::before {
+    content:""; position:absolute; top:0; left:-100%; width:100%; height:100%;
+    background: linear-gradient(120deg,transparent,rgba(255,255,255,0.15),transparent);
+    transition: 0.5s;
+}
+.help-submit-btn:hover::before { left:100%; }
+.help-submit-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(99,102,241,0.35); }
+
+/* CONTACTO */
+.contact-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.contact-card {
+    background: #f9fafb; border-radius: 16px;
+    padding: 18px; border: 1px solid #f3f4f6;
+    display: flex; flex-direction: column; gap: 12px;
+    transition: 0.2s;
+}
+.contact-card:hover { background: #f3f4f6; border-color: #e5e7eb; }
+.contact-name { font-size: 14px; font-weight: 700; color: #111827; }
+.contact-role { font-size: 11px; color: #9ca3af; font-weight: 600; }
+.contact-link {
+    display: flex; align-items: center; gap: 8px;
+    padding: 9px 14px; border-radius: 10px;
+    background: white; border: 1px solid #e5e7eb;
+    text-decoration: none; font-size: 13px; font-weight: 600;
+    color: #374151; transition: 0.15s;
+}
+.contact-link:hover { background: #dcfce7; border-color: #86efac; color: #16a34a; }
+.contact-link-icon { font-size: 16px; }
+
+/* VERSION BADGE */
+.version-badge {
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    padding: 12px; border-radius: 14px;
+    background: rgba(99,102,241,0.06); border: 1px solid rgba(99,102,241,0.12);
+    font-size: 12px; font-weight: 600; color: #6366f1;
+    margin-top: 14px;
+}
+
+/* DARK MODE */
+body.bg-dark .help-card { background: #1e293b !important; border-color: #2d3748 !important; }
+body.bg-dark .help-card-title { color: #f1f5f9 !important; }
+body.bg-dark .founders-text { background: #2d3748 !important; border-color: #3d4d60 !important; color: #94a3b8 !important; }
+body.bg-dark .founders-text strong { color: #f1f5f9 !important; }
+body.bg-dark .stat-item { background: rgba(99,102,241,0.08) !important; }
+body.bg-dark .help-textarea { background: #2d3748 !important; border-color: #3d4d60 !important; color: #f1f5f9 !important; }
+body.bg-dark .help-textarea:focus { background: #334155 !important; }
+body.bg-dark .contact-card { background: #2d3748 !important; border-color: #3d4d60 !important; }
+body.bg-dark .contact-card:hover { background: #334155 !important; }
+body.bg-dark .contact-name { color: #f1f5f9 !important; }
+body.bg-dark .contact-link { background: #1e293b !important; border-color: #3d4d60 !important; color: #94a3b8 !important; }
+body.bg-dark .contact-link:hover { background: #14532d !important; border-color: #166534 !important; color: #4ade80 !important; }
+body.bg-dark .version-badge { background: rgba(99,102,241,0.1) !important; }
+body.bg-dark .help-banner.success { color: #4ade80 !important; }
+body.bg-dark .help-banner.error { color: #f87171 !important; }
+
+@@media (max-width: 480px) {
+    .contact-grid { grid-template-columns: 1fr; }
+    .help-stats { grid-template-columns: repeat(3, 1fr); }
+}
+</style>
+
+<div class="help-page">
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="help-banner success">
+            <span class="help-banner-icon">✅</span>
+            <span>@TempData["Success"]</span>
+        </div>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <div class="help-banner error">
+            <span class="help-banner-icon">❌</span>
+            <span>@TempData["Error"]</span>
+        </div>
+    }
+
+    <!-- HERO -->
+    <div class="help-hero">
+        <img src="~/images/hole.png" class="help-hero-img" />
+        <h2 class="help-hero-title">Mesa de Ayuda</h2>
+        <p class="help-hero-sub">
+            Estamos aquí para escucharte y mejorar tu experiencia 💙
         </p>
     </div>
 
-    <div class="help-founders">
-        <p>
-            🚀 Este es nuestro primer proyecto como desarrolladores de software.
-            <br />
-            Estamos construyendo una aplicación enfocada en el control de hábitos,
-            con el objetivo de ayudarte a superarte cada día y vencerte a ti mismo.
-            <br /><br />
-            Actualmente nos encontramos en el segundo semestre de desarrollo,
-            aprendiendo y mejorando constantemente 💡
-        </p>
-    </div>
-
-    <!-- FORMULARIO -->
+    <!-- SOBRE NOSOTROS -->
     <div class="help-card">
-        <h5>💡 Envíanos tu recomendación</h5>
-        <p class="text-muted">Tu opinión nos ayuda a mejorar</p>
+        <div class="help-card-header">
+            <div class="help-card-icon purple">🚀</div>
+            <div>
+                <div class="help-card-title">Sobre el proyecto</div>
+                <div class="help-card-desc">Quiénes somos y qué estamos construyendo</div>
+            </div>
+        </div>
+        <div class="founders-text">
+            <strong>HabitTracker</strong> es nuestro primer proyecto como desarrolladores de software.
+            Estamos construyendo una app enfocada en el control de hábitos, con el objetivo de
+            ayudarte a <strong>superarte cada día</strong> y vencerte a ti mismo. 💡
+            <br /><br />
+            Actualmente nos encontramos en el <strong>segundo semestre de desarrollo</strong>,
+            aprendiendo y mejorando constantemente para darte la mejor experiencia posible.
+        </div>
+        <div class="help-stats">
+            <div class="stat-item">
+                <div class="stat-num">2°</div>
+                <div class="stat-label">Semestre</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-num">2</div>
+                <div class="stat-label">Fundadores</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-num">∞</div>
+                <div class="stat-label">Mejoras</div>
+            </div>
+        </div>
+    </div>
 
+    <!-- FEEDBACK -->
+    <div class="help-card">
+        <div class="help-card-header">
+            <div class="help-card-icon purple">💡</div>
+            <div>
+                <div class="help-card-title">Envíanos tu recomendación</div>
+                <div class="help-card-desc">Tu opinión nos ayuda a mejorar cada día</div>
+            </div>
+        </div>
         <form method="post" asp-controller="Help" asp-action="SendFeedback">
-            <textarea name="message" class="help-input" placeholder="Escribe tu recomendación..." required></textarea>
-
-            <button type="submit" class="help-btn">
-                Enviar recomendación
+            <textarea name="message" class="help-textarea"
+                      placeholder="¿Qué podemos mejorar? ¿Tienes alguna idea o sugerencia?" required></textarea>
+            <button type="submit" class="help-submit-btn">
+                🚀 Enviar recomendación
             </button>
         </form>
     </div>
 
-    <div class="help-card text-center">
-        <h5>📞 ¿Necesitas ayuda personalizada?</h5>
-        <p class="text-muted">Contáctanos directamente</p>
-
-        <div class="help-socials">
-
-            <!-- WHATSAPP -->
-            <div class="help-contact">
-                <p>🟢 WhatsApp</p>
-
+    <!-- CONTACTO -->
+    <div class="help-card">
+        <div class="help-card-header">
+            <div class="help-card-icon green">📞</div>
+            <div>
+                <div class="help-card-title">Contacto directo</div>
+                <div class="help-card-desc">Escríbenos por WhatsApp</div>
+            </div>
+        </div>
+        <div class="contact-grid">
+            <div class="contact-card">
+                <div>
+                    <div class="contact-name">Juan Carlos</div>
+                    <div class="contact-role">Co-fundador · Dev</div>
+                </div>
                 <a href="https://wa.me/573106013616?text=Hola%20Juan,%20necesito%20ayuda%20con%20la%20app%20HabitTracker"
-                       target="_blank" data-no-loader>
-                    Contactar a Juan Carlos
+                   target="_blank" class="contact-link" data-no-loader>
+                    <span class="contact-link-icon">🟢</span>
+                    <span>WhatsApp</span>
                 </a>
-                <br />
+            </div>
+            <div class="contact-card">
+                <div>
+                    <div class="contact-name">Juan Esteban</div>
+                    <div class="contact-role">Co-fundador · Dev</div>
+                </div>
                 <a href="https://wa.me/573233748757?text=Hola,%20necesito%20ayuda%20con%20la%20app%20HabitTracker"
-                       target="_blank" data-no-loader>
-                    Contactar a Juan Esteban
+                   target="_blank" class="contact-link" data-no-loader>
+                    <span class="contact-link-icon">🟢</span>
+                    <span>WhatsApp</span>
                 </a>
-                <br />
             </div>
-
-            <!-- TIKTOK -->
-            <div class="help-contact">
-                <p>🎵 TikTok</p>
-
-                <a href="https://www.tiktok.com/@@holasoyjuancarlos_" target="_blank" data-no-loader>
-                    Ver perfil de Juan Carlos
-                </a>
-                <br />
-
-                <a href="https://www.tiktok.com/@@j_eelunico" target="_blank" data-no-loader>
-                    Ver perfil de Juan Esteban
-                </a>
-                <br>
-            </div>
-
+        </div>
+        <div class="version-badge">
+            🛠 HabitTracker Pro · En desarrollo activo · v2.0
         </div>
     </div>
 
 </div>
-
-<style>
-    .help-container {
-        max-width: 600px;
-        margin: 40px auto;
-    }
-
-    .help-founders {
-        margin-top: 15px;
-        font-size: 0.9rem;
-        color: #6b7280;
-        text-align: center;
-        line-height: 1.5;
-    }
-
-
-    .help-socials {
-        display: flex;
-        justify-content: center;
-        gap: 30px;
-        flex-wrap: wrap;
-        margin-top: 15px;
-    }
-
-    .help-contact {
-        background: #f8fafc;
-        padding: 15px;
-        border-radius: 12px;
-        min-width: 180px;
-    }
-
-    .help-link {
-        display: block;
-        margin-top: 8px;
-        text-decoration: none;
-        font-weight: 600;
-        color: #2563eb;
-    }
-
-        .help-link:hover {
-            text-decoration: underline;
-        }
-
-    .help-card {
-        background: white;
-        padding: 20px;
-        border-radius: 15px;
-        margin-bottom: 20px;
-        box-shadow: 0 5px 20px rgba(0,0,0,0.08);
-    }
-
-    .help-img {
-        width: 120px;
-        border-radius: 15px;
-    }
-
-    .help-input {
-        width: 100%;
-        height: 100px;
-        padding: 10px;
-        border-radius: 10px;
-        border: 1px solid #ccc;
-        margin-bottom: 10px;
-    }
-
-
-
-    .help-success {
-        background: #ecfdf5;
-        border: 1px solid #10b981;
-        padding: 15px;
-        border-radius: 12px;
-        text-align: center;
-        color: #000 !important; /* 🔥 SIEMPRE NEGRO */
-    }
-
-    .help-success span {
-    color: #000 !important;
-}
-        .help-success img {
-            width: 60px;
-            border-radius: 10px;
-            margin-bottom: 10px;
-        }
-
-    body.dark-mode .help-success {
-        background: linear-gradient(135deg, #064e3b, #022c22);
-        color: #d1fae5;
-    }
-
-    /* 🌞 MODO CLARO */
-.help-error {
-    background: #fef2f2;
-    border: 1px solid #dc2626;
-    padding: 15px;
-    border-radius: 12px;
-    margin-bottom: 15px;
-    color: #7f1d1d; /* 🔥 rojo oscuro visible */
-}
-
-/* 🌙 MODO OSCURO */
-body.dark .help-error {
-    background: #1e1b1b;
-    border: 1px solid #ef4444;
-    color: #ffffff; /* 🔥 blanco visible */
-}
-    /* 🌙 MODO OSCURO */
-body.dark .help-success {
-    background: #1e293b; /* oscuro elegante */
-    border: 1px solid #334155;
-    color: #fff;
-}
-
-background: #ecfdf5; /* claro */
-
-
-
-    body.dark-mode .help-success {
-        background: #064e3b; /* verde oscuro */
-        border: 1px solid #10b981;
-        color: #d1fae5; /* 🔥 TEXTO CLARO */
-    }
-
-    .help-error {
-        background: #fef2f2;
-        border: 1px solid #dc2626;
-        padding: 10px;
-        border-radius: 10px;
-        margin-bottom: 15px;
-        color: #b91c1c;
-        text-align: center;
-    }
-
-    .help-btn {
-        width: 100%;
-        padding: 12px;
-        border: none;
-        border-radius: 10px;
-        background: linear-gradient(135deg,#2563eb,#4f46e5);
-        color: white;
-        font-weight: 600;
-    }
-
-    .help-socials {
-        display: flex;
-        justify-content: center;
-        gap: 20px;
-    }
-
-        .help-socials a {
-            text-decoration: none;
-            font-weight: 600;
-        }
-</style>
