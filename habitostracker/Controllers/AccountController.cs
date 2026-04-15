@@ -1371,116 +1371,147 @@ namespace HabitTrackerApp.Controllers
             return Challenge(properties, provider);
         }
 
-       [HttpGet]
-public async Task<IActionResult> ExternalLoginCallback()
-{
-    try
-    {
-        string ip = HttpContext.Request.Headers["X-Forwarded-For"].FirstOrDefault();
-        if (!string.IsNullOrEmpty(ip))
-            ip = ip.Split(',').First().Trim();
-        else
-            ip = HttpContext.Connection.RemoteIpAddress?.ToString();
-
-        var blocked = _context.BlockedIPs.FirstOrDefault(x => x.IpAddress == ip);
-        if (blocked != null)
-            return RedirectToAction("Login", new { ipblocked = true });
-
-        var result = await HttpContext.AuthenticateAsync(GoogleDefaults.AuthenticationScheme);
-        if (!result.Succeeded)
+        [HttpGet]
+        public async Task<IActionResult> ExternalLoginCallback()
         {
-            await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-            return RedirectToAction("Login");
-        }
-
-        var email = result.Principal.FindFirst(ClaimTypes.Email)?.Value;
-        var name = result.Principal.FindFirst(ClaimTypes.Name)?.Value;
-        var picture = result.Principal.FindFirst("picture")?.Value;
-
-        if (email == null) return RedirectToAction("Login");
-
-        var user = _context.Users.FirstOrDefault(u => u.Email == email);
-
-        if (user == null)
-        {
-            user = new User
+            try
             {
-                Email = email,
-                Username = name ?? email,
-                ProfilePicture = picture,
-                EmailConfirmed = true,
-                IsActive = true,
-                Gender = "No especificado",
-                PasswordHash = BCrypt.Net.BCrypt.HashPassword(Guid.NewGuid().ToString()),
-                IsGoogleAccount = true,
-                Role = "User"
-            };
-            _context.Users.Add(user);
-            _context.SaveChanges();
-        }
-        else
-        {
-            if (!user.IsGoogleAccount)
-            {
-                user.IsGoogleAccount = true;
+                string ip = HttpContext.Request.Headers["X-Forwarded-For"].FirstOrDefault();
+                if (!string.IsNullOrEmpty(ip))
+                    ip = ip.Split(',').First().Trim();
+                else
+                    ip = HttpContext.Connection.RemoteIpAddress?.ToString();
+
+                var blocked = _context.BlockedIPs.FirstOrDefault(x => x.IpAddress == ip);
+                if (blocked != null)
+                    return RedirectToAction("Login", new { ipblocked = true });
+
+                var result = await HttpContext.AuthenticateAsync(GoogleDefaults.AuthenticationScheme);
+                if (!result.Succeeded)
+                {
+                    await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+                    return RedirectToAction("Login");
+                }
+
+                var email = result.Principal.FindFirst(ClaimTypes.Email)?.Value;
+                var name = result.Principal.FindFirst(ClaimTypes.Name)?.Value;
+                var picture = result.Principal.FindFirst("picture")?.Value;
+
+                if (email == null) return RedirectToAction("Login");
+
+                var user = _context.Users.FirstOrDefault(u => u.Email == email);
+
+                if (user == null)
+                {
+                    user = new User
+                    {
+                        Email = email,
+                        Username = name ?? email,
+                        ProfilePicture = picture,
+                        EmailConfirmed = true,
+                        IsActive = true,
+                        Gender = "No especificado",
+                        PasswordHash = BCrypt.Net.BCrypt.HashPassword(Guid.NewGuid().ToString()),
+                        IsGoogleAccount = true,
+                        Role = "User"
+                    };
+                    _context.Users.Add(user);
+                    _context.SaveChanges();
+                }
+                else
+                {
+                    if (!user.IsGoogleAccount)
+                    {
+                        user.IsGoogleAccount = true;
+                        _context.SaveChanges();
+                    }
+                }
+
+                user.LastOnline = DateTime.Now;
+                var userAgent = HttpContext.Request.Headers["User-Agent"].ToString();
+                user.Device = GetDevice(userAgent);
+                user.OperatingSystem = GetOS(userAgent);
+                user.Browser = GetBrowser(userAgent);
+                user.LastIp = ip;
+
+                try
+                {
+                    using var httpClient = new HttpClient();
+                    httpClient.Timeout = TimeSpan.FromSeconds(5);
+                    var geoJson = await httpClient.GetStringAsync($"https://ipwho.is/{ip}");
+                    var geoDoc = System.Text.Json.JsonDocument.Parse(geoJson);
+                    var geoRoot = geoDoc.RootElement;
+                    if (geoRoot.GetProperty("success").GetBoolean())
+                    {
+                        user.Country = geoRoot.GetProperty("country").GetString();
+                        user.City = geoRoot.GetProperty("city").GetString();
+                        user.Latitude = geoRoot.GetProperty("latitude").GetDouble();
+                        user.Longitude = geoRoot.GetProperty("longitude").GetDouble();
+                    }
+                }
+                catch { }
+
                 _context.SaveChanges();
-            }
-        }
 
-        user.LastOnline = DateTime.Now;
-        var userAgent = HttpContext.Request.Headers["User-Agent"].ToString();
-        user.Device = GetDevice(userAgent);
-        user.OperatingSystem = GetOS(userAgent);
-        user.Browser = GetBrowser(userAgent);
-        user.LastIp = ip;
+                // 🔥 generar token único para esta sesión
+                var sessionToken = Guid.NewGuid().ToString();
 
-        try
-        {
-            using var httpClient = new HttpClient();
-            httpClient.Timeout = TimeSpan.FromSeconds(5);
-            var geoJson = await httpClient.GetStringAsync($"https://ipwho.is/{ip}");
-            var geoDoc = System.Text.Json.JsonDocument.Parse(geoJson);
-            var geoRoot = geoDoc.RootElement;
-            if (geoRoot.GetProperty("success").GetBoolean())
-            {
-                user.Country = geoRoot.GetProperty("country").GetString();
-                user.City = geoRoot.GetProperty("city").GetString();
-                user.Latitude = geoRoot.GetProperty("latitude").GetDouble();
-                user.Longitude = geoRoot.GetProperty("longitude").GetDouble();
-            }
-        }
-        catch { }
-
-        _context.SaveChanges();
-
-        var claims = new List<Claim>
+                var claims = new List<Claim>
         {
             new Claim("UserId", user.Id.ToString()),
+            new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
             new Claim(ClaimTypes.Name, user.Username),
             new Claim(ClaimTypes.Email, user.Email),
             new Claim(ClaimTypes.Role, user.Role ?? "User"),
-            new Claim("ProfileImage", user.ProfileImage ?? user.ProfilePicture ?? "")
+            new Claim("ProfileImage", user.ProfileImage ?? user.ProfilePicture ?? ""),
+            new Claim("SessionToken", sessionToken) // 🔥 incluir token
         };
-        var identity = new ClaimsIdentity(claims, "Cookies");
-        var principal = new ClaimsPrincipal(identity);
-        await HttpContext.SignInAsync("Cookies", principal);
+                var identity = new ClaimsIdentity(claims, "Cookies");
+                var principal = new ClaimsPrincipal(identity);
+                await HttpContext.SignInAsync("Cookies", principal);
 
-        bool perfilIncompleto = string.IsNullOrEmpty(user.Gender)
-            || user.Gender == "No especificado"
-            || string.IsNullOrEmpty(user.Bio)
-            || user.Bio == "Registrado con Google";
+                // 🔥 guardar sesión en BD
+                try
+                {
+                    _context.UserSessions.Add(new UserSession
+                    {
+                        UserId = user.Id,
+                        SessionToken = sessionToken,
+                        Device = GetDevice(userAgent),
+                        Browser = GetBrowser(userAgent),
+                        IpAddress = ip ?? "",
+                        CreatedAt = DateTime.UtcNow,
+                        IsActive = true
+                    });
+                    await _context.SaveChangesAsync();
+                    Console.WriteLine($"✅ Sesión guardada userId={user.Id} token={sessionToken}");
 
-        if (perfilIncompleto)
-            return RedirectToAction("CompleteProfile", "Account");
+                    // 🔥 notificar en tiempo real
+                    await _hubContext.Clients.Group(user.Id.ToString())
+                        .SendAsync("NewSessionDetected");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"❌ Error guardando sesión: {ex.Message}");
+                }
 
-        return RedirectToAction("Index", "Habit");
-    }
-    catch (Exception)
-    {
-        await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-        return RedirectToAction("Login");
-    }
-}
+                bool perfilIncompleto = string.IsNullOrEmpty(user.Gender)
+                    || user.Gender == "No especificado"
+                    || string.IsNullOrEmpty(user.Bio)
+                    || user.Bio == "Registrado con Google";
+
+                if (perfilIncompleto)
+                    return RedirectToAction("CompleteProfile", "Account");
+
+                return RedirectToAction("Index", "Habit");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ ExternalLoginCallback error: {ex.Message}");
+                await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+                return RedirectToAction("Login");
+            }
+        }
         [HttpGet]
         public IActionResult GuestRegister()
         {
@@ -1537,6 +1568,41 @@ public async Task<IActionResult> ExternalLoginCallback()
             return View();
         }
 
+        private async Task RegistrarSesion(int userId)
+        {
+            try
+            {
+                var userAgent = HttpContext.Request.Headers["User-Agent"].ToString();
+                var ip = HttpContext.Request.Headers["X-Forwarded-For"].FirstOrDefault()
+                         ?? HttpContext.Connection.RemoteIpAddress?.ToString();
+                var sessionToken = User.FindFirst("SessionToken")?.Value;
+
+                if (!string.IsNullOrEmpty(sessionToken))
+                {
+                    var exists = _context.UserSessions.Any(s => s.SessionToken == sessionToken);
+                    if (!exists)
+                    {
+                        _context.UserSessions.Add(new UserSession
+                        {
+                            UserId = userId,
+                            SessionToken = sessionToken,
+                            Device = GetDevice(userAgent),
+                            Browser = GetBrowser(userAgent),
+                            IpAddress = ip ?? "",
+                            CreatedAt = DateTime.UtcNow,
+                            IsActive = true
+                        });
+                        await _context.SaveChangesAsync();
+                        Console.WriteLine($"✅ Sesión Google guardada userId={userId}");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ Error sesión Google: {ex.Message}");
+            }
+        }
+
         public IActionResult GoogleLogin()
         {
             // 🔥 OBTENER IP
@@ -1571,7 +1637,15 @@ public async Task<IActionResult> ExternalLoginCallback()
 
         public async Task<IActionResult> GoogleResponse()
         {
-            // ... (todo el código de IP y bloqueo igual) ...
+            string ip = HttpContext.Request.Headers["X-Forwarded-For"].FirstOrDefault();
+            if (!string.IsNullOrEmpty(ip))
+                ip = ip.Split(',').First().Trim();
+            else
+                ip = HttpContext.Connection.RemoteIpAddress?.ToString();
+
+            var blocked = _context.BlockedIPs.FirstOrDefault(x => x.IpAddress == ip);
+            if (blocked != null)
+                return RedirectToAction("Login", new { ipblocked = true });
 
             var result = await HttpContext.AuthenticateAsync("Cookies");
             var claims = result.Principal.Identities.FirstOrDefault()?.Claims;
@@ -1639,9 +1713,48 @@ public async Task<IActionResult> ExternalLoginCallback()
                 _context.SaveChanges();
             }
 
-            await SignInUser(user);
+            // 🔥 generar token de sesión
+            var sessionToken = Guid.NewGuid().ToString();
+            var userAgent = HttpContext.Request.Headers["User-Agent"].ToString();
 
-            // 🔥 Redirigir a CompleteProfile si es nuevo O si el perfil está incompleto
+            // 🔥 SignIn con token incluido
+            var sessionClaims = new List<Claim>
+    {
+        new Claim("UserId", user.Id.ToString()),
+        new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+        new Claim(ClaimTypes.Name, user.Username ?? "Usuario"),
+        new Claim(ClaimTypes.Role, user.Role ?? "User"),
+        new Claim("ProfileImage", user.ProfileImage ?? user.ProfilePicture ?? ""),
+        new Claim("SessionToken", sessionToken)
+    };
+            var sessionIdentity = new ClaimsIdentity(sessionClaims, CookieAuthenticationDefaults.AuthenticationScheme);
+            await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(sessionIdentity));
+
+            // 🔥 guardar sesión en BD
+            try
+            {
+                _context.UserSessions.Add(new UserSession
+                {
+                    UserId = user.Id,
+                    SessionToken = sessionToken,
+                    Device = GetDevice(userAgent),
+                    Browser = GetBrowser(userAgent),
+                    IpAddress = ip ?? "",
+                    CreatedAt = DateTime.UtcNow,
+                    IsActive = true
+                });
+                await _context.SaveChangesAsync();
+                Console.WriteLine($"✅ Sesión GoogleResponse guardada userId={user.Id}");
+
+                // 🔥 notificar en tiempo real a otras sesiones
+                await _hubContext.Clients.Group(user.Id.ToString())
+                    .SendAsync("NewSessionDetected");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ Error sesión GoogleResponse: {ex.Message}");
+            }
+
             bool perfilIncompleto = string.IsNullOrEmpty(user.Gender)
                 || user.Gender == "No especificado"
                 || string.IsNullOrEmpty(user.Bio)

@@ -423,10 +423,11 @@ body.bg-dark .modal-content .btn-outline-secondary:hover { background: #334155; 
                 <p class="text-muted small mt-1">Tendrás que volver a ingresar tus datos.</p>
                 <div class="d-flex justify-content-center gap-3 mt-4">
                     <button type="button" class="btn btn-secondary rounded-pill px-4" data-bs-dismiss="modal">Cancelar</button>
-                    <form asp-controller="Account" asp-action="Logout" method="post" class="d-inline">
-                        @Html.AntiForgeryToken()
-                        <button type="submit" class="btn btn-danger rounded-pill px-4">Sí, salir</button>
-                    </form>
+                   <form asp-controller="Account" asp-action="Logout" method="post" class="d-inline">
+    @Html.AntiForgeryToken()
+    <input type="hidden" name="sessionToken" value="@User.FindFirst("SessionToken")?.Value" />
+    <button type="submit" class="btn btn-danger rounded-pill px-4">Sí, salir</button>
+</form>
                 </div>
             </div>
         </div>
@@ -471,7 +472,7 @@ const connectionGlobal = new signalR.HubConnectionBuilder().withUrl("/chatHub").
 
 connectionGlobal.on("ForceLogout", function(message) {
     document.body.innerHTML = `<div style="height:100vh;display:flex;align-items:center;justify-content:center;background:#0f172a;font-family:sans-serif;color:white;text-align:center;"><div style="background:#1e293b;padding:50px;border-radius:14px;"><h2 style="color:#f59e0b">⚠ Atención</h2><p>${message}</p><p style="opacity:0.6">Cerrando sesión...</p></div></div>`;
-    setTimeout(() => window.location.href="/Account/Logout", 2500);
+   setTimeout(() => window.location.href="/Account/LogoutGet", 2500);
 });
 
 connectionGlobal.on("IPBlocked", function(blockedIp) {
@@ -501,6 +502,13 @@ connectionGlobal.on("UserDeleted", function(userId) {
 
 connectionGlobal.on("UserConnectedNotification", function(username) {
     showToastNotif(username, "● En línea", "", null);
+});
+
+// 🔥 nueva sesión detectada en tiempo real
+connectionGlobal.on("NewSessionDetected", function() {
+    if (window.location.pathname.toLowerCase().includes("/security")) {
+        location.reload();
+    }
 });
 
 connectionGlobal.start().catch(err => console.error("SignalR global:", err));
