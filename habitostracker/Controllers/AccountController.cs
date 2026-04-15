@@ -653,7 +653,7 @@ namespace HabitTrackerApp.Controllers
                 Email = model.Email,
                 Gender = model.Gender,
                 Bio = model.Bio,
-                FullName = model.FullName,
+                FullName = null,
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword(model.Password),
                 CreatedAt = DateTime.Now,
                 Role = "User",

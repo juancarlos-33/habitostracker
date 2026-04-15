@@ -5,10 +5,10 @@ namespace HabitTrackerApp.Models
     public class RegisterViewModel
     {
         [Required(ErrorMessage = "El usuario es obligatorio.")]
+        
         public string Username { get; set; }
 
-        [Required(ErrorMessage = "El nombre completo es obligatorio.")]
-        public string FullName { get; set; }
+   
 
         [Required(ErrorMessage = "El correo es obligatorio.")]
         [EmailAddress(ErrorMessage = "Debes ingresar un correo válido.")]
