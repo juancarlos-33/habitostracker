@@ -843,6 +843,24 @@ chatConnection.on("UserOffline", (uid) => {
     offlineInterval = setInterval(updateOfflineText, 60000);
 });
 
+// 🔥 si ya estaba offline al cargar, iniciar contador desde el tiempo real
+@{
+    if (!isOnline && lastOnline.HasValue)
+    {
+        var totalSecs = (int)(DateTime.UtcNow - lastOnline.Value.ToUniversalTime()).TotalSeconds;
+        @Html.Raw($@"
+offlineSeconds = {totalSecs};
+offlineInterval = setInterval(() => {{
+    offlineSeconds += 60;
+    const mins = Math.floor(offlineSeconds / 60);
+    const hours = Math.floor(mins / 60);
+    let text = mins < 2 ? 'Hace un momento' : mins < 60 ? `Hace ${{mins}} min` : hours < 24 ? `Hace ${{hours}} h` : 'Hace más de un día';
+    document.getElementById('onlineStatus').textContent = '○ ' + text;
+}}, 60000);
+        ")
+    }
+}
+
 // 🔥 bloqueo en tiempo real — el que fue bloqueado ve el banner y se le deshabilita
 chatConnection.on("UserBlocked", (blockerId) => {
     if (String(blockerId) !== String(receiverId)) return;
@@ -911,11 +929,18 @@ async function toggleHeaderMenu() {
     const isOpen = menu.style.display !== "none";
     menu.style.display = isOpen ? "none" : "block";
     if (!isOpen) {
+        // 🔥 verificar bloqueo
         const statusRes = await fetch(`/User/IsBlocked?userId=${receiverId}`);
         const status = await statusRes.json();
         const btn = document.getElementById("btnBloquear");
         if (btn) btn.textContent = status.blocked ? "✅ Desbloquear" : "🚫 Bloquear";
         if (status.blocked) deshabilitarChat();
+
+        // 🔥 verificar si está anclado y actualizar botón
+        const pinRes = await fetch(`/Message/IsPinned?userId=${receiverId}`);
+        const pinData = await pinRes.json();
+        const btnAnclar = menu.querySelector("[onclick='anclarChat()']");
+        if (btnAnclar) btnAnclar.textContent = pinData.pinned ? "📌 Desanclar chat" : "📌 Anclar chat";
     }
 }
 
