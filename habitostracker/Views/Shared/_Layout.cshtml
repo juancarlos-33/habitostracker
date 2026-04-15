@@ -722,10 +722,15 @@ document.addEventListener("DOMContentLoaded", function() {
         e.preventDefault();
         guestModal.show();
     }, true);
-
-    document.getElementById("closeGuestModal").addEventListener("click", function() {
-        guestModal.hide();
-    });
+document.getElementById("closeGuestModal").addEventListener("click", function() {
+    guestModal.hide();
+    // 🔥 limpiar backdrop por si queda bloqueado
+    setTimeout(() => {
+        document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
+        document.body.classList.remove('modal-open');
+        document.body.style.removeProperty('overflow');
+        document.body.style.removeProperty('padding-right');
+    }, 300);
 });
 </script>
 

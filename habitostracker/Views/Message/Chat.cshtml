@@ -1284,17 +1284,17 @@ async function sendAudio() {
     formData.append("receiverId", receiverId);
     const btn = document.querySelector(".btn-send-audio");
     btn.textContent = "Enviando..."; btn.disabled = true;
-    const res = await fetch('/Message/SendAudio', { method: 'POST', body: formData });
-    if (res.ok) {
-        const data = await res.json();
-        const audioTempCheck = "audio-check-" + Date.now();
-        const wrap = document.createElement("div");
-        wrap.className = "msg-wrap msg-mine";
-       wrap.innerHTML = `
-    <div class="msg-content-wrap"><div class="msg-bubble bubble-theirs">
-        ${createAudioPlayer(audioUrl)}
-                <div class="msg-footer"><span class="msg-time">${makeTime()}</span><span class="msg-check sent" id="${audioTempCheck}">✔</span></div>
-            </div></div>`;
+ const res = await fetch('/Message/SendAudio', { method: 'POST', body: formData });
+if (res.ok) {
+    const data = await res.json();
+    const audioTempCheck = "audio-check-" + Date.now();
+    const wrap = document.createElement("div");
+    wrap.className = "msg-wrap msg-mine";
+    wrap.innerHTML = `
+        <div class="msg-content-wrap"><div class="msg-bubble bubble-mine">
+            ${createAudioPlayer(data.audioUrl)}
+            <div class="msg-footer"><span class="msg-time">${makeTime()}</span><span class="msg-check sent" id="${audioTempCheck}">✔</span></div>
+        </div></div>`;
         chatBox.insertBefore(wrap, document.getElementById("typingIndicator"));
         scrollBottom(null); cancelAudio();
         if (data.messageId) {
