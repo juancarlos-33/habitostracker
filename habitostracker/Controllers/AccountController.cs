@@ -1155,17 +1155,25 @@ namespace HabitTrackerApp.Controllers
             var ip = HttpContext.Request.Headers["X-Forwarded-For"].FirstOrDefault()
                      ?? HttpContext.Connection.RemoteIpAddress?.ToString();
 
-            _context.UserSessions.Add(new UserSession
+            try
             {
-                UserId = user.Id,
-                SessionToken = sessionToken,
-                Device = GetDevice(userAgent),
-                Browser = GetBrowser(userAgent),
-                IpAddress = ip ?? "",
-                CreatedAt = DateTime.UtcNow,
-                IsActive = true
-            });
-            await _context.SaveChangesAsync();
+                _context.UserSessions.Add(new UserSession
+                {
+                    UserId = user.Id,
+                    SessionToken = sessionToken,
+                    Device = GetDevice(userAgent),
+                    Browser = GetBrowser(userAgent),
+                    IpAddress = ip ?? "",
+                    CreatedAt = DateTime.UtcNow,
+                    IsActive = true
+                });
+                await _context.SaveChangesAsync();
+                Console.WriteLine($"✅ Sesión guardada para userId={user.Id} token={sessionToken}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ Error guardando sesión: {ex.Message}");
+            }
         }
         public async Task RefreshUserSession(User user)
         {
