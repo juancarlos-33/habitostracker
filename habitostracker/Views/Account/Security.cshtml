@@ -465,9 +465,12 @@ let securityValida = @(hasQuestions ? "false" : "true");
 
 function toggleSection(id, btn) {
     const el = document.getElementById("section-" + id);
+    if (!el) return;
     const isOpen = el.style.display === "block";
     el.style.display = isOpen ? "none" : "block";
-    if (btn) btn.classList.toggle("open", !isOpen);
+    // buscar el botón toggle más cercano
+    const toggleBtn = btn ? btn.closest(".sec-toggle-row") : null;
+    if (toggleBtn) toggleBtn.classList.toggle("open", !isOpen);
 }
 
 function logoutAll() {
