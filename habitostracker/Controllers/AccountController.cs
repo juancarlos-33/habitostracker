@@ -102,9 +102,10 @@ namespace HabitTrackerApp.Controllers
         // 🔥 GUARDAR PREGUNTAS DE SEGURIDAD
         [HttpPost]
         public async Task<IActionResult> SaveSecurityQuestions(
-            string q1, string a1,
-            string q2, string a2,
-            string q3, string a3)
+    string q1, string a1,
+    string q2, string a2,
+    string q3, string a3,
+    string verifyPassword)
         {
             var userIdClaim = User.FindFirst("UserId");
             if (userIdClaim == null) return RedirectToAction("Login");
@@ -121,6 +122,21 @@ namespace HabitTrackerApp.Controllers
                 return RedirectToAction("Security");
             }
 
+            // 🔥 si ya tiene preguntas configuradas, verificar identidad antes de cambiarlas
+            bool yaTeniePreguntas = !string.IsNullOrEmpty(user.SecurityQuestion1);
+            if (yaTeniePreguntas)
+            {
+                if (!user.IsGoogleAccount)
+                {
+                    if (string.IsNullOrWhiteSpace(verifyPassword) ||
+                        !BCrypt.Net.BCrypt.Verify(verifyPassword, user.PasswordHash))
+                    {
+                        TempData["Error"] = "Contraseña incorrecta. No se pudieron actualizar las preguntas.";
+                        return RedirectToAction("Security");
+                    }
+                }
+            }
+
             user.SecurityQuestion1 = q1.Trim();
             user.SecurityAnswer1 = BCrypt.Net.BCrypt.HashPassword(a1.Trim().ToLower());
             user.SecurityQuestion2 = q2.Trim();
@@ -133,7 +149,6 @@ namespace HabitTrackerApp.Controllers
             TempData["Success"] = "✅ Preguntas de seguridad guardadas correctamente.";
             return RedirectToAction("Security");
         }
-
         // 🔥 VERIFICAR RESPUESTA DE SEGURIDAD (para eliminar cuenta)
         [HttpPost]
         public IActionResult VerifySecurityAnswer([FromBody] SecurityAnswerDto dto)
