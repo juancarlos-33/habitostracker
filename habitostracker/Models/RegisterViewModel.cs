@@ -8,7 +8,7 @@ namespace HabitTrackerApp.Models
         public string Username { get; set; }
 
        
-        public string FullName { get; set; }
+        public string? FullName { get; set; }
 
         [Required(ErrorMessage = "El correo es obligatorio.")]
         [EmailAddress(ErrorMessage = "Debes ingresar un correo válido.")]
