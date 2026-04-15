@@ -102,10 +102,10 @@ namespace HabitTrackerApp.Controllers
         // 🔥 GUARDAR PREGUNTAS DE SEGURIDAD
         [HttpPost]
         public async Task<IActionResult> SaveSecurityQuestions(
-    string q1, string a1,
-    string q2, string a2,
-    string q3, string a3,
-    string verifyPassword)
+       string q1, string a1,
+       string q2, string a2,
+       string q3, string a3,
+       string verifyPassword)
         {
             var userIdClaim = User.FindFirst("UserId");
             if (userIdClaim == null) return RedirectToAction("Login");
@@ -122,16 +122,37 @@ namespace HabitTrackerApp.Controllers
                 return RedirectToAction("Security");
             }
 
-            // 🔥 si ya tiene preguntas configuradas, verificar identidad antes de cambiarlas
-            bool yaTeniePreguntas = !string.IsNullOrEmpty(user.SecurityQuestion1);
-            if (yaTeniePreguntas)
+            bool yaTienePreguntas = !string.IsNullOrEmpty(user.SecurityQuestion1);
+            if (yaTienePreguntas)
             {
                 if (!user.IsGoogleAccount)
                 {
+                    // 🔥 usuario normal → verificar contraseña
                     if (string.IsNullOrWhiteSpace(verifyPassword) ||
                         !BCrypt.Net.BCrypt.Verify(verifyPassword, user.PasswordHash))
                     {
                         TempData["Error"] = "Contraseña incorrecta. No se pudieron actualizar las preguntas.";
+                        return RedirectToAction("Security");
+                    }
+                }
+                else
+                {
+                    // 🔥 cuenta Google → verificar con una de sus preguntas actuales
+                    var verifyAnswer = Request.Form["verifySecurityAnswer"].ToString();
+                    var verifyQNum = int.TryParse(Request.Form["verifySecurityQNum"], out int vq) ? vq : 1;
+
+                    string? storedHash = verifyQNum switch
+                    {
+                        1 => user.SecurityAnswer1,
+                        2 => user.SecurityAnswer2,
+                        3 => user.SecurityAnswer3,
+                        _ => null
+                    };
+
+                    if (string.IsNullOrWhiteSpace(verifyAnswer) || string.IsNullOrEmpty(storedHash) ||
+                        !BCrypt.Net.BCrypt.Verify(verifyAnswer.Trim().ToLower(), storedHash))
+                    {
+                        TempData["Error"] = "Respuesta de seguridad incorrecta. No se pudieron actualizar las preguntas.";
                         return RedirectToAction("Security");
                     }
                 }

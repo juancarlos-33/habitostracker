@@ -329,14 +329,32 @@ body.bg-dark .verify-pwd-note { background: #1a2535 !important; border-color: #2
                     </div>
                 }
 
-                @if (hasQuestions && !Model.IsGoogleAccount)
-                {
-                    <div class="sec-field" style="margin-top:4px;">
-                        <label>🔑 Confirma tu contraseña para guardar cambios</label>
-                        <input name="verifyPassword" type="password" class="sec-input"
-                               placeholder="Contraseña actual" autocomplete="off" />
-                    </div>
-                }
+              @if (hasQuestions)
+{
+    if (!Model.IsGoogleAccount)
+    {
+        <div class="sec-field" style="margin-top:4px;">
+            <label>🔑 Confirma tu contraseña para guardar cambios</label>
+            <input name="verifyPassword" type="password" class="sec-input"
+                   placeholder="Contraseña actual" autocomplete="off" />
+        </div>
+    }
+    else
+    {
+        var vQNum = new Random().Next(1, 4);
+        var vQText = vQNum == 1 ? Model.SecurityQuestion1 :
+                     vQNum == 2 ? Model.SecurityQuestion2 : Model.SecurityQuestion3;
+        <input type="hidden" name="verifySecurityQNum" value="@vQNum" />
+        <div class="verify-pwd-note">
+            🔒 Para actualizar tus preguntas debes verificar tu identidad.
+        </div>
+        <div class="sec-field">
+            <label>🔐 @vQText</label>
+            <input name="verifySecurityAnswer" type="text" class="sec-input"
+                   placeholder="Tu respuesta..." autocomplete="off" />
+        </div>
+    }
+}
 
                 <button type="submit" class="sec-btn primary">
                     💾 @(hasQuestions ? "Actualizar preguntas" : "Guardar preguntas de seguridad")
