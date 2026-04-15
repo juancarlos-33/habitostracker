@@ -174,6 +174,28 @@ options.ClientSecret = builder.Configuration["Google:ClientSecret"];
 
             app.UseAuthentication();
 
+            // 🔥 verificar sesión activa en cada request
+            app.Use(async (context, next) =>
+            {
+                if (context.User.Identity != null && context.User.Identity.IsAuthenticated)
+                {
+                    var sessionToken = context.User.FindFirst("SessionToken")?.Value;
+                    if (!string.IsNullOrEmpty(sessionToken))
+                    {
+                        using var scope = context.RequestServices.CreateScope();
+                        var db = scope.ServiceProvider.GetRequiredService<HabitDbContext>();
+                        var session = db.UserSessions.FirstOrDefault(s => s.SessionToken == sessionToken);
+                        if (session == null || !session.IsActive)
+                        {
+                            await context.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+                            context.Response.Redirect("/Account/Login");
+                            return;
+                        }
+                    }
+                }
+                await next();
+            });
+
             app.UseMiddleware<ConnectionBlockMiddleware>();
 
             app.UseAuthorization();

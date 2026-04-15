@@ -18,6 +18,7 @@ namespace HabitTrackerApp.Data
         public DbSet<BlockedIP> BlockedIPs { get; set; }
         public DbSet<Block> Blocks { get; set; }
         public DbSet<Report> Reports { get; set; }
+        public DbSet<UserSession> UserSessions { get; set; }
 
         public DbSet<HabitComment> HabitComments { get; set; }
         public DbSet<Feedback> Feedbacks { get; set; }

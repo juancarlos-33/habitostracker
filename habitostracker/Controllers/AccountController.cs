@@ -78,14 +78,20 @@ namespace HabitTrackerApp.Controllers
             var user = _context.Users.FirstOrDefault(u => u.Id == userId);
             if (user == null) return RedirectToAction("Login");
 
-            // 🔥 si no tiene preguntas de seguridad, redirigir a configurarlas
             bool hasQuestions = !string.IsNullOrEmpty(user.SecurityQuestion1) &&
                                 !string.IsNullOrEmpty(user.SecurityQuestion2) &&
                                 !string.IsNullOrEmpty(user.SecurityQuestion3);
 
             ViewBag.HasSecurityQuestions = hasQuestions;
 
-            // 🔥 elegir pregunta aleatoria y guardarla en sesión
+            // 🔥 sesiones activas
+            var activeSessions = _context.UserSessions
+                .Where(s => s.UserId == userId && s.IsActive)
+                .OrderByDescending(s => s.CreatedAt)
+                .ToList();
+
+            ViewBag.ActiveSessions = activeSessions;
+
             if (hasQuestions)
             {
                 var rng = new Random();
@@ -93,8 +99,6 @@ namespace HabitTrackerApp.Controllers
                 HttpContext.Session.SetInt32("SecurityQuestionNum", qNum);
                 ViewBag.SecurityQuestionNum = qNum;
             }
-
-            return View(user);
 
             return View(user);
         }
@@ -303,6 +307,25 @@ namespace HabitTrackerApp.Controllers
         [HttpPost]
         public async Task<IActionResult> LogoutAll()
         {
+            var userIdClaim = User.FindFirst("UserId");
+            if (userIdClaim == null) return Ok();
+
+            var userId = int.Parse(userIdClaim.Value);
+
+            // 🔥 marcar todas las sesiones como inactivas
+            var sessions = _context.UserSessions
+                .Where(s => s.UserId == userId && s.IsActive)
+                .ToList();
+
+            foreach (var s in sessions)
+                s.IsActive = false;
+
+            await _context.SaveChangesAsync();
+
+            // 🔥 forzar logout en todos los dispositivos via SignalR
+            await _hubContext.Clients.Group(userId.ToString())
+                .SendAsync("ForceLogout", "Tu sesión fue cerrada desde otro dispositivo.");
+
             await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
             return Ok();
         }
@@ -1084,27 +1107,42 @@ namespace HabitTrackerApp.Controllers
         // =====================================================
         private async Task SignInUser(User user)
         {
-            var claims = new List<Claim>
-{
-    new Claim("UserId", user.Id.ToString()),
-    new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-    new Claim(ClaimTypes.Name, user.Username ?? "Usuario"),
-    
-    // 🔥 IMPORTANTE (para detectar Guest)
-    new Claim(ClaimTypes.Role, user.Role ?? "User"),
+            // 🔥 generar token único para esta sesión
+            var sessionToken = Guid.NewGuid().ToString();
 
-    new Claim("ProfileImage", user.ProfileImage ?? user.ProfilePicture ?? "")
-};
+            var claims = new List<Claim>
+    {
+        new Claim("UserId", user.Id.ToString()),
+        new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+        new Claim(ClaimTypes.Name, user.Username ?? "Usuario"),
+        new Claim(ClaimTypes.Role, user.Role ?? "User"),
+        new Claim("ProfileImage", user.ProfileImage ?? user.ProfilePicture ?? ""),
+        new Claim("SessionToken", sessionToken)
+    };
 
             var claimsIdentity = new ClaimsIdentity(
-                claims,
-                CookieAuthenticationDefaults.AuthenticationScheme);
+                claims, CookieAuthenticationDefaults.AuthenticationScheme);
 
             await HttpContext.SignInAsync(
                 CookieAuthenticationDefaults.AuthenticationScheme,
                 new ClaimsPrincipal(claimsIdentity));
 
-            //REFRESHUSERSESSION
+            // 🔥 registrar sesión en BD
+            var userAgent = HttpContext.Request.Headers["User-Agent"].ToString();
+            var ip = HttpContext.Request.Headers["X-Forwarded-For"].FirstOrDefault()
+                     ?? HttpContext.Connection.RemoteIpAddress?.ToString();
+
+            _context.UserSessions.Add(new UserSession
+            {
+                UserId = user.Id,
+                SessionToken = sessionToken,
+                Device = GetDevice(userAgent),
+                Browser = GetBrowser(userAgent),
+                IpAddress = ip ?? "",
+                CreatedAt = DateTime.UtcNow,
+                IsActive = true
+            });
+            await _context.SaveChangesAsync();
         }
         public async Task RefreshUserSession(User user)
         {

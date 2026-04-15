@@ -19,113 +19,179 @@
     int qNum = ViewBag.SecurityQuestionNum != null ? (int)ViewBag.SecurityQuestionNum : 1;
     string qText = qNum == 1 ? Model.SecurityQuestion1 :
                    qNum == 2 ? Model.SecurityQuestion2 : Model.SecurityQuestion3;
+    var sessions = ViewBag.ActiveSessions as List<HabitTrackerApp.Models.UserSession>;
+    var sessionCount = sessions?.Count ?? 0;
+    var currentToken = User.FindFirst("SessionToken")?.Value ?? "";
 }
 
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
 
 <style>
-.sec-page { max-width: 600px; margin: 0 auto; font-family: 'Plus Jakarta Sans', sans-serif; }
+.sec-page { max-width: 620px; margin: 0 auto; font-family: 'Plus Jakarta Sans', sans-serif; padding-bottom: 40px; }
 
+/* HERO */
 .sec-hero {
-    background: linear-gradient(135deg, #1e293b, #0f172a);
-    border-radius: 22px; padding: 28px 28px 24px; margin-bottom: 16px;
-    display: flex; align-items: center; gap: 18px;
+    background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+    border-radius: 24px; padding: 32px 28px; margin-bottom: 16px;
+    display: flex; align-items: center; gap: 20px;
     border: 1px solid rgba(255,255,255,0.06);
     position: relative; overflow: hidden;
 }
 .sec-hero::before {
-    content:""; position:absolute; top:-40px; right:-40px;
-    width:160px; height:160px;
-    background: radial-gradient(circle, rgba(99,102,241,0.15), transparent 70%);
+    content:""; position:absolute; top:-50px; right:-50px;
+    width:200px; height:200px;
+    background: radial-gradient(circle, rgba(99,102,241,0.18), transparent 70%);
+    border-radius:50%;
+}
+.sec-hero::after {
+    content:""; position:absolute; bottom:-30px; left:-30px;
+    width:140px; height:140px;
+    background: radial-gradient(circle, rgba(37,99,235,0.12), transparent 70%);
     border-radius:50%;
 }
 .sec-hero-icon {
-    width:56px; height:56px; border-radius:16px;
+    width:60px; height:60px; border-radius:18px;
     background: linear-gradient(135deg, #6366f1, #2563eb);
     display:flex; align-items:center; justify-content:center;
-    font-size:26px; flex-shrink:0;
-    box-shadow: 0 8px 20px rgba(99,102,241,0.35);
+    font-size:28px; flex-shrink:0;
+    box-shadow: 0 10px 24px rgba(99,102,241,0.4);
+    position: relative; z-index:1;
 }
-.sec-hero-title { font-size:20px; font-weight:800; color:white; margin:0 0 4px; }
-.sec-hero-sub { font-size:13px; color:rgba(255,255,255,0.45); margin:0; }
+.sec-hero-text { position: relative; z-index:1; }
+.sec-hero-title { font-size:22px; font-weight:800; color:white; margin:0 0 5px; letter-spacing:-0.3px; }
+.sec-hero-sub { font-size:13px; color:rgba(255,255,255,0.4); margin:0; }
+.sec-hero-badge {
+    margin-left:auto; flex-shrink:0; position:relative; z-index:1;
+    background: rgba(99,102,241,0.2); border: 1px solid rgba(99,102,241,0.3);
+    border-radius:20px; padding:6px 14px;
+    font-size:12px; font-weight:700; color:#818cf8;
+}
 
-.sec-alert-banner {
-    padding: 14px 18px; border-radius: 14px; margin-bottom: 16px;
+/* ALERTS */
+.sec-alert {
+    padding: 14px 18px; border-radius: 16px; margin-bottom: 14px;
     font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 10px;
 }
-.sec-alert-banner.warning { background: rgba(251,191,36,0.1); border: 1px solid rgba(251,191,36,0.3); color: #fbbf24; }
-.sec-alert-banner.success { background: rgba(34,197,94,0.1); border: 1px solid rgba(34,197,94,0.3); color: #22c55e; }
-.sec-alert-banner.error { background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3); color: #ef4444; }
+.sec-alert.warning { background: rgba(251,191,36,0.1); border: 1px solid rgba(251,191,36,0.25); color: #fbbf24; }
+.sec-alert.success { background: rgba(34,197,94,0.1); border: 1px solid rgba(34,197,94,0.25); color: #22c55e; }
+.sec-alert.error { background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.25); color: #ef4444; }
 
+/* CARDS */
 .sec-card {
-    background: white; border-radius: 20px; padding: 22px; margin-bottom: 14px;
-    box-shadow: 0 2px 12px rgba(0,0,0,0.06); border: 1px solid rgba(0,0,0,0.05); transition: 0.2s;
+    background: white; border-radius: 22px; padding: 22px 24px; margin-bottom: 12px;
+    box-shadow: 0 2px 16px rgba(0,0,0,0.05); border: 1px solid rgba(0,0,0,0.05);
+    transition: box-shadow 0.2s;
 }
-.sec-card.danger-card { border-color: rgba(239,68,68,0.2); }
-.sec-card.questions-card { border-color: rgba(99,102,241,0.2); }
+.sec-card:hover { box-shadow: 0 6px 24px rgba(0,0,0,0.08); }
+.sec-card.danger-card { border-color: rgba(239,68,68,0.15); }
+.sec-card.questions-card { border-color: rgba(99,102,241,0.15); }
+.sec-card.sessions-card { border-color: rgba(34,197,94,0.15); }
 
-.sec-card-header { display: flex; align-items: center; gap: 12px; margin-bottom: 18px; }
-.sec-card-icon {
-    width: 40px; height: 40px; border-radius: 12px;
+/* CARD HEADER */
+.sec-card-hd { display: flex; align-items: center; gap: 14px; margin-bottom: 18px; }
+.sec-icon {
+    width: 42px; height: 42px; border-radius: 13px;
     display: flex; align-items: center; justify-content: center;
-    font-size: 18px; flex-shrink: 0; pointer-events: none;
+    font-size: 19px; flex-shrink: 0; pointer-events: none;
 }
-.sec-card-icon.blue { background: rgba(37,99,235,0.1); }
-.sec-card-icon.green { background: rgba(34,197,94,0.1); }
-.sec-card-icon.purple { background: rgba(99,102,241,0.1); }
-.sec-card-icon.red { background: rgba(239,68,68,0.1); }
-.sec-card-title { font-size: 15px; font-weight: 700; color: #111827; margin: 0 0 2px; pointer-events: none; }
-.sec-card-desc { font-size: 12px; color: #9ca3af; margin: 0; pointer-events: none; }
+.sec-icon.blue { background: rgba(37,99,235,0.08); }
+.sec-icon.green { background: rgba(34,197,94,0.08); }
+.sec-icon.purple { background: rgba(99,102,241,0.08); }
+.sec-icon.red { background: rgba(239,68,68,0.08); }
+.sec-icon.orange { background: rgba(249,115,22,0.08); }
+.sec-card-title { font-size: 15px; font-weight: 700; color: #111827; margin: 0 0 2px; pointer-events:none; }
+.sec-card-desc { font-size: 12px; color: #9ca3af; margin: 0; pointer-events:none; }
+.sec-card-badge {
+    margin-left:auto; flex-shrink:0;
+    font-size:11px; font-weight:700; padding:3px 10px;
+    border-radius:20px; pointer-events:none;
+}
+.sec-card-badge.green { background:#dcfce7; color:#16a34a; }
+.sec-card-badge.yellow { background:#fef9c3; color:#a16207; }
+.sec-card-badge.blue { background:#dbeafe; color:#1d4ed8; }
 
-.sec-info-grid { display: flex; flex-direction: column; gap: 8px; }
+/* INFO GRID */
+.sec-info-grid { display: flex; flex-direction: column; gap: 7px; }
 .sec-info-item {
     display: flex; justify-content: space-between; align-items: center;
-    padding: 10px 14px; background: #f9fafb; border-radius: 12px; flex-wrap: wrap; gap: 6px;
+    padding: 10px 14px; background: #f8fafc; border-radius: 12px; flex-wrap: wrap; gap: 6px;
+    border: 1px solid rgba(0,0,0,0.03);
 }
 .sec-info-label { font-size: 12px; color: #6b7280; font-weight: 600; }
 .sec-info-value { font-size: 13px; font-weight: 700; color: #111827; }
 
-.session-row {
-    display: flex; align-items: center; gap: 14px; padding: 14px 16px;
-    background: #f0fdf4; border-radius: 14px; margin-bottom: 14px; border: 1px solid #86efac;
+/* SESSIONS */
+.session-item {
+    display: flex; align-items: center; gap: 14px;
+    padding: 14px 16px; background: #f0fdf4;
+    border-radius: 14px; margin-bottom: 8px; border: 1px solid #bbf7d0;
+    transition: 0.2s;
 }
+.session-item:last-of-type { margin-bottom: 14px; }
+.session-item.current { background: #ecfdf5; border-color: #6ee7b7; }
 .session-dot {
     width: 10px; height: 10px; border-radius: 50%; background: #22c55e; flex-shrink: 0;
-    box-shadow: 0 0 0 4px rgba(34,197,94,0.2); animation: pulse 2s infinite;
+    box-shadow: 0 0 0 3px rgba(34,197,94,0.2); animation: pulse 2s infinite;
 }
 @@keyframes pulse { 0%{box-shadow:0 0 0 0 rgba(34,197,94,0.4);} 70%{box-shadow:0 0 0 8px rgba(34,197,94,0);} 100%{box-shadow:0 0 0 0 rgba(34,197,94,0);} }
-.session-device { font-size: 13px; font-weight: 700; color: #166534; }
-.session-ip { font-size: 11px; color: #6b7280; margin-top: 1px; }
+.session-info { flex: 1; min-width: 0; }
+.session-device { font-size: 13px; font-weight: 700; color: #166534; display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+.session-meta { font-size: 11px; color: #6b7280; margin-top: 2px; }
+.this-device-badge {
+    font-size:10px; font-weight:700; padding:2px 8px;
+    border-radius:20px; background:#dcfce7; color:#16a34a;
+}
 
-.sec-toggle-row {
+/* SESSIONS COUNT */
+.sessions-count-wrap {
+    display: flex; align-items: center; gap: 10px;
+    padding: 12px 16px; background: rgba(34,197,94,0.06);
+    border: 1px solid rgba(34,197,94,0.15); border-radius: 14px;
+    margin-bottom: 12px;
+}
+.sessions-count-num {
+    width: 36px; height: 36px; border-radius: 10px;
+    background: linear-gradient(135deg, #22c55e, #16a34a);
+    color: white; font-size: 16px; font-weight: 800;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+}
+.sessions-count-text { font-size: 13px; font-weight: 600; color: #166534; }
+.sessions-count-sub { font-size: 11px; color: #6b7280; }
+
+/* TOGGLE */
+.sec-toggle {
     display: flex; justify-content: space-between; align-items: center;
     cursor: pointer; padding: 0; border: none; background: none;
-    width: 100%; text-align: left; border-radius: 0;
+    width: 100%; text-align: left;
 }
-.sec-toggle-inner { display: flex; align-items: center; gap: 12px; pointer-events: none; }
+.sec-toggle-inner { display: flex; align-items: center; gap: 14px; pointer-events: none; flex:1; }
 .sec-toggle-arrow {
-    width: 28px; height: 28px; border-radius: 8px; background: #f3f4f6;
+    width: 30px; height: 30px; border-radius: 9px; background: #f3f4f6;
     display: flex; align-items: center; justify-content: center;
-    font-size: 11px; color: #9ca3af; transition: transform 0.2s, background 0.2s;
+    font-size: 11px; color: #9ca3af;
+    transition: transform 0.25s, background 0.2s, color 0.2s;
     flex-shrink: 0; pointer-events: none;
 }
-.sec-toggle-row.open .sec-toggle-arrow { transform: rotate(180deg); background: #ede9fe; color: #6366f1; }
+.sec-toggle.open .sec-toggle-arrow { transform: rotate(180deg); background: #ede9fe; color: #6366f1; }
 
 .sec-box {
-    display: none; margin-top: 18px; padding-top: 18px; border-top: 1px solid #f3f4f6;
+    display: none; margin-top: 20px; padding-top: 20px;
+    border-top: 1px solid #f1f5f9;
 }
 
+/* FIELDS */
 .sec-field { margin-bottom: 12px; }
 .sec-field label {
     display: block; font-size: 11px; font-weight: 700; color: #6b7280;
-    text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 6px;
+    text-transform: uppercase; letter-spacing: 0.7px; margin-bottom: 7px;
 }
 .sec-input {
     width: 100%; padding: 11px 14px; border: 1.5px solid #e5e7eb; border-radius: 12px;
     font-size: 14px; font-family: inherit; outline: none; transition: 0.2s;
     background: white; color: #111827; box-sizing: border-box;
 }
-.sec-input:focus { border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99,102,241,0.1); }
+.sec-input:focus { border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99,102,241,0.1); background: white; }
 .sec-select {
     width: 100%; padding: 11px 14px; border: 1.5px solid #e5e7eb; border-radius: 12px;
     font-size: 13px; font-family: inherit; outline: none; transition: 0.2s;
@@ -136,117 +202,153 @@
 }
 .sec-select:focus { border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99,102,241,0.1); }
 
-.q-group { background: #fafafa; border-radius: 14px; padding: 16px; margin-bottom: 12px; border: 1px solid #f0f0f0; }
-.q-group-num { font-size: 11px; font-weight: 800; color: #6366f1; text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 10px; }
+/* Q GROUP */
+.q-group {
+    background: #fafafa; border-radius: 16px; padding: 16px; margin-bottom: 10px;
+    border: 1px solid #f0f0f0;
+}
+.q-num {
+    font-size: 10px; font-weight: 800; color: #6366f1;
+    text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 12px;
+    display: flex; align-items: center; gap: 6px;
+}
+.q-num::before {
+    content:""; display:inline-block; width:16px; height:2px;
+    background: linear-gradient(90deg, #6366f1, #2563eb); border-radius:2px;
+}
 
+/* BTNS */
 .sec-btn {
-    width: 100%; padding: 12px; border: none; border-radius: 12px;
-    font-size: 14px; font-weight: 700; font-family: inherit; cursor: pointer; transition: 0.2s;
+    width: 100%; padding: 13px; border: none; border-radius: 13px;
+    font-size: 14px; font-weight: 700; font-family: inherit;
+    cursor: pointer; transition: 0.2s; display: flex; align-items:center; justify-content:center; gap:8px;
 }
 .sec-btn.primary { background: linear-gradient(135deg, #6366f1, #2563eb); color: white; }
-.sec-btn.primary:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(99,102,241,0.35); }
+.sec-btn.primary:hover { transform: translateY(-1px); box-shadow: 0 8px 20px rgba(99,102,241,0.4); }
 .sec-btn.danger-outline { background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; }
-.sec-btn.danger-outline:hover { background: #dc2626; color: white; }
-.sec-btn.danger-solid { background: #dc2626; color: white; }
-.sec-btn.danger-solid:hover { background: #b91c1c; }
+.sec-btn.danger-outline:hover { background: #dc2626; color: white; box-shadow: 0 4px 12px rgba(220,38,38,0.3); }
+.sec-btn.danger-solid { background: linear-gradient(135deg,#dc2626,#b91c1c); color: white; }
+.sec-btn.danger-solid:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(220,38,38,0.35); }
 
+/* WARNINGS */
 .delete-warning {
-    font-size: 13px; color: #dc2626; background: #fef2f2; padding: 12px 14px;
-    border-radius: 12px; margin-bottom: 14px; border: 1px solid #fecaca; line-height: 1.5;
+    font-size: 13px; color: #dc2626; background: #fef2f2; padding: 13px 16px;
+    border-radius: 13px; margin-bottom: 16px; border: 1px solid #fecaca; line-height: 1.6;
+    display: flex; gap: 10px; align-items: flex-start;
 }
 .security-q-display {
-    background: rgba(99,102,241,0.06); border: 1px solid rgba(99,102,241,0.15);
-    border-radius: 12px; padding: 14px 16px; font-size: 13px; color: #4338ca;
-    font-weight: 600; margin-bottom: 12px; line-height: 1.5;
+    background: rgba(99,102,241,0.06); border: 1px solid rgba(99,102,241,0.2);
+    border-radius: 13px; padding: 14px 16px; font-size: 13px; color: #4338ca;
+    font-weight: 600; margin-bottom: 14px; line-height: 1.6;
 }
+.verify-note {
+    font-size: 12px; color: #6b7280; background: #f8fafc;
+    border: 1px solid #e5e7eb; border-radius: 10px;
+    padding: 10px 14px; margin-bottom: 14px; line-height: 1.5;
+    display: flex; gap: 8px; align-items: flex-start;
+}
+
+/* FEEDBACK */
 .field-feedback {
     font-size: 12px; font-weight: 600; padding: 8px 12px;
-    border-radius: 8px; margin-top: 6px; display: none;
+    border-radius: 9px; margin-top: 6px; display: none;
 }
 .field-feedback.ok { background: #f0fdf4; color: #16a34a; border: 1px solid #86efac; }
 .field-feedback.err { background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; }
-.verify-pwd-note {
-    font-size: 12px; color: #6b7280; background: #f9fafb;
-    border: 1px solid #e5e7eb; border-radius: 10px;
-    padding: 10px 12px; margin-bottom: 12px; line-height: 1.5;
-}
 
 /* DARK MODE */
 body.bg-dark .sec-card { background: #1e293b !important; border-color: #2d3748 !important; }
-body.bg-dark .sec-card.danger-card { border-color: #4c1d1d !important; }
-body.bg-dark .sec-card.questions-card { border-color: rgba(99,102,241,0.3) !important; }
+body.bg-dark .sec-card.danger-card { border-color: rgba(239,68,68,0.2) !important; }
+body.bg-dark .sec-card.questions-card { border-color: rgba(99,102,241,0.25) !important; }
+body.bg-dark .sec-card.sessions-card { border-color: rgba(34,197,94,0.2) !important; }
 body.bg-dark .sec-card-title { color: #f1f5f9 !important; }
-body.bg-dark .sec-info-item { background: #2d3748 !important; }
+body.bg-dark .sec-info-item { background: #2d3748 !important; border-color: rgba(255,255,255,0.04) !important; }
 body.bg-dark .sec-info-label { color: #64748b !important; }
 body.bg-dark .sec-info-value { color: #f1f5f9 !important; }
 body.bg-dark .sec-toggle-arrow { background: #334155 !important; }
 body.bg-dark .sec-box { border-color: #2d3748 !important; }
-body.bg-dark .sec-input, body.bg-dark .sec-select { background: #2d3748 !important; border-color: #3d4d60 !important; color: #f1f5f9 !important; }
+body.bg-dark .sec-input { background: #2d3748 !important; border-color: #3d4d60 !important; color: #f1f5f9 !important; }
+body.bg-dark .sec-select { background: #2d3748 !important; border-color: #3d4d60 !important; color: #f1f5f9 !important; }
 body.bg-dark .q-group { background: #1a2535 !important; border-color: #2d3748 !important; }
 body.bg-dark .sec-field label { color: #64748b !important; }
 body.bg-dark .security-q-display { background: rgba(99,102,241,0.1) !important; border-color: rgba(99,102,241,0.25) !important; }
-body.bg-dark .session-row { background: #14532d !important; border-color: #166534 !important; }
-body.bg-dark .sec-btn.danger-outline { background: #3f1010 !important; color: #f87171 !important; border-color: #7f1d1d !important; }
-body.bg-dark .verify-pwd-note { background: #1a2535 !important; border-color: #2d3748 !important; color: #64748b !important; }
+body.bg-dark .session-item { background: #1a2e1a !important; border-color: #166534 !important; }
+body.bg-dark .session-item.current { background: #14532d !important; }
 body.bg-dark .session-device { color: #4ade80 !important; }
+body.bg-dark .sec-btn.danger-outline { background: #3f1010 !important; color: #f87171 !important; border-color: #7f1d1d !important; }
+body.bg-dark .verify-note { background: #1a2535 !important; border-color: #2d3748 !important; color: #64748b !important; }
+body.bg-dark .sessions-count-wrap { background: rgba(34,197,94,0.08) !important; }
+body.bg-dark .sessions-count-text { color: #4ade80 !important; }
+body.bg-dark .sec-card-badge.green { background: #14532d !important; color: #4ade80 !important; }
+body.bg-dark .sec-card-badge.yellow { background: #3f3000 !important; color: #fbbf24 !important; }
+body.bg-dark .sec-hero-badge { background: rgba(99,102,241,0.15) !important; }
 </style>
 
-<!-- MODAL CONFIRMAR ELIMINAR -->
-<div id="confirmDeleteModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:99999;align-items:center;justify-content:center;backdrop-filter:blur(6px);">
-    <div style="background:#1e293b;border-radius:22px;padding:32px 28px;max-width:360px;width:90%;border:1px solid rgba(255,255,255,0.08);box-shadow:0 24px 60px rgba(0,0,0,0.6);text-align:center;">
-        <div style="font-size:44px;margin-bottom:14px;">⚠️</div>
-        <h4 style="color:white;font-weight:800;margin:0 0 10px;font-size:17px;">¿Eliminar tu cuenta?</h4>
-        <p style="color:rgba(255,255,255,0.45);font-size:13px;margin:0 0 24px;line-height:1.6;">Esta acción es permanente. Todos tus datos serán eliminados para siempre.</p>
+<!-- MODAL ELIMINAR -->
+<div id="confirmDeleteModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:99999;align-items:center;justify-content:center;backdrop-filter:blur(8px);">
+    <div style="background:#0f172a;border-radius:24px;padding:36px 30px;max-width:360px;width:92%;border:1px solid rgba(255,255,255,0.08);box-shadow:0 30px 70px rgba(0,0,0,0.7);text-align:center;animation:modalIn 0.25s cubic-bezier(0.34,1.56,0.64,1);">
+        <div style="width:64px;height:64px;border-radius:18px;background:rgba(220,38,38,0.15);border:1px solid rgba(220,38,38,0.3);display:flex;align-items:center;justify-content:center;font-size:28px;margin:0 auto 18px;">🗑️</div>
+        <h4 style="color:white;font-weight:800;margin:0 0 10px;font-size:18px;">¿Eliminar tu cuenta?</h4>
+        <p style="color:rgba(255,255,255,0.4);font-size:13px;margin:0 0 26px;line-height:1.7;">Esta acción es permanente e irreversible. Todos tus datos, hábitos y mensajes serán eliminados para siempre.</p>
         <div style="display:flex;gap:10px;">
-            <button type="button" onclick="cerrarConfirmDelete()" style="flex:1;padding:12px;border-radius:12px;border:1px solid #334155;background:#334155;color:#94a3b8;font-weight:700;font-size:13px;cursor:pointer;">Cancelar</button>
-            <button type="button" onclick="confirmarEliminar()" style="flex:1;padding:12px;border-radius:12px;border:none;background:#dc2626;color:white;font-weight:700;font-size:13px;cursor:pointer;">Sí, eliminar</button>
+            <button type="button" onclick="cerrarConfirmDelete()" style="flex:1;padding:13px;border-radius:12px;border:1px solid #1e293b;background:#1e293b;color:#64748b;font-weight:700;font-size:13px;cursor:pointer;font-family:inherit;">Cancelar</button>
+            <button type="button" onclick="confirmarEliminar()" style="flex:1;padding:13px;border-radius:12px;border:none;background:linear-gradient(135deg,#dc2626,#b91c1c);color:white;font-weight:700;font-size:13px;cursor:pointer;font-family:inherit;">Sí, eliminar</button>
         </div>
     </div>
 </div>
 
 <!-- MODAL CERRAR SESIONES -->
-<div id="logoutAllModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:99999;align-items:center;justify-content:center;backdrop-filter:blur(6px);">
-    <div style="background:#1e293b;border-radius:22px;padding:32px 28px;max-width:360px;width:90%;border:1px solid rgba(255,255,255,0.08);box-shadow:0 24px 60px rgba(0,0,0,0.6);text-align:center;">
-        <div style="font-size:44px;margin-bottom:14px;">🚪</div>
-        <h4 style="color:white;font-weight:800;margin:0 0 10px;font-size:17px;">¿Cerrar todas las sesiones?</h4>
-        <p style="color:rgba(255,255,255,0.45);font-size:13px;margin:0 0 24px;line-height:1.6;">Se cerrará la sesión en todos los dispositivos incluyendo este. Tendrás que volver a iniciar sesión.</p>
+<div id="logoutAllModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:99999;align-items:center;justify-content:center;backdrop-filter:blur(8px);">
+    <div style="background:#0f172a;border-radius:24px;padding:36px 30px;max-width:360px;width:92%;border:1px solid rgba(255,255,255,0.08);box-shadow:0 30px 70px rgba(0,0,0,0.7);text-align:center;animation:modalIn 0.25s cubic-bezier(0.34,1.56,0.64,1);">
+        <div style="width:64px;height:64px;border-radius:18px;background:rgba(239,68,68,0.12);border:1px solid rgba(239,68,68,0.25);display:flex;align-items:center;justify-content:center;font-size:28px;margin:0 auto 18px;">🚪</div>
+        <h4 style="color:white;font-weight:800;margin:0 0 10px;font-size:18px;">¿Cerrar todas las sesiones?</h4>
+        <p style="color:rgba(255,255,255,0.4);font-size:13px;margin:0 0 26px;line-height:1.7;">Se cerrará la sesión en <strong style="color:rgba(255,255,255,0.7);">todos los dispositivos</strong> incluyendo este. Tendrás que volver a iniciar sesión.</p>
         <div style="display:flex;gap:10px;">
-            <button type="button" onclick="cerrarLogoutModal()" style="flex:1;padding:12px;border-radius:12px;border:1px solid #334155;background:#334155;color:#94a3b8;font-weight:700;font-size:13px;cursor:pointer;">Cancelar</button>
-            <button type="button" onclick="confirmarLogoutAll()" style="flex:1;padding:12px;border-radius:12px;border:none;background:#dc2626;color:white;font-weight:700;font-size:13px;cursor:pointer;">Sí, cerrar todo</button>
+            <button type="button" onclick="cerrarLogoutModal()" style="flex:1;padding:13px;border-radius:12px;border:1px solid #1e293b;background:#1e293b;color:#64748b;font-weight:700;font-size:13px;cursor:pointer;font-family:inherit;">Cancelar</button>
+            <button type="button" onclick="confirmarLogoutAll()" style="flex:1;padding:13px;border-radius:12px;border:none;background:linear-gradient(135deg,#dc2626,#b91c1c);color:white;font-weight:700;font-size:13px;cursor:pointer;font-family:inherit;">Cerrar todo</button>
         </div>
     </div>
 </div>
 
+<style>
+@@keyframes modalIn { from{opacity:0;transform:scale(0.92) translateY(10px);} to{opacity:1;transform:scale(1) translateY(0);} }
+</style>
+
 <div class="sec-page">
 
+    <!-- HERO -->
     <div class="sec-hero">
         <div class="sec-hero-icon">🔐</div>
-        <div>
+        <div class="sec-hero-text">
             <h2 class="sec-hero-title">Centro de Seguridad</h2>
             <p class="sec-hero-sub">Gestiona y protege tu cuenta</p>
         </div>
+        @if (sessionCount > 1)
+        {
+            <div class="sec-hero-badge">⚠️ @sessionCount sesiones</div>
+        }
     </div>
 
     @if (!hasQuestions)
     {
-        <div class="sec-alert-banner warning">
+        <div class="sec-alert warning">
             <span>⚠️</span>
-            <span>No has configurado tus preguntas de seguridad. Son requeridas para eliminar tu cuenta.</span>
+            <span>Configura tus preguntas de seguridad — son requeridas para eliminar tu cuenta.</span>
         </div>
     }
     @if (TempData["Success"] != null)
     {
-        <div class="sec-alert-banner success"><span>✅</span><span>@TempData["Success"]</span></div>
+        <div class="sec-alert success"><span>✅</span><span>@TempData["Success"]</span></div>
     }
     @if (TempData["Error"] != null)
     {
-        <div class="sec-alert-banner error"><span>❌</span><span>@TempData["Error"]</span></div>
+        <div class="sec-alert error"><span>❌</span><span>@TempData["Error"]</span></div>
     }
 
-    <!-- INFO DE SESIÓN -->
+    <!-- INFO SESIÓN -->
     <div class="sec-card">
-        <div class="sec-card-header">
-            <div class="sec-card-icon blue">📋</div>
+        <div class="sec-card-hd">
+            <div class="sec-icon blue">📋</div>
             <div>
                 <div class="sec-card-title">Información de sesión</div>
                 <div class="sec-card-desc">Detalles de tu última actividad</div>
@@ -276,22 +378,66 @@ body.bg-dark .session-device { color: #4ade80 !important; }
         </div>
     </div>
 
-    <!-- SESIÓN ACTIVA -->
-    <div class="sec-card">
-        <div class="sec-card-header">
-            <div class="sec-card-icon green">🟢</div>
+    <!-- SESIONES ACTIVAS -->
+    <div class="sec-card sessions-card">
+        <div class="sec-card-hd">
+            <div class="sec-icon green">🟢</div>
             <div>
-                <div class="sec-card-title">Sesión activa</div>
+                <div class="sec-card-title">Sesiones activas</div>
                 <div class="sec-card-desc">Dispositivos con sesión iniciada</div>
             </div>
+            <span class="sec-card-badge @(sessionCount > 1 ? "yellow" : "green")">
+                @sessionCount dispositivo@(sessionCount != 1 ? "s" : "")
+            </span>
         </div>
-        <div class="session-row">
-            <div class="session-dot"></div>
-            <div>
-                <div class="session-device">@(Model.Device ?? "Desconocido") · @(Model.Browser ?? "")</div>
-                <div class="session-ip">@(Model.LastIp ?? "No disponible") · @(Model.Country ?? "")</div>
+
+        @if (sessionCount > 0)
+        {
+            if (sessionCount > 1)
+            {
+                <div class="sessions-count-wrap">
+                    <div class="sessions-count-num">@sessionCount</div>
+                    <div>
+                        <div class="sessions-count-text">@sessionCount sesiones activas detectadas</div>
+                        <div class="sessions-count-sub">Cierra todas si no reconoces alguna</div>
+                    </div>
+                </div>
+            }
+
+            foreach (var s in sessions!)
+            {
+                bool isCurrent = s.SessionToken == currentToken;
+                <div class="session-item @(isCurrent ? "current" : "")">
+                    <div class="session-dot"></div>
+                    <div class="session-info">
+                        <div class="session-device">
+                            @(s.Device ?? "Desconocido") · @(s.Browser ?? "Navegador")
+                            @if (isCurrent)
+                            {
+                                <span class="this-device-badge">Este dispositivo</span>
+                            }
+                        </div>
+                        <div class="session-meta">
+                            @(s.IpAddress ?? "IP desconocida") · @s.CreatedAt.ToLocalTime().ToString("dd MMM yyyy · HH:mm")
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+        else
+        {
+            <div class="session-item current">
+                <div class="session-dot"></div>
+                <div class="session-info">
+                    <div class="session-device">
+                        @(Model.Device ?? "Desconocido") · @(Model.Browser ?? "")
+                        <span class="this-device-badge">Este dispositivo</span>
+                    </div>
+                    <div class="session-meta">@(Model.LastIp ?? "") · @(Model.Country ?? "")</div>
+                </div>
             </div>
-        </div>
+        }
+
         <button type="button" class="sec-btn danger-outline" data-no-loader onclick="mostrarLogoutModal()">
             🚪 Cerrar todas las sesiones
         </button>
@@ -299,23 +445,27 @@ body.bg-dark .session-device { color: #4ade80 !important; }
 
     <!-- PREGUNTAS DE SEGURIDAD -->
     <div class="sec-card questions-card">
-        <button type="button" class="sec-toggle-row @(hasQuestions ? "" : "open")"
+        <button type="button" class="sec-toggle @(hasQuestions ? "" : "open")"
                 data-no-loader data-section="questions">
             <div class="sec-toggle-inner">
-                <div class="sec-card-icon purple">🛡️</div>
+                <div class="sec-icon purple">🛡️</div>
                 <div>
                     <div class="sec-card-title">Preguntas de seguridad</div>
-                    <div class="sec-card-desc">@(hasQuestions ? "Configuradas ✅" : "Sin configurar ⚠️")</div>
+                    <div class="sec-card-desc">@(hasQuestions ? "Configuradas correctamente" : "Sin configurar — requeridas")</div>
                 </div>
+                <span class="sec-card-badge @(hasQuestions ? "green" : "yellow")" style="margin-left:auto;">
+                    @(hasQuestions ? "✅ Activas" : "⚠️ Pendiente")
+                </span>
             </div>
-            <div class="sec-toggle-arrow">▼</div>
+            <div class="sec-toggle-arrow" style="margin-left:10px;">▼</div>
         </button>
 
         <div id="section-questions" class="sec-box" style="@(hasQuestions ? "" : "display:block;")">
             @if (hasQuestions)
             {
-                <div class="verify-pwd-note">
-                    🔒 Para actualizar tus preguntas debes confirmar tu identidad.
+                <div class="verify-note">
+                    <span>🔒</span>
+                    <span>Para actualizar tus preguntas debes verificar tu identidad.</span>
                 </div>
             }
             <form asp-controller="Account" asp-action="SaveSecurityQuestions" method="post">
@@ -325,7 +475,7 @@ body.bg-dark .session-device { color: #4ade80 !important; }
                     var currentQ = i == 1 ? Model.SecurityQuestion1 :
                                    i == 2 ? Model.SecurityQuestion2 : Model.SecurityQuestion3;
                     <div class="q-group">
-                        <div class="q-group-num">Pregunta @i</div>
+                        <div class="q-num">Pregunta @i</div>
                         <div class="sec-field">
                             <label>Selecciona la pregunta</label>
                             <select name="q@(i)" class="sec-select" required>
@@ -350,8 +500,8 @@ body.bg-dark .session-device { color: #4ade80 !important; }
                 {
                     if (!Model.IsGoogleAccount)
                     {
-                        <div class="sec-field" style="margin-top:4px;">
-                            <label>🔑 Confirma tu contraseña para guardar cambios</label>
+                        <div class="sec-field">
+                            <label>🔑 Confirma tu contraseña</label>
                             <input name="verifyPassword" type="password" class="sec-input"
                                    placeholder="Contraseña actual" autocomplete="off" />
                         </div>
@@ -380,15 +530,15 @@ body.bg-dark .session-device { color: #4ade80 !important; }
     @if (!Model.IsGoogleAccount)
     {
         <div class="sec-card">
-            <button type="button" class="sec-toggle-row" data-no-loader data-section="pwd">
+            <button type="button" class="sec-toggle" data-no-loader data-section="pwd">
                 <div class="sec-toggle-inner">
-                    <div class="sec-card-icon blue">🔑</div>
+                    <div class="sec-icon blue">🔑</div>
                     <div>
                         <div class="sec-card-title">Cambiar contraseña</div>
                         <div class="sec-card-desc">Actualiza tu contraseña de acceso</div>
                     </div>
                 </div>
-                <div class="sec-toggle-arrow">▼</div>
+                <div class="sec-toggle-arrow" style="margin-left:10px;">▼</div>
             </button>
             <div id="section-pwd" class="sec-box">
                 <form asp-controller="Account" asp-action="ChangePassword" method="post">
@@ -401,7 +551,7 @@ body.bg-dark .session-device { color: #4ade80 !important; }
                         <label>Nueva contraseña</label>
                         <input name="NewPassword" type="password" class="sec-input" placeholder="Mínimo 6 caracteres" />
                     </div>
-                    <div class="sec-field" style="margin-bottom:16px;">
+                    <div class="sec-field" style="margin-bottom:18px;">
                         <label>Confirmar nueva contraseña</label>
                         <input name="ConfirmPassword" type="password" class="sec-input" placeholder="Repite la contraseña" />
                     </div>
@@ -413,19 +563,20 @@ body.bg-dark .session-device { color: #4ade80 !important; }
 
     <!-- ELIMINAR CUENTA -->
     <div class="sec-card danger-card">
-        <button type="button" class="sec-toggle-row" data-no-loader data-section="del">
+        <button type="button" class="sec-toggle" data-no-loader data-section="del">
             <div class="sec-toggle-inner">
-                <div class="sec-card-icon red">⚠️</div>
+                <div class="sec-icon red">⚠️</div>
                 <div>
                     <div class="sec-card-title" style="color:#dc2626;">Eliminar cuenta</div>
-                    <div class="sec-card-desc">Esta acción es permanente e irreversible</div>
+                    <div class="sec-card-desc">Acción permanente e irreversible</div>
                 </div>
             </div>
-            <div class="sec-toggle-arrow">▼</div>
+            <div class="sec-toggle-arrow" style="margin-left:10px;">▼</div>
         </button>
         <div id="section-del" class="sec-box">
             <div class="delete-warning">
-                ⚠️ Esta acción eliminará permanentemente tu cuenta, hábitos, mensajes y todos tus datos. No hay marcha atrás.
+                <span>⚠️</span>
+                <span>Esta acción eliminará permanentemente tu cuenta, hábitos, mensajes y todos tus datos. No hay marcha atrás.</span>
             </div>
             <form asp-controller="Account" asp-action="DeleteAccount" method="post"
                   onsubmit="return validarEliminar()">
@@ -473,8 +624,8 @@ let passwordValida = false;
 let securityValida = @(hasQuestions ? "false" : "true");
 let formEliminarPendiente = null;
 
-// 🔥 toggleSection usando data-section en vez de onclick
-document.querySelectorAll(".sec-toggle-row[data-section]").forEach(btn => {
+// 🔥 toggleSection via data-section
+document.querySelectorAll(".sec-toggle[data-section]").forEach(btn => {
     btn.addEventListener("click", function(e) {
         e.stopPropagation();
         const id = this.getAttribute("data-section");
@@ -486,7 +637,6 @@ document.querySelectorAll(".sec-toggle-row[data-section]").forEach(btn => {
     });
 });
 
-// abrir sección si no tiene preguntas
 @if (!hasQuestions)
 {
     <text>
@@ -499,7 +649,6 @@ document.querySelectorAll(".sec-toggle-row[data-section]").forEach(btn => {
     </text>
 }
 
-// abrir sección del si hay error
 @if (TempData["Error"] != null)
 {
     <text>
@@ -515,11 +664,9 @@ document.querySelectorAll(".sec-toggle-row[data-section]").forEach(btn => {
 function mostrarLogoutModal() {
     document.getElementById("logoutAllModal").style.display = "flex";
 }
-
 function cerrarLogoutModal() {
     document.getElementById("logoutAllModal").style.display = "none";
 }
-
 function confirmarLogoutAll() {
     cerrarLogoutModal();
     fetch("/Account/LogoutAll", { method: "POST" })
@@ -531,8 +678,9 @@ function mostrarErrorSec(msg) {
     if (existing) existing.remove();
     const div = document.createElement("div");
     div.id = "sec-error-inline";
-    div.style.cssText = "background:#fef2f2;border:1px solid #fecaca;color:#b91c1c;padding:10px 14px;border-radius:10px;font-size:13px;font-weight:600;margin-bottom:12px;";
-    div.textContent = msg;
+    div.className = "sec-alert error";
+    div.style.marginBottom = "12px";
+    div.innerHTML = `<span>❌</span><span>${msg}</span>`;
     const form = document.querySelector("#section-del form");
     if (form) form.insertBefore(div, form.firstChild);
     setTimeout(() => div?.remove(), 4000);
@@ -584,7 +732,7 @@ function validarEliminar() {
     {
         <text>
         if (!securityValida) {
-            mostrarErrorSec("⚠️ Debes responder correctamente la pregunta de seguridad.");
+            mostrarErrorSec("Debes responder correctamente la pregunta de seguridad.");
             return false;
         }
         </text>
@@ -592,12 +740,12 @@ function validarEliminar() {
 
     if (confirmInput) {
         if (confirmInput.value.trim().toUpperCase() !== "ELIMINAR") {
-            mostrarErrorSec("⚠️ Debes escribir ELIMINAR para confirmar.");
+            mostrarErrorSec("Debes escribir ELIMINAR para confirmar.");
             return false;
         }
     } else {
         if (!passwordValida) {
-            mostrarErrorSec("⚠️ Ingresa tu contraseña correctamente.");
+            mostrarErrorSec("Ingresa tu contraseña correctamente.");
             return false;
         }
     }
