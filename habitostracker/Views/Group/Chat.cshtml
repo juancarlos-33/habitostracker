@@ -30,7 +30,6 @@
     }
 }
 
-/* HEADER */
 .grp-header {
     display: flex; align-items: center; gap: 12px;
     padding: 12px 16px;
@@ -57,7 +56,6 @@
 }
 .grp-header-btn:hover { background: rgba(255,255,255,0.12); color: white; }
 
-/* CHAT BOX */
 .grp-chat-box {
     flex: 1; overflow-y: auto; overflow-x: hidden;
     padding: 14px 12px; background: #f1f5f9;
@@ -68,7 +66,6 @@
 .grp-chat-box::-webkit-scrollbar { width: 5px; }
 .grp-chat-box::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
 
-/* DATE SEPARATOR */
 .grp-date-sep {
     display: flex; align-items: center; justify-content: center;
     margin: 10px 0 6px;
@@ -79,7 +76,6 @@
     font-size: 11px; font-weight: 600;
 }
 
-/* MESSAGES */
 .grp-msg-row { display: flex; max-width: 78%; margin-bottom: 1px; }
 .grp-msg-row.mine { align-self: flex-end; }
 .grp-msg-row.theirs { align-self: flex-start; gap: 8px; }
@@ -122,15 +118,66 @@
     box-shadow: 0 2px 8px rgba(0,0,0,0.06);
 }
 
+.grp-msg-media { max-width: 200px; border-radius: 12px; display: block; margin-top: 4px; cursor: pointer; }
+.grp-msg-audio { width: 200px; height: 36px; margin-top: 4px; accent-color: #6366f1; }
+.grp-msg-row.mine .grp-msg-audio { accent-color: white; }
+
 .grp-msg-footer {
     display: flex; align-items: center; gap: 4px;
     margin-top: 3px; padding: 0 4px;
 }
 .grp-msg-time { font-size: 10px; color: #9ca3af; }
-.grp-msg-check { font-size: 11px; color: #9ca3af; }
+.grp-msg-check { font-size: 11px; color: #9ca3af; letter-spacing: -1px; }
 .grp-msg-check.seen { color: #6366f1; font-weight: 700; }
 
-/* EMOJI PANEL */
+/* PREVIEW */
+.grp-preview {
+    flex-shrink: 0; padding: 8px 12px; background: white;
+    border-top: 1px solid #e2e8f0; display: none;
+    position: relative;
+}
+.grp-preview img, .grp-preview video { max-height: 100px; border-radius: 10px; }
+.grp-preview-close {
+    position: absolute; top: 4px; right: 12px;
+    width: 22px; height: 22px; border-radius: 50%;
+    background: #dc2626; color: white; border: none;
+    font-size: 12px; cursor: pointer; display: flex;
+    align-items: center; justify-content: center;
+}
+
+/* RECORDING */
+.grp-recording {
+    flex-shrink: 0; display: none; align-items: center; gap: 8px;
+    padding: 6px 14px; background: #fef2f2;
+    border-top: 1px solid #fecaca;
+}
+.grp-rec-dot {
+    width: 9px; height: 9px; border-radius: 50%;
+    background: #dc2626; animation: recPulse 1s infinite;
+}
+@@keyframes recPulse { 0%,100%{opacity:1;} 50%{opacity:0.3;} }
+.grp-rec-label { font-size: 13px; font-weight: 600; color: #dc2626; flex: 1; }
+.grp-rec-timer { font-size: 13px; font-weight: 700; color: #dc2626; }
+
+/* AUDIO PREVIEW */
+.grp-audio-preview {
+    flex-shrink: 0; display: none;
+    padding: 8px 12px; background: white; border-top: 1px solid #e2e8f0;
+}
+.grp-audio-preview audio { width: 100%; margin-bottom: 8px; }
+.grp-audio-btns { display: flex; gap: 8px; }
+.grp-audio-send {
+    flex: 1; padding: 8px; border-radius: 10px; border: none;
+    background: linear-gradient(135deg, #6366f1, #4f46e5);
+    color: white; font-size: 13px; font-weight: 700; cursor: pointer; font-family: inherit;
+}
+.grp-audio-cancel {
+    padding: 8px 16px; border-radius: 10px; border: none;
+    background: #fee2e2; color: #dc2626; font-size: 13px;
+    font-weight: 700; cursor: pointer; font-family: inherit;
+}
+
+/* EMOJI */
 .grp-emoji-panel {
     flex-shrink: 0; background: white;
     border-top: 1px solid #e2e8f0;
@@ -147,9 +194,7 @@
 .grp-emoji-grid span:hover { background: #f1f5f9; transform: scale(1.2); }
 
 /* TYPING */
-.grp-typing-indicator {
-    display: none; flex-shrink: 0; padding: 0 14px 8px;
-}
+.grp-typing-indicator { display: none; flex-shrink: 0; padding: 0 14px 8px; }
 .grp-typing-bubble {
     background: white; padding: 8px 14px; border-radius: 18px 18px 18px 4px;
     display: inline-flex; gap: 4px; align-items: center;
@@ -163,7 +208,7 @@
 .grp-typing-dot:nth-child(3) { animation-delay: 0.4s; }
 @@keyframes typingBounce { 0%,60%,100%{transform:translateY(0);} 30%{transform:translateY(-5px);} }
 
-/* INPUT */
+/* INPUT BAR */
 .grp-input-bar {
     display: flex; align-items: center; gap: 6px;
     padding: 8px 12px 10px; background: white;
@@ -177,6 +222,7 @@
 }
 .grp-bar-btn:hover { background: #e2e8f0; color: #334155; }
 .grp-bar-btn.active { background: #ede9fe; color: #6366f1; }
+.grp-bar-btn.recording { background: #fee2e2; color: #dc2626; animation: recPulse 1s infinite; }
 .grp-msg-input {
     flex: 1; min-width: 0; padding: 10px 16px;
     border: 1.5px solid #e2e8f0; border-radius: 24px;
@@ -205,11 +251,14 @@ body.bg-dark .grp-bar-btn { background: #334155 !important; color: #94a3b8 !impo
 body.bg-dark .grp-emoji-panel { background: #1e293b !important; border-color: #334155 !important; }
 body.bg-dark .grp-date-sep span { background: #334155 !important; color: #94a3b8 !important; }
 body.bg-dark .grp-typing-bubble { background: #1e293b !important; }
+body.bg-dark .grp-preview { background: #1e293b !important; border-color: #2d3748 !important; }
+body.bg-dark .grp-audio-preview { background: #1e293b !important; border-color: #2d3748 !important; }
 </style>
+
+<input type="file" id="grpFileInput" accept="image/*,video/*" style="display:none;" />
 
 <div class="grp-chat-page">
 
-    <!-- HEADER — click va a Details -->
     <div class="grp-header" onclick="window.location.href='/Group/Details/@Model.Id'">
         <div class="grp-header-avatar">
             @if (!string.IsNullOrEmpty(Model.ImageUrl))
@@ -226,9 +275,7 @@ body.bg-dark .grp-typing-bubble { background: #1e293b !important; }
         </div>
     </div>
 
-    <!-- CHAT BOX -->
     <div class="grp-chat-box" id="chatBox">
-
         @if (!messages.Any())
         {
             <div id="emptyState" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;color:#9ca3af;text-align:center;padding:40px;">
@@ -247,7 +294,6 @@ body.bg-dark .grp-typing-bubble { background: #1e293b !important; }
                 string dateLabel = grp.Key == today ? "Hoy" :
                                    grp.Key == yesterday ? "Ayer" :
                                    grp.Key.ToString("dd MMMM yyyy", new System.Globalization.CultureInfo("es-ES"));
-
                 <div class="grp-date-sep"><span>@dateLabel</span></div>
 
                 foreach (var msg in grp.OrderBy(m => m.SentAt))
@@ -255,9 +301,16 @@ body.bg-dark .grp-typing-bubble { background: #1e293b !important; }
                     bool isMine = msg.SenderId == currentUserId;
                     var senderImg = msg.Sender?.ProfileImage ?? msg.Sender?.ProfilePicture ?? "";
                     var senderLetter = (msg.Sender?.Username ?? "?").Substring(0, 1).ToUpper();
-                    var readCount = msg.Reads?.Count ?? 0;
-                    // chulo azul si todos los miembros (menos el sender) leyeron
-                    bool allRead = readCount >= totalMembers - 1;
+                    var readCount = msg.Reads?.Count(r => r.UserId != msg.SenderId) ?? 0;
+                    bool allRead = readCount >= totalMembers - 1 && totalMembers > 1;
+
+                    // detectar tipo de contenido
+                    bool isAudio = !string.IsNullOrEmpty(msg.Content) &&
+                                   (msg.Content.Contains("cloudinary") || msg.Content.Contains("/audios/") || msg.Content.EndsWith(".webm"));
+                    bool isImage = !string.IsNullOrEmpty(msg.FileUrl) &&
+                                   (msg.FileUrl.Contains("/image/upload/") || msg.FileUrl.EndsWith(".jpg") || msg.FileUrl.EndsWith(".png") || msg.FileUrl.EndsWith(".jpeg"));
+                    bool isVideo = !string.IsNullOrEmpty(msg.FileUrl) &&
+                                   (msg.FileUrl.Contains("/video/upload/") || msg.FileUrl.EndsWith(".mp4") || msg.FileUrl.EndsWith(".webm"));
 
                     <div class="grp-msg-row @(isMine ? "mine" : "theirs")" id="msg-@msg.Id">
                         @if (!isMine)
@@ -265,8 +318,7 @@ body.bg-dark .grp-typing-bubble { background: #1e293b !important; }
                             <a href="/User/Profile/@msg.SenderId" class="grp-msg-avatar">
                                 @if (!string.IsNullOrEmpty(senderImg))
                                 { <img src="@senderImg" /> }
-                                else
-                                { @senderLetter }
+                                else { @senderLetter }
                             </a>
                         }
                         <div class="grp-msg-wrap">
@@ -276,7 +328,29 @@ body.bg-dark .grp-typing-bubble { background: #1e293b !important; }
                                     @msg.Sender?.Username
                                 </a>
                             }
-                            <div class="grp-msg-bubble">@msg.Content</div>
+                            <div class="grp-msg-bubble">
+                                @if (isAudio)
+                                {
+                                    <audio controls class="grp-msg-audio">
+                                        <source src="@msg.Content" />
+                                    </audio>
+                                }
+                                else if (isImage)
+                                {
+                                    <img src="@msg.FileUrl" class="grp-msg-media"
+                                         onclick="window.open('@msg.FileUrl', '_blank')" />
+                                }
+                                else if (isVideo)
+                                {
+                                    <video controls class="grp-msg-media">
+                                        <source src="@msg.FileUrl" />
+                                    </video>
+                                }
+                                else if (!string.IsNullOrEmpty(msg.Content))
+                                {
+                                    @msg.Content
+                                }
+                            </div>
                             <div class="grp-msg-footer">
                                 <span class="grp-msg-time">@msg.SentAt.ToLocalTime().ToString("hh:mm tt")</span>
                                 @if (isMine)
@@ -301,7 +375,30 @@ body.bg-dark .grp-typing-bubble { background: #1e293b !important; }
         </div>
     </div>
 
-    <!-- EMOJI PANEL -->
+    <!-- PREVIEW ARCHIVO -->
+    <div class="grp-preview" id="grpPreview">
+        <button class="grp-preview-close" onclick="cancelarArchivo()">✕</button>
+        <img id="grpPreviewImg" style="display:none;" />
+        <video id="grpPreviewVid" controls style="display:none;"></video>
+    </div>
+
+    <!-- RECORDING STATUS -->
+    <div class="grp-recording" id="grpRecording">
+        <div class="grp-rec-dot"></div>
+        <span class="grp-rec-label">Grabando audio...</span>
+        <span class="grp-rec-timer" id="grpRecTimer">0:00</span>
+    </div>
+
+    <!-- AUDIO PREVIEW -->
+    <div class="grp-audio-preview" id="grpAudioPreview">
+        <audio id="grpPreviewAudio" controls></audio>
+        <div class="grp-audio-btns">
+            <button class="grp-audio-send" onclick="enviarAudio()">📤 Enviar audio</button>
+            <button class="grp-audio-cancel" onclick="cancelarAudio()">Cancelar</button>
+        </div>
+    </div>
+
+    <!-- EMOJI -->
     <div class="grp-emoji-panel" id="emojiPanel">
         <div class="grp-emoji-grid">
             @foreach (var e in new[]{"😀","😃","😄","😁","😆","😅","🤣","😂","🙂","😉","😊","😇","🥰","😍","🤩","😘","😋","😛","😜","🤪","😝","🤑","🤗","🤭","🤫","🤔","😐","😑","😶","😏","😒","🙄","😬","🤥","😌","😔","😪","😴","😷","🤒","🤕","🤢","🤮","🤧","🥵","🥶","😵","🤯","🤠","🥳","😎","🤓","😕","😟","🙁","☹️","😮","😲","😳","🥺","😦","😧","😨","😰","😥","😢","😭","😱","😖","😣","😞","😓","😩","😫","🤬","😤","😠","😡","💀","👻","👽","🤖","😺","😸","😹","😻","😼","😽","🙀","😿","😾","👋","✋","👌","✌️","🤞","👍","👎","✊","👊","👏","🙌","🙏","💪","❤️","🧡","💛","💚","💙","💜","🖤","💔","❣️","💕","💞","💓","💗","💖","💘","💝","🔥","⚡","🌈","☀️","🌙","⭐","🌟","💫","✨","🎉","🎊","🎈","🎁","🏆","🥇","👑","🚀","💯","✅","❌","⚠️","🔐","🔑","💡","📱","💻","🎮","🎵","🎶","🍕","🍔","🌮","🍣","🍜","🍦","🎂","🍰","🧁","☕","🍺","🥂"})
@@ -309,14 +406,22 @@ body.bg-dark .grp-typing-bubble { background: #1e293b !important; }
         </div>
     </div>
 
-    <!-- INPUT -->
+    <!-- INPUT BAR -->
     <div class="grp-input-bar">
-        <button type="button" class="grp-bar-btn" id="emojiBtn"
-                onclick="toggleGroupEmoji()" data-no-loader>😊</button>
-        <textarea id="msgInput" class="grp-msg-input" rows="1"
-                  placeholder="Escribe un mensaje..."></textarea>
-        <button class="grp-send-btn" id="sendBtn" data-no-loader
-                onclick="sendGroupMessage()" disabled>
+        <button type="button" class="grp-bar-btn" id="emojiBtn" onclick="toggleGroupEmoji()" data-no-loader>😊</button>
+        <button type="button" class="grp-bar-btn" onclick="document.getElementById('grpFileInput').click()" data-no-loader title="Adjuntar">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/>
+            </svg>
+        </button>
+        <button type="button" class="grp-bar-btn" id="grpRecBtn" onclick="toggleGrabacion()" data-no-loader title="Audio">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/>
+                <path d="M19 10v2a7 7 0 01-14 0v-2M12 19v4M8 23h8"/>
+            </svg>
+        </button>
+        <textarea id="msgInput" class="grp-msg-input" rows="1" placeholder="Escribe un mensaje..."></textarea>
+        <button class="grp-send-btn" id="sendBtn" data-no-loader onclick="sendGroupMessage()" disabled>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
             </svg>
@@ -336,14 +441,27 @@ let currentTotalMembers = @totalMembers;
 const chatBox = document.getElementById("chatBox");
 const msgInput = document.getElementById("msgInput");
 const sendBtn = document.getElementById("sendBtn");
+let selectedFile = null;
+let mediaRecorder = null, audioChunks = [], isRecording = false, recInterval = null;
+let recordedBlob = null;
 
 window.addEventListener("load", () => chatBox.scrollTop = chatBox.scrollHeight);
 
+const token = () => document.querySelector('input[name="__RequestVerificationToken"]')?.value ?? "";
+
 // 🔥 marcar como leído al abrir
-fetch(`/Group/MarkRead`, {
+fetch("/Group/MarkRead", {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: `groupId=${groupId}`
+    body: `groupId=${groupId}&__RequestVerificationToken=${encodeURIComponent(token())}`
+}).then(r => r.json()).then(data => {
+    // notificar chulos via SignalR para cada mensaje leído
+    if (data.readIds) {
+        data.readIds.forEach(msgId => {
+            grpConnection.invoke("NotifyGroupRead", groupId.toString(), msgId.toString())
+                .catch(() => {});
+        });
+    }
 });
 
 // SignalR
@@ -355,10 +473,9 @@ grpConnection.start().then(async () => {
     await grpConnection.invoke("JoinGroupChat", groupId.toString());
 }).catch(err => console.error("SignalR grupo:", err));
 
-// 🔥 recibir mensaje en tiempo real
-grpConnection.on("ReceiveGroupMessage", (senderId, senderName, senderImage, content, time, msgId) => {
+// 🔥 recibir mensaje
+grpConnection.on("ReceiveGroupMessage", (senderId, senderName, senderImage, content, time, msgId, fileUrl, fileType) => {
     if (String(senderId) === String(myId)) return;
-
     const empty = document.getElementById("emptyState");
     if (empty) empty.remove();
 
@@ -367,6 +484,16 @@ grpConnection.on("ReceiveGroupMessage", (senderId, senderName, senderImage, cont
         ? `<img src="${senderImage}" style="width:100%;height:100%;object-fit:cover;" />`
         : letter;
 
+    let contentHTML = "";
+    if (fileType === "audio")
+        contentHTML = `<audio controls class="grp-msg-audio"><source src="${content}" /></audio>`;
+    else if (fileType === "image")
+        contentHTML = `<img src="${fileUrl}" class="grp-msg-media" onclick="window.open('${fileUrl}', '_blank')" />`;
+    else if (fileType === "video")
+        contentHTML = `<video controls class="grp-msg-media"><source src="${fileUrl}" /></video>`;
+    else
+        contentHTML = escapeHtml(content);
+
     const row = document.createElement("div");
     row.className = "grp-msg-row theirs";
     if (msgId) row.id = "msg-" + msgId;
@@ -374,34 +501,37 @@ grpConnection.on("ReceiveGroupMessage", (senderId, senderName, senderImage, cont
         <a href="/User/Profile/${senderId}" class="grp-msg-avatar">${avatarHTML}</a>
         <div class="grp-msg-wrap">
             <a href="/User/Profile/${senderId}" class="grp-msg-sender">${senderName}</a>
-            <div class="grp-msg-bubble">${escapeHtml(content)}</div>
-            <div class="grp-msg-footer">
-                <span class="grp-msg-time">${time}</span>
-            </div>
+            <div class="grp-msg-bubble">${contentHTML}</div>
+            <div class="grp-msg-footer"><span class="grp-msg-time">${time}</span></div>
         </div>`;
 
     chatBox.insertBefore(row, document.getElementById("typingIndicator"));
     chatBox.scrollTop = chatBox.scrollHeight;
 
-    // marcar como leído
-    fetch(`/Group/MarkRead`, {
+    // marcar leído y notificar chulos
+    fetch("/Group/MarkRead", {
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: `groupId=${groupId}`
+        body: `groupId=${groupId}&__RequestVerificationToken=${encodeURIComponent(token())}`
+    }).then(r => r.json()).then(data => {
+        if (data.readIds) {
+            data.readIds.forEach(id => {
+                grpConnection.invoke("NotifyGroupRead", groupId.toString(), id.toString()).catch(() => {});
+            });
+        }
     });
 });
 
-// 🔥 actualizar chulos en tiempo real
+// 🔥 actualizar chulos
 grpConnection.on("GroupMessageRead", (msgId, readCount) => {
     const check = document.getElementById("check-" + msgId);
     if (!check) return;
-    const allRead = readCount >= currentTotalMembers - 1;
+    const allRead = parseInt(readCount) >= currentTotalMembers - 1 && currentTotalMembers > 1;
     check.textContent = allRead ? "✔✔" : "✔";
     if (allRead) check.classList.add("seen");
     else check.classList.remove("seen");
 });
 
-// 🔥 typing
 grpConnection.on("GroupUserTyping", (senderName) => {
     if (senderName === myName) return;
     document.getElementById("typingIndicator").style.display = "block";
@@ -411,11 +541,10 @@ grpConnection.on("GroupUserStoppedTyping", () => {
     document.getElementById("typingIndicator").style.display = "none";
 });
 
-// input
 msgInput.addEventListener("input", function() {
     this.style.height = "auto";
     this.style.height = Math.min(this.scrollHeight, 100) + "px";
-    sendBtn.disabled = this.value.trim() === "";
+    sendBtn.disabled = this.value.trim() === "" && !selectedFile;
     grpConnection.invoke("GroupUserTyping", groupId.toString(), myName).catch(() => {});
     clearTimeout(window.grpTypingTimer);
     window.grpTypingTimer = setTimeout(() => {
@@ -424,69 +553,189 @@ msgInput.addEventListener("input", function() {
 });
 
 msgInput.addEventListener("keydown", function(e) {
-    if (e.key === "Enter" && !e.shiftKey) {
-        e.preventDefault();
-        sendGroupMessage();
-    }
+    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendGroupMessage(); }
 });
+
+// 🔥 seleccionar archivo
+document.getElementById("grpFileInput").addEventListener("change", function() {
+    const file = this.files[0]; if (!file) return;
+    selectedFile = file;
+    const url = URL.createObjectURL(file);
+    const preview = document.getElementById("grpPreview");
+    const img = document.getElementById("grpPreviewImg");
+    const vid = document.getElementById("grpPreviewVid");
+    preview.style.display = "block";
+    if (file.type.startsWith("image")) {
+        img.src = url; img.style.display = "block"; vid.style.display = "none";
+    } else {
+        vid.src = url; vid.style.display = "block"; img.style.display = "none";
+    }
+    sendBtn.disabled = false;
+});
+
+function cancelarArchivo() {
+    selectedFile = null;
+    document.getElementById("grpFileInput").value = "";
+    document.getElementById("grpPreview").style.display = "none";
+    document.getElementById("grpPreviewImg").style.display = "none";
+    document.getElementById("grpPreviewVid").style.display = "none";
+    sendBtn.disabled = msgInput.value.trim() === "";
+}
+
+// 🔥 grabación de audio
+async function toggleGrabacion() {
+    if (isRecording) {
+        mediaRecorder.stop(); isRecording = false;
+        clearInterval(recInterval);
+        document.getElementById("grpRecording").style.display = "none";
+        document.getElementById("grpRecBtn").classList.remove("recording");
+        return;
+    }
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        mediaRecorder = new MediaRecorder(stream);
+        audioChunks = []; isRecording = true;
+        document.getElementById("grpRecording").style.display = "flex";
+        document.getElementById("grpRecBtn").classList.add("recording");
+        let secs = 0;
+        recInterval = setInterval(() => {
+            secs++;
+            document.getElementById("grpRecTimer").textContent =
+                `${Math.floor(secs/60)}:${String(secs%60).padStart(2,"0")}`;
+        }, 1000);
+        mediaRecorder.ondataavailable = e => { if (e.data?.size > 0) audioChunks.push(e.data); };
+        mediaRecorder.onstop = () => {
+            stream.getTracks().forEach(t => t.stop());
+            recordedBlob = new Blob(audioChunks, { type: "audio/webm" });
+            document.getElementById("grpPreviewAudio").src = URL.createObjectURL(recordedBlob);
+            document.getElementById("grpAudioPreview").style.display = "block";
+        };
+        mediaRecorder.start();
+    } catch (err) { alert("No se pudo acceder al micrófono."); }
+}
+
+async function enviarAudio() {
+    if (!recordedBlob) return;
+    document.getElementById("grpAudioPreview").style.display = "none";
+
+    const formData = new FormData();
+    formData.append("audio", recordedBlob, "audio.webm");
+    formData.append("groupId", groupId);
+    formData.append("__RequestVerificationToken", token());
+
+    const tempId = "temp-" + Date.now();
+    agregarBurbujaMia(`<audio controls class="grp-msg-audio"><source src="${URL.createObjectURL(recordedBlob)}" /></audio>`, tempId);
+
+    try {
+        const res = await fetch("/Group/SendAudio", { method: "POST", body: formData });
+        const data = await res.json();
+        if (data.success) {
+            const row = document.getElementById(tempId);
+            if (row) row.id = "msg-" + data.id;
+            const check = document.getElementById("check-" + tempId);
+            if (check) check.id = "check-" + data.id;
+            currentTotalMembers = data.totalMembers;
+            await grpConnection.invoke("SendGroupMessage",
+                groupId.toString(), myId, myName, data.audioUrl, data.id.toString(), "", "audio");
+        }
+    } catch (err) { console.error(err); }
+    recordedBlob = null;
+}
+
+function cancelarAudio() {
+    recordedBlob = null;
+    document.getElementById("grpAudioPreview").style.display = "none";
+    document.getElementById("grpPreviewAudio").src = "";
+}
 
 function makeTime() {
     return new Date().toLocaleTimeString('es-CO', { hour:'2-digit', minute:'2-digit' });
 }
 
 function escapeHtml(text) {
-    return text.replace(/&/g,"&amp;").replace(/</g,"&lt;")
-               .replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+    return String(text).replace(/&/g,"&amp;").replace(/</g,"&lt;")
+                       .replace(/>/g,"&gt;").replace(/"/g,"&quot;");
 }
 
-async function sendGroupMessage() {
-    const content = msgInput.value.trim();
-    if (!content) return;
-
+function agregarBurbujaMia(contentHTML, tempId) {
     const empty = document.getElementById("emptyState");
     if (empty) empty.remove();
-
-    const tempId = "temp-" + Date.now();
     const row = document.createElement("div");
     row.className = "grp-msg-row mine";
     row.id = tempId;
     row.innerHTML = `
         <div class="grp-msg-wrap">
-            <div class="grp-msg-bubble">${escapeHtml(content)}</div>
+            <div class="grp-msg-bubble">${contentHTML}</div>
             <div class="grp-msg-footer">
                 <span class="grp-msg-time">${makeTime()}</span>
                 <span class="grp-msg-check" id="check-${tempId}">✔</span>
             </div>
         </div>`;
-
     chatBox.insertBefore(row, document.getElementById("typingIndicator"));
     chatBox.scrollTop = chatBox.scrollHeight;
+    return row;
+}
 
-    msgInput.value = "";
-    msgInput.style.height = "auto";
+async function sendGroupMessage() {
+    const content = msgInput.value.trim();
+    if (!content && !selectedFile) return;
+
+    const tempId = "temp-" + Date.now();
+    msgInput.value = ""; msgInput.style.height = "auto";
     sendBtn.disabled = true;
 
-    try {
-        const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value ?? "";
-        const res = await fetch("/Group/SendMessage", {
-            method: "POST",
-            headers: { "Content-Type": "application/x-www-form-urlencoded" },
-            body: `groupId=${groupId}&content=${encodeURIComponent(content)}&__RequestVerificationToken=${encodeURIComponent(token)}`
-        });
-        const data = await res.json();
-        if (data.success) {
-            row.id = "msg-" + data.id;
-            const check = document.getElementById("check-" + tempId);
-            if (check) { check.id = "check-" + data.id; }
-            currentTotalMembers = data.totalMembers;
-            // notificar via SignalR con el id real
-            await grpConnection.invoke("SendGroupMessage", groupId.toString(), myId, myName, content, data.id.toString());
-        } else {
-            row.remove();
+    if (selectedFile) {
+        const file = selectedFile; selectedFile = null;
+        cancelarArchivo();
+        const url = URL.createObjectURL(file);
+        const isImg = file.type.startsWith("image");
+        const previewHTML = isImg
+            ? `<img src="${url}" class="grp-msg-media" />`
+            : `<video controls class="grp-msg-media"><source src="${url}" /></video>`;
+        agregarBurbujaMia(previewHTML, tempId);
+
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("groupId", groupId);
+        formData.append("__RequestVerificationToken", token());
+
+        try {
+            const res = await fetch("/Group/SendFile", { method: "POST", body: formData });
+            const data = await res.json();
+            if (data.success) {
+                const row = document.getElementById(tempId);
+                if (row) row.id = "msg-" + data.id;
+                const check = document.getElementById("check-" + tempId);
+                if (check) check.id = "check-" + data.id;
+                currentTotalMembers = data.totalMembers;
+                await grpConnection.invoke("SendGroupMessage",
+                    groupId.toString(), myId, myName, "", data.id.toString(), data.fileUrl, data.fileType);
+            }
+        } catch (err) { console.error(err); }
+    } else {
+        agregarBurbujaMia(escapeHtml(content), tempId);
+        try {
+            const res = await fetch("/Group/SendMessage", {
+                method: "POST",
+                headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                body: `groupId=${groupId}&content=${encodeURIComponent(content)}&__RequestVerificationToken=${encodeURIComponent(token())}`
+            });
+            const data = await res.json();
+            if (data.success) {
+                const row = document.getElementById(tempId);
+                if (row) row.id = "msg-" + data.id;
+                const check = document.getElementById("check-" + tempId);
+                if (check) check.id = "check-" + data.id;
+                currentTotalMembers = data.totalMembers;
+                await grpConnection.invoke("SendGroupMessage",
+                    groupId.toString(), myId, myName, content, data.id.toString(), "", "text");
+            } else {
+                document.getElementById(tempId)?.remove();
+            }
+        } catch (err) {
+            console.error(err);
+            document.getElementById(tempId)?.remove();
         }
-    } catch (err) {
-        console.error("Error:", err);
-        row.remove();
     }
 
     msgInput.focus();
@@ -501,9 +750,8 @@ function toggleGroupEmoji() {
 }
 
 function addGroupEmoji(emoji) {
-    msgInput.value += emoji;
-    msgInput.focus();
-    sendBtn.disabled = msgInput.value.trim() === "";
+    msgInput.value += emoji; msgInput.focus();
+    sendBtn.disabled = msgInput.value.trim() === "" && !selectedFile;
 }
 
 document.addEventListener("click", (e) => {
