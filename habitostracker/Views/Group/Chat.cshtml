@@ -1,0 +1,372 @@
+﻿@model HabitTrackerApp.Models.Group
+
+@{
+    ViewData["Title"] = Model.Name;
+    var messages = ViewBag.Messages as List<HabitTrackerApp.Models.GroupMessage> ?? new();
+    var currentUserId = (int)ViewBag.CurrentUserId;
+    var isAdmin = (bool)ViewBag.IsAdmin;
+    var members = Model.Members?.Where(m => m.IsActive).ToList() ?? new();
+}
+
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+<style>
+* { box-sizing: border-box; }
+.grp-chat-page {
+    max-width: 720px; margin: 0 auto;
+    display: flex; flex-direction: column;
+    height: calc(100vh - 120px);
+    font-family: 'Plus Jakarta Sans', sans-serif;
+}
+
+/* HEADER */
+.grp-chat-header {
+    background: linear-gradient(135deg, #1e293b, #0f172a);
+    border-radius: 20px; padding: 16px 20px; margin-bottom: 12px;
+    display: flex; align-items: center; gap: 14px;
+    border: 1px solid rgba(255,255,255,0.06); flex-shrink: 0;
+}
+.grp-chat-avatar {
+    width: 46px; height: 46px; border-radius: 14px; flex-shrink: 0;
+    background: linear-gradient(135deg, #6366f1, #2563eb);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px; color: white; font-weight: 800; overflow: hidden;
+}
+.grp-chat-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.grp-chat-name { font-size: 16px; font-weight: 800; color: white; margin: 0 0 3px; }
+.grp-chat-meta { font-size: 12px; color: rgba(255,255,255,0.4); margin: 0; }
+.grp-header-actions { margin-left: auto; display: flex; gap: 8px; }
+.grp-header-btn {
+    padding: 7px 14px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.1);
+    background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.6);
+    font-size: 12px; font-weight: 600; cursor: pointer; transition: 0.2s;
+    text-decoration: none;
+}
+.grp-header-btn:hover { background: rgba(255,255,255,0.1); color: white; }
+.grp-header-btn.danger:hover { background: rgba(239,68,68,0.2); color: #f87171; border-color: rgba(239,68,68,0.3); }
+
+/* MEMBERS BAR */
+.grp-members-bar {
+    display: flex; gap: 10px; align-items: center;
+    padding: 10px 14px; background: white;
+    border-radius: 14px; margin-bottom: 10px;
+    border: 1px solid rgba(0,0,0,0.05);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    overflow-x: auto; flex-shrink: 0;
+}
+.grp-members-bar::-webkit-scrollbar { display: none; }
+.grp-member-chip {
+    display: flex; align-items: center; gap: 6px;
+    padding: 5px 10px; border-radius: 20px;
+    background: #f8fafc; border: 1px solid #e5e7eb;
+    font-size: 12px; font-weight: 600; color: #374151;
+    white-space: nowrap; flex-shrink: 0;
+}
+.grp-member-chip img, .grp-member-chip-letter {
+    width: 22px; height: 22px; border-radius: 50%; object-fit: cover;
+    background: linear-gradient(135deg, #6366f1, #2563eb);
+    display: flex; align-items: center; justify-content: center;
+    color: white; font-size: 10px; font-weight: 800; flex-shrink: 0;
+}
+.grp-member-chip.admin { background: #ede9fe; border-color: #c4b5fd; color: #6366f1; }
+
+/* CHAT */
+.grp-chat-wrap {
+    flex: 1; background: white; border-radius: 20px;
+    border: 1px solid rgba(0,0,0,0.05);
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    display: flex; flex-direction: column; overflow: hidden; min-height: 0;
+}
+
+.grp-chat-box {
+    flex: 1; overflow-y: auto; padding: 18px;
+    display: flex; flex-direction: column; gap: 4px;
+    scroll-behavior: smooth;
+}
+.grp-chat-box::-webkit-scrollbar { width: 4px; }
+.grp-chat-box::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
+
+/* MESSAGES */
+.grp-msg-row { display: flex; margin-bottom: 2px; }
+.grp-msg-row.mine { justify-content: flex-end; }
+.grp-msg-row.theirs { justify-content: flex-start; gap: 8px; }
+
+.grp-msg-avatar {
+    width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0;
+    background: linear-gradient(135deg, #6366f1, #2563eb);
+    display: flex; align-items: center; justify-content: center;
+    color: white; font-size: 11px; font-weight: 800;
+    align-self: flex-end; overflow: hidden;
+}
+.grp-msg-avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+.grp-msg-wrap { display: flex; flex-direction: column; max-width: 72%; }
+.grp-msg-row.mine .grp-msg-wrap { align-items: flex-end; }
+.grp-msg-row.theirs .grp-msg-wrap { align-items: flex-start; }
+
+.grp-msg-sender {
+    font-size: 11px; font-weight: 700; color: #6366f1;
+    margin-bottom: 3px; padding: 0 4px;
+}
+
+.grp-msg-bubble {
+    padding: 10px 14px; border-radius: 18px;
+    font-size: 14px; line-height: 1.5; word-break: break-word;
+}
+.grp-msg-row.mine .grp-msg-bubble {
+    background: linear-gradient(135deg, #6366f1, #4f46e5);
+    color: white; border-bottom-right-radius: 4px;
+    box-shadow: 0 2px 10px rgba(99,102,241,0.3);
+}
+.grp-msg-row.theirs .grp-msg-bubble {
+    background: #f1f5f9; color: #1e293b;
+    border-bottom-left-radius: 4px;
+}
+.grp-msg-time {
+    font-size: 10px; color: #9ca3af; margin-top: 3px; padding: 0 4px;
+}
+
+/* EMPTY */
+.grp-empty-chat {
+    flex: 1; display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 10px; color: #9ca3af; text-align: center; padding: 40px;
+}
+
+/* TYPING */
+.grp-typing {
+    padding: 0 18px 10px;
+    display: flex; align-items: center; gap: 8px;
+}
+.grp-typing-bubble {
+    background: #f1f5f9; padding: 8px 14px;
+    border-radius: 18px 18px 18px 4px;
+    display: flex; gap: 4px; align-items: center;
+}
+.grp-typing-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: #94a3b8; animation: typingBounce 1.2s infinite;
+}
+.grp-typing-dot:nth-child(2) { animation-delay: 0.2s; }
+.grp-typing-dot:nth-child(3) { animation-delay: 0.4s; }
+@@keyframes typingBounce { 0%,60%,100%{transform:translateY(0);} 30%{transform:translateY(-5px);} }
+
+/* INPUT */
+.grp-input-wrap {
+    padding: 12px 14px; display: flex; gap: 10px; align-items: center;
+    border-top: 1px solid #f1f5f9; flex-shrink: 0;
+}
+.grp-textarea {
+    flex: 1; padding: 10px 14px; border: 1.5px solid #e5e7eb;
+    border-radius: 22px; font-size: 14px; font-family: inherit;
+    outline: none; transition: 0.2s; background: #f9fafb;
+    color: #111827; resize: none; max-height: 100px;
+}
+.grp-textarea:focus { border-color: #6366f1; background: white; box-shadow: 0 0 0 3px rgba(99,102,241,0.1); }
+.grp-send-btn {
+    width: 42px; height: 42px; border-radius: 50%; border: none;
+    background: linear-gradient(135deg, #6366f1, #4f46e5);
+    color: white; cursor: pointer; font-size: 16px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; transition: 0.2s;
+    box-shadow: 0 4px 12px rgba(99,102,241,0.35);
+}
+.grp-send-btn:hover { transform: scale(1.08); }
+.grp-send-btn:disabled { background: #cbd5e1; box-shadow: none; cursor: not-allowed; transform: none; }
+
+/* DARK */
+body.bg-dark .grp-chat-wrap { background: #1e293b !important; border-color: #2d3748 !important; }
+body.bg-dark .grp-msg-row.theirs .grp-msg-bubble { background: #2d3748 !important; color: #f1f5f9 !important; }
+body.bg-dark .grp-textarea { background: #2d3748 !important; border-color: #3d4d60 !important; color: #f1f5f9 !important; }
+body.bg-dark .grp-textarea:focus { background: #334155 !important; }
+body.bg-dark .grp-input-wrap { border-color: #2d3748 !important; }
+body.bg-dark .grp-members-bar { background: #1e293b !important; border-color: #2d3748 !important; }
+body.bg-dark .grp-member-chip { background: #2d3748 !important; border-color: #3d4d60 !important; color: #94a3b8 !important; }
+body.bg-dark .grp-member-chip.admin { background: rgba(99,102,241,0.15) !important; color: #818cf8 !important; }
+</style>
+
+<!-- MODAL SALIR -->
+<div id="leaveModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:99999;align-items:center;justify-content:center;backdrop-filter:blur(6px);">
+    <div style="background:#0f172a;border-radius:22px;padding:32px 28px;max-width:340px;width:90%;border:1px solid rgba(255,255,255,0.08);text-align:center;">
+        <div style="font-size:40px;margin-bottom:12px;">🚪</div>
+        <h4 style="color:white;font-weight:800;margin:0 0 10px;">¿Salir del grupo?</h4>
+        <p style="color:rgba(255,255,255,0.4);font-size:13px;margin:0 0 22px;line-height:1.6;">Ya no podrás ver los mensajes de este grupo.</p>
+        <div style="display:flex;gap:10px;">
+            <button onclick="document.getElementById('leaveModal').style.display='none'" style="flex:1;padding:11px;border-radius:11px;border:1px solid #1e293b;background:#1e293b;color:#64748b;font-weight:700;font-size:13px;cursor:pointer;font-family:inherit;">Cancelar</button>
+            <form asp-controller="Group" asp-action="Leave" method="post" style="flex:1;">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="groupId" value="@Model.Id" />
+                <button type="submit" style="width:100%;padding:11px;border-radius:11px;border:none;background:#dc2626;color:white;font-weight:700;font-size:13px;cursor:pointer;font-family:inherit;">Salir</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="grp-chat-page">
+
+    <!-- HEADER -->
+    <div class="grp-chat-header">
+        <div class="grp-chat-avatar">
+            @if (!string.IsNullOrEmpty(Model.ImageUrl))
+            { <img src="@Model.ImageUrl" /> }
+            else
+            { @Model.Name.Substring(0, 1).ToUpper() }
+        </div>
+        <div>
+            <div class="grp-chat-name">@Model.Name</div>
+            <div class="grp-chat-meta">@members.Count miembro@(members.Count != 1 ? "s" : "")</div>
+        </div>
+        <div class="grp-header-actions">
+            <a asp-controller="Group" asp-action="Index" class="grp-header-btn">← Grupos</a>
+            <button type="button" class="grp-header-btn danger" data-no-loader
+                    onclick="document.getElementById('leaveModal').style.display='flex'">
+                🚪 Salir
+            </button>
+        </div>
+    </div>
+
+    <!-- MEMBERS BAR -->
+    <div class="grp-members-bar">
+        <span style="font-size:11px;font-weight:700;color:#9ca3af;flex-shrink:0;">👥</span>
+        @foreach (var m in members)
+        {
+            var img = m.User?.ProfileImage ?? m.User?.ProfilePicture ?? "";
+            var letter = (m.User?.Username ?? "?").Substring(0, 1).ToUpper();
+            var isCurrentAdmin = m.Role == "Admin";
+            <div class="grp-member-chip @(isCurrentAdmin ? "admin" : "")">
+                @if (!string.IsNullOrEmpty(img))
+                { <img src="@img" style="width:22px;height:22px;border-radius:50%;object-fit:cover;" /> }
+                else
+                {
+                    <div class="grp-member-chip-letter">@letter</div>
+                }
+                @m.User?.Username
+                @if (isCurrentAdmin) { <span>👑</span> }
+            </div>
+        }
+    </div>
+
+    <!-- CHAT -->
+    <div class="grp-chat-wrap">
+        <div class="grp-chat-box" id="chatBox">
+            @if (!messages.Any())
+            {
+                <div class="grp-empty-chat">
+                    <div style="font-size:44px;">💬</div>
+                    <div style="font-size:15px;font-weight:700;color:#374151;">¡Sé el primero en escribir!</div>
+                    <div style="font-size:13px;">Empieza la conversación del grupo.</div>
+                </div>
+            }
+            else
+            {
+                foreach (var msg in messages)
+                {
+                    bool isMine = msg.SenderId == currentUserId;
+                    var senderImg = msg.Sender?.ProfileImage ?? msg.Sender?.ProfilePicture ?? "";
+                    var senderLetter = (msg.Sender?.Username ?? "?").Substring(0, 1).ToUpper();
+                    <div class="grp-msg-row @(isMine ? "mine" : "theirs")">
+                        @if (!isMine)
+                        {
+                            <div class="grp-msg-avatar">
+                                @if (!string.IsNullOrEmpty(senderImg))
+                                { <img src="@senderImg" /> }
+                                else
+                                { @senderLetter }
+                            </div>
+                        }
+                        <div class="grp-msg-wrap">
+                            @if (!isMine)
+                            {
+                                <div class="grp-msg-sender">@msg.Sender?.Username</div>
+                            }
+                            <div class="grp-msg-bubble">@msg.Content</div>
+                            <div class="grp-msg-time">@msg.SentAt.ToLocalTime().ToString("hh:mm tt")</div>
+                        </div>
+                    </div>
+                }
+            }
+        </div>
+
+        <div id="typingIndicator" style="display:none;" class="grp-typing">
+            <div class="grp-typing-bubble">
+                <div class="grp-typing-dot"></div>
+                <div class="grp-typing-dot"></div>
+                <div class="grp-typing-dot"></div>
+            </div>
+        </div>
+
+        <div class="grp-input-wrap">
+            <textarea id="msgInput" class="grp-textarea" rows="1"
+                      placeholder="Escribe un mensaje..."></textarea>
+            <button class="grp-send-btn" id="sendBtn" data-no-loader onclick="sendMessage()">➤</button>
+        </div>
+    </div>
+</div>
+
+<script>
+const groupId = @Model.Id;
+const chatBox = document.getElementById("chatBox");
+const msgInput = document.getElementById("msgInput");
+const sendBtn = document.getElementById("sendBtn");
+
+window.addEventListener("load", () => chatBox.scrollTop = chatBox.scrollHeight);
+
+msgInput.addEventListener("input", function() {
+    this.style.height = "auto";
+    this.style.height = Math.min(this.scrollHeight, 100) + "px";
+    sendBtn.disabled = this.value.trim() === "";
+});
+
+msgInput.addEventListener("keydown", function(e) {
+    if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        sendMessage();
+    }
+});
+
+function escapeHtml(text) {
+    return text.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+}
+
+function makeTime() {
+    return new Date().toLocaleTimeString('es-CO', { hour:'2-digit', minute:'2-digit' });
+}
+
+async function sendMessage() {
+    const content = msgInput.value.trim();
+    if (!content) return;
+
+    // agregar burbuja propia
+    const emptyChat = chatBox.querySelector(".grp-empty-chat");
+    if (emptyChat) emptyChat.remove();
+
+    chatBox.innerHTML += `
+        <div class="grp-msg-row mine">
+            <div class="grp-msg-wrap">
+                <div class="grp-msg-bubble">${escapeHtml(content)}</div>
+                <div class="grp-msg-time">${makeTime()}</div>
+            </div>
+        </div>`;
+
+    msgInput.value = "";
+    msgInput.style.height = "auto";
+    sendBtn.disabled = true;
+    chatBox.scrollTop = chatBox.scrollHeight;
+
+    try {
+        const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value ?? "";
+        const res = await fetch("/Group/SendMessage", {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: `groupId=${groupId}&content=${encodeURIComponent(content)}&__RequestVerificationToken=${encodeURIComponent(token)}`
+        });
+        const data = await res.json();
+        if (!data.success) console.error("Error enviando mensaje");
+    } catch (err) {
+        console.error("Error:", err);
+    }
+
+    sendBtn.disabled = false;
+    msgInput.focus();
+}
+</script>
