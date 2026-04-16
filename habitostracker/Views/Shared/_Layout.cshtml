@@ -510,6 +510,14 @@ connectionGlobal.on("NewSessionDetected", function() {
         location.reload();
     }
 });
+// 🔥 cerrar sesión específica
+connectionGlobal.on("ForceLogoutSession", function(targetToken) {
+    const myToken = '@User.FindFirst("SessionToken")?.Value';
+    if (targetToken === myToken) {
+        document.body.innerHTML = `<div style="height:100vh;display:flex;align-items:center;justify-content:center;background:#0f172a;font-family:sans-serif;color:white;text-align:center;"><div style="background:#1e293b;padding:50px;border-radius:14px;"><h2 style="color:#f59e0b">⚠ Sesión cerrada</h2><p>Tu sesión fue cerrada desde otro dispositivo.</p><p style="opacity:0.6">Redirigiendo...</p></div></div>`;
+        setTimeout(() => window.location.href="/Account/LogoutGet", 2500);
+    }
+});
 
 connectionGlobal.start().catch(err => console.error("SignalR global:", err));
 </script>

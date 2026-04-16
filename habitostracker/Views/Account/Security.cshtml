@@ -407,21 +407,31 @@ body.bg-dark .sec-hero-badge { background: rgba(99,102,241,0.15) !important; }
             foreach (var s in sessions!)
             {
                 bool isCurrent = s.SessionToken == currentToken;
-                <div class="session-item @(isCurrent ? "current" : "")">
-                    <div class="session-dot"></div>
-                    <div class="session-info">
-                        <div class="session-device">
-                            @(s.Device ?? "Desconocido") · @(s.Browser ?? "Navegador")
-                            @if (isCurrent)
-                            {
-                                <span class="this-device-badge">Este dispositivo</span>
-                            }
-                        </div>
-                        <div class="session-meta">
-                            @(s.IpAddress ?? "IP desconocida") · @s.CreatedAt.ToLocalTime().ToString("dd MMM yyyy · HH:mm")
-                        </div>
-                    </div>
-                </div>
+              <div class="session-item @(isCurrent ? "current" : "")">
+    <div class="session-dot"></div>
+    <div class="session-info">
+        <div class="session-device">
+            @(s.Device ?? "Desconocido") · @(s.Browser ?? "")
+            @if (isCurrent)
+            {
+                <span class="this-device-badge">Este dispositivo</span>
+            }
+        </div>
+        <div class="session-meta">
+            @(s.IpAddress ?? "IP desconocida") · @s.CreatedAt.ToLocalTime().ToString("dd MMM yyyy · HH:mm")
+        </div>
+    </div>
+    @if (!isCurrent)
+    {
+        <button type="button"
+                onclick="cerrarSesionIndividual(@s.Id)"
+                style="flex-shrink:0;padding:6px 12px;border-radius:10px;border:1px solid #fecaca;background:#fef2f2;color:#dc2626;font-size:11px;font-weight:700;cursor:pointer;transition:0.2s;font-family:inherit;"
+                onmouseover="this.style.background='#dc2626';this.style.color='white';"
+                onmouseout="this.style.background='#fef2f2';this.style.color='#dc2626';">
+            🚪 Cerrar
+        </button>
+    }
+</div>
             }
         }
         else
@@ -702,6 +712,19 @@ async function verificarRespuesta(val, qNum) {
     } else {
         fb.className = "field-feedback err"; fb.textContent = "❌ Respuesta incorrecta";
         securityValida = false;
+    }
+}
+
+async function cerrarSesionIndividual(sessionId) {
+    const res = await fetch("/Account/CloseSession", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sessionId })
+    });
+    const data = await res.json();
+    if (data.success) {
+        mostrarErrorSec("✅ Sesión cerrada correctamente.");
+        setTimeout(() => location.reload(), 1500);
     }
 }
 

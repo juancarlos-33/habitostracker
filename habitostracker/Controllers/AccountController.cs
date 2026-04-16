@@ -1765,6 +1765,29 @@ namespace HabitTrackerApp.Controllers
 
             return RedirectToAction("Index", "Habit");
         }
+
+        [HttpPost]
+        public async Task<IActionResult> CloseSession([FromBody] CloseSessionDto dto)
+        {
+            var myId = int.Parse(User.FindFirst("UserId").Value);
+
+            var session = _context.UserSessions
+                .FirstOrDefault(s => s.Id == dto.SessionId && s.UserId == myId);
+
+            if (session == null) return Json(new { success = false });
+
+            session.IsActive = false;
+            await _context.SaveChangesAsync();
+
+            // 🔥 forzar logout solo en esa sesión via SignalR
+            await _hubContext.Clients.Group(myId.ToString())
+                .SendAsync("ForceLogoutSession", session.SessionToken);
+
+            return Json(new { success = true });
+        }
+
+        public class CloseSessionDto { public int SessionId { get; set; } }
+
         [HttpPost]
         public async Task<IActionResult> GuestLoginExisting(string username)
         {
