@@ -12,87 +12,105 @@
 
 <style>
 * { box-sizing: border-box; }
+
 .grp-chat-page {
-    max-width: 720px; margin: 0 auto;
     display: flex; flex-direction: column;
-    height: calc(100vh - 120px);
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    background: #f1f5f9; z-index: 10; overflow: hidden; padding-top: 90px;
     font-family: 'Plus Jakarta Sans', sans-serif;
+}
+@@media (min-width: 768px) {
+    .grp-chat-page {
+        position: relative; padding-top: 0;
+        height: calc(100vh - 130px); max-width: 860px;
+        margin: 0 auto; border-radius: 20px;
+        box-shadow: 0 8px 40px rgba(0,0,0,0.1);
+        overflow: hidden; border: 1px solid rgba(0,0,0,0.06);
+    }
 }
 
 /* HEADER */
-.grp-chat-header {
-    background: linear-gradient(135deg, #1e293b, #0f172a);
-    border-radius: 20px; padding: 16px 20px; margin-bottom: 12px;
-    display: flex; align-items: center; gap: 14px;
-    border: 1px solid rgba(255,255,255,0.06); flex-shrink: 0;
+.grp-header {
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px 16px;
+    background: linear-gradient(135deg, #1e293b, #334155);
+    flex-shrink: 0; z-index: 2;
 }
-.grp-chat-avatar {
-    width: 46px; height: 46px; border-radius: 14px; flex-shrink: 0;
+.grp-header-avatar {
+    width: 42px; height: 42px; border-radius: 13px; flex-shrink: 0;
     background: linear-gradient(135deg, #6366f1, #2563eb);
     display: flex; align-items: center; justify-content: center;
-    font-size: 20px; color: white; font-weight: 800; overflow: hidden;
+    font-size: 18px; color: white; font-weight: 800; overflow: hidden;
+    border: 2px solid rgba(255,255,255,0.15);
 }
-.grp-chat-avatar img { width: 100%; height: 100%; object-fit: cover; }
-.grp-chat-name { font-size: 16px; font-weight: 800; color: white; margin: 0 0 3px; }
-.grp-chat-meta { font-size: 12px; color: rgba(255,255,255,0.4); margin: 0; }
-.grp-header-actions { margin-left: auto; display: flex; gap: 8px; }
+.grp-header-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.grp-header-name { font-size: 15px; font-weight: 700; color: white; margin: 0 0 2px; }
+.grp-header-meta { font-size: 11px; color: rgba(255,255,255,0.45); margin: 0; }
+.grp-header-actions { margin-left: auto; display: flex; gap: 8px; align-items: center; }
 .grp-header-btn {
-    padding: 7px 14px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.1);
-    background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.6);
+    padding: 7px 14px; border-radius: 10px;
+    border: 1px solid rgba(255,255,255,0.1);
+    background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.6);
     font-size: 12px; font-weight: 600; cursor: pointer; transition: 0.2s;
-    text-decoration: none;
+    text-decoration: none; font-family: inherit;
 }
-.grp-header-btn:hover { background: rgba(255,255,255,0.1); color: white; }
+.grp-header-btn:hover { background: rgba(255,255,255,0.12); color: white; }
 .grp-header-btn.danger:hover { background: rgba(239,68,68,0.2); color: #f87171; border-color: rgba(239,68,68,0.3); }
 
 /* MEMBERS BAR */
 .grp-members-bar {
-    display: flex; gap: 10px; align-items: center;
-    padding: 10px 14px; background: white;
-    border-radius: 14px; margin-bottom: 10px;
-    border: 1px solid rgba(0,0,0,0.05);
-    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    display: flex; gap: 8px; align-items: center;
+    padding: 8px 14px; background: white;
+    border-bottom: 1px solid #f1f5f9;
     overflow-x: auto; flex-shrink: 0;
 }
 .grp-members-bar::-webkit-scrollbar { display: none; }
 .grp-member-chip {
-    display: flex; align-items: center; gap: 6px;
-    padding: 5px 10px; border-radius: 20px;
+    display: flex; align-items: center; gap: 5px;
+    padding: 4px 10px; border-radius: 20px;
     background: #f8fafc; border: 1px solid #e5e7eb;
     font-size: 12px; font-weight: 600; color: #374151;
     white-space: nowrap; flex-shrink: 0;
 }
-.grp-member-chip img, .grp-member-chip-letter {
-    width: 22px; height: 22px; border-radius: 50%; object-fit: cover;
+.grp-member-chip-avatar {
+    width: 20px; height: 20px; border-radius: 50%;
     background: linear-gradient(135deg, #6366f1, #2563eb);
     display: flex; align-items: center; justify-content: center;
-    color: white; font-size: 10px; font-weight: 800; flex-shrink: 0;
+    color: white; font-size: 9px; font-weight: 800;
+    flex-shrink: 0; overflow: hidden;
 }
+.grp-member-chip-avatar img { width: 100%; height: 100%; object-fit: cover; }
 .grp-member-chip.admin { background: #ede9fe; border-color: #c4b5fd; color: #6366f1; }
 
-/* CHAT */
-.grp-chat-wrap {
-    flex: 1; background: white; border-radius: 20px;
-    border: 1px solid rgba(0,0,0,0.05);
-    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
-    display: flex; flex-direction: column; overflow: hidden; min-height: 0;
-}
-
+/* CHAT BOX */
 .grp-chat-box {
-    flex: 1; overflow-y: auto; padding: 18px;
-    display: flex; flex-direction: column; gap: 4px;
-    scroll-behavior: smooth;
+    flex: 1; overflow-y: auto; overflow-x: hidden;
+    padding: 14px 12px; background: #f1f5f9;
+    display: flex; flex-direction: column; gap: 3px;
+    -webkit-overflow-scrolling: touch;
+    min-height: 0; overscroll-behavior: contain;
 }
-.grp-chat-box::-webkit-scrollbar { width: 4px; }
-.grp-chat-box::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
+.grp-chat-box::-webkit-scrollbar { width: 5px; }
+.grp-chat-box::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+
+/* DATE SEPARATOR */
+.grp-date-sep {
+    display: flex; align-items: center; justify-content: center;
+    margin: 10px 0 6px;
+}
+.grp-date-sep span {
+    background: #cbd5e1; color: #475569;
+    padding: 3px 14px; border-radius: 20px;
+    font-size: 11px; font-weight: 600;
+}
 
 /* MESSAGES */
-.grp-msg-row { display: flex; margin-bottom: 2px; }
-.grp-msg-row.mine { justify-content: flex-end; }
-.grp-msg-row.theirs { justify-content: flex-start; gap: 8px; }
+.grp-msg-row { display: flex; max-width: 78%; margin-bottom: 1px; }
+.grp-msg-row.mine { align-self: flex-end; }
+.grp-msg-row.theirs { align-self: flex-start; gap: 8px; }
 
 .grp-msg-avatar {
-    width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0;
+    width: 30px; height: 30px; border-radius: 50%; flex-shrink: 0;
     background: linear-gradient(135deg, #6366f1, #2563eb);
     display: flex; align-items: center; justify-content: center;
     color: white; font-size: 11px; font-weight: 800;
@@ -100,7 +118,7 @@
 }
 .grp-msg-avatar img { width: 100%; height: 100%; object-fit: cover; }
 
-.grp-msg-wrap { display: flex; flex-direction: column; max-width: 72%; }
+.grp-msg-wrap { display: flex; flex-direction: column; }
 .grp-msg-row.mine .grp-msg-wrap { align-items: flex-end; }
 .grp-msg-row.theirs .grp-msg-wrap { align-items: flex-start; }
 
@@ -110,8 +128,9 @@
 }
 
 .grp-msg-bubble {
-    padding: 10px 14px; border-radius: 18px;
-    font-size: 14px; line-height: 1.5; word-break: break-word;
+    padding: 9px 13px 6px; border-radius: 18px;
+    font-size: 14px; line-height: 1.55; word-break: break-word;
+    max-width: min(300px, 72vw);
 }
 .grp-msg-row.mine .grp-msg-bubble {
     background: linear-gradient(135deg, #6366f1, #4f46e5);
@@ -119,29 +138,73 @@
     box-shadow: 0 2px 10px rgba(99,102,241,0.3);
 }
 .grp-msg-row.theirs .grp-msg-bubble {
-    background: #f1f5f9; color: #1e293b;
+    background: white; color: #1e293b;
     border-bottom-left-radius: 4px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
 }
 .grp-msg-time {
-    font-size: 10px; color: #9ca3af; margin-top: 3px; padding: 0 4px;
+    font-size: 10px; color: #9ca3af;
+    margin-top: 3px; padding: 0 4px;
 }
+.grp-msg-row.mine .grp-msg-time { color: rgba(255,255,255,0.5); }
 
-/* EMPTY */
-.grp-empty-chat {
-    flex: 1; display: flex; flex-direction: column;
-    align-items: center; justify-content: center;
-    gap: 10px; color: #9ca3af; text-align: center; padding: 40px;
+/* EMOJI PANEL */
+.grp-emoji-panel {
+    flex-shrink: 0; background: white;
+    border-top: 1px solid #e2e8f0;
+    padding: 8px 12px 10px; max-height: 220px; overflow-y: auto;
+    display: none;
 }
+.grp-emoji-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(34px, 1fr)); gap: 2px;
+}
+.grp-emoji-grid span {
+    font-size: 22px; cursor: pointer; text-align: center;
+    padding: 4px; border-radius: 8px; transition: 0.15s;
+}
+.grp-emoji-grid span:hover { background: #f1f5f9; transform: scale(1.2); }
+
+/* INPUT */
+.grp-input-bar {
+    display: flex; align-items: center; gap: 6px;
+    padding: 8px 12px 10px; background: white;
+    border-top: 1px solid #e2e8f0; flex-shrink: 0;
+}
+.grp-bar-btn {
+    width: 38px; height: 38px; border-radius: 50%;
+    border: none; background: #f1f5f9; color: #64748b;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    transition: 0.2s; flex-shrink: 0; font-size: 18px;
+}
+.grp-bar-btn:hover { background: #e2e8f0; color: #334155; }
+.grp-bar-btn.active { background: #ede9fe; color: #6366f1; }
+.grp-msg-input {
+    flex: 1; min-width: 0; padding: 10px 16px;
+    border: 1.5px solid #e2e8f0; border-radius: 24px;
+    font-size: 14px; outline: none; background: #f8fafc;
+    transition: 0.2s; color: #1e293b; font-family: inherit;
+    resize: none; max-height: 100px;
+}
+.grp-msg-input:focus { border-color: #6366f1; background: white; box-shadow: 0 0 0 3px rgba(99,102,241,0.1); }
+.grp-send-btn {
+    width: 40px; height: 40px; border-radius: 50%; border: none;
+    background: linear-gradient(135deg, #6366f1, #4f46e5);
+    color: white; cursor: pointer; transition: 0.2s;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; box-shadow: 0 4px 14px rgba(99,102,241,0.4);
+}
+.grp-send-btn:hover { transform: scale(1.08); }
+.grp-send-btn:disabled { background: #cbd5e1; box-shadow: none; cursor: not-allowed; transform: none; }
 
 /* TYPING */
-.grp-typing {
-    padding: 0 18px 10px;
-    display: flex; align-items: center; gap: 8px;
+.grp-typing-indicator {
+    display: none; flex-shrink: 0;
+    padding: 0 14px 8px;
 }
 .grp-typing-bubble {
-    background: #f1f5f9; padding: 8px 14px;
-    border-radius: 18px 18px 18px 4px;
-    display: flex; gap: 4px; align-items: center;
+    background: white; padding: 8px 14px; border-radius: 18px 18px 18px 4px;
+    display: inline-flex; gap: 4px; align-items: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
 }
 .grp-typing-dot {
     width: 6px; height: 6px; border-radius: 50%;
@@ -151,52 +214,45 @@
 .grp-typing-dot:nth-child(3) { animation-delay: 0.4s; }
 @@keyframes typingBounce { 0%,60%,100%{transform:translateY(0);} 30%{transform:translateY(-5px);} }
 
-/* INPUT */
-.grp-input-wrap {
-    padding: 12px 14px; display: flex; gap: 10px; align-items: center;
-    border-top: 1px solid #f1f5f9; flex-shrink: 0;
+/* EMPTY */
+.grp-empty {
+    flex: 1; display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 10px; color: #9ca3af; text-align: center; padding: 40px;
 }
-.grp-textarea {
-    flex: 1; padding: 10px 14px; border: 1.5px solid #e5e7eb;
-    border-radius: 22px; font-size: 14px; font-family: inherit;
-    outline: none; transition: 0.2s; background: #f9fafb;
-    color: #111827; resize: none; max-height: 100px;
-}
-.grp-textarea:focus { border-color: #6366f1; background: white; box-shadow: 0 0 0 3px rgba(99,102,241,0.1); }
-.grp-send-btn {
-    width: 42px; height: 42px; border-radius: 50%; border: none;
-    background: linear-gradient(135deg, #6366f1, #4f46e5);
-    color: white; cursor: pointer; font-size: 16px;
-    display: flex; align-items: center; justify-content: center;
-    flex-shrink: 0; transition: 0.2s;
-    box-shadow: 0 4px 12px rgba(99,102,241,0.35);
-}
-.grp-send-btn:hover { transform: scale(1.08); }
-.grp-send-btn:disabled { background: #cbd5e1; box-shadow: none; cursor: not-allowed; transform: none; }
 
 /* DARK */
-body.bg-dark .grp-chat-wrap { background: #1e293b !important; border-color: #2d3748 !important; }
-body.bg-dark .grp-msg-row.theirs .grp-msg-bubble { background: #2d3748 !important; color: #f1f5f9 !important; }
-body.bg-dark .grp-textarea { background: #2d3748 !important; border-color: #3d4d60 !important; color: #f1f5f9 !important; }
-body.bg-dark .grp-textarea:focus { background: #334155 !important; }
-body.bg-dark .grp-input-wrap { border-color: #2d3748 !important; }
+body.bg-dark .grp-chat-page { background: #0f172a !important; }
+body.bg-dark .grp-chat-box { background: #0f172a !important; }
+body.bg-dark .grp-msg-row.theirs .grp-msg-bubble { background: #1e293b !important; color: #f1f5f9 !important; box-shadow: none !important; }
 body.bg-dark .grp-members-bar { background: #1e293b !important; border-color: #2d3748 !important; }
 body.bg-dark .grp-member-chip { background: #2d3748 !important; border-color: #3d4d60 !important; color: #94a3b8 !important; }
 body.bg-dark .grp-member-chip.admin { background: rgba(99,102,241,0.15) !important; color: #818cf8 !important; }
+body.bg-dark .grp-input-bar { background: #1e293b !important; border-color: #2d3748 !important; }
+body.bg-dark .grp-msg-input { background: #0f172a !important; border-color: #334155 !important; color: #f1f5f9 !important; }
+body.bg-dark .grp-bar-btn { background: #334155 !important; color: #94a3b8 !important; }
+body.bg-dark .grp-emoji-panel { background: #1e293b !important; border-color: #334155 !important; }
+body.bg-dark .grp-date-sep span { background: #334155 !important; color: #94a3b8 !important; }
+body.bg-dark .grp-typing-bubble { background: #1e293b !important; }
 </style>
 
 <!-- MODAL SALIR -->
-<div id="leaveModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:99999;align-items:center;justify-content:center;backdrop-filter:blur(6px);">
-    <div style="background:#0f172a;border-radius:22px;padding:32px 28px;max-width:340px;width:90%;border:1px solid rgba(255,255,255,0.08);text-align:center;">
-        <div style="font-size:40px;margin-bottom:12px;">🚪</div>
-        <h4 style="color:white;font-weight:800;margin:0 0 10px;">¿Salir del grupo?</h4>
+<div id="leaveModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:99999;align-items:center;justify-content:center;backdrop-filter:blur(8px);">
+    <div style="background:#0f172a;border-radius:22px;padding:32px 28px;max-width:340px;width:90%;border:1px solid rgba(255,255,255,0.08);text-align:center;box-shadow:0 30px 70px rgba(0,0,0,0.6);">
+        <div style="font-size:40px;margin-bottom:14px;">🚪</div>
+        <h4 style="color:white;font-weight:800;margin:0 0 10px;font-size:17px;">¿Salir del grupo?</h4>
         <p style="color:rgba(255,255,255,0.4);font-size:13px;margin:0 0 22px;line-height:1.6;">Ya no podrás ver los mensajes de este grupo.</p>
         <div style="display:flex;gap:10px;">
-            <button onclick="document.getElementById('leaveModal').style.display='none'" style="flex:1;padding:11px;border-radius:11px;border:1px solid #1e293b;background:#1e293b;color:#64748b;font-weight:700;font-size:13px;cursor:pointer;font-family:inherit;">Cancelar</button>
+            <button onclick="document.getElementById('leaveModal').style.display='none'"
+                    style="flex:1;padding:11px;border-radius:11px;border:1px solid #1e293b;background:#1e293b;color:#64748b;font-weight:700;font-size:13px;cursor:pointer;font-family:inherit;">
+                Cancelar
+            </button>
             <form asp-controller="Group" asp-action="Leave" method="post" style="flex:1;">
                 @Html.AntiForgeryToken()
                 <input type="hidden" name="groupId" value="@Model.Id" />
-                <button type="submit" style="width:100%;padding:11px;border-radius:11px;border:none;background:#dc2626;color:white;font-weight:700;font-size:13px;cursor:pointer;font-family:inherit;">Salir</button>
+                <button type="submit" style="width:100%;padding:11px;border-radius:11px;border:none;background:#dc2626;color:white;font-weight:700;font-size:13px;cursor:pointer;font-family:inherit;">
+                    Sí, salir
+                </button>
             </form>
         </div>
     </div>
@@ -205,16 +261,16 @@ body.bg-dark .grp-member-chip.admin { background: rgba(99,102,241,0.15) !importa
 <div class="grp-chat-page">
 
     <!-- HEADER -->
-    <div class="grp-chat-header">
-        <div class="grp-chat-avatar">
+    <div class="grp-header">
+        <div class="grp-header-avatar">
             @if (!string.IsNullOrEmpty(Model.ImageUrl))
             { <img src="@Model.ImageUrl" /> }
             else
             { @Model.Name.Substring(0, 1).ToUpper() }
         </div>
         <div>
-            <div class="grp-chat-name">@Model.Name</div>
-            <div class="grp-chat-meta">@members.Count miembro@(members.Count != 1 ? "s" : "")</div>
+            <div class="grp-header-name">@Model.Name</div>
+            <div class="grp-header-meta" id="groupMeta">@members.Count miembro@(members.Count != 1 ? "s" : "")</div>
         </div>
         <div class="grp-header-actions">
             <a asp-controller="Group" asp-action="Index" class="grp-header-btn">← Grupos</a>
@@ -227,44 +283,54 @@ body.bg-dark .grp-member-chip.admin { background: rgba(99,102,241,0.15) !importa
 
     <!-- MEMBERS BAR -->
     <div class="grp-members-bar">
-        <span style="font-size:11px;font-weight:700;color:#9ca3af;flex-shrink:0;">👥</span>
         @foreach (var m in members)
         {
             var img = m.User?.ProfileImage ?? m.User?.ProfilePicture ?? "";
             var letter = (m.User?.Username ?? "?").Substring(0, 1).ToUpper();
-            var isCurrentAdmin = m.Role == "Admin";
-            <div class="grp-member-chip @(isCurrentAdmin ? "admin" : "")">
-                @if (!string.IsNullOrEmpty(img))
-                { <img src="@img" style="width:22px;height:22px;border-radius:50%;object-fit:cover;" /> }
-                else
-                {
-                    <div class="grp-member-chip-letter">@letter</div>
-                }
+            <div class="grp-member-chip @(m.Role == "Admin" ? "admin" : "")">
+                <div class="grp-member-chip-avatar">
+                    @if (!string.IsNullOrEmpty(img))
+                    { <img src="@img" /> }
+                    else
+                    { @letter }
+                </div>
                 @m.User?.Username
-                @if (isCurrentAdmin) { <span>👑</span> }
+                @if (m.Role == "Admin") { <span>👑</span> }
             </div>
         }
     </div>
 
-    <!-- CHAT -->
-    <div class="grp-chat-wrap">
-        <div class="grp-chat-box" id="chatBox">
-            @if (!messages.Any())
+    <!-- CHAT BOX -->
+    <div class="grp-chat-box" id="chatBox">
+
+        @if (!messages.Any())
+        {
+            <div class="grp-empty" id="emptyState">
+                <div style="font-size:48px;">💬</div>
+                <div style="font-size:16px;font-weight:700;color:#374151;">¡Sé el primero en escribir!</div>
+                <div style="font-size:13px;">Empieza la conversación del grupo.</div>
+            </div>
+        }
+        else
+        {
+            var grouped = messages.GroupBy(m => m.SentAt.ToLocalTime().Date).OrderBy(g => g.Key);
+            foreach (var grp in grouped)
             {
-                <div class="grp-empty-chat">
-                    <div style="font-size:44px;">💬</div>
-                    <div style="font-size:15px;font-weight:700;color:#374151;">¡Sé el primero en escribir!</div>
-                    <div style="font-size:13px;">Empieza la conversación del grupo.</div>
-                </div>
-            }
-            else
-            {
-                foreach (var msg in messages)
+                var today = DateTime.Today;
+                var yesterday = today.AddDays(-1);
+                string dateLabel = grp.Key == today ? "Hoy" :
+                                   grp.Key == yesterday ? "Ayer" :
+                                   grp.Key.ToString("dd MMMM yyyy", new System.Globalization.CultureInfo("es-ES"));
+
+                <div class="grp-date-sep"><span>@dateLabel</span></div>
+
+                foreach (var msg in grp.OrderBy(m => m.SentAt))
                 {
                     bool isMine = msg.SenderId == currentUserId;
                     var senderImg = msg.Sender?.ProfileImage ?? msg.Sender?.ProfilePicture ?? "";
                     var senderLetter = (msg.Sender?.Username ?? "?").Substring(0, 1).ToUpper();
-                    <div class="grp-msg-row @(isMine ? "mine" : "theirs")">
+
+                    <div class="grp-msg-row @(isMine ? "mine" : "theirs")" id="msg-@msg.Id">
                         @if (!isMine)
                         {
                             <div class="grp-msg-avatar">
@@ -285,73 +351,152 @@ body.bg-dark .grp-member-chip.admin { background: rgba(99,102,241,0.15) !importa
                     </div>
                 }
             }
-        </div>
+        }
 
-        <div id="typingIndicator" style="display:none;" class="grp-typing">
+        <div class="grp-typing-indicator" id="typingIndicator">
             <div class="grp-typing-bubble">
                 <div class="grp-typing-dot"></div>
                 <div class="grp-typing-dot"></div>
                 <div class="grp-typing-dot"></div>
             </div>
         </div>
+    </div>
 
-        <div class="grp-input-wrap">
-            <textarea id="msgInput" class="grp-textarea" rows="1"
-                      placeholder="Escribe un mensaje..."></textarea>
-            <button class="grp-send-btn" id="sendBtn" data-no-loader onclick="sendMessage()">➤</button>
+    <!-- EMOJI PANEL -->
+    <div class="grp-emoji-panel" id="emojiPanel">
+        <div class="grp-emoji-grid">
+            @foreach (var e in new[]{"😀","😃","😄","😁","😆","😅","🤣","😂","🙂","😉","😊","😇","🥰","😍","🤩","😘","😋","😛","😜","🤪","😝","🤑","🤗","🤭","🤫","🤔","😐","😑","😶","😏","😒","🙄","😬","🤥","😌","😔","😪","😴","😷","🤒","🤕","🤢","🤮","🤧","🥵","🥶","😵","🤯","🤠","🥳","😎","🤓","😕","😟","🙁","☹️","😮","😲","😳","🥺","😦","😧","😨","😰","😥","😢","😭","😱","😖","😣","😞","😓","😩","😫","🤬","😤","😠","😡","💀","👻","👽","🤖","😺","😸","😹","😻","😼","😽","🙀","😿","😾","👋","✋","👌","✌️","🤞","👍","👎","✊","👊","👏","🙌","🙏","💪","❤️","🧡","💛","💚","💙","💜","🖤","💔","❣️","💕","💞","💓","💗","💖","💘","💝","🔥","⚡","🌈","☀️","🌙","⭐","🌟","💫","✨","🎉","🎊","🎈","🎁","🏆","🥇","👑","🚀","💯","✅","❌","⚠️","🔐","🔑","💡","📱","💻","🎮","🎵","🎶","🍕","🍔","🌮","🍣","🍜","🍦","🎂","🍰","🧁","☕","🍺","🥂"})
+            { <span onclick="addGroupEmoji('@e')">@e</span> }
         </div>
     </div>
+
+    <!-- INPUT -->
+    <div class="grp-input-bar">
+        <button type="button" class="grp-bar-btn" id="emojiBtn"
+                onclick="toggleGroupEmoji()" data-no-loader title="Emojis">
+            😊
+        </button>
+        <textarea id="msgInput" class="grp-msg-input" rows="1"
+                  placeholder="Escribe un mensaje..."></textarea>
+        <button class="grp-send-btn" id="sendBtn" data-no-loader
+                onclick="sendGroupMessage()" disabled>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+            </svg>
+        </button>
+    </div>
+
 </div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
 <script>
 const groupId = @Model.Id;
+const myId = "@User.FindFirst("UserId").Value";
+const myName = "@User.Identity.Name";
 const chatBox = document.getElementById("chatBox");
 const msgInput = document.getElementById("msgInput");
 const sendBtn = document.getElementById("sendBtn");
 
+// scroll al fondo
 window.addEventListener("load", () => chatBox.scrollTop = chatBox.scrollHeight);
 
+// SignalR
+const grpConnection = new signalR.HubConnectionBuilder()
+    .withUrl("/chatHub").withAutomaticReconnect().build();
+
+grpConnection.start().then(async () => {
+    await grpConnection.invoke("JoinUserGroup", myId);
+    await grpConnection.invoke("JoinGroupChat", groupId.toString());
+}).catch(err => console.error("SignalR grupo:", err));
+
+// 🔥 recibir mensaje en tiempo real
+grpConnection.on("ReceiveGroupMessage", (senderId, senderName, senderImage, content, time) => {
+    if (String(senderId) === String(myId)) return;
+
+    const empty = document.getElementById("emptyState");
+    if (empty) empty.remove();
+
+    const letter = senderName ? senderName.charAt(0).toUpperCase() : "?";
+    const avatarHTML = (senderImage && senderImage.trim() !== "")
+        ? `<img src="${senderImage}" style="width:100%;height:100%;object-fit:cover;" />`
+        : letter;
+
+    const row = document.createElement("div");
+    row.className = "grp-msg-row theirs";
+    row.innerHTML = `
+        <div class="grp-msg-avatar">${avatarHTML}</div>
+        <div class="grp-msg-wrap">
+            <div class="grp-msg-sender">${senderName}</div>
+            <div class="grp-msg-bubble">${escapeHtml(content)}</div>
+            <div class="grp-msg-time">${time}</div>
+        </div>`;
+
+    chatBox.insertBefore(row, document.getElementById("typingIndicator"));
+    chatBox.scrollTop = chatBox.scrollHeight;
+});
+
+// 🔥 typing
+grpConnection.on("GroupUserTyping", (senderName) => {
+    if (senderName === myName) return;
+    document.getElementById("typingIndicator").style.display = "block";
+    chatBox.scrollTop = chatBox.scrollHeight;
+});
+grpConnection.on("GroupUserStoppedTyping", () => {
+    document.getElementById("typingIndicator").style.display = "none";
+});
+
+// input
 msgInput.addEventListener("input", function() {
     this.style.height = "auto";
     this.style.height = Math.min(this.scrollHeight, 100) + "px";
     sendBtn.disabled = this.value.trim() === "";
+
+    grpConnection.invoke("GroupUserTyping", groupId.toString(), myName).catch(() => {});
+    clearTimeout(window.grpTypingTimer);
+    window.grpTypingTimer = setTimeout(() => {
+        grpConnection.invoke("GroupUserStoppedTyping", groupId.toString()).catch(() => {});
+    }, 1500);
 });
 
 msgInput.addEventListener("keydown", function(e) {
     if (e.key === "Enter" && !e.shiftKey) {
         e.preventDefault();
-        sendMessage();
+        sendGroupMessage();
     }
 });
-
-function escapeHtml(text) {
-    return text.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
-}
 
 function makeTime() {
     return new Date().toLocaleTimeString('es-CO', { hour:'2-digit', minute:'2-digit' });
 }
 
-async function sendMessage() {
+function escapeHtml(text) {
+    return text
+        .replace(/&/g,"&amp;").replace(/</g,"&lt;")
+        .replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+}
+
+async function sendGroupMessage() {
     const content = msgInput.value.trim();
     if (!content) return;
 
-    // agregar burbuja propia
-    const emptyChat = chatBox.querySelector(".grp-empty-chat");
-    if (emptyChat) emptyChat.remove();
+    const empty = document.getElementById("emptyState");
+    if (empty) empty.remove();
 
-    chatBox.innerHTML += `
-        <div class="grp-msg-row mine">
-            <div class="grp-msg-wrap">
-                <div class="grp-msg-bubble">${escapeHtml(content)}</div>
-                <div class="grp-msg-time">${makeTime()}</div>
-            </div>
+    // burbuja optimista
+    const row = document.createElement("div");
+    row.className = "grp-msg-row mine";
+    row.innerHTML = `
+        <div class="grp-msg-wrap">
+            <div class="grp-msg-bubble">${escapeHtml(content)}</div>
+            <div class="grp-msg-time">${makeTime()}</div>
         </div>`;
+
+    chatBox.insertBefore(row, document.getElementById("typingIndicator"));
+    chatBox.scrollTop = chatBox.scrollHeight;
 
     msgInput.value = "";
     msgInput.style.height = "auto";
     sendBtn.disabled = true;
-    chatBox.scrollTop = chatBox.scrollHeight;
 
     try {
         const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value ?? "";
@@ -361,12 +506,40 @@ async function sendMessage() {
             body: `groupId=${groupId}&content=${encodeURIComponent(content)}&__RequestVerificationToken=${encodeURIComponent(token)}`
         });
         const data = await res.json();
-        if (!data.success) console.error("Error enviando mensaje");
+        if (data.success) {
+            row.id = "msg-" + data.id;
+            // notificar a otros via SignalR
+            await grpConnection.invoke("SendGroupMessage", groupId.toString(), myId, myName, content);
+        } else {
+            row.remove();
+        }
     } catch (err) {
         console.error("Error:", err);
+        row.remove();
     }
 
-    sendBtn.disabled = false;
     msgInput.focus();
 }
+
+function toggleGroupEmoji() {
+    const panel = document.getElementById("emojiPanel");
+    const btn = document.getElementById("emojiBtn");
+    const isOpen = panel.style.display === "block";
+    panel.style.display = isOpen ? "none" : "block";
+    btn.classList.toggle("active", !isOpen);
+    if (!isOpen) chatBox.scrollTop = chatBox.scrollHeight;
+}
+
+function addGroupEmoji(emoji) {
+    msgInput.value += emoji;
+    msgInput.focus();
+    sendBtn.disabled = msgInput.value.trim() === "";
+}
+
+document.addEventListener("click", (e) => {
+    if (!e.target.closest("#emojiBtn") && !e.target.closest("#emojiPanel")) {
+        document.getElementById("emojiPanel").style.display = "none";
+        document.getElementById("emojiBtn").classList.remove("active");
+    }
+});
 </script>

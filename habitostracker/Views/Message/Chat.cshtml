@@ -983,7 +983,8 @@ function confirmarGrupo() {
     const nombre = document.getElementById("grupoNombre").value.trim();
     if (!nombre) { showChatToast("⚠️ Escribe un nombre para el grupo"); return; }
     cerrarModal("grupoModal");
-    showChatToast(`👥 Grupo "${nombre}" — próximamente`);
+    // 🔥 redirigir a crear grupo con el nombre prellenado y el amigo actual
+    window.location.href = `/Group/Create?nombre=${encodeURIComponent(nombre)}&preselect=${receiverId}`;
 }
 
 function anclarChat() {

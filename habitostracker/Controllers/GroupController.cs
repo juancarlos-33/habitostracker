@@ -16,7 +16,6 @@ namespace HabitTrackerApp.Controllers
             _context = context;
         }
 
-        // 🔥 lista de grupos del usuario
         [HttpGet]
         public IActionResult Index()
         {
@@ -36,22 +35,23 @@ namespace HabitTrackerApp.Controllers
             return View(groups);
         }
 
-        // 🔥 crear grupo
         [HttpGet]
-        public IActionResult Create()
+        public IActionResult Create(string? nombre, int? preselect)
         {
             var userId = int.Parse(User.FindFirst("UserId").Value);
+
             var friendIds = _context.FriendRequests
-        .Where(f => (f.SenderId == userId || f.ReceiverId == userId) && f.Status == "Accepted")
-        .Select(f => f.SenderId == userId ? f.ReceiverId : f.SenderId)
-        .ToList();
+                .Where(f => (f.SenderId == userId || f.ReceiverId == userId) && f.Status == "Accepted")
+                .Select(f => f.SenderId == userId ? f.ReceiverId : f.SenderId)
+                .ToList();
 
             var amigos = _context.Users
                 .Where(u => friendIds.Contains(u.Id))
                 .ToList();
 
             ViewBag.Amigos = amigos;
-            ViewBag.Amigos = amigos;
+            ViewBag.NombreInicial = nombre ?? "";
+            ViewBag.Preselect = preselect ?? 0;
             return View();
         }
 
@@ -103,11 +103,9 @@ namespace HabitTrackerApp.Controllers
             }
 
             await _context.SaveChangesAsync();
-
             return RedirectToAction("Chat", new { id = group.Id });
         }
 
-        // 🔥 chat del grupo
         [HttpGet]
         public IActionResult Chat(int id)
         {
@@ -134,7 +132,6 @@ namespace HabitTrackerApp.Controllers
                 .OrderBy(m => m.SentAt)
                 .ToList();
 
-            ViewBag.Group = group;
             ViewBag.Messages = messages;
             ViewBag.CurrentUserId = userId;
             ViewBag.IsAdmin = member.Role == "Admin";
@@ -142,7 +139,6 @@ namespace HabitTrackerApp.Controllers
             return View(group);
         }
 
-        // 🔥 enviar mensaje
         [HttpPost]
         public async Task<IActionResult> SendMessage(int groupId, string content)
         {
@@ -182,7 +178,6 @@ namespace HabitTrackerApp.Controllers
             });
         }
 
-        // 🔥 salir del grupo
         [HttpPost]
         public async Task<IActionResult> Leave(int groupId)
         {
@@ -200,7 +195,6 @@ namespace HabitTrackerApp.Controllers
             return RedirectToAction("Index");
         }
 
-        // 🔥 agregar miembro (solo admin)
         [HttpPost]
         public async Task<IActionResult> AddMember(int groupId, int newUserId)
         {
@@ -231,7 +225,6 @@ namespace HabitTrackerApp.Controllers
             return Json(new { success = true });
         }
 
-        // 🔥 eliminar grupo (solo admin/creador)
         [HttpPost]
         public async Task<IActionResult> Delete(int groupId)
         {

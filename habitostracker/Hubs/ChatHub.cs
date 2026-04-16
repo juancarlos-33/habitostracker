@@ -177,5 +177,37 @@ namespace HabitTrackerApp.Hubs
         {
             await Clients.Group(receiverId).SendAsync("UserStoppedRecording");
         }
+        // 🔥 GRUPOS
+        public async Task JoinGroupChat(string groupId)
+        {
+            await Groups.AddToGroupAsync(Context.ConnectionId, "group-" + groupId);
+        }
+
+        public async Task LeaveGroupChat(string groupId)
+        {
+            await Groups.RemoveFromGroupAsync(Context.ConnectionId, "group-" + groupId);
+        }
+
+        public async Task SendGroupMessage(string groupId, string senderId, string senderName, string content)
+        {
+            var sender = await _context.Users.FirstOrDefaultAsync(u => u.Id == int.Parse(senderId));
+            var senderImage = sender?.ProfileImage ?? sender?.ProfilePicture ?? "";
+            var time = DateTime.Now.ToString("hh:mm tt");
+
+            await Clients.Group("group-" + groupId)
+                .SendAsync("ReceiveGroupMessage", senderId, senderName, senderImage, content, time);
+        }
+
+        public async Task GroupUserTyping(string groupId, string senderName)
+        {
+            await Clients.OthersInGroup("group-" + groupId)
+                .SendAsync("GroupUserTyping", senderName);
+        }
+
+        public async Task GroupUserStoppedTyping(string groupId)
+        {
+            await Clients.OthersInGroup("group-" + groupId)
+                .SendAsync("GroupUserStoppedTyping");
+        }
     }
 }
