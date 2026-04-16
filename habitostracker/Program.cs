@@ -13,7 +13,6 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
-using Npgsql.EntityFrameworkCore.PostgreSQL;
 using System.Text;
 
 namespace HabitTrackerApp
@@ -33,7 +32,7 @@ namespace HabitTrackerApp
                 if (builder.Environment.IsProduction())
                     options.UseNpgsql(connectionString);
                 else
-                    options.UseSqlServer(connectionString);
+                    options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString));
             });
 
             // 🔥 Filtro

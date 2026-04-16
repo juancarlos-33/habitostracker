@@ -246,12 +246,69 @@ body {
 @@keyframes loginSpin { from{transform:rotate(0deg);} to{transform:rotate(360deg);} }
 
 /* RESPONSIVE */
+/* RESPONSIVE MÓVIL */
 @@media (max-width:900px) {
-    .ht-login-left { display:none; }
-    .ht-login-right { width:100%; padding:24px 20px; justify-content:center; align-items:center; min-height:calc(100vh - 72px); }
-    .ht-login-card { max-width:400px; }
-    .ht-login-nav { padding:14px 20px; }
-    .ht-nav-links .ht-nav-link:not(.primary) { display:none; }
+    .ht-login-layout { flex-direction: column; padding-top: 64px; }
+    .ht-login-nav { padding: 12px 20px; }
+    .ht-nav-links .ht-nav-link:not(.primary) { display: none; }
+    .ht-login-brand-name { font-size: 16px; }
+
+    /* HERO COMPACTO ARRIBA */
+    .ht-login-left {
+        display: flex; max-width: 100%;
+        padding: 24px 20px 16px;
+        flex-direction: column; align-items: center;
+        text-align: center;
+    }
+    .ht-hero-badge { margin-bottom: 14px; }
+    .ht-hero-title {
+        font-size: 28px; margin-bottom: 10px; letter-spacing: -0.5px;
+    }
+    .ht-hero-desc { display: none; }
+
+    /* STATS EN FILA */
+    .ht-stats {
+        gap: 0; margin-bottom: 16px; width: 100%;
+        background: rgba(255,255,255,0.04);
+        border: 1px solid rgba(255,255,255,0.08);
+        border-radius: 16px; overflow: hidden;
+        justify-content: space-around;
+    }
+    .ht-stat {
+        flex: 1; padding: 12px 8px; text-align: center;
+        border-right: 1px solid rgba(255,255,255,0.06);
+    }
+    .ht-stat:last-child { border-right: none; }
+    .ht-stat-num { font-size: 20px; }
+    .ht-stat-label { font-size: 10px; }
+
+    /* FEATURES EN FILA HORIZONTAL */
+    .ht-features {
+        flex-direction: row; gap: 8px; width: 100%;
+        overflow-x: auto; padding-bottom: 4px;
+    }
+    .ht-features::-webkit-scrollbar { display: none; }
+    .ht-feature {
+        flex-direction: column; align-items: center; text-align: center;
+        padding: 12px 10px; min-width: 110px; flex-shrink: 0;
+        gap: 8px;
+    }
+    .ht-feature-icon { width: 36px; height: 36px; font-size: 17px; }
+    .ht-feature-title { font-size: 11px; }
+    .ht-feature-desc { display: none; }
+
+    /* FORM ABAJO */
+    .ht-login-right {
+        width: 100%; padding: 0 16px 32px;
+        justify-content: center; align-items: center;
+    }
+    .ht-login-card {
+        max-width: 100%; padding: 24px 20px;
+        border-radius: 20px;
+    }
+    .ht-card-avatar { width: 52px; height: 52px; }
+    .ht-card-title { font-size: 18px; }
+    .ht-card-header { margin-bottom: 20px; }
 }
 </style>
 
