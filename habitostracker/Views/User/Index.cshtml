@@ -1,244 +1,486 @@
 ﻿@model List<HabitTrackerApp.Models.User>
 @{
-    ViewData["Title"] = "Usuarios";
+    ViewData["Title"] = "Descubrir";
     var myId = int.Parse(User.FindFirst("UserId").Value);
     var sentList = ViewBag.SentRequests as List<int> ?? new List<int>();
     var friendList = ViewBag.Friends as List<int> ?? new List<int>();
 }
 
-<div class="discover-page">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
 
-    <div class="discover-header">
-        <h2 class="discover-title">🔎 Descubrir amigos</h2>
-        <p class="discover-subtitle">Conecta con personas que comparten tus hábitos</p>
+<style>
+.disc-page { max-width: 1100px; margin: 0 auto; font-family: 'Plus Jakarta Sans', sans-serif; padding-bottom: 40px; }
+
+/* HERO */
+.disc-hero {
+    background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+    border-radius: 24px; padding: 32px 28px; margin-bottom: 20px;
+    display: flex; align-items: center; justify-content: space-between;
+    flex-wrap: wrap; gap: 20px; position: relative; overflow: hidden;
+    border: 1px solid rgba(255,255,255,0.06);
+}
+.disc-hero::before {
+    content:""; position:absolute; top:-60px; right:-60px;
+    width:240px; height:240px;
+    background: radial-gradient(circle, rgba(99,102,241,0.2), transparent 70%);
+    border-radius:50%;
+}
+.disc-hero::after {
+    content:""; position:absolute; bottom:-40px; left:100px;
+    width:160px; height:160px;
+    background: radial-gradient(circle, rgba(37,99,235,0.15), transparent 70%);
+    border-radius:50%;
+}
+.disc-hero-left { position: relative; z-index:1; }
+.disc-hero-title { font-size: 24px; font-weight: 800; color: white; margin: 0 0 6px; }
+.disc-hero-sub { font-size: 13px; color: rgba(255,255,255,0.4); margin: 0; }
+.disc-hero-stats {
+    display: flex; gap: 16px; position: relative; z-index:1; flex-wrap: wrap;
+}
+.disc-hero-stat {
+    background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 16px; padding: 14px 20px; text-align: center; min-width: 80px;
+}
+.disc-hero-stat-num { font-size: 22px; font-weight: 800; color: white; display: block; }
+.disc-hero-stat-label { font-size: 11px; color: rgba(255,255,255,0.4); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+
+/* SEARCH & FILTERS */
+.disc-controls { display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; align-items: center; }
+.disc-search-wrap { position: relative; flex: 1; min-width: 240px; max-width: 400px; }
+.disc-search-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); font-size: 16px; pointer-events: none; }
+.disc-search-input {
+    width: 100%; padding: 12px 16px 12px 44px;
+    border: 1.5px solid #e5e7eb; border-radius: 50px;
+    font-size: 14px; background: white; outline: none;
+    transition: 0.2s; box-sizing: border-box; font-family: inherit;
+    color: #111827;
+}
+.disc-search-input:focus { border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99,102,241,0.1); }
+
+.disc-filter-btn {
+    padding: 10px 18px; border-radius: 50px; border: 1.5px solid #e5e7eb;
+    background: white; font-size: 13px; font-weight: 600; cursor: pointer;
+    transition: 0.2s; color: #374151; font-family: inherit;
+    display: flex; align-items: center; gap: 6px;
+}
+.disc-filter-btn:hover { border-color: #6366f1; color: #6366f1; background: rgba(99,102,241,0.04); }
+.disc-filter-btn.active { background: #6366f1; color: white; border-color: #6366f1; }
+
+.disc-online-badge {
+    display: flex; align-items: center; gap: 6px;
+    padding: 8px 16px; border-radius: 50px;
+    background: rgba(34,197,94,0.1); border: 1.5px solid rgba(34,197,94,0.25);
+    font-size: 13px; font-weight: 700; color: #16a34a;
+}
+.disc-online-dot {
+    width: 8px; height: 8px; border-radius: 50%; background: #22c55e;
+    animation: onlinePulse 2s infinite;
+}
+@@keyframes onlinePulse { 0%,100%{box-shadow:0 0 0 0 rgba(34,197,94,0.4);} 50%{box-shadow:0 0 0 6px rgba(34,197,94,0);} }
+
+/* SECTION LABEL */
+.disc-section-label {
+    font-size: 12px; font-weight: 700; color: #9ca3af;
+    text-transform: uppercase; letter-spacing: 0.8px;
+    margin-bottom: 12px; display: flex; align-items: center; gap: 8px;
+}
+.disc-section-label::after { content:""; flex:1; height:1px; background:#f3f4f6; }
+
+/* GRID */
+.disc-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; }
+
+/* USER CARD */
+.disc-card {
+    background: white; border-radius: 20px; overflow: hidden;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06); border: 1px solid rgba(0,0,0,0.04);
+    transition: 0.25s; cursor: pointer; position: relative;
+}
+.disc-card:hover { transform: translateY(-4px); box-shadow: 0 12px 32px rgba(0,0,0,0.1); }
+
+.disc-card-banner {
+    height: 60px; position: relative;
+}
+.disc-card-banner-inner {
+    position: absolute; inset: 0;
+}
+
+.disc-card-body { padding: 0 18px 18px; }
+.disc-card-avatar-wrap { position: relative; margin-top: -30px; margin-bottom: 12px; display: inline-block; }
+.disc-card-avatar {
+    width: 60px; height: 60px; border-radius: 50%; object-fit: cover;
+    border: 3px solid white; box-shadow: 0 4px 12px rgba(0,0,0,0.15); display: block;
+}
+.disc-card-avatar-letter {
+    width: 60px; height: 60px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 24px; font-weight: 800; color: white;
+    border: 3px solid white; box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+.disc-status-dot {
+    position: absolute; bottom: 3px; right: 3px;
+    width: 14px; height: 14px; border-radius: 50%;
+    border: 2px solid white; background: #d1d5db;
+    transition: 0.3s;
+}
+.disc-status-dot.online { background: #22c55e; }
+
+.disc-card-name { font-size: 15px; font-weight: 800; color: #111827; margin: 0 0 3px; }
+.disc-card-sub { font-size: 12px; color: #9ca3af; margin: 0 0 10px; display: flex; align-items: center; gap: 6px; }
+.disc-active-label {
+    display: none; align-items: center; gap: 5px;
+    font-size: 11px; font-weight: 700; color: #16a34a;
+}
+.disc-active-dot { width: 6px; height: 6px; border-radius: 50%; background: #22c55e; animation: onlinePulse 2s infinite; }
+
+.disc-role-badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: 10px; font-weight: 700; padding: 2px 8px;
+    border-radius: 20px; margin-bottom: 10px;
+}
+.disc-role-badge.admin { background: #fef3c7; color: #d97706; }
+.disc-role-badge.owner { background: #111827; color: #fbbf24; }
+
+.disc-card-actions { display: flex; gap: 8px; }
+.disc-card-btn {
+    flex: 1; padding: 9px 12px; border-radius: 12px;
+    font-size: 13px; font-weight: 700; cursor: pointer; border: none;
+    text-decoration: none; text-align: center; transition: 0.2s;
+    display: inline-flex; align-items: center; justify-content: center; gap: 5px;
+    font-family: inherit;
+}
+.disc-card-btn.view { background: linear-gradient(135deg, #6366f1, #4f46e5); color: white; }
+.disc-card-btn.view:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(99,102,241,0.35); color: white; }
+.disc-card-btn.add { background: #f0fdf4; color: #16a34a; border: 1.5px solid #86efac; }
+.disc-card-btn.add:hover { background: #22c55e; color: white; border-color: #22c55e; }
+.disc-card-btn.friends { background: #f0fdf4; color: #16a34a; }
+.disc-card-btn.sent { background: #fef9c3; color: #a16207; }
+
+/* EMPTY */
+.disc-empty {
+    text-align: center; padding: 60px 20px; grid-column: 1/-1;
+    color: #9ca3af;
+}
+.disc-empty-icon { font-size: 52px; margin-bottom: 14px; }
+.disc-empty-title { font-size: 16px; font-weight: 700; color: #374151; margin: 0 0 6px; }
+
+/* DARK */
+body.bg-dark .disc-search-input { background: #1e293b !important; border-color: #2d3748 !important; color: #f1f5f9 !important; }
+body.bg-dark .disc-filter-btn { background: #1e293b !important; border-color: #2d3748 !important; color: #94a3b8 !important; }
+body.bg-dark .disc-filter-btn:hover { border-color: #6366f1 !important; color: #818cf8 !important; background: rgba(99,102,241,0.1) !important; }
+body.bg-dark .disc-filter-btn.active { background: #6366f1 !important; color: white !important; }
+body.bg-dark .disc-card { background: #1e293b !important; border-color: #2d3748 !important; }
+body.bg-dark .disc-card-name { color: #f1f5f9 !important; }
+body.bg-dark .disc-card-avatar, body.bg-dark .disc-card-avatar-letter { border-color: #1e293b !important; }
+body.bg-dark .disc-status-dot { border-color: #1e293b !important; }
+body.bg-dark .disc-card-btn.view { background: linear-gradient(135deg, #6366f1, #4f46e5) !important; }
+body.bg-dark .disc-card-btn.add { background: #14532d !important; color: #4ade80 !important; border-color: #166534 !important; }
+body.bg-dark .disc-section-label { color: #475569 !important; }
+body.bg-dark .disc-section-label::after { background: #2d3748 !important; }
+body.bg-dark .disc-empty-title { color: #f1f5f9 !important; }
+body.bg-dark .disc-online-badge { background: rgba(34,197,94,0.08) !important; }
+
+@@media (max-width: 640px) {
+    .disc-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+    .disc-hero { padding: 22px 18px; }
+    .disc-hero-stats { gap: 10px; }
+    .disc-hero-stat { padding: 10px 14px; }
+}
+</style>
+
+<!-- GRADIENTES DE BANNERS (variados por usuario) -->
+<style id="bannerStyles"></style>
+
+<div class="disc-page">
+
+    <!-- HERO -->
+    <div class="disc-hero">
+        <div class="disc-hero-left">
+            <div class="disc-hero-title">🔎 Descubrir personas</div>
+            <div class="disc-hero-sub">Conecta con personas que comparten tus hábitos</div>
+        </div>
+        <div class="disc-hero-stats">
+            <div class="disc-hero-stat">
+                <span class="disc-hero-stat-num">@Model.Count(u => u.Id != myId)</span>
+                <span class="disc-hero-stat-label">Usuarios</span>
+            </div>
+            <div class="disc-hero-stat">
+                <span class="disc-hero-stat-num" id="onlineCount">0</span>
+                <span class="disc-hero-stat-label">En línea</span>
+            </div>
+            <div class="disc-hero-stat">
+                <span class="disc-hero-stat-num">@friendList.Count</span>
+                <span class="disc-hero-stat-label">Amigos</span>
+            </div>
+        </div>
     </div>
 
-    <div class="search-wrap">
-        <span class="search-icon">🔍</span>
-        <input type="text" id="userSearch" placeholder="Buscar usuarios..." class="search-input" />
+    <!-- CONTROLES -->
+    <div class="disc-controls">
+        <div class="disc-search-wrap">
+            <span class="disc-search-icon">🔍</span>
+            <input type="text" id="userSearch" placeholder="Buscar usuarios..." class="disc-search-input" />
+        </div>
+        <button class="disc-filter-btn active" onclick="setFilter('all', this)">👥 Todos</button>
+        <button class="disc-filter-btn" onclick="setFilter('online', this)">🟢 En línea</button>
+        <button class="disc-filter-btn" onclick="setFilter('friends', this)">✅ Amigos</button>
+        <div class="disc-online-badge">
+            <div class="disc-online-dot"></div>
+            <span id="onlineBadgeCount">0</span> en línea
+        </div>
     </div>
 
-    <div class="user-grid" id="userGrid">
+    <div class="disc-section-label" id="sectionLabel">Todos los usuarios</div>
+
+    <!-- GRID -->
+    <div class="disc-grid" id="userGrid">
+        @{
+            var banners = new[]
+            {
+                "linear-gradient(135deg,#6366f1,#2563eb)",
+                "linear-gradient(135deg,#ec4899,#f43f5e)",
+                "linear-gradient(135deg,#10b981,#059669)",
+                "linear-gradient(135deg,#f59e0b,#ef4444)",
+                "linear-gradient(135deg,#8b5cf6,#6366f1)",
+                "linear-gradient(135deg,#06b6d4,#3b82f6)",
+                "linear-gradient(135deg,#f97316,#ec4899)",
+                "linear-gradient(135deg,#14b8a6,#6366f1)"
+            };
+            var avatarColors = new[]
+            {
+                "linear-gradient(135deg,#6366f1,#4f46e5)",
+                "linear-gradient(135deg,#ec4899,#db2777)",
+                "linear-gradient(135deg,#10b981,#059669)",
+                "linear-gradient(135deg,#f59e0b,#d97706)",
+                "linear-gradient(135deg,#8b5cf6,#7c3aed)",
+                "linear-gradient(135deg,#06b6d4,#0284c7)",
+                "linear-gradient(135deg,#f97316,#ea580c)",
+                "linear-gradient(135deg,#14b8a6,#0d9488)"
+            };
+            int idx = 0;
+        }
+
         @foreach (var user in Model)
         {
             if (user.Id == myId) continue;
+            var banner = banners[idx % banners.Length];
+            var avatarColor = avatarColors[idx % avatarColors.Length];
+            var isFriend = friendList.Contains(user.Id);
+            var isSent = sentList.Contains(user.Id);
+            idx++;
 
-            <div class="user-card" id="user-@user.Id" data-username="@user.Username.ToLower()">
+            <div class="disc-card" id="user-@user.Id"
+                 data-username="@user.Username.ToLower()"
+                 data-friend="@isFriend.ToString().ToLower()"
+                 data-online="false">
 
-                <div class="card-top">
-                    <div class="avatar-wrap">
+                <div class="disc-card-banner">
+                    <div class="disc-card-banner-inner" style="background:@banner;"></div>
+                </div>
+
+                <div class="disc-card-body">
+                    <div class="disc-card-avatar-wrap">
                         @if (!string.IsNullOrEmpty(user.ProfileImage))
                         {
-                            <img src="@user.ProfileImage" class="user-avatar-img" id="avatar-@user.Id" />
+                            <img src="@user.ProfileImage" class="disc-card-avatar" id="avatar-@user.Id" />
+                        }
+                        else if (!string.IsNullOrEmpty(user.ProfilePicture))
+                        {
+                            <img src="@user.ProfilePicture" class="disc-card-avatar" id="avatar-@user.Id" />
                         }
                         else
                         {
-                            <div class="avatar-placeholder" id="avatar-@user.Id">
-                                @user.Username.Substring(0, 1).ToUpper()
+                            <div class="disc-card-avatar-letter" id="avatar-@user.Id"
+                                 style="background:@avatarColor;">
+                                @user.Username.Substring(0,1).ToUpper()
                             </div>
                         }
-                        <span class="status-dot offline" id="status-@user.Id"></span>
+                        <div class="disc-status-dot offline" id="status-@user.Id"></div>
                     </div>
 
-                    <div class="user-info">
-                        <div class="user-name">@user.Username</div>
-                        @if (user.Role == "Admin")
-                        {
-                            <span class="role-badge admin">Administrador</span>
-                        }
-                        @if (user.Role == "SuperAdmin")
-                        {
-                            <span class="role-badge owner">👑 Propietario</span>
-                        }
-                        <div class="active-label" id="active-@user.Id" style="display:none;">
-                            <span class="active-dot"></span> Activo ahora
+                    <div class="disc-card-name">@user.Username</div>
+                    <div class="disc-card-sub">
+                        <div class="disc-active-label" id="active-@user.Id">
+                            <div class="disc-active-dot"></div> Activo ahora
                         </div>
+                        @if (!string.IsNullOrEmpty(user.Country))
+                        {
+                            <span>📍 @user.Country</span>
+                        }
                     </div>
-                </div>
 
-                <div class="card-actions">
-                    <a href="/User/Profile/@user.Id" class="card-btn view guest-block">👁 Ver perfil</a>
+                    @if (user.Role == "Admin")
+                    { <div class="disc-role-badge admin">🛡️ Admin</div> }
+                    @if (user.Role == "SuperAdmin")
+                    { <div class="disc-role-badge owner">👑 Propietario</div> }
 
-                    @if (friendList.Contains(user.Id))
-                    {
-                        <button class="card-btn friends" disabled>✅ Amigos</button>
-                    }
-                    else if (sentList.Contains(user.Id))
-                    {
-                        <button class="card-btn sent" disabled>✔ Enviada</button>
-                    }
-                    else
-                    {
-                        <button class="card-btn add guest-block"
-                                data-user="@user.Id"
-                                data-no-loader="true"
-                                onclick="sendFriendRequest(this)">
-                            + Agregar
-                        </button>
-                    }
+                    <div class="disc-card-actions">
+                        <a href="/User/Profile/@user.Id" class="disc-card-btn view guest-block">
+                            👁 Perfil
+                        </a>
+                        @if (isFriend)
+                        {
+                            <button class="disc-card-btn friends" disabled>✅ Amigos</button>
+                        }
+                        else if (isSent)
+                        {
+                            <button class="disc-card-btn sent" disabled>✔ Enviada</button>
+                        }
+                        else
+                        {
+                            <button class="disc-card-btn add guest-block"
+                                    data-user="@user.Id" data-no-loader="true"
+                                    onclick="sendFriendRequest(this)">
+                                + Agregar
+                            </button>
+                        }
+                    </div>
                 </div>
             </div>
         }
     </div>
 </div>
 
-<style>
-.discover-page { max-width: 1100px; margin: 0 auto; }
-.discover-header { margin-bottom: 24px; }
-.discover-title { font-size: 24px; font-weight: 800; color: #111827; margin: 0 0 4px; }
-.discover-subtitle { font-size: 14px; color: #9ca3af; margin: 0; }
-
-.search-wrap { position: relative; margin-bottom: 28px; max-width: 420px; }
-.search-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); font-size: 16px; }
-.search-input {
-    width: 100%; padding: 12px 16px 12px 42px;
-    border: 1px solid #e5e7eb; border-radius: 50px;
-    font-size: 14px; background: white;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-    outline: none; transition: 0.2s; box-sizing: border-box;
-}
-.search-input:focus { border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37,99,235,0.1); }
-
-.user-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px; }
-
-.user-card {
-    background: white; border-radius: 18px; padding: 20px;
-    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
-    border: 1px solid rgba(0,0,0,0.04); transition: 0.2s;
-}
-.user-card:hover { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(0,0,0,0.1); }
-
-.card-top { display: flex; align-items: center; gap: 14px; margin-bottom: 16px; }
-.avatar-wrap { position: relative; flex-shrink: 0; }
-
-.user-avatar-img {
-    width: 56px; height: 56px; border-radius: 50%;
-    object-fit: cover; border: 3px solid #e5e7eb;
-}
-
-.avatar-placeholder {
-    width: 56px; height: 56px; border-radius: 50%;
-    background: linear-gradient(135deg, #2563eb, #7c3aed);
-    color: white; display: flex; align-items: center;
-    justify-content: center; font-size: 22px; font-weight: 800;
-    border: 3px solid #e5e7eb;
-}
-
-.status-dot {
-    position: absolute; bottom: 2px; right: 2px;
-    width: 12px; height: 12px; border-radius: 50%; border: 2px solid white;
-}
-.status-dot.online { background: #22c55e; }
-.status-dot.offline { background: #d1d5db; }
-
-.user-info { flex: 1; min-width: 0; }
-.user-name { font-size: 15px; font-weight: 700; color: #111827; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-
-.role-badge { display: inline-block; font-size: 10px; padding: 2px 8px; border-radius: 20px; margin-top: 4px; font-weight: 600; }
-.role-badge.admin { background: #fef3c7; color: #d97706; }
-.role-badge.owner { background: #111827; color: white; }
-
-.active-label { display: flex; align-items: center; gap: 5px; font-size: 12px; color: #22c55e; font-weight: 600; margin-top: 4px; }
-.active-dot { width: 7px; height: 7px; border-radius: 50%; background: #22c55e; animation: pulse 1.5s infinite; }
-
-@@keyframes pulse {
-    0% { box-shadow: 0 0 0 0 rgba(34,197,94,0.7); }
-    70% { box-shadow: 0 0 0 6px rgba(34,197,94,0); }
-    100% { box-shadow: 0 0 0 0 rgba(34,197,94,0); }
-}
-
-.card-actions { display: flex; gap: 8px; }
-
-.card-btn {
-    flex: 1; padding: 9px 12px; border-radius: 10px;
-    font-size: 13px; font-weight: 600; cursor: pointer; border: none;
-    text-decoration: none; text-align: center; transition: 0.2s;
-    display: inline-flex; align-items: center; justify-content: center;
-}
-.card-btn.view { background: #2563eb; color: white; }
-.card-btn.view:hover { background: #1d4ed8; color: white; }
-.card-btn.add { background: #f0fdf4; color: #16a34a; border: 1px solid #86efac; }
-.card-btn.add:hover { background: #22c55e; color: white; }
-.card-btn.friends { background: #f0fdf4; color: #16a34a; }
-.card-btn.sent { background: #fef3c7; color: #d97706; }
-.online-avatar { border-color: #22c55e !important; }
-
-/* DARK MODE */
-body.bg-dark .discover-title { color: #f1f5f9 !important; }
-body.bg-dark .search-input { background: #1e1e2e !important; border-color: #2d2d3d !important; color: #f1f5f9 !important; }
-body.bg-dark .user-card { background: #1e1e2e !important; border-color: #2d2d3d !important; }
-body.bg-dark .user-name { color: #f1f5f9 !important; }
-body.bg-dark .status-dot { border-color: #1e1e2e !important; }
-body.bg-dark .card-btn.view { background: #2563eb !important; color: white !important; }
-body.bg-dark .card-btn.add { background: #14532d !important; color: #86efac !important; border-color: #166534 !important; }
-</style>
-
 <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
 <script>
-const connectionGlobal = new signalR.HubConnectionBuilder()
+let currentFilter = 'all';
+let onlineUsers = new Set();
+
+// SignalR
+const connectionDisc = new signalR.HubConnectionBuilder()
     .withUrl("/chatHub").build();
 
-connectionGlobal.start().then(function () {
+connectionDisc.start().then(() => {
     const myId = '@User.FindFirst("UserId")?.Value';
-    connectionGlobal.invoke("JoinUserGroup", myId);
+    connectionDisc.invoke("JoinUserGroup", myId);
 }).catch(err => console.error(err));
 
-connectionGlobal.on("UserOnline", function(userId) {
+connectionDisc.on("UserOnline", (userId) => {
+    setUserOnline(userId, true);
+});
+
+connectionDisc.on("UserOffline", (userId) => {
+    setUserOnline(userId, false);
+});
+
+function setUserOnline(userId, isOnline) {
     const dot = document.getElementById("status-" + userId);
-    if (dot) { dot.classList.remove("offline"); dot.classList.add("online"); }
-    const avatar = document.getElementById("avatar-" + userId);
-    if (avatar) avatar.classList.add("online-avatar");
     const activeLabel = document.getElementById("active-" + userId);
-    if (activeLabel) activeLabel.style.display = "flex";
     const card = document.getElementById("user-" + userId);
-    if (card) document.getElementById("userGrid").prepend(card);
-});
 
-connectionGlobal.on("UserOffline", function(userId) {
-    const dot = document.getElementById("status-" + userId);
-    if (dot) { dot.classList.remove("online"); dot.classList.add("offline"); }
-    const avatar = document.getElementById("avatar-" + userId);
-    if (avatar) avatar.classList.remove("online-avatar");
-    const activeLabel = document.getElementById("active-" + userId);
-    if (activeLabel) activeLabel.style.display = "none";
-});
+    if (dot) {
+        dot.classList.toggle("online", isOnline);
+        dot.classList.toggle("offline", !isOnline);
+    }
+    if (activeLabel) activeLabel.style.display = isOnline ? "flex" : "none";
+    if (card) card.setAttribute("data-online", isOnline.toString());
 
+    if (isOnline) {
+        onlineUsers.add(userId);
+        if (card) document.getElementById("userGrid").prepend(card);
+    } else {
+        onlineUsers.delete(userId);
+    }
+
+    updateOnlineCount();
+    applyFilter();
+}
+
+function updateOnlineCount() {
+    const count = onlineUsers.size;
+    const el = document.getElementById("onlineCount");
+    const badge = document.getElementById("onlineBadgeCount");
+    if (el) el.textContent = count;
+    if (badge) badge.textContent = count;
+}
+
+// cargar usuarios online al inicio
 fetch("/User/GetOnlineUsers")
     .then(r => r.json())
     .then(users => {
         users.forEach(id => {
-            const dot = document.getElementById("status-" + id);
-            if (dot) { dot.classList.remove("offline"); dot.classList.add("online"); }
-            const activeLabel = document.getElementById("active-" + id);
-            if (activeLabel) activeLabel.style.display = "flex";
+            setUserOnline(id.toString(), true);
         });
-    });
+    }).catch(() => {});
 
-document.getElementById("userSearch").addEventListener("keyup", function() {
-    const value = this.value.toLowerCase();
-    document.querySelectorAll(".user-card").forEach(card => {
-        card.style.display = card.dataset.username.includes(value) ? "block" : "none";
-    });
+// BÚSQUEDA
+document.getElementById("userSearch").addEventListener("input", function() {
+    applyFilter();
 });
 
+// FILTROS
+function setFilter(filter, btn) {
+    currentFilter = filter;
+    document.querySelectorAll(".disc-filter-btn").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+
+    const labels = { all: "Todos los usuarios", online: "🟢 En línea ahora", friends: "✅ Tus amigos" };
+    document.getElementById("sectionLabel").textContent = labels[filter] ?? "Usuarios";
+
+    applyFilter();
+}
+
+function applyFilter() {
+    const query = document.getElementById("userSearch").value.toLowerCase().trim();
+    let visibleCount = 0;
+
+    document.querySelectorAll(".disc-card").forEach(card => {
+        const username = card.getAttribute("data-username") ?? "";
+        const isOnline = card.getAttribute("data-online") === "true";
+        const isFriend = card.getAttribute("data-friend") === "true";
+
+        const matchesSearch = !query || username.includes(query);
+        const matchesFilter =
+            currentFilter === "all" ? true :
+            currentFilter === "online" ? isOnline :
+            currentFilter === "friends" ? isFriend : true;
+
+        const visible = matchesSearch && matchesFilter;
+        card.style.display = visible ? "block" : "none";
+        if (visible) visibleCount++;
+    });
+
+    // mostrar empty si no hay resultados
+    let emptyEl = document.getElementById("disc-empty");
+    if (visibleCount === 0) {
+        if (!emptyEl) {
+            emptyEl = document.createElement("div");
+            emptyEl.id = "disc-empty";
+            emptyEl.className = "disc-empty";
+            emptyEl.innerHTML = `
+                <div class="disc-empty-icon">🔍</div>
+                <div class="disc-empty-title">Sin resultados</div>
+                <div style="font-size:13px;color:#9ca3af;">Intenta con otro filtro o búsqueda</div>`;
+            document.getElementById("userGrid").appendChild(emptyEl);
+        }
+    } else {
+        emptyEl?.remove();
+    }
+}
+
+// ENVIAR SOLICITUD
 function sendFriendRequest(btn) {
     if (typeof isGuest !== "undefined" && isGuest) {
-        new bootstrap.Modal(document.getElementById('guestModal')).show();
+        try { new bootstrap.Modal(document.getElementById('guestModal')).show(); } catch(e) {}
         return;
     }
     const userId = btn.dataset.user;
-    btn.innerHTML = "⏳";
-    btn.disabled = true;
+    const original = btn.innerHTML;
+    btn.innerHTML = "⏳"; btn.disabled = true;
+
     fetch("/User/SendFriendRequest", {
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
         body: "receiverId=" + userId
-    }).then(() => {
-        btn.innerHTML = "✔";
+    }).then(r => r.ok ? r.json() : Promise.reject())
+    .then(() => {
+        btn.innerHTML = "✔ Enviada";
         btn.classList.remove("add");
         btn.classList.add("sent");
+        // animación
+        btn.style.transform = "scale(1.05)";
+        setTimeout(() => btn.style.transform = "scale(1)", 200);
     }).catch(() => {
-        btn.innerHTML = "❌";
+        btn.innerHTML = original;
         btn.disabled = false;
     });
 }

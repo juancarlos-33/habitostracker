@@ -1,511 +1,398 @@
 ﻿@if (TempData["Error"] != null)
 {
-    <div class="comments-alert">⚠️ @TempData["Error"]</div>
+    <div class="cmt-alert">⚠️ @TempData["Error"]</div>
 }
 
 @model List<HabitTrackerApp.Models.PostComment>
 
 @{
     var db = Context.RequestServices.GetService<HabitTrackerApp.Data.HabitDbContext>();
+    var myUserId = int.Parse(User.FindFirst("UserId").Value);
 }
 
-<div class="comments-page">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
 
-    <h3 class="comments-title">💬 Comentarios</h3>
+<style>
+.cmt-page { max-width: 680px; margin: 0 auto; font-family: 'Plus Jakarta Sans', sans-serif; padding-bottom: 40px; }
 
-    <!-- FORMULARIO -->
-    <div class="comment-form-card">
+.cmt-alert {
+    background: rgba(251,191,36,0.1); color: #92400e;
+    border: 1px solid rgba(251,191,36,0.3);
+    padding: 12px 16px; border-radius: 14px;
+    margin-bottom: 16px; font-size: 13px; font-weight: 600;
+}
+
+.cmt-title {
+    font-size: 20px; font-weight: 800; color: #111827;
+    margin-bottom: 20px; display: flex; align-items: center; gap: 8px;
+}
+
+/* FORM */
+.cmt-form-card {
+    background: white; border-radius: 20px; padding: 20px;
+    margin-bottom: 20px; box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    border: 1px solid rgba(0,0,0,0.04);
+}
+.cmt-textarea {
+    width: 100%; padding: 12px 16px; border: 1.5px solid #e5e7eb;
+    border-radius: 14px; font-size: 14px; resize: vertical; min-height: 80px;
+    outline: none; transition: 0.2s; box-sizing: border-box;
+    background: #f9fafb; color: #111827; font-family: inherit;
+}
+.cmt-textarea:focus { border-color: #6366f1; background: white; box-shadow: 0 0 0 3px rgba(99,102,241,0.1); }
+.cmt-form-bottom { display: flex; justify-content: space-between; align-items: center; margin-top: 12px; gap: 10px; }
+.cmt-file-label {
+    font-size: 13px; color: #6b7280; cursor: pointer;
+    padding: 8px 14px; border-radius: 10px; border: 1px solid #e5e7eb;
+    transition: 0.2s; display: flex; align-items: center; gap: 6px;
+}
+.cmt-file-label:hover { background: #f3f4f6; border-color: #d1d5db; }
+.cmt-submit-btn {
+    padding: 10px 22px; background: linear-gradient(135deg, #6366f1, #4f46e5);
+    color: white; border: none; border-radius: 12px; font-size: 14px;
+    font-weight: 700; cursor: pointer; transition: 0.2s; font-family: inherit;
+}
+.cmt-submit-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(99,102,241,0.35); }
+
+/* COMMENT CARD */
+.cmt-card {
+    background: white; border-radius: 20px; padding: 18px;
+    margin-bottom: 14px; box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    border: 1px solid rgba(0,0,0,0.04); transition: 0.2s;
+}
+.cmt-card:hover { box-shadow: 0 4px 18px rgba(0,0,0,0.08); }
+
+.cmt-header { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+.cmt-avatar {
+    width: 42px; height: 42px; border-radius: 50%; object-fit: cover;
+    border: 2px solid #e5e7eb; flex-shrink: 0;
+}
+.cmt-avatar-letter {
+    width: 42px; height: 42px; border-radius: 50%; flex-shrink: 0;
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    color: white; display: flex; align-items: center; justify-content: center;
+    font-weight: 800; font-size: 16px;
+}
+.cmt-username { font-weight: 700; font-size: 14px; color: #111827; text-decoration: none; display: block; }
+.cmt-username:hover { color: #6366f1; }
+.cmt-time { font-size: 11px; color: #9ca3af; margin-top: 1px; }
+
+.cmt-body { padding-left: 54px; }
+.cmt-text { font-size: 14px; color: #374151; line-height: 1.65; margin: 0 0 10px; }
+.cmt-img { max-width: 100%; max-height: 260px; object-fit: cover; border-radius: 14px; margin-top: 8px; cursor: pointer; transition: 0.2s; }
+.cmt-img:hover { opacity: 0.92; }
+
+/* ACTIONS */
+.cmt-actions { display: flex; align-items: center; gap: 8px; padding-left: 54px; margin-top: 10px; flex-wrap: wrap; }
+.cmt-btn {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 6px 13px; border-radius: 20px; border: none;
+    background: #f3f4f6; font-size: 12px; font-weight: 600;
+    cursor: pointer; transition: 0.2s; color: #4b5563;
+    font-family: inherit;
+}
+.cmt-btn:hover { background: #e5e7eb; }
+.cmt-btn.like:hover { background: #fef2f2; color: #dc2626; }
+.cmt-btn.reply:hover { background: #eff6ff; color: #2563eb; }
+.cmt-btn.delete { color: #ef4444; text-decoration: none; }
+.cmt-btn.delete:hover { background: #fef2f2; color: #dc2626; }
+
+/* LIKE ANIMATION */
+@@keyframes heartPop {
+    0% { transform: scale(1); }
+    30% { transform: scale(1.5); }
+    60% { transform: scale(0.9); }
+    100% { transform: scale(1); }
+}
+.heart-pop { animation: heartPop 0.4s cubic-bezier(0.36, 0.07, 0.19, 0.97); }
+
+/* REPLY FORM */
+.cmt-reply-form { padding-left: 54px; margin-top: 10px; display: none; }
+.cmt-reply-form form { display: flex; gap: 8px; }
+.cmt-reply-input {
+    flex: 1; padding: 9px 16px; border-radius: 24px;
+    border: 1.5px solid #e5e7eb; font-size: 13px; outline: none;
+    background: #f9fafb; color: #111827; transition: 0.2s; font-family: inherit;
+}
+.cmt-reply-input:focus { border-color: #6366f1; background: white; }
+.cmt-reply-submit {
+    padding: 9px 18px; background: linear-gradient(135deg, #6366f1, #4f46e5);
+    color: white; border: none; border-radius: 24px; font-size: 13px;
+    font-weight: 700; cursor: pointer; font-family: inherit; transition: 0.2s;
+}
+.cmt-reply-submit:hover { transform: translateY(-1px); }
+
+/* REPLY ITEMS */
+.reply-wrap { padding-left: 54px; margin-top: 12px; display: flex; flex-direction: column; gap: 10px; }
+.reply-item { display: flex; gap: 10px; }
+.reply-item.child { padding-left: 44px; }
+.reply-avatar {
+    width: 32px; height: 32px; border-radius: 50%; object-fit: cover;
+    border: 2px solid #e5e7eb; flex-shrink: 0; text-decoration: none;
+}
+.reply-avatar-letter {
+    width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0;
+    background: linear-gradient(135deg, #2563eb, #6366f1);
+    color: white; display: flex; align-items: center; justify-content: center;
+    font-weight: 800; font-size: 12px; text-decoration: none;
+}
+.reply-content { flex: 1; background: #f9fafb; border-radius: 14px; padding: 10px 14px; }
+.reply-header { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+.reply-username { font-weight: 700; font-size: 13px; color: #111827; text-decoration: none; }
+.reply-username:hover { color: #6366f1; }
+.reply-arrow { font-size: 11px; color: #9ca3af; }
+.reply-time { font-size: 10px; color: #9ca3af; margin-left: auto; }
+.reply-text { font-size: 13px; color: #4b5563; line-height: 1.55; margin: 0 0 8px; }
+.reply-actions { display: flex; gap: 6px; align-items: center; }
+.view-replies-btn {
+    background: none; border: none; font-size: 12px; color: #6366f1;
+    cursor: pointer; font-weight: 700; padding: 4px 0; transition: 0.15s;
+    display: flex; align-items: center; gap: 4px; font-family: inherit;
+}
+.view-replies-btn:hover { opacity: 0.75; }
+
+.replies-container { margin-top: 8px; display: none; flex-direction: column; gap: 8px; }
+
+/* EMPTY */
+.cmt-empty {
+    text-align: center; padding: 50px 20px;
+    background: white; border-radius: 20px;
+    border: 1px solid rgba(0,0,0,0.04);
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+}
+.cmt-empty-icon { font-size: 44px; margin-bottom: 12px; }
+.cmt-empty-text { font-size: 15px; font-weight: 600; color: #6b7280; }
+
+/* DARK */
+body.bg-dark .cmt-title { color: #f1f5f9 !important; }
+body.bg-dark .cmt-form-card, body.bg-dark .cmt-card { background: #1e293b !important; border-color: #2d3748 !important; }
+body.bg-dark .cmt-textarea { background: #2d3748 !important; border-color: #3d4d60 !important; color: #f1f5f9 !important; }
+body.bg-dark .cmt-textarea:focus { background: #334155 !important; }
+body.bg-dark .cmt-username { color: #f1f5f9 !important; }
+body.bg-dark .cmt-text { color: #cbd5e1 !important; }
+body.bg-dark .cmt-time, body.bg-dark .reply-time { color: #64748b !important; }
+body.bg-dark .cmt-btn { background: #2d3748 !important; color: #94a3b8 !important; }
+body.bg-dark .cmt-btn:hover { background: #334155 !important; }
+body.bg-dark .cmt-btn.like:hover { background: #3f1010 !important; color: #f87171 !important; }
+body.bg-dark .cmt-btn.reply:hover { background: #1e3a5f !important; color: #60a5fa !important; }
+body.bg-dark .cmt-btn.delete { color: #f87171 !important; }
+body.bg-dark .cmt-btn.delete:hover { background: #3f1010 !important; }
+body.bg-dark .cmt-reply-input { background: #2d3748 !important; border-color: #3d4d60 !important; color: #f1f5f9 !important; }
+body.bg-dark .reply-content { background: #2d3748 !important; }
+body.bg-dark .reply-username { color: #f1f5f9 !important; }
+body.bg-dark .reply-text { color: #94a3b8 !important; }
+body.bg-dark .cmt-file-label { color: #64748b !important; border-color: #3d4d60 !important; }
+body.bg-dark .cmt-file-label:hover { background: #2d3748 !important; }
+body.bg-dark .cmt-empty { background: #1e293b !important; border-color: #2d3748 !important; }
+body.bg-dark .cmt-empty-text { color: #64748b !important; }
+</style>
+
+<div class="cmt-page">
+
+    <div class="cmt-title">💬 Comentarios</div>
+
+    <!-- FORM -->
+    <div class="cmt-form-card">
         <form asp-action="AddComment" method="post" enctype="multipart/form-data" data-no-loader="true">
             <input type="hidden" name="postId" value="@ViewBag.PostId" />
-            <textarea name="comment" class="comment-textarea" placeholder="Escribe un comentario..." required></textarea>
-            <div class="form-bottom">
-                <label class="file-label">
+            <textarea name="comment" class="cmt-textarea" placeholder="Escribe un comentario..." required></textarea>
+            <div class="cmt-form-bottom">
+                <label class="cmt-file-label">
                     📎 Adjuntar imagen
-                    <input type="file" name="image" accept="image/*" style="display:none;" />
+                    <input type="file" name="image" accept="image/*" style="display:none;"
+                           onchange="this.parentElement.querySelector('span') && (this.parentElement.querySelector('span').textContent = this.files[0]?.name ?? '')" />
                 </label>
-                <button type="submit" class="submit-btn">💬 Comentar</button>
+                <button type="submit" class="cmt-submit-btn">💬 Comentar</button>
             </div>
         </form>
     </div>
 
-    <!-- COMENTARIOS -->
-    <div class="comments-list">
-       @foreach (var c in Model)
-{
-    var replies = db.CommentReplies
-        .Where(r => r.CommentId == c.Id)
-        .OrderBy(r => r.CreatedAt)
-        .ToList();
-    var parentReplies = replies.Where(x => x.ParentReplyId == null).ToList();
+    <!-- LISTA -->
+    <div class="cmt-list">
+        @if (!Model.Any())
+        {
+            <div class="cmt-empty">
+                <div class="cmt-empty-icon">💭</div>
+                <div class="cmt-empty-text">Sé el primero en comentar</div>
+            </div>
+        }
+        else
+        {
+            foreach (var c in Model)
+            {
+                var replies = db.CommentReplies
+                    .Where(r => r.CommentId == c.Id)
+                    .OrderBy(r => r.CreatedAt)
+                    .ToList();
+                var parentReplies = replies.Where(x => x.ParentReplyId == null).ToList();
+                bool isMine = c.UserId == myUserId;
+                bool isLiked = ViewBag.MyCommentLikes != null && ((List<int>)ViewBag.MyCommentLikes).Contains(c.Id);
+                int likeCount = ViewBag.CommentLikes != null && ((IDictionary<int,int>)ViewBag.CommentLikes).ContainsKey(c.Id)
+                    ? ((IDictionary<int,int>)ViewBag.CommentLikes)[c.Id] : 0;
 
-    <div class="comment-card">
-
-                <!-- HEADER -->
-                <div class="comment-header">
-                    @if (!string.IsNullOrEmpty(c.ProfileImage))
-                    {
-                        <img src="@c.ProfileImage" class="comment-avatar" />
-                    }
-                    else
-                    {
-                        <div class="comment-avatar-letter">@c.Username.Substring(0, 1).ToUpper()</div>
-                    }
-
-                    <div class="comment-meta">
-                       @if (c.UserId == 29)
-{
-    <a href="/User" class="comment-username" style="text-decoration:none;">@c.Username</a>
-}
-else
-{
-    <a href="/User/Profile/@c.UserId" class="comment-username" style="text-decoration:none;">@c.Username</a>
-}
-                        <span class="comment-time">@c.CreatedAt.ToString("dd MMM yyyy · HH:mm")</span>
-                    </div>
-                </div>
-
-                <!-- CONTENIDO -->
-                <div class="comment-body">
-                    <p class="comment-text">@c.Comment</p>
-                    @if (!string.IsNullOrEmpty(c.ImagePath))
-                    {
-                        <img src="@c.ImagePath" class="comment-img" />
-                    }
-                </div>
-
-                <!-- ACCIONES -->
-                <div class="comment-actions">
-    <button class="action-like comment-like-btn" data-id="@c.Id" onclick="toggleCommentLike(this)">
-        @(ViewBag.MyCommentLikes != null && ((List<int>)ViewBag.MyCommentLikes).Contains(c.Id) ? "❤️" : "🤍")
-        <span id="like-count-@c.Id">
-            @(ViewBag.CommentLikes != null && ViewBag.CommentLikes.ContainsKey(c.Id) ? ViewBag.CommentLikes[c.Id] : 0)
-        </span>
-    </button>
-    <button class="action-reply" onclick="toggleReplyBox(@c.Id)">💬 Responder</button>
-    @if (c.UserId == int.Parse(User.FindFirst("UserId").Value))
-    {
-        <a asp-controller="Post" asp-action="DeleteComment" asp-route-id="@c.Id"
-           class="action-delete"
-           data-no-loader="true"
-           onclick="return confirm('¿Eliminar este comentario?')">🗑 Eliminar</a>
-    }
-</div>
-
-                <!-- FORM RESPONDER -->
-            <div id="replyBox-@c.Id" class="reply-form" style="display:none;">
-    <form asp-controller="Post" asp-action="ReplyComment" method="post" data-no-loader="true">
-                        <input type="hidden" name="commentId" value="@c.Id" />
-                        <input type="text" name="text" placeholder="Escribe tu respuesta..." class="reply-input" />
-                        <button type="submit" class="reply-submit">Enviar</button>
-                    </form>
-                </div>
-
-                <!-- RESPUESTAS -->
-                @foreach (var parent in parentReplies)
-                {
-                    var children = replies.Where(x => x.ParentReplyId == parent.Id).ToList();
-
-                    <div class="reply-item">
-                       <a href="/User/Profile/@parent.UserId" style="text-decoration:none;">
-    @if (!string.IsNullOrEmpty(parent.ProfileImage))
-    {
-        <img src="@parent.ProfileImage" class="reply-avatar" />
-    }
-    else
-    {
-        <div class="reply-avatar-letter">@parent.Username.Substring(0, 1).ToUpper()</div>
-    }
-</a>
-
-                        <div class="reply-content">
-                            <div class="reply-header">
-                                @if (parent.UserId == 29)
-{
-    <a href="/User" class="reply-username" style="text-decoration:none;">@parent.Username</a>
-}
-else
-{
-    <a href="/User/Profile?id=@parent.UserId" class="reply-username" style="text-decoration:none;">@parent.Username</a>
-}
-                                <span class="reply-time">@parent.CreatedAt.ToString("dd MMM · HH:mm")</span>
-                            </div>
-                            <p class="reply-text">@parent.Text</p>
-
-                            <div class="reply-actions-row">
-                                <button class="action-like reply-like-btn" data-id="@parent.Id" onclick="toggleReplyLike(this)">
-                                    @(ViewBag.MyReplyLikes != null && ((List<int>)ViewBag.MyReplyLikes).Contains(parent.Id) ? "❤️" : "🤍")
-                                    <span id="reply-like-count-@parent.Id">
-                                        @(ViewBag.ReplyLikes != null && ViewBag.ReplyLikes.ContainsKey(parent.Id) ? ViewBag.ReplyLikes[parent.Id] : 0)
-                                    </span>
-                                </button>
-                                <button class="action-reply" onclick="toggleReplyToReply(@parent.Id)">↩️ Responder</button>
-                            </div>
-
-                          <div id="replyBox-@c.Id" class="reply-form" style="display:none;">
-    <form asp-controller="Post" asp-action="ReplyComment" method="post" data-no-loader="true">
-                                    <input type="hidden" name="commentId" value="@c.Id" />
-                                    <input type="hidden" name="parentReplyId" value="@parent.Id" />
-                                    <input type="text" name="text" placeholder="Responder..." class="reply-input" />
-                                    <button type="submit" class="reply-submit">Enviar</button>
-                                </form>
-                            </div>
-
-                            @if (children.Count > 0)
-                            {
-                                <button class="view-replies-btn" onclick="toggleReplies(@parent.Id, this)">
-                                    Ver respuestas (@children.Count)
-                                </button>
-                            }
-
-                            <div id="replies-@parent.Id" style="display:none;">
-                                @foreach (var child in children)
-                                {
-                                    <div class="reply-item child">
-                                       <a href="/User/Profile/@child.UserId" style="text-decoration:none;">
-    @if (!string.IsNullOrEmpty(child.ProfileImage))
-    {
-        <img src="@child.ProfileImage" class="reply-avatar" />
-    }
-    else
-    {
-        <div class="reply-avatar-letter">@child.Username.Substring(0, 1).ToUpper()</div>
-    }
-</a>
-                                        <div class="reply-content">
-                                            <div class="reply-header">
-                                                <span class="reply-username">@child.Username</span>
-                                                <span class="reply-time"> → @parent.Username</span>
-                                            </div>
-                                            <p class="reply-text">@child.Text</p>
-                                            <div class="reply-actions-row">
-                                                <button class="action-like reply-like-btn" data-id="@child.Id" onclick="toggleReplyLike(this)">
-                                                    @(ViewBag.MyReplyLikes != null && ((List<int>)ViewBag.MyReplyLikes).Contains(child.Id) ? "❤️" : "🤍")
-                                                    <span id="reply-like-count-@child.Id">
-                                                        @(ViewBag.ReplyLikes != null && ViewBag.ReplyLikes.ContainsKey(child.Id) ? ViewBag.ReplyLikes[child.Id] : 0)
-                                                    </span>
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                }
-                            </div>
+                <div class="cmt-card" id="cmt-@c.Id">
+                    <div class="cmt-header">
+                        @if (!string.IsNullOrEmpty(c.ProfileImage))
+                        { <img src="@c.ProfileImage" class="cmt-avatar" /> }
+                        else
+                        { <div class="cmt-avatar-letter">@c.Username.Substring(0,1).ToUpper()</div> }
+                        <div>
+                            @if (c.UserId == 29)
+                            { <a href="/User" class="cmt-username">@c.Username</a> }
+                            else
+                            { <a href="/User/Profile/@c.UserId" class="cmt-username">@c.Username</a> }
+                            <div class="cmt-time">@c.CreatedAt.ToString("dd MMM yyyy · HH:mm")</div>
                         </div>
                     </div>
-                }
 
-            </div>
+                    <div class="cmt-body">
+                        <p class="cmt-text">@c.Comment</p>
+                        @if (!string.IsNullOrEmpty(c.ImagePath))
+                        {
+                            <img src="@c.ImagePath" class="cmt-img"
+                                 onclick="window.open('@c.ImagePath', '_blank')" />
+                        }
+                    </div>
+
+                    <div class="cmt-actions">
+                        <button class="cmt-btn like" data-id="@c.Id" onclick="toggleCommentLike(this)">
+                            <span class="heart-icon">@(isLiked ? "❤️" : "🤍")</span>
+                            <span id="like-count-@c.Id">@likeCount</span>
+                        </button>
+                        <button class="cmt-btn reply" onclick="toggleReplyBox(@c.Id)">
+                            💬 Responder
+                        </button>
+                        @if (isMine)
+                        {
+                            <a asp-controller="Post" asp-action="DeleteComment" asp-route-id="@c.Id"
+                               class="cmt-btn delete" data-no-loader="true"
+                               onclick="return confirm('¿Eliminar este comentario?')">
+                                🗑 Eliminar
+                            </a>
+                        }
+                    </div>
+
+                    <div class="cmt-reply-form" id="replyBox-@c.Id">
+                        <form asp-controller="Post" asp-action="ReplyComment" method="post" data-no-loader="true">
+                            <input type="hidden" name="commentId" value="@c.Id" />
+                            <input type="text" name="text" placeholder="Escribe tu respuesta..."
+                                   class="cmt-reply-input" required />
+                            <button type="submit" class="cmt-reply-submit">Enviar</button>
+                        </form>
+                    </div>
+
+                    @if (parentReplies.Any())
+                    {
+                        <div class="reply-wrap">
+                            @foreach (var parent in parentReplies)
+                            {
+                                var children = replies.Where(x => x.ParentReplyId == parent.Id).ToList();
+                                bool rLiked = ViewBag.MyReplyLikes != null && ((List<int>)ViewBag.MyReplyLikes).Contains(parent.Id);
+                                int rCount = ViewBag.ReplyLikes != null && ((IDictionary<int,int>)ViewBag.ReplyLikes).ContainsKey(parent.Id)
+                                    ? ((IDictionary<int,int>)ViewBag.ReplyLikes)[parent.Id] : 0;
+
+                                <div class="reply-item">
+                                    <a href="/User/Profile/@parent.UserId">
+                                        @if (!string.IsNullOrEmpty(parent.ProfileImage))
+                                        { <img src="@parent.ProfileImage" class="reply-avatar" /> }
+                                        else
+                                        { <div class="reply-avatar-letter">@parent.Username.Substring(0,1).ToUpper()</div> }
+                                    </a>
+                                    <div class="reply-content">
+                                        <div class="reply-header">
+                                            @if (parent.UserId == 29)
+                                            { <a href="/User" class="reply-username">@parent.Username</a> }
+                                            else
+                                            { <a href="/User/Profile/@parent.UserId" class="reply-username">@parent.Username</a> }
+                                            <span class="reply-time">@parent.CreatedAt.ToString("dd MMM · HH:mm")</span>
+                                        </div>
+                                        <p class="reply-text">@parent.Text</p>
+                                        <div class="reply-actions">
+                                            <button class="cmt-btn like" data-id="@parent.Id" onclick="toggleReplyLike(this)">
+                                                <span class="heart-icon">@(rLiked ? "❤️" : "🤍")</span>
+                                                <span id="reply-like-count-@parent.Id">@rCount</span>
+                                            </button>
+                                            <button class="cmt-btn reply" onclick="toggleReplyToReply(@parent.Id)">
+                                                ↩️ Responder
+                                            </button>
+                                        </div>
+
+                                        <div class="cmt-reply-form" id="replyToReplyBox-@parent.Id">
+                                            <form asp-controller="Post" asp-action="ReplyComment" method="post" data-no-loader="true">
+                                                <input type="hidden" name="commentId" value="@c.Id" />
+                                                <input type="hidden" name="parentReplyId" value="@parent.Id" />
+                                                <input type="text" name="text" placeholder="Responder a @parent.Username..."
+                                                       class="cmt-reply-input" required />
+                                                <button type="submit" class="cmt-reply-submit">Enviar</button>
+                                            </form>
+                                        </div>
+
+                                        @if (children.Any())
+                                        {
+                                            <button class="view-replies-btn" onclick="toggleReplies(@parent.Id, this)">
+                                                ▾ Ver @children.Count respuesta@(children.Count != 1 ? "s" : "")
+                                            </button>
+                                            <div class="replies-container" id="replies-@parent.Id">
+                                                @foreach (var child in children)
+                                                {
+                                                    bool cLiked = ViewBag.MyReplyLikes != null && ((List<int>)ViewBag.MyReplyLikes).Contains(child.Id);
+                                                    int cCount = ViewBag.ReplyLikes != null && ((IDictionary<int,int>)ViewBag.ReplyLikes).ContainsKey(child.Id)
+                                                        ? ((IDictionary<int,int>)ViewBag.ReplyLikes)[child.Id] : 0;
+
+                                                    <div class="reply-item child">
+                                                        <a href="/User/Profile/@child.UserId">
+                                                            @if (!string.IsNullOrEmpty(child.ProfileImage))
+                                                            { <img src="@child.ProfileImage" class="reply-avatar" /> }
+                                                            else
+                                                            { <div class="reply-avatar-letter">@child.Username.Substring(0,1).ToUpper()</div> }
+                                                        </a>
+                                                        <div class="reply-content">
+                                                            <div class="reply-header">
+                                                                <a href="/User/Profile/@child.UserId" class="reply-username">@child.Username</a>
+                                                                <span class="reply-arrow">→ @parent.Username</span>
+                                                                <span class="reply-time">@child.CreatedAt.ToString("dd MMM · HH:mm")</span>
+                                                            </div>
+                                                            <p class="reply-text">@child.Text</p>
+                                                            <div class="reply-actions">
+                                                                <button class="cmt-btn like" data-id="@child.Id" onclick="toggleReplyLike(this)">
+                                                                    <span class="heart-icon">@(cLiked ? "❤️" : "🤍")</span>
+                                                                    <span id="reply-like-count-@child.Id">@cCount</span>
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                }
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            }
         }
     </div>
 </div>
 
-<style>
-.comments-page { max-width: 680px; margin: 0 auto; }
-
-.comments-alert {
-    background: #fef3c7; color: #92400e;
-    padding: 12px 16px; border-radius: 12px;
-    margin-bottom: 16px; font-size: 14px;
-}
-
-.comments-title {
-    font-size: 22px; font-weight: 800;
-    color: #111827; margin-bottom: 20px;
-}
-
-/* FORM */
-.comment-form-card {
-    background: white;
-    border-radius: 20px;
-    padding: 20px;
-    margin-bottom: 24px;
-    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
-    border: 1px solid rgba(0,0,0,0.04);
-}
-
-.comment-textarea {
-    width: 100%;
-    padding: 12px 16px;
-    border: 1px solid #e5e7eb;
-    border-radius: 14px;
-    font-size: 14px;
-    resize: vertical;
-    min-height: 80px;
-    outline: none;
-    transition: 0.2s;
-    box-sizing: border-box;
-    background: #f9fafb;
-    color: #111827;
-}
-
-.comment-textarea:focus {
-    border-color: #2563eb;
-    background: white;
-    box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
-}
-
-.form-bottom {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-top: 12px;
-}
-
-.action-delete {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    padding: 6px 12px;
-    border-radius: 20px;
-    font-size: 13px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: 0.15s;
-    color: #ef4444;
-    background: #fef2f2;
-    text-decoration: none;
-}
-
-.action-delete:hover { background: #fee2e2; color: #dc2626; }
-body.bg-dark .action-delete { background: #4c1d1d !important; color: #f87171 !important; }
-
-.file-label {
-    font-size: 13px;
-    color: #6b7280;
-    cursor: pointer;
-    padding: 8px 14px;
-    border-radius: 10px;
-    border: 1px solid #e5e7eb;
-    transition: 0.2s;
-}
-
-.file-label:hover { background: #f3f4f6; }
-
-.submit-btn {
-    padding: 10px 22px;
-    background: #2563eb;
-    color: white;
-    border: none;
-    border-radius: 12px;
-    font-size: 14px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: 0.2s;
-}
-
-.submit-btn:hover { background: #1d4ed8; transform: translateY(-1px); }
-
-/* COMMENT CARD */
-.comment-card {
-    background: white;
-    border-radius: 20px;
-    padding: 18px;
-    margin-bottom: 16px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.06);
-    border: 1px solid rgba(0,0,0,0.04);
-}
-
-.comment-header {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 10px;
-}
-
-.comment-avatar {
-    width: 42px; height: 42px;
-    border-radius: 50%; object-fit: cover;
-    border: 2px solid #e5e7eb;
-}
-
-.comment-avatar-letter {
-    width: 42px; height: 42px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, #2563eb, #7c3aed);
-    color: white;
-    display: flex; align-items: center; justify-content: center;
-    font-weight: 800; font-size: 16px;
-}
-
-.comment-meta { display: flex; flex-direction: column; }
-.comment-username { font-weight: 700; font-size: 15px; color: #111827; }
-.comment-time { font-size: 12px; color: #9ca3af; }
-
-.comment-body { padding-left: 54px; }
-.comment-text { font-size: 14px; color: #374151; line-height: 1.6; margin: 0 0 8px; }
-.comment-img { max-width: 100%; border-radius: 12px; margin-top: 8px; }
-
-.comment-actions {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding-left: 54px;
-    margin-top: 10px;
-}
-
-.action-like, .action-reply {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    padding: 6px 12px;
-    border-radius: 20px;
-    border: none;
-    background: #f3f4f6;
-    font-size: 13px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: 0.15s;
-    color: #4b5563;
-}
-
-.action-like:hover { background: #fee2e2; color: #dc2626; }
-.action-reply:hover { background: #eff6ff; color: #2563eb; }
-
-/* REPLY FORM */
-.reply-form {
-    padding-left: 54px;
-    margin-top: 10px;
-}
-
-.reply-input {
-    width: calc(100% - 80px);
-    padding: 8px 14px;
-    border-radius: 50px;
-    border: 1px solid #e5e7eb;
-    font-size: 13px;
-    outline: none;
-    background: #f9fafb;
-    color: #111827;
-}
-
-.reply-input:focus { border-color: #2563eb; background: white; }
-
-.reply-submit {
-    padding: 8px 16px;
-    background: #2563eb;
-    color: white;
-    border: none;
-    border-radius: 50px;
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-    margin-left: 6px;
-}
-
-/* REPLY ITEM */
-.reply-item {
-    display: flex;
-    gap: 10px;
-    margin-top: 14px;
-    padding-left: 54px;
-}
-
-.reply-item.child { padding-left: 20px; }
-
-.reply-avatar {
-    width: 34px; height: 34px;
-    border-radius: 50%; object-fit: cover;
-    border: 2px solid #e5e7eb;
-    flex-shrink: 0;
-}
-
-.reply-avatar-letter {
-    width: 34px; height: 34px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, #6366f1, #8b5cf6);
-    color: white;
-    display: flex; align-items: center; justify-content: center;
-    font-weight: 800; font-size: 13px;
-    flex-shrink: 0;
-}
-
-.reply-content { flex: 1; }
-.reply-header { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
-.reply-username { font-weight: 700; font-size: 14px; color: #111827; }
-.reply-time { font-size: 11px; color: #9ca3af; }
-.reply-text { font-size: 13px; color: #4b5563; line-height: 1.5; margin: 0 0 6px; }
-
-.reply-actions-row {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.view-replies-btn {
-    background: none;
-    border: none;
-    font-size: 12px;
-    color: #2563eb;
-    cursor: pointer;
-    font-weight: 600;
-    margin-top: 6px;
-    padding: 0;
-}
-
-.view-replies-btn:hover { text-decoration: underline; }
-
-/* DARK MODE */
-body.bg-dark .comments-title { color: #f1f5f9 !important; }
-
-body.bg-dark .comment-form-card,
-body.bg-dark .comment-card {
-    background: #1e1e2e !important;
-    border-color: #2d2d3d !important;
-}
-
-body.bg-dark .comment-textarea {
-    background: #2d2d3d !important;
-    border-color: #3d3d4d !important;
-    color: #f1f5f9 !important;
-}
-
-body.bg-dark .comment-textarea:focus {
-    background: #2d2d3d !important;
-    border-color: #2563eb !important;
-}
-
-body.bg-dark .comment-username,
-body.bg-dark .reply-username { color: #f1f5f9 !important; }
-
-body.bg-dark .comment-text,
-body.bg-dark .reply-text { color: #cbd5e1 !important; }
-
-body.bg-dark .comment-time,
-body.bg-dark .reply-time { color: #64748b !important; }
-
-body.bg-dark .action-like,
-body.bg-dark .action-reply {
-    background: #2d2d3d !important;
-    color: #94a3b8 !important;
-}
-
-body.bg-dark .action-like:hover { background: #4c1d1d !important; color: #f87171 !important; }
-body.bg-dark .action-reply:hover { background: #1e3a5f !important; color: #60a5fa !important; }
-
-body.bg-dark .reply-input {
-    background: #2d2d3d !important;
-    border-color: #3d3d4d !important;
-    color: #f1f5f9 !important;
-}
-
-body.bg-dark .file-label {
-    color: #94a3b8 !important;
-    border-color: #3d3d4d !important;
-}
-
-body.bg-dark .file-label:hover { background: #2d2d3d !important; }
-</style>
-
 <script>
+function animateHeart(btn) {
+    const icon = btn.querySelector(".heart-icon");
+    if (!icon) return;
+    icon.classList.remove("heart-pop");
+    void icon.offsetWidth; // reflow
+    icon.classList.add("heart-pop");
+    setTimeout(() => icon.classList.remove("heart-pop"), 400);
+}
+
 function toggleCommentLike(el) {
     const commentId = el.getAttribute("data-id");
     fetch('/Post/ToggleCommentLike?commentId=' + commentId, { method: 'POST' })
         .then(res => res.json())
         .then(data => {
-            const iconNode = el.firstChild;
-            iconNode.textContent = data.liked ? "❤️" : "🤍";
-            document.getElementById("like-count-" + commentId).innerText = data.count;
-            el.style.transform = "scale(1.2)";
-            setTimeout(() => el.style.transform = "scale(1)", 150);
+            el.querySelector(".heart-icon").textContent = data.liked ? "❤️" : "🤍";
+            document.getElementById("like-count-" + commentId).textContent = data.count;
+            animateHeart(el);
         });
 }
 
@@ -513,36 +400,34 @@ async function toggleReplyLike(el) {
     const id = el.getAttribute("data-id");
     const res = await fetch(`/Post/ToggleReplyLike?id=${id}`, { method: "POST" });
     const data = await res.json();
-    el.firstChild.textContent = data.liked ? "❤️" : "🤍";
-    document.getElementById("reply-like-count-" + id).innerText = data.count;
-    el.style.transform = "scale(1.3)";
-    setTimeout(() => el.style.transform = "scale(1)", 150);
+    el.querySelector(".heart-icon").textContent = data.liked ? "❤️" : "🤍";
+    document.getElementById("reply-like-count-" + id).textContent = data.count;
+    animateHeart(el);
 }
 
 function toggleReplyBox(id) {
     const box = document.getElementById("replyBox-" + id);
-    box.style.display = box.style.display === "none" ? "block" : "none";
+    const isOpen = box.style.display === "block";
+    box.style.display = isOpen ? "none" : "block";
+    if (!isOpen) box.querySelector("input")?.focus();
 }
 
 function toggleReplyToReply(id) {
     const box = document.getElementById("replyToReplyBox-" + id);
-    box.style.display = box.style.display === "none" ? "block" : "none";
+    const isOpen = box.style.display === "block";
+    box.style.display = isOpen ? "none" : "block";
+    if (!isOpen) box.querySelector("input")?.focus();
 }
 
 function toggleReplies(id, btn) {
     const el = document.getElementById("replies-" + id);
-    if (el.style.display === "none") {
-        el.style.display = "block";
-        el.style.opacity = 0;
-        btn.innerText = "Ocultar respuestas";
-        let op = 0;
-        let interval = setInterval(() => {
-            op += 0.1; el.style.opacity = op;
-            if (op >= 1) clearInterval(interval);
-        }, 20);
-    } else {
+    const isOpen = el.style.display === "flex";
+    if (isOpen) {
         el.style.display = "none";
-        btn.innerText = "Ver respuestas";
+        btn.textContent = `▾ Ver respuestas`;
+    } else {
+        el.style.display = "flex";
+        btn.textContent = "▴ Ocultar respuestas";
     }
 }
 </script>
