@@ -5,6 +5,7 @@
     var messages = ViewBag.Messages as List<HabitTrackerApp.Models.GroupMessage> ?? new();
     var currentUserId = (int)ViewBag.CurrentUserId;
     var isAdmin = (bool)ViewBag.IsAdmin;
+    var totalMembers = (int)ViewBag.TotalMembers;
     var members = Model.Members?.Where(m => m.IsActive).ToList() ?? new();
 }
 
@@ -34,7 +35,7 @@
     display: flex; align-items: center; gap: 12px;
     padding: 12px 16px;
     background: linear-gradient(135deg, #1e293b, #334155);
-    flex-shrink: 0; z-index: 2;
+    flex-shrink: 0; z-index: 2; cursor: pointer;
 }
 .grp-header-avatar {
     width: 42px; height: 42px; border-radius: 13px; flex-shrink: 0;
@@ -55,32 +56,6 @@
     text-decoration: none; font-family: inherit;
 }
 .grp-header-btn:hover { background: rgba(255,255,255,0.12); color: white; }
-.grp-header-btn.danger:hover { background: rgba(239,68,68,0.2); color: #f87171; border-color: rgba(239,68,68,0.3); }
-
-/* MEMBERS BAR */
-.grp-members-bar {
-    display: flex; gap: 8px; align-items: center;
-    padding: 8px 14px; background: white;
-    border-bottom: 1px solid #f1f5f9;
-    overflow-x: auto; flex-shrink: 0;
-}
-.grp-members-bar::-webkit-scrollbar { display: none; }
-.grp-member-chip {
-    display: flex; align-items: center; gap: 5px;
-    padding: 4px 10px; border-radius: 20px;
-    background: #f8fafc; border: 1px solid #e5e7eb;
-    font-size: 12px; font-weight: 600; color: #374151;
-    white-space: nowrap; flex-shrink: 0;
-}
-.grp-member-chip-avatar {
-    width: 20px; height: 20px; border-radius: 50%;
-    background: linear-gradient(135deg, #6366f1, #2563eb);
-    display: flex; align-items: center; justify-content: center;
-    color: white; font-size: 9px; font-weight: 800;
-    flex-shrink: 0; overflow: hidden;
-}
-.grp-member-chip-avatar img { width: 100%; height: 100%; object-fit: cover; }
-.grp-member-chip.admin { background: #ede9fe; border-color: #c4b5fd; color: #6366f1; }
 
 /* CHAT BOX */
 .grp-chat-box {
@@ -115,7 +90,9 @@
     display: flex; align-items: center; justify-content: center;
     color: white; font-size: 11px; font-weight: 800;
     align-self: flex-end; overflow: hidden;
+    text-decoration: none; cursor: pointer; transition: 0.2s;
 }
+.grp-msg-avatar:hover { transform: scale(1.1); }
 .grp-msg-avatar img { width: 100%; height: 100%; object-fit: cover; }
 
 .grp-msg-wrap { display: flex; flex-direction: column; }
@@ -125,7 +102,9 @@
 .grp-msg-sender {
     font-size: 11px; font-weight: 700; color: #6366f1;
     margin-bottom: 3px; padding: 0 4px;
+    text-decoration: none; cursor: pointer;
 }
+.grp-msg-sender:hover { text-decoration: underline; }
 
 .grp-msg-bubble {
     padding: 9px 13px 6px; border-radius: 18px;
@@ -142,11 +121,14 @@
     border-bottom-left-radius: 4px;
     box-shadow: 0 2px 8px rgba(0,0,0,0.06);
 }
-.grp-msg-time {
-    font-size: 10px; color: #9ca3af;
+
+.grp-msg-footer {
+    display: flex; align-items: center; gap: 4px;
     margin-top: 3px; padding: 0 4px;
 }
-.grp-msg-row.mine .grp-msg-time { color: rgba(255,255,255,0.5); }
+.grp-msg-time { font-size: 10px; color: #9ca3af; }
+.grp-msg-check { font-size: 11px; color: #9ca3af; }
+.grp-msg-check.seen { color: #6366f1; font-weight: 700; }
 
 /* EMOJI PANEL */
 .grp-emoji-panel {
@@ -163,6 +145,23 @@
     padding: 4px; border-radius: 8px; transition: 0.15s;
 }
 .grp-emoji-grid span:hover { background: #f1f5f9; transform: scale(1.2); }
+
+/* TYPING */
+.grp-typing-indicator {
+    display: none; flex-shrink: 0; padding: 0 14px 8px;
+}
+.grp-typing-bubble {
+    background: white; padding: 8px 14px; border-radius: 18px 18px 18px 4px;
+    display: inline-flex; gap: 4px; align-items: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+.grp-typing-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: #94a3b8; animation: typingBounce 1.2s infinite;
+}
+.grp-typing-dot:nth-child(2) { animation-delay: 0.2s; }
+.grp-typing-dot:nth-child(3) { animation-delay: 0.4s; }
+@@keyframes typingBounce { 0%,60%,100%{transform:translateY(0);} 30%{transform:translateY(-5px);} }
 
 /* INPUT */
 .grp-input-bar {
@@ -196,38 +195,10 @@
 .grp-send-btn:hover { transform: scale(1.08); }
 .grp-send-btn:disabled { background: #cbd5e1; box-shadow: none; cursor: not-allowed; transform: none; }
 
-/* TYPING */
-.grp-typing-indicator {
-    display: none; flex-shrink: 0;
-    padding: 0 14px 8px;
-}
-.grp-typing-bubble {
-    background: white; padding: 8px 14px; border-radius: 18px 18px 18px 4px;
-    display: inline-flex; gap: 4px; align-items: center;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-}
-.grp-typing-dot {
-    width: 6px; height: 6px; border-radius: 50%;
-    background: #94a3b8; animation: typingBounce 1.2s infinite;
-}
-.grp-typing-dot:nth-child(2) { animation-delay: 0.2s; }
-.grp-typing-dot:nth-child(3) { animation-delay: 0.4s; }
-@@keyframes typingBounce { 0%,60%,100%{transform:translateY(0);} 30%{transform:translateY(-5px);} }
-
-/* EMPTY */
-.grp-empty {
-    flex: 1; display: flex; flex-direction: column;
-    align-items: center; justify-content: center;
-    gap: 10px; color: #9ca3af; text-align: center; padding: 40px;
-}
-
 /* DARK */
 body.bg-dark .grp-chat-page { background: #0f172a !important; }
 body.bg-dark .grp-chat-box { background: #0f172a !important; }
-body.bg-dark .grp-msg-row.theirs .grp-msg-bubble { background: #1e293b !important; color: #f1f5f9 !important; box-shadow: none !important; }
-body.bg-dark .grp-members-bar { background: #1e293b !important; border-color: #2d3748 !important; }
-body.bg-dark .grp-member-chip { background: #2d3748 !important; border-color: #3d4d60 !important; color: #94a3b8 !important; }
-body.bg-dark .grp-member-chip.admin { background: rgba(99,102,241,0.15) !important; color: #818cf8 !important; }
+body.bg-dark .grp-msg-row.theirs .grp-msg-bubble { background: #1e293b !important; color: #f1f5f9 !important; }
 body.bg-dark .grp-input-bar { background: #1e293b !important; border-color: #2d3748 !important; }
 body.bg-dark .grp-msg-input { background: #0f172a !important; border-color: #334155 !important; color: #f1f5f9 !important; }
 body.bg-dark .grp-bar-btn { background: #334155 !important; color: #94a3b8 !important; }
@@ -236,32 +207,10 @@ body.bg-dark .grp-date-sep span { background: #334155 !important; color: #94a3b8
 body.bg-dark .grp-typing-bubble { background: #1e293b !important; }
 </style>
 
-<!-- MODAL SALIR -->
-<div id="leaveModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:99999;align-items:center;justify-content:center;backdrop-filter:blur(8px);">
-    <div style="background:#0f172a;border-radius:22px;padding:32px 28px;max-width:340px;width:90%;border:1px solid rgba(255,255,255,0.08);text-align:center;box-shadow:0 30px 70px rgba(0,0,0,0.6);">
-        <div style="font-size:40px;margin-bottom:14px;">🚪</div>
-        <h4 style="color:white;font-weight:800;margin:0 0 10px;font-size:17px;">¿Salir del grupo?</h4>
-        <p style="color:rgba(255,255,255,0.4);font-size:13px;margin:0 0 22px;line-height:1.6;">Ya no podrás ver los mensajes de este grupo.</p>
-        <div style="display:flex;gap:10px;">
-            <button onclick="document.getElementById('leaveModal').style.display='none'"
-                    style="flex:1;padding:11px;border-radius:11px;border:1px solid #1e293b;background:#1e293b;color:#64748b;font-weight:700;font-size:13px;cursor:pointer;font-family:inherit;">
-                Cancelar
-            </button>
-            <form asp-controller="Group" asp-action="Leave" method="post" style="flex:1;">
-                @Html.AntiForgeryToken()
-                <input type="hidden" name="groupId" value="@Model.Id" />
-                <button type="submit" style="width:100%;padding:11px;border-radius:11px;border:none;background:#dc2626;color:white;font-weight:700;font-size:13px;cursor:pointer;font-family:inherit;">
-                    Sí, salir
-                </button>
-            </form>
-        </div>
-    </div>
-</div>
-
 <div class="grp-chat-page">
 
-    <!-- HEADER -->
-    <div class="grp-header">
+    <!-- HEADER — click va a Details -->
+    <div class="grp-header" onclick="window.location.href='/Group/Details/@Model.Id'">
         <div class="grp-header-avatar">
             @if (!string.IsNullOrEmpty(Model.ImageUrl))
             { <img src="@Model.ImageUrl" /> }
@@ -270,34 +219,11 @@ body.bg-dark .grp-typing-bubble { background: #1e293b !important; }
         </div>
         <div>
             <div class="grp-header-name">@Model.Name</div>
-            <div class="grp-header-meta" id="groupMeta">@members.Count miembro@(members.Count != 1 ? "s" : "")</div>
+            <div class="grp-header-meta">@members.Count miembro@(members.Count != 1 ? "s" : "") · Toca para ver info</div>
         </div>
-        <div class="grp-header-actions">
-            <a asp-controller="Group" asp-action="Index" class="grp-header-btn">← Grupos</a>
-            <button type="button" class="grp-header-btn danger" data-no-loader
-                    onclick="document.getElementById('leaveModal').style.display='flex'">
-                🚪 Salir
-            </button>
+        <div class="grp-header-actions" onclick="event.stopPropagation()">
+            <a asp-controller="Group" asp-action="Index" class="grp-header-btn" data-no-loader>← Grupos</a>
         </div>
-    </div>
-
-    <!-- MEMBERS BAR -->
-    <div class="grp-members-bar">
-        @foreach (var m in members)
-        {
-            var img = m.User?.ProfileImage ?? m.User?.ProfilePicture ?? "";
-            var letter = (m.User?.Username ?? "?").Substring(0, 1).ToUpper();
-            <div class="grp-member-chip @(m.Role == "Admin" ? "admin" : "")">
-                <div class="grp-member-chip-avatar">
-                    @if (!string.IsNullOrEmpty(img))
-                    { <img src="@img" /> }
-                    else
-                    { @letter }
-                </div>
-                @m.User?.Username
-                @if (m.Role == "Admin") { <span>👑</span> }
-            </div>
-        }
     </div>
 
     <!-- CHAT BOX -->
@@ -305,7 +231,7 @@ body.bg-dark .grp-typing-bubble { background: #1e293b !important; }
 
         @if (!messages.Any())
         {
-            <div class="grp-empty" id="emptyState">
+            <div id="emptyState" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;color:#9ca3af;text-align:center;padding:40px;">
                 <div style="font-size:48px;">💬</div>
                 <div style="font-size:16px;font-weight:700;color:#374151;">¡Sé el primero en escribir!</div>
                 <div style="font-size:13px;">Empieza la conversación del grupo.</div>
@@ -329,24 +255,37 @@ body.bg-dark .grp-typing-bubble { background: #1e293b !important; }
                     bool isMine = msg.SenderId == currentUserId;
                     var senderImg = msg.Sender?.ProfileImage ?? msg.Sender?.ProfilePicture ?? "";
                     var senderLetter = (msg.Sender?.Username ?? "?").Substring(0, 1).ToUpper();
+                    var readCount = msg.Reads?.Count ?? 0;
+                    // chulo azul si todos los miembros (menos el sender) leyeron
+                    bool allRead = readCount >= totalMembers - 1;
 
                     <div class="grp-msg-row @(isMine ? "mine" : "theirs")" id="msg-@msg.Id">
                         @if (!isMine)
                         {
-                            <div class="grp-msg-avatar">
+                            <a href="/User/Profile/@msg.SenderId" class="grp-msg-avatar">
                                 @if (!string.IsNullOrEmpty(senderImg))
                                 { <img src="@senderImg" /> }
                                 else
                                 { @senderLetter }
-                            </div>
+                            </a>
                         }
                         <div class="grp-msg-wrap">
                             @if (!isMine)
                             {
-                                <div class="grp-msg-sender">@msg.Sender?.Username</div>
+                                <a href="/User/Profile/@msg.SenderId" class="grp-msg-sender">
+                                    @msg.Sender?.Username
+                                </a>
                             }
                             <div class="grp-msg-bubble">@msg.Content</div>
-                            <div class="grp-msg-time">@msg.SentAt.ToLocalTime().ToString("hh:mm tt")</div>
+                            <div class="grp-msg-footer">
+                                <span class="grp-msg-time">@msg.SentAt.ToLocalTime().ToString("hh:mm tt")</span>
+                                @if (isMine)
+                                {
+                                    <span class="grp-msg-check @(allRead ? "seen" : "")" id="check-@msg.Id">
+                                        @(allRead ? "✔✔" : "✔")
+                                    </span>
+                                }
+                            </div>
                         </div>
                     </div>
                 }
@@ -373,9 +312,7 @@ body.bg-dark .grp-typing-bubble { background: #1e293b !important; }
     <!-- INPUT -->
     <div class="grp-input-bar">
         <button type="button" class="grp-bar-btn" id="emojiBtn"
-                onclick="toggleGroupEmoji()" data-no-loader title="Emojis">
-            😊
-        </button>
+                onclick="toggleGroupEmoji()" data-no-loader>😊</button>
         <textarea id="msgInput" class="grp-msg-input" rows="1"
                   placeholder="Escribe un mensaje..."></textarea>
         <button class="grp-send-btn" id="sendBtn" data-no-loader
@@ -388,17 +325,26 @@ body.bg-dark .grp-typing-bubble { background: #1e293b !important; }
 
 </div>
 
+@Html.AntiForgeryToken()
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
 <script>
 const groupId = @Model.Id;
 const myId = "@User.FindFirst("UserId").Value";
 const myName = "@User.Identity.Name";
+let currentTotalMembers = @totalMembers;
 const chatBox = document.getElementById("chatBox");
 const msgInput = document.getElementById("msgInput");
 const sendBtn = document.getElementById("sendBtn");
 
-// scroll al fondo
 window.addEventListener("load", () => chatBox.scrollTop = chatBox.scrollHeight);
+
+// 🔥 marcar como leído al abrir
+fetch(`/Group/MarkRead`, {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: `groupId=${groupId}`
+});
 
 // SignalR
 const grpConnection = new signalR.HubConnectionBuilder()
@@ -410,7 +356,7 @@ grpConnection.start().then(async () => {
 }).catch(err => console.error("SignalR grupo:", err));
 
 // 🔥 recibir mensaje en tiempo real
-grpConnection.on("ReceiveGroupMessage", (senderId, senderName, senderImage, content, time) => {
+grpConnection.on("ReceiveGroupMessage", (senderId, senderName, senderImage, content, time, msgId) => {
     if (String(senderId) === String(myId)) return;
 
     const empty = document.getElementById("emptyState");
@@ -423,16 +369,36 @@ grpConnection.on("ReceiveGroupMessage", (senderId, senderName, senderImage, cont
 
     const row = document.createElement("div");
     row.className = "grp-msg-row theirs";
+    if (msgId) row.id = "msg-" + msgId;
     row.innerHTML = `
-        <div class="grp-msg-avatar">${avatarHTML}</div>
+        <a href="/User/Profile/${senderId}" class="grp-msg-avatar">${avatarHTML}</a>
         <div class="grp-msg-wrap">
-            <div class="grp-msg-sender">${senderName}</div>
+            <a href="/User/Profile/${senderId}" class="grp-msg-sender">${senderName}</a>
             <div class="grp-msg-bubble">${escapeHtml(content)}</div>
-            <div class="grp-msg-time">${time}</div>
+            <div class="grp-msg-footer">
+                <span class="grp-msg-time">${time}</span>
+            </div>
         </div>`;
 
     chatBox.insertBefore(row, document.getElementById("typingIndicator"));
     chatBox.scrollTop = chatBox.scrollHeight;
+
+    // marcar como leído
+    fetch(`/Group/MarkRead`, {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: `groupId=${groupId}`
+    });
+});
+
+// 🔥 actualizar chulos en tiempo real
+grpConnection.on("GroupMessageRead", (msgId, readCount) => {
+    const check = document.getElementById("check-" + msgId);
+    if (!check) return;
+    const allRead = readCount >= currentTotalMembers - 1;
+    check.textContent = allRead ? "✔✔" : "✔";
+    if (allRead) check.classList.add("seen");
+    else check.classList.remove("seen");
 });
 
 // 🔥 typing
@@ -450,7 +416,6 @@ msgInput.addEventListener("input", function() {
     this.style.height = "auto";
     this.style.height = Math.min(this.scrollHeight, 100) + "px";
     sendBtn.disabled = this.value.trim() === "";
-
     grpConnection.invoke("GroupUserTyping", groupId.toString(), myName).catch(() => {});
     clearTimeout(window.grpTypingTimer);
     window.grpTypingTimer = setTimeout(() => {
@@ -470,9 +435,8 @@ function makeTime() {
 }
 
 function escapeHtml(text) {
-    return text
-        .replace(/&/g,"&amp;").replace(/</g,"&lt;")
-        .replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+    return text.replace(/&/g,"&amp;").replace(/</g,"&lt;")
+               .replace(/>/g,"&gt;").replace(/"/g,"&quot;");
 }
 
 async function sendGroupMessage() {
@@ -482,13 +446,17 @@ async function sendGroupMessage() {
     const empty = document.getElementById("emptyState");
     if (empty) empty.remove();
 
-    // burbuja optimista
+    const tempId = "temp-" + Date.now();
     const row = document.createElement("div");
     row.className = "grp-msg-row mine";
+    row.id = tempId;
     row.innerHTML = `
         <div class="grp-msg-wrap">
             <div class="grp-msg-bubble">${escapeHtml(content)}</div>
-            <div class="grp-msg-time">${makeTime()}</div>
+            <div class="grp-msg-footer">
+                <span class="grp-msg-time">${makeTime()}</span>
+                <span class="grp-msg-check" id="check-${tempId}">✔</span>
+            </div>
         </div>`;
 
     chatBox.insertBefore(row, document.getElementById("typingIndicator"));
@@ -508,8 +476,11 @@ async function sendGroupMessage() {
         const data = await res.json();
         if (data.success) {
             row.id = "msg-" + data.id;
-            // notificar a otros via SignalR
-            await grpConnection.invoke("SendGroupMessage", groupId.toString(), myId, myName, content);
+            const check = document.getElementById("check-" + tempId);
+            if (check) { check.id = "check-" + data.id; }
+            currentTotalMembers = data.totalMembers;
+            // notificar via SignalR con el id real
+            await grpConnection.invoke("SendGroupMessage", groupId.toString(), myId, myName, content, data.id.toString());
         } else {
             row.remove();
         }
@@ -527,7 +498,6 @@ function toggleGroupEmoji() {
     const isOpen = panel.style.display === "block";
     panel.style.display = isOpen ? "none" : "block";
     btn.classList.toggle("active", !isOpen);
-    if (!isOpen) chatBox.scrollTop = chatBox.scrollHeight;
 }
 
 function addGroupEmoji(emoji) {

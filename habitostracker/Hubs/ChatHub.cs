@@ -35,7 +35,6 @@ namespace HabitTrackerApp.Hubs
 
         public async Task JoinUserGroup(string userId)
         {
-            // 🔥 no llamar SetOnline aquí — solo OnConnectedAsync lo maneja
             await Groups.AddToGroupAsync(Context.ConnectionId, userId);
         }
 
@@ -80,7 +79,6 @@ namespace HabitTrackerApp.Hubs
                 await Groups.AddToGroupAsync(Context.ConnectionId, userId);
                 await Clients.All.SendAsync("UserOnline", userId);
 
-                // 🔥 notificar a emisores que sus mensajes llegaron → ✔✔ grises
                 var pendingSenders = await _context.Messages
                     .Where(m => m.ReceiverId == int.Parse(userId) && !m.IsRead)
                     .Select(m => m.SenderId)
@@ -177,6 +175,7 @@ namespace HabitTrackerApp.Hubs
         {
             await Clients.Group(receiverId).SendAsync("UserStoppedRecording");
         }
+
         // 🔥 GRUPOS
         public async Task JoinGroupChat(string groupId)
         {
@@ -188,14 +187,15 @@ namespace HabitTrackerApp.Hubs
             await Groups.RemoveFromGroupAsync(Context.ConnectionId, "group-" + groupId);
         }
 
-        public async Task SendGroupMessage(string groupId, string senderId, string senderName, string content)
+        public async Task SendGroupMessage(string groupId, string senderId, string senderName, string content, string msgId)
         {
             var sender = await _context.Users.FirstOrDefaultAsync(u => u.Id == int.Parse(senderId));
             var senderImage = sender?.ProfileImage ?? sender?.ProfilePicture ?? "";
             var time = DateTime.Now.ToString("hh:mm tt");
 
-            await Clients.Group("group-" + groupId)
-                .SendAsync("ReceiveGroupMessage", senderId, senderName, senderImage, content, time);
+            // 🔥 notificar a todos menos al sender
+            await Clients.OthersInGroup("group-" + groupId)
+                .SendAsync("ReceiveGroupMessage", senderId, senderName, senderImage, content, time, msgId);
         }
 
         public async Task GroupUserTyping(string groupId, string senderName)
@@ -208,6 +208,13 @@ namespace HabitTrackerApp.Hubs
         {
             await Clients.OthersInGroup("group-" + groupId)
                 .SendAsync("GroupUserStoppedTyping");
+        }
+
+        // 🔥 notificar chulos cuando alguien lee mensajes del grupo
+        public async Task NotifyGroupMessageRead(string groupId, string msgId, int readCount)
+        {
+            await Clients.Group("group-" + groupId)
+                .SendAsync("GroupMessageRead", msgId, readCount);
         }
     }
 }

@@ -6,6 +6,7 @@ namespace HabitTrackerApp.Models
     {
         public int Id { get; set; }
         public int GroupId { get; set; }
+        public ICollection<GroupMessageRead> Reads { get; set; } = new List<GroupMessageRead>();
         public Group Group { get; set; }
         public int SenderId { get; set; }
         public User Sender { get; set; }

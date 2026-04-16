@@ -34,6 +34,8 @@ namespace HabitTrackerApp.Data
         public DbSet<CommentReply> CommentReplies { get; set; }
         public DbSet<Notification> Notifications { get; set; }
         public DbSet<PostComment> PostComments { get; set; }
+        public DbSet<GroupMessageRead> GroupMessageReads { get; set; }
+        public DbSet<GroupReport> GroupReports { get; set; }
         public DbSet<BlockedIP> BlockedIP { get; set; }
         public DbSet<AdminAccessCode> AdminAccessCodes { get; set; }
         public DbSet<CommentLike> CommentLikes { get; set; }

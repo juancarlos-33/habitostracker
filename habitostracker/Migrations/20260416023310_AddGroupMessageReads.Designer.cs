@@ -4,6 +4,7 @@ using HabitTrackerApp.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace habitostracker.Migrations
 {
     [DbContext(typeof(HabitDbContext))]
-    partial class HabitDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260416023310_AddGroupMessageReads")]
+    partial class AddGroupMessageReads
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -504,36 +507,6 @@ namespace habitostracker.Migrations
                     b.HasIndex("UserId");
 
                     b.ToTable("GroupMessageReads");
-                });
-
-            modelBuilder.Entity("HabitTrackerApp.Models.GroupReport", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("GroupId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Reason")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("ReporterId")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("GroupId");
-
-                    b.HasIndex("ReporterId");
-
-                    b.ToTable("GroupReports");
                 });
 
             modelBuilder.Entity("HabitTrackerApp.Models.Habit", b =>
@@ -1281,25 +1254,6 @@ namespace habitostracker.Migrations
                     b.Navigation("GroupMessage");
 
                     b.Navigation("User");
-                });
-
-            modelBuilder.Entity("HabitTrackerApp.Models.GroupReport", b =>
-                {
-                    b.HasOne("HabitTrackerApp.Models.Group", "Group")
-                        .WithMany()
-                        .HasForeignKey("GroupId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("HabitTrackerApp.Models.User", "Reporter")
-                        .WithMany()
-                        .HasForeignKey("ReporterId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Group");
-
-                    b.Navigation("Reporter");
                 });
 
             modelBuilder.Entity("HabitTrackerApp.Models.Habit", b =>
