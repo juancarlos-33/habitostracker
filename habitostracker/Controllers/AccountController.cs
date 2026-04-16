@@ -86,9 +86,11 @@ namespace HabitTrackerApp.Controllers
 
             // 🔥 sesiones activas
             var activeSessions = _context.UserSessions
-       .Where(s => s.UserId == userId && s.IsActive)
-       .OrderByDescending(s => s.CreatedAt)
-       .ToList();
+      .Where(s => s.UserId == userId)
+      .OrderByDescending(s => s.IsActive)
+      .ThenByDescending(s => s.CreatedAt)
+      .Take(10)
+      .ToList();
 
             // 🔥 si no hay sesiones activas, crear una para la sesión actual
             var currentToken = User.FindFirst("SessionToken")?.Value;

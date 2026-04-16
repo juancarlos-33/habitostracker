@@ -126,7 +126,12 @@
     padding: 14px 16px; background: #f0fdf4;
     border-radius: 14px; margin-bottom: 8px; border: 1px solid #bbf7d0;
     transition: 0.2s;
+
 }
+
+.session-item.inactive { background: #f9fafb; border-color: #e5e7eb; opacity: 0.8; }
+body.bg-dark .session-item.inactive { background: #1a1a2e !important; border-color: #2d2d3d !important; }
+
 .session-item:last-of-type { margin-bottom: 14px; }
 .session-item.current { background: #ecfdf5; border-color: #6ee7b7; }
 .session-dot {
@@ -417,14 +422,31 @@ body.bg-dark .sec-hero-badge { background: rgba(99,102,241,0.15) !important; }
                 <span class="this-device-badge">Este dispositivo</span>
             }
         </div>
-        <div class="session-meta">
-            @(s.IpAddress ?? "IP desconocida") · @s.CreatedAt.ToLocalTime().ToString("dd MMM yyyy · HH:mm")
-        </div>
+      <div class="session-meta">
+    @(s.IpAddress ?? "IP desconocida") · @s.CreatedAt.ToLocalTime().ToString("dd MMM yyyy · HH:mm")
+</div>
+@{
+    var diff = DateTime.UtcNow - s.CreatedAt;
+    string timeAgo = diff.TotalMinutes < 2 ? "Hace un momento" :
+                     diff.TotalMinutes < 60 ? $"Hace {(int)diff.TotalMinutes} min" :
+                     diff.TotalHours < 24 ? $"Hace {(int)diff.TotalHours} h" :
+                     $"Hace {(int)diff.TotalDays} día(s)";
+}
+<div style="margin-top:4px;">
+    @if (s.IsActive)
+    {
+        <span style="font-size:11px;font-weight:700;color:#16a34a;background:#dcfce7;padding:2px 8px;border-radius:20px;">● Activa</span>
+    }
+    else
+    {
+        <span style="font-size:11px;font-weight:700;color:#6b7280;background:#f3f4f6;padding:2px 8px;border-radius:20px;">○ Inactiva · @timeAgo</span>
+    }
+</div>
     </div>
     @if (!isCurrent)
     {
         <button type="button"
-                onclick="cerrarSesionIndividual(@s.Id)"
+               onclick="cerrarSesionIndividual(@s.Id, '@(s.Device ?? "Desconocido")', '@(s.Browser ?? "Navegador")')"
                 style="flex-shrink:0;padding:6px 12px;border-radius:10px;border:1px solid #fecaca;background:#fef2f2;color:#dc2626;font-size:11px;font-weight:700;cursor:pointer;transition:0.2s;font-family:inherit;"
                 onmouseover="this.style.background='#dc2626';this.style.color='white';"
                 onmouseout="this.style.background='#fef2f2';this.style.color='#dc2626';">
@@ -715,8 +737,39 @@ async function verificarRespuesta(val, qNum) {
     }
 }
 
-async function cerrarSesionIndividual(sessionId) {
-    const res = await fetch("/Account/CloseSession", {
+async function cerrarSesionIndividual(sessionId, device, browser) {
+    // 🔥 modal de confirmación
+    const modal = document.createElement("div");
+    modal.style.cssText = "position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:99999;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(8px);";
+    modal.innerHTML = `
+        <div style="background:#0f172a;border-radius:22px;padding:32px 28px;max-width:360px;width:90%;border:1px solid rgba(255,255,255,0.08);box-shadow:0 30px 70px rgba(0,0,0,0.7);text-align:center;">
+            <div style="width:56px;height:56px;border-radius:16px;background:rgba(239,68,68,0.12);border:1px solid rgba(239,68,68,0.25);display:flex;align-items:center;justify-content:center;font-size:24px;margin:0 auto 16px;">🚪</div>
+            <h4 style="color:white;font-weight:800;margin:0 0 10px;font-size:17px;">¿Cerrar esta sesión?</h4>
+            <p style="color:rgba(255,255,255,0.45);font-size:13px;margin:0 0 6px;line-height:1.6;">${device} · ${browser}</p>
+            <p style="color:rgba(255,255,255,0.3);font-size:12px;margin:0 0 24px;">El dispositivo perderá el acceso inmediatamente.</p>
+            <div style="display:flex;gap:10px;">
+                <button id="cancelCloseSession" style="flex:1;padding:12px;border-radius:12px;border:1px solid #1e293b;background:#1e293b;color:#64748b;font-weight:700;font-size:13px;cursor:pointer;font-family:inherit;">Cancelar</button>
+                <button id="confirmCloseSession" style="flex:1;padding:12px;border-radius:12px;border:none;background:linear-gradient(135deg,#dc2626,#b91c1c);color:white;font-weight:700;font-size:13px;cursor:pointer;font-family:inherit;">Sí, cerrar</button>
+            </div>
+        </div>`;
+    document.body.appendChild(modal);
+
+    document.getElementById("cancelCloseSession").onclick = () => modal.remove();
+
+    document.getElementById("confirmCloseSession").onclick = async () => {
+        modal.remove();
+        const res = await fetch("/Account/CloseSession", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ sessionId })
+        });
+        const data = await res.json();
+        if (data.success) {
+            mostrarErrorSec("✅ Sesión cerrada correctamente.");
+            setTimeout(() => location.reload(), 1500);
+        }
+    };
+}
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ sessionId })
