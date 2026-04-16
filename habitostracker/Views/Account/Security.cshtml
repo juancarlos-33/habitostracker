@@ -770,16 +770,7 @@ async function cerrarSesionIndividual(sessionId, device, browser) {
         }
     };
 }
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sessionId })
-    });
-    const data = await res.json();
-    if (data.success) {
-        mostrarErrorSec("✅ Sesión cerrada correctamente.");
-        setTimeout(() => location.reload(), 1500);
-    }
-}
+    
 
 async function verificarPassword(val) {
     const fb = document.getElementById("pwd-feedback");

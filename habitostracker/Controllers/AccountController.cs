@@ -85,33 +85,50 @@ namespace HabitTrackerApp.Controllers
             ViewBag.HasSecurityQuestions = hasQuestions;
 
             // 🔥 sesiones activas
-            var activeSessions = _context.UserSessions
-      .Where(s => s.UserId == userId)
-      .OrderByDescending(s => s.IsActive)
-      .ThenByDescending(s => s.CreatedAt)
-      .Take(10)
-      .ToList();
+            var todasSesiones = _context.UserSessions
+       .Where(s => s.UserId == userId)
+       .OrderByDescending(s => s.IsActive)
+       .ThenByDescending(s => s.CreatedAt)
+       .ToList();
 
-            // 🔥 si no hay sesiones activas, crear una para la sesión actual
+            // 🔥 agrupar por device+browser, tomar la más reciente de cada combo
+            var activeSessions = todasSesiones
+                .GroupBy(s => $"{s.Device ?? "?"}-{s.Browser ?? "?"}")
+                .Select(g => g.First())
+                .OrderByDescending(s => s.IsActive)
+                .ThenByDescending(s => s.CreatedAt)
+                .ToList();
+
+            // 🔥 si la sesión actual no está en el resultado, agregarla
             var currentToken = User.FindFirst("SessionToken")?.Value;
             if (!string.IsNullOrEmpty(currentToken))
             {
-                var exists = activeSessions.Any(s => s.SessionToken == currentToken);
-                if (!exists)
+                bool currentIncluida = activeSessions.Any(s => s.SessionToken == currentToken);
+                if (!currentIncluida)
                 {
-                    var newSession = new UserSession
+                    var currentSession = todasSesiones.FirstOrDefault(s => s.SessionToken == currentToken);
+                    if (currentSession != null)
+                        activeSessions.Insert(0, currentSession);
+                    else
                     {
-                        UserId = userId,
-                        SessionToken = currentToken,
-                        Device = user.Device,
-                        Browser = user.Browser,
-                        IpAddress = user.LastIp,
-                        CreatedAt = DateTime.UtcNow,
-                        IsActive = true
-                    };
-                    _context.UserSessions.Add(newSession);
-                    await _context.SaveChangesAsync();
-                    activeSessions.Insert(0, newSession);
+                        // crear sesión actual si no existe
+                        var userAgent = HttpContext.Request.Headers["User-Agent"].ToString();
+                        var ip = HttpContext.Request.Headers["X-Forwarded-For"].FirstOrDefault()
+                                 ?? HttpContext.Connection.RemoteIpAddress?.ToString();
+                        var newSession = new UserSession
+                        {
+                            UserId = userId,
+                            SessionToken = currentToken,
+                            Device = user.Device,
+                            Browser = user.Browser,
+                            IpAddress = ip ?? "",
+                            CreatedAt = DateTime.UtcNow,
+                            IsActive = true
+                        };
+                        _context.UserSessions.Add(newSession);
+                        await _context.SaveChangesAsync();
+                        activeSessions.Insert(0, newSession);
+                    }
                 }
             }
 
