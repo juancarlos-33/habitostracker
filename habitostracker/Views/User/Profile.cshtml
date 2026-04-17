@@ -17,6 +17,14 @@
     var profilePic = !string.IsNullOrEmpty(Model.ProfileImage)
         ? Model.ProfileImage : Model.ProfilePicture;
     bool isMe = Model.Id == myId;
+    bool isFriend = friendStatus == "Accepted";
+
+    // 🔥 estado solicitud de mensaje
+    var msgRequest = db.MessageRequests
+        .FirstOrDefault(r => (r.SenderId == myId && r.ReceiverId == Model.Id) ||
+                              (r.SenderId == Model.Id && r.ReceiverId == myId));
+    var msgStatus = msgRequest?.Status ?? "None";
+    bool canChat = isFriend || msgStatus == "Accepted";
 }
 
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
@@ -24,7 +32,6 @@
 <style>
 .prof-page { max-width: 900px; margin: 0 auto; font-family: 'Plus Jakarta Sans', sans-serif; padding-bottom: 40px; }
 
-/* HERO */
 .prof-hero {
     background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
     border-radius: 24px; margin-bottom: 16px;
@@ -43,8 +50,7 @@
 .prof-avatar-wrap { position: relative; display: inline-block; margin-top: -48px; margin-bottom: 14px; }
 .prof-avatar {
     width: 96px; height: 96px; border-radius: 50%; object-fit: cover;
-    border: 4px solid #0f172a; box-shadow: 0 8px 24px rgba(0,0,0,0.4);
-    display: block;
+    border: 4px solid #0f172a; box-shadow: 0 8px 24px rgba(0,0,0,0.4); display: block;
 }
 .prof-avatar-letter {
     width: 96px; height: 96px; border-radius: 50%;
@@ -52,11 +58,6 @@
     color: white; display: flex; align-items: center; justify-content: center;
     font-size: 38px; font-weight: 800;
     border: 4px solid #0f172a; box-shadow: 0 8px 24px rgba(0,0,0,0.4);
-}
-.prof-online-dot {
-    position: absolute; bottom: 4px; right: 4px;
-    width: 20px; height: 20px; border-radius: 50%;
-    background: #22c55e; border: 3px solid #0f172a;
 }
 
 .prof-info-row { display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 14px; }
@@ -78,12 +79,15 @@
 .prof-btn.following:hover { background: rgba(239,68,68,0.15); color: #f87171; border-color: rgba(239,68,68,0.3); }
 .prof-btn.add { background: linear-gradient(135deg, #22c55e, #16a34a); color: white; }
 .prof-btn.add:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(34,197,94,0.35); }
-.prof-btn.message { background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.7); border: 1px solid rgba(255,255,255,0.15); }
-.prof-btn.message:hover { background: rgba(255,255,255,0.14); color: white; }
 .prof-btn.friends { background: rgba(34,197,94,0.15); color: #4ade80; border: 1px solid rgba(34,197,94,0.25); }
 .prof-btn.pending { background: rgba(251,191,36,0.1); color: #fbbf24; border: 1px solid rgba(251,191,36,0.2); }
+.prof-btn.message { background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.7); border: 1px solid rgba(255,255,255,0.15); }
+.prof-btn.message:hover { background: rgba(255,255,255,0.14); color: white; }
+.prof-btn.msg-pending { background: rgba(251,191,36,0.1); color: #fbbf24; border: 1px solid rgba(251,191,36,0.2); }
+.prof-btn.msg-rejected { background: rgba(239,68,68,0.1); color: #f87171; border: 1px solid rgba(239,68,68,0.2); }
+.prof-btn.remove-friend { background: rgba(239,68,68,0.1); color: #f87171; border: 1px solid rgba(239,68,68,0.2); }
+.prof-btn.remove-friend:hover { background: rgba(239,68,68,0.2); color: #ef4444; }
 
-/* STATS */
 .prof-stats {
     display: flex; gap: 0; margin-top: 18px;
     background: rgba(255,255,255,0.05); border-radius: 16px;
@@ -102,7 +106,6 @@
 .prof-stat-num { font-size: 20px; font-weight: 800; color: white; }
 .prof-stat-label { font-size: 11px; color: rgba(255,255,255,0.4); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px; }
 
-/* POSTS SECTION */
 .prof-posts {
     background: white; border-radius: 22px; padding: 24px;
     box-shadow: 0 2px 12px rgba(0,0,0,0.06); border: 1px solid rgba(0,0,0,0.04);
@@ -115,12 +118,10 @@
 }
 .prof-posts-count {
     font-size: 12px; font-weight: 700; padding: 3px 10px;
-    border-radius: 20px; background: #ede9fe; color: #6366f1;
-    margin-left: auto;
+    border-radius: 20px; background: #ede9fe; color: #6366f1; margin-left: auto;
 }
 
 .posts-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
-
 .post-tile {
     position: relative; border-radius: 16px; overflow: hidden;
     display: block; background: #f3f4f6; text-decoration: none;
@@ -139,8 +140,7 @@
 .post-tile-noimg {
     width: 100%; height: 100%;
     display: flex; align-items: center; justify-content: center;
-    font-size: 32px;
-    background: linear-gradient(135deg, #eff6ff, #e0e7ff);
+    font-size: 32px; background: linear-gradient(135deg, #eff6ff, #e0e7ff);
 }
 .post-tile-overlay {
     position: absolute; inset: 0; background: rgba(0,0,0,0.55);
@@ -151,15 +151,11 @@
 .post-tile-overlay span { color: white; font-weight: 700; font-size: 13px; }
 .post-tile-overlay small { color: rgba(255,255,255,0.6); font-size: 11px; }
 
-/* EMPTY */
-.prof-empty {
-    text-align: center; padding: 50px 20px; color: #9ca3af;
-}
+.prof-empty { text-align: center; padding: 50px 20px; color: #9ca3af; }
 .prof-empty-icon { font-size: 52px; margin-bottom: 14px; }
 .prof-empty-text { font-size: 15px; font-weight: 600; color: #6b7280; margin: 0 0 6px; }
 .prof-empty-sub { font-size: 13px; }
 
-/* FOLLOW MODAL */
 .follow-modal {
     position: fixed; inset: 0; background: rgba(0,0,0,0.6);
     display: flex; justify-content: center; align-items: center;
@@ -181,6 +177,47 @@
 }
 .close-btn:hover { background: #e5e7eb; color: #111827; }
 
+/* MODAL SOLICITUD MENSAJE */
+.msg-req-modal {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.65); z-index: 99999;
+    align-items: center; justify-content: center;
+    backdrop-filter: blur(8px);
+}
+.msg-req-card {
+    background: #0f172a; border-radius: 24px; padding: 32px 28px;
+    max-width: 360px; width: 90%;
+    border: 1px solid rgba(255,255,255,0.08);
+    box-shadow: 0 30px 70px rgba(0,0,0,0.5);
+}
+.msg-req-title { font-size: 18px; font-weight: 800; color: white; text-align: center; margin: 0 0 4px; }
+.msg-req-sub { font-size: 13px; color: rgba(255,255,255,0.4); text-align: center; margin: 0 0 18px; line-height: 1.5; }
+.msg-req-input {
+    width: 100%; padding: 12px 16px; border-radius: 14px;
+    border: 1.5px solid rgba(255,255,255,0.1);
+    background: rgba(255,255,255,0.05); color: white;
+    font-size: 14px; font-family: inherit; outline: none;
+    resize: none; transition: 0.2s; box-sizing: border-box; margin-bottom: 6px;
+}
+.msg-req-input:focus { border-color: #6366f1; background: rgba(99,102,241,0.06); }
+.msg-req-input::placeholder { color: rgba(255,255,255,0.25); }
+.msg-req-chars { font-size: 11px; color: rgba(255,255,255,0.3); text-align: right; margin-bottom: 16px; }
+.msg-req-btns { display: flex; gap: 10px; }
+.msg-req-cancel {
+    flex: 1; padding: 11px; border-radius: 12px;
+    border: 1px solid rgba(255,255,255,0.1);
+    background: rgba(255,255,255,0.04); color: rgba(255,255,255,0.5);
+    font-size: 13px; font-weight: 700; cursor: pointer; font-family: inherit;
+}
+.msg-req-send {
+    flex: 1; padding: 11px; border-radius: 12px; border: none;
+    background: linear-gradient(135deg, #6366f1, #2563eb);
+    color: white; font-size: 13px; font-weight: 700;
+    cursor: pointer; font-family: inherit; transition: 0.2s;
+}
+.msg-req-send:hover { transform: translateY(-1px); }
+.msg-req-send:disabled { background: #334155; cursor: not-allowed; transform: none; }
+
 /* DARK */
 body.bg-dark .prof-posts { background: #1e293b !important; border-color: #2d3748 !important; }
 body.bg-dark .prof-posts-title { color: #f1f5f9 !important; border-color: #2d3748 !important; }
@@ -197,12 +234,33 @@ body.bg-dark .prof-posts-count { background: rgba(99,102,241,0.15) !important; }
     .prof-stats { width: 100%; justify-content: space-around; }
     .prof-stat { flex: 1; padding: 12px 8px; }
     .prof-username { font-size: 18px; }
+    .prof-actions { flex-wrap: wrap; }
 }
 </style>
 
+<!-- MODAL SOLICITUD MENSAJE -->
+<div class="msg-req-modal" id="msgReqModal">
+    <div class="msg-req-card">
+        <div class="msg-req-title">💬 Enviar mensaje</div>
+        <div class="msg-req-sub">
+            Escribe un mensaje a <strong style="color:white;">@Model.Username</strong>.<br>
+            Si lo acepta, podrán chatear libremente.
+        </div>
+        <textarea class="msg-req-input" id="msgReqText" rows="3"
+                  placeholder="Hola, me gustaría conectar contigo..."
+                  maxlength="200" oninput="updateReqChars()"></textarea>
+        <div class="msg-req-chars"><span id="reqCharsCount">0</span>/200</div>
+        <div class="msg-req-btns">
+            <button class="msg-req-cancel" onclick="closeMsgReqModal()">Cancelar</button>
+            <button class="msg-req-send" id="msgReqSendBtn" onclick="sendMsgReq()" disabled>
+                Enviar solicitud
+            </button>
+        </div>
+    </div>
+</div>
+
 <div class="prof-page">
 
-    <!-- HERO CARD -->
     <div class="prof-hero">
         <div class="prof-hero-banner"></div>
         <div class="prof-hero-body">
@@ -225,6 +283,7 @@ body.bg-dark .prof-posts-count { background: rgba(99,102,241,0.15) !important; }
                 @if (!isMe)
                 {
                     <div class="prof-actions">
+                        @* SEGUIR *@
                         @if (isFollowing)
                         {
                             <form asp-controller="User" asp-action="Unfollow" method="post">
@@ -240,13 +299,17 @@ body.bg-dark .prof-posts-count { background: rgba(99,102,241,0.15) !important; }
                             </form>
                         }
 
-                        @if (friendStatus == "Accepted")
+                        @* AMISTAD *@
+                        @if (isFriend)
                         {
                             <button class="prof-btn friends" disabled>✅ Amigos</button>
+                            <button class="prof-btn remove-friend" onclick="confirmarEliminarAmigo()" id="removeFriendBtn">
+                                👋 Eliminar amigo
+                            </button>
                         }
                         else if (friendStatus == "Pending")
                         {
-                            <button class="prof-btn pending" disabled>⏳ Pendiente</button>
+                            <button class="prof-btn pending" disabled>⏳ Solicitud enviada</button>
                         }
                         else
                         {
@@ -256,13 +319,31 @@ body.bg-dark .prof-posts-count { background: rgba(99,102,241,0.15) !important; }
                             </form>
                         }
 
-                        <a asp-controller="Message" asp-action="Chat" asp-route-userId="@Model.Id"
-                           class="prof-btn message">💬 Mensaje</a>
+                        @* MENSAJE *@
+                        @if (canChat)
+                        {
+                            <a href="/Message/Chat?userId=@Model.Id" class="prof-btn message">
+                                💬 Mensaje
+                            </a>
+                        }
+                        else if (msgStatus == "Pending")
+                        {
+                            <button class="prof-btn msg-pending" disabled>⏳ Solicitud enviada</button>
+                        }
+                        else if (msgStatus == "Rejected")
+                        {
+                            <button class="prof-btn msg-rejected" disabled>🚫 Solicitud rechazada</button>
+                        }
+                        else
+                        {
+                            <button class="prof-btn message" onclick="document.getElementById('msgReqModal').style.display='flex'">
+                                💬 Mensaje
+                            </button>
+                        }
                     </div>
                 }
             </div>
 
-            <!-- STATS -->
             <div class="prof-stats">
                 <div class="prof-stat" onclick="if(@ViewBag.Followers > 0) openModal('followers')">
                     <span class="prof-stat-num">@ViewBag.Followers</span>
@@ -280,7 +361,6 @@ body.bg-dark .prof-posts-count { background: rgba(99,102,241,0.15) !important; }
         </div>
     </div>
 
-    <!-- POSTS -->
     <div class="prof-posts">
         <div class="prof-posts-title">
             📸 Publicaciones
@@ -305,25 +385,18 @@ body.bg-dark .prof-posts-count { background: rgba(99,102,241,0.15) !important; }
                                    post.ImagePath.EndsWith(".mp4") ||
                                    post.ImagePath.EndsWith(".mov") ||
                                    post.ImagePath.EndsWith(".webm"));
-
                     <a href="/Post/Index" class="post-tile">
                         @if (isVideo)
                         {
                             <div class="post-tile-video">
-                                <video muted preload="metadata">
-                                    <source src="@post.ImagePath" />
-                                </video>
+                                <video muted preload="metadata"><source src="@post.ImagePath" /></video>
                                 <span class="post-tile-badge">▶ Video</span>
                             </div>
                         }
                         else if (!string.IsNullOrEmpty(post.ImagePath))
-                        {
-                            <img src="@post.ImagePath" class="post-tile-img" />
-                        }
+                        { <img src="@post.ImagePath" class="post-tile-img" /> }
                         else
-                        {
-                            <div class="post-tile-noimg">📝</div>
-                        }
+                        { <div class="post-tile-noimg">📝</div> }
                         <div class="post-tile-overlay">
                             <span>@(isVideo ? "▶ Ver video" : "👁 Ver post")</span>
                             <small>@post.CreatedAt.ToString("dd MMM yyyy", culture)</small>
@@ -349,6 +422,9 @@ body.bg-dark .prof-posts-count { background: rgba(99,102,241,0.15) !important; }
 </div>
 
 <script>
+const targetUserId = @Model.Id;
+
+// ── SEGUIR MODAL ────────────────────────
 function openModal(type) {
     const modal = document.getElementById("followModal");
     const list = document.getElementById("followList");
@@ -356,7 +432,7 @@ function openModal(type) {
     modal.style.display = "flex";
     list.innerHTML = "<div style='text-align:center;padding:20px;color:#9ca3af;'>Cargando...</div>";
     title.innerText = type === "followers" ? "Seguidores" : "Siguiendo";
-    fetch(`/User/${type === "followers" ? "GetFollowers" : "GetFollowing"}?userId=@Model.Id`)
+    fetch(`/User/${type === "followers" ? "GetFollowers" : "GetFollowing"}?userId=${targetUserId}`)
         .then(r => r.text())
         .then(data => list.innerHTML = data);
 }
@@ -368,4 +444,94 @@ function closeModal() {
 document.getElementById("followModal").addEventListener("click", function(e) {
     if (e.target === this) closeModal();
 });
+
+// ── SOLICITUD DE MENSAJE ─────────────────
+function closeMsgReqModal() {
+    document.getElementById("msgReqModal").style.display = "none";
+}
+
+function updateReqChars() {
+    const len = document.getElementById("msgReqText").value.length;
+    document.getElementById("reqCharsCount").textContent = len;
+    document.getElementById("msgReqSendBtn").disabled = len === 0;
+}
+
+async function sendMsgReq() {
+    const msg = document.getElementById("msgReqText").value.trim();
+    if (!msg) return;
+
+    const btn = document.getElementById("msgReqSendBtn");
+    btn.disabled = true;
+    btn.textContent = "⏳ Enviando...";
+
+    try {
+        const res = await fetch("/Message/SendMessageRequest", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ receiverId: targetUserId, message: msg })
+        });
+        const data = await res.json();
+
+        if (data.success) {
+            closeMsgReqModal();
+            // reemplazar botón de mensaje
+            const msgBtns = document.querySelectorAll(".prof-btn.message");
+            msgBtns.forEach(b => {
+                if (!b.href) {
+                    b.outerHTML = `<button class="prof-btn msg-pending" disabled>⏳ Solicitud enviada</button>`;
+                }
+            });
+            showProfToast("✅ Solicitud enviada. Espera a que la acepte.");
+        } else {
+            showProfToast("⚠️ " + (data.error ?? "Error al enviar"));
+            btn.disabled = false;
+            btn.textContent = "Enviar solicitud";
+        }
+    } catch (err) {
+        showProfToast("❌ Error de conexión");
+        btn.disabled = false;
+        btn.textContent = "Enviar solicitud";
+    }
+}
+
+document.getElementById("msgReqModal").addEventListener("click", function(e) {
+    if (e.target === this) closeMsgReqModal();
+});
+
+// ── ELIMINAR AMIGO ───────────────────────
+function confirmarEliminarAmigo() {
+    if (!confirm("¿Eliminar a @Model.Username de tus amigos? Esta acción no se puede deshacer.")) return;
+
+    fetch("/User/RemoveFriend", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ blockedId: targetUserId })
+    }).then(r => r.json()).then(data => {
+        if (data.success) {
+            showProfToast("✅ Amigo eliminado");
+            // actualizar botones
+            const friendBtn = document.querySelector(".prof-btn.friends");
+            const removeBtn = document.getElementById("removeFriendBtn");
+            if (friendBtn) friendBtn.outerHTML = `
+                <form action="/User/SendFriendRequest" method="post" style="display:inline;">
+                    <input type="hidden" name="receiverId" value="${targetUserId}" />
+                    <button class="prof-btn add">👤 Agregar</button>
+                </form>`;
+            if (removeBtn) removeBtn.remove();
+            // actualizar botón de mensaje
+            const chatBtn = document.querySelector(".prof-btn.message[href]");
+            if (chatBtn) chatBtn.outerHTML = `<button class="prof-btn message" onclick="document.getElementById('msgReqModal').style.display='flex'">💬 Mensaje</button>`;
+        } else {
+            showProfToast("❌ No se pudo eliminar");
+        }
+    }).catch(() => showProfToast("❌ Error de conexión"));
+}
+
+function showProfToast(msg) {
+    const t = document.createElement("div");
+    t.style.cssText = "position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#1e293b;color:white;padding:10px 20px;border-radius:20px;font-size:13px;font-weight:600;z-index:99999;box-shadow:0 4px 20px rgba(0,0,0,0.3);font-family:'Plus Jakarta Sans',sans-serif;";
+    t.textContent = msg;
+    document.body.appendChild(t);
+    setTimeout(() => t.remove(), 3000);
+}
 </script>

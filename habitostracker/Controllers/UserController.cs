@@ -442,6 +442,25 @@ namespace HabitTrackerApp.Controllers
             return Json(new { blocked });
         }
 
+        [HttpPost]
+        public async Task<IActionResult> RemoveFriend([FromBody] BlockDto dto)
+        {
+            var myId = int.Parse(User.FindFirst("UserId").Value);
+
+            var friendship = _context.FriendRequests
+                .FirstOrDefault(f => ((f.SenderId == myId && f.ReceiverId == dto.BlockedId) ||
+                                       (f.SenderId == dto.BlockedId && f.ReceiverId == myId)) &&
+                                      f.Status == "Accepted");
+
+            if (friendship != null)
+            {
+                _context.FriendRequests.Remove(friendship);
+                await _context.SaveChangesAsync();
+            }
+
+            return Json(new { success = true });
+        }
+
         [HttpGet]
         public IActionResult GetOnlineUsers()
         {
