@@ -6,6 +6,7 @@
     var currentUserId = (int)ViewBag.CurrentUserId;
     var isMuted = (bool)(ViewBag.IsMuted ?? false);
     var members = Model.Members?.Where(m => m.IsActive).ToList() ?? new();
+    var isCreator = Model.CreatorId == currentUserId;
 }
 
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
@@ -25,20 +26,14 @@
     background: radial-gradient(circle, rgba(99,102,241,0.2), transparent 70%);
     border-radius:50%;
 }
-
-/* AVATAR con cambio de foto */
-.grp-details-avatar-wrap {
-    position: relative; display: inline-block;
-    margin: 0 auto 16px; z-index: 1;
-}
+.grp-details-avatar-wrap { position: relative; display: inline-block; margin: 0 auto 16px; z-index: 1; }
 .grp-details-avatar {
     width: 80px; height: 80px; border-radius: 22px;
     background: linear-gradient(135deg, #6366f1, #2563eb);
     display: flex; align-items: center; justify-content: center;
     font-size: 34px; color: white; font-weight: 800;
-    box-shadow: 0 10px 24px rgba(99,102,241,0.4);
-    overflow: hidden; cursor: @(isAdmin ? "pointer" : "default");
-    transition: 0.2s;
+    box-shadow: 0 10px 24px rgba(99,102,241,0.4); overflow: hidden;
+    cursor: @(isAdmin ? "pointer" : "default"); transition: 0.2s;
 }
 .grp-details-avatar img { width: 100%; height: 100%; object-fit: cover; }
 .grp-details-avatar:hover { @(isAdmin ? "opacity: 0.85;" : "") }
@@ -50,18 +45,15 @@
     font-size: 12px; cursor: pointer; transition: 0.2s;
 }
 .grp-avatar-edit-badge:hover { background: #4f46e5; transform: scale(1.1); }
-
 .grp-details-name { font-size: 20px; font-weight: 800; color: white; margin: 0 0 6px; position: relative; z-index:1; }
 .grp-details-desc { font-size: 13px; color: rgba(255,255,255,0.4); margin: 0 0 6px; position: relative; z-index:1; }
 .grp-details-meta { font-size: 12px; color: rgba(255,255,255,0.3); position: relative; z-index:1; }
-
 .grp-back-btn {
     display: inline-flex; align-items: center; gap: 6px;
     padding: 8px 16px; border-radius: 12px;
     background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.1);
     color: rgba(255,255,255,0.7); font-size: 13px; font-weight: 600;
-    text-decoration: none; transition: 0.2s; margin-bottom: 16px;
-    position: relative; z-index:1;
+    text-decoration: none; transition: 0.2s; margin-bottom: 16px; position: relative; z-index:1;
 }
 .grp-back-btn:hover { background: rgba(255,255,255,0.14); color: white; }
 
@@ -96,8 +88,10 @@
 .grp-action-icon.red { background: rgba(239,68,68,0.1); }
 .grp-action-icon.orange { background: rgba(249,115,22,0.1); }
 .grp-action-icon.purple { background: rgba(99,102,241,0.1); }
+.grp-action-icon.green { background: rgba(34,197,94,0.1); }
 .grp-action-chevron { margin-left: auto; color: #9ca3af; font-size: 12px; }
 
+/* MEMBERS */
 .grp-member-row {
     display: flex; align-items: center; gap: 12px;
     padding: 10px 0; border-bottom: 1px solid #f3f4f6;
@@ -113,18 +107,26 @@
 .grp-member-avatar img { width: 100%; height: 100%; object-fit: cover; }
 .grp-member-info { flex: 1; }
 .grp-member-name { font-size: 14px; font-weight: 600; color: #111827; }
+.grp-member-subrole { font-size: 11px; color: #9ca3af; margin-top: 1px; }
 .grp-member-badge {
     font-size: 10px; font-weight: 700; padding: 2px 8px;
     border-radius: 20px; background: #ede9fe; color: #6366f1;
 }
-.grp-remove-btn {
+.grp-member-badge.creator { background: #111827; color: #fbbf24; }
+.grp-member-actions { display: flex; gap: 6px; align-items: center; }
+.grp-member-btn {
     width: 28px; height: 28px; border-radius: 8px;
-    border: none; background: #fef2f2; color: #dc2626;
-    cursor: pointer; font-size: 13px; transition: 0.15s;
+    border: none; cursor: pointer; font-size: 12px; transition: 0.15s;
     display: flex; align-items: center; justify-content: center;
 }
-.grp-remove-btn:hover { background: #dc2626; color: white; }
+.grp-member-btn.remove { background: #fef2f2; color: #dc2626; }
+.grp-member-btn.remove:hover { background: #dc2626; color: white; }
+.grp-member-btn.promote { background: #fef9c3; color: #d97706; }
+.grp-member-btn.promote:hover { background: #f59e0b; color: white; }
+.grp-member-btn.demote { background: #ede9fe; color: #6366f1; }
+.grp-member-btn.demote:hover { background: #6366f1; color: white; }
 
+/* EDIT */
 .grp-edit-field { display: flex; gap: 8px; margin-bottom: 12px; }
 .grp-edit-input {
     flex: 1; padding: 10px 14px; border: 1.5px solid #e5e7eb;
@@ -140,6 +142,7 @@
 }
 .grp-edit-btn:hover { transform: translateY(-1px); }
 
+/* TOAST */
 .grp-toast {
     position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%);
     background: #1e293b; color: white; padding: 10px 20px;
@@ -148,6 +151,67 @@
     animation: toastIn 0.3s ease; font-family: 'Plus Jakarta Sans', sans-serif;
 }
 @@keyframes toastIn { from{opacity:0;transform:translateX(-50%) translateY(10px);} to{opacity:1;transform:translateX(-50%) translateY(0);} }
+
+/* MODAL AÑADIR MIEMBRO */
+.add-member-modal {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.6); z-index: 99999;
+    align-items: center; justify-content: center;
+    backdrop-filter: blur(8px);
+}
+.add-member-card {
+    background: #0f172a; border-radius: 24px; padding: 28px;
+    max-width: 380px; width: 90%;
+    border: 1px solid rgba(255,255,255,0.08);
+    box-shadow: 0 30px 70px rgba(0,0,0,0.5);
+}
+.add-member-title { font-size: 17px; font-weight: 800; color: white; margin: 0 0 4px; }
+.add-member-sub { font-size: 13px; color: rgba(255,255,255,0.4); margin: 0 0 18px; }
+.add-member-search {
+    width: 100%; padding: 11px 14px; border-radius: 12px;
+    border: 1.5px solid rgba(255,255,255,0.1);
+    background: rgba(255,255,255,0.05); color: white;
+    font-size: 14px; font-family: inherit; outline: none; margin-bottom: 12px;
+    transition: 0.2s; box-sizing: border-box;
+}
+.add-member-search:focus { border-color: #6366f1; }
+.add-member-search::placeholder { color: rgba(255,255,255,0.25); }
+.add-member-list { max-height: 260px; overflow-y: auto; margin-bottom: 14px; }
+.add-member-list::-webkit-scrollbar { width: 4px; }
+.add-member-list::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
+.add-member-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 12px; border-radius: 12px; cursor: pointer;
+    transition: 0.15s; border: 1.5px solid transparent;
+}
+.add-member-item:hover { background: rgba(99,102,241,0.08); border-color: rgba(99,102,241,0.2); }
+.add-member-item.selected { background: rgba(99,102,241,0.12); border-color: #6366f1; }
+.add-member-avatar {
+    width: 38px; height: 38px; border-radius: 50%; flex-shrink: 0;
+    background: linear-gradient(135deg, #6366f1, #2563eb);
+    display: flex; align-items: center; justify-content: center;
+    color: white; font-size: 14px; font-weight: 800; overflow: hidden;
+}
+.add-member-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.add-member-name { font-size: 14px; font-weight: 600; color: white; flex: 1; }
+.add-member-check { color: #6366f1; font-size: 16px; display: none; }
+.add-member-item.selected .add-member-check { display: block; }
+.add-member-empty { text-align: center; padding: 20px; color: rgba(255,255,255,0.3); font-size: 13px; }
+.add-member-btns { display: flex; gap: 10px; }
+.add-member-cancel {
+    flex: 1; padding: 11px; border-radius: 12px;
+    border: 1px solid rgba(255,255,255,0.1);
+    background: rgba(255,255,255,0.04); color: rgba(255,255,255,0.5);
+    font-size: 13px; font-weight: 700; cursor: pointer; font-family: inherit;
+}
+.add-member-confirm {
+    flex: 1; padding: 11px; border-radius: 12px; border: none;
+    background: linear-gradient(135deg, #6366f1, #2563eb);
+    color: white; font-size: 13px; font-weight: 700;
+    cursor: pointer; font-family: inherit; transition: 0.2s;
+}
+.add-member-confirm:hover { transform: translateY(-1px); }
+.add-member-confirm:disabled { background: #334155; cursor: not-allowed; transform: none; }
 
 /* DARK */
 body.bg-dark .grp-card { background: #1e293b !important; border-color: #2d3748 !important; }
@@ -159,18 +223,39 @@ body.bg-dark .grp-action-item.danger:hover { background: #3f1010 !important; }
 body.bg-dark .grp-member-name { color: #f1f5f9 !important; }
 body.bg-dark .grp-member-row { border-color: #2d3748 !important; }
 body.bg-dark .grp-edit-input { background: #2d3748 !important; border-color: #3d4d60 !important; color: #f1f5f9 !important; }
+body.bg-dark .grp-member-btn.remove { background: #3f1010 !important; }
+body.bg-dark .grp-member-btn.promote { background: #422006 !important; }
+body.bg-dark .grp-member-btn.demote { background: #1e1b4b !important; }
 </style>
 
-<input type="file" id="groupImageInput" accept="image/*" style="display:none;"
-       onchange="uploadGroupImage(this)" />
+<input type="file" id="groupImageInput" accept="image/*" style="display:none;" onchange="uploadGroupImage(this)" />
+
+<!-- MODAL AÑADIR MIEMBRO -->
+<div class="add-member-modal" id="addMemberModal">
+    <div class="add-member-card">
+        <div class="add-member-title">➕ Añadir miembros</div>
+        <div class="add-member-sub">Selecciona amigos para agregar al grupo</div>
+        <input type="text" class="add-member-search" placeholder="🔍 Buscar amigos..."
+               oninput="filtrarAmigosModal(this.value)" id="addMemberSearch" />
+        <div class="add-member-list" id="addMemberList">
+            <div class="add-member-empty">Cargando...</div>
+        </div>
+        <div class="add-member-btns">
+            <button class="add-member-cancel" onclick="closeAddMember()">Cancelar</button>
+            <button class="add-member-confirm" id="addMemberConfirm" onclick="confirmarAgregar()" disabled>
+                Agregar
+            </button>
+        </div>
+    </div>
+</div>
 
 <div class="grp-details-page">
 
+    <!-- HERO -->
     <div class="grp-details-hero">
         <a asp-controller="Group" asp-action="Chat" asp-route-id="@Model.Id" class="grp-back-btn">
             ← Volver al chat
         </a>
-
         <div class="grp-details-avatar-wrap">
             <div class="grp-details-avatar" id="groupAvatarEl"
                  onclick="@(isAdmin ? "document.getElementById('groupImageInput').click()" : "")">
@@ -181,17 +266,12 @@ body.bg-dark .grp-edit-input { background: #2d3748 !important; border-color: #3d
             </div>
             @if (isAdmin)
             {
-                <div class="grp-avatar-edit-badge" onclick="document.getElementById('groupImageInput').click()">
-                    📷
-                </div>
+                <div class="grp-avatar-edit-badge" onclick="document.getElementById('groupImageInput').click()">📷</div>
             }
         </div>
-
         <div class="grp-details-name" id="groupNameDisplay">@Model.Name</div>
         @if (!string.IsNullOrEmpty(Model.Description))
-        {
-            <div class="grp-details-desc">@Model.Description</div>
-        }
+        { <div class="grp-details-desc">@Model.Description</div> }
         <div class="grp-details-meta">
             Creado por @(Model.Creator?.Username ?? "?") · @members.Count miembro@(members.Count != 1 ? "s" : "")
         </div>
@@ -211,33 +291,72 @@ body.bg-dark .grp-edit-input { background: #2d3748 !important; border-color: #3d
 
     <!-- MIEMBROS -->
     <div class="grp-card">
-        <div class="grp-card-title">👥 Miembros (@members.Count)</div>
-        @foreach (var m in members.OrderByDescending(m => m.Role == "Admin"))
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+            <div class="grp-card-title" style="margin:0;">👥 Miembros (@members.Count)</div>
+            @if (isAdmin)
+            {
+                <button onclick="openAddMember()"
+                        style="padding:7px 14px;border-radius:10px;border:none;background:linear-gradient(135deg,#6366f1,#2563eb);color:white;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:5px;">
+                    ➕ Añadir
+                </button>
+            }
+        </div>
+
+        @foreach (var m in members.OrderByDescending(m => m.UserId == Model.CreatorId).ThenByDescending(m => m.Role == "Admin"))
         {
             var img = m.User?.ProfileImage ?? m.User?.ProfilePicture ?? "";
             var letter = (m.User?.Username ?? "?").Substring(0, 1).ToUpper();
             var isMe = m.UserId == currentUserId;
+            var isMemberCreator = m.UserId == Model.CreatorId;
+            var isMemberAdmin = m.Role == "Admin";
+
             <div class="grp-member-row" id="member-row-@m.UserId">
-                <a asp-controller="User" asp-action="Profile" asp-route-id="@m.UserId"
-                   class="grp-member-avatar">
-                    @if (!string.IsNullOrEmpty(img))
-                    { <img src="@img" /> }
+                <a asp-controller="User" asp-action="Profile" asp-route-id="@m.UserId" class="grp-member-avatar">
+                    @if (!string.IsNullOrEmpty(img)) { <img src="@img" /> }
                     else { @letter }
                 </a>
                 <div class="grp-member-info">
                     <div class="grp-member-name">
                         @m.User?.Username @(isMe ? "(Tú)" : "")
                     </div>
+                    <div class="grp-member-subrole">
+                        @if (isMemberCreator) { <text>👑 Creador</text> }
+                        else if (isMemberAdmin) { <text>⭐ Admin</text> }
+                        else { <text>👤 Miembro</text> }
+                    </div>
                 </div>
-                @if (m.Role == "Admin")
+
+                @if (isMemberCreator && !isMe)
                 {
-                    <span class="grp-member-badge">👑 Admin</span>
+                    <!-- nadie puede tocar al creador -->
                 }
-                @if (isAdmin && !isMe && m.Role != "Admin")
+                else if (!isMe && !isMemberCreator)
                 {
-                    <button class="grp-remove-btn"
-                            onclick="removeMember(@m.UserId, '@m.User?.Username')"
-                            title="Eliminar del grupo">✕</button>
+                    <div class="grp-member-actions">
+                        @* Solo el creador puede dar/quitar admin *@
+                        @if (isCreator)
+                        {
+                            @if (!isMemberAdmin)
+                            {
+                                <button class="grp-member-btn promote"
+                                        onclick="promoverAdmin(@m.UserId, '@m.User?.Username')"
+                                        title="Dar admin">⭐</button>
+                            }
+                            else
+                            {
+                                <button class="grp-member-btn demote"
+                                        onclick="quitarAdmin(@m.UserId, '@m.User?.Username')"
+                                        title="Quitar admin">↓</button>
+                            }
+                        }
+                        @* Admin y creador pueden eliminar (no a otros admins si no eres creador) *@
+                        @if (isAdmin && (isCreator || !isMemberAdmin))
+                        {
+                            <button class="grp-member-btn remove"
+                                    onclick="removeMember(@m.UserId, '@m.User?.Username')"
+                                    title="Eliminar del grupo">✕</button>
+                        }
+                    </div>
                 }
             </div>
         }
@@ -265,7 +384,7 @@ body.bg-dark .grp-edit-input { background: #2d3748 !important; border-color: #3d
                 <span>Salir del grupo</span>
                 <span class="grp-action-chevron">›</span>
             </button>
-            @if (isAdmin)
+            @if (isCreator)
             {
                 <button class="grp-action-item danger" onclick="eliminarGrupo()">
                     <div class="grp-action-icon red">🗑️</div>
@@ -275,7 +394,6 @@ body.bg-dark .grp-edit-input { background: #2d3748 !important; border-color: #3d
             }
         </div>
     </div>
-
 </div>
 
 <!-- MODAL SALIR -->
@@ -331,8 +449,11 @@ body.bg-dark .grp-edit-input { background: #2d3748 !important; border-color: #3d
 
 <script>
 const groupId = @Model.Id;
-let selectedReason = null;
+const isCreator = @isCreator.ToString().ToLower();
 let isMuted = @isMuted.ToString().ToLower();
+let selectedReason = null;
+let selectedMembers = new Set();
+let allFriends = [];
 
 const token = () => document.querySelector('input[name="__RequestVerificationToken"]')?.value ?? "";
 
@@ -344,41 +465,31 @@ function showToast(msg) {
     setTimeout(() => t.remove(), 3000);
 }
 
-// 🔥 cambiar foto del grupo
+// ── FOTO GRUPO ───────────────────────────
 async function uploadGroupImage(input) {
     const file = input.files[0];
     if (!file) return;
-
     showToast("⏳ Subiendo imagen...");
     const formData = new FormData();
     formData.append("image", file);
     formData.append("groupId", groupId);
     formData.append("__RequestVerificationToken", token());
-
     try {
         const res = await fetch("/Group/UpdateImage", { method: "POST", body: formData });
         const data = await res.json();
         if (data.success) {
-            // actualizar avatar en pantalla
-            const avatarEl = document.getElementById("groupAvatarEl");
+            const el = document.getElementById("groupAvatarEl");
             const letter = document.getElementById("groupAvatarLetter");
             if (letter) letter.remove();
-            let img = avatarEl.querySelector("img");
-            if (!img) {
-                img = document.createElement("img");
-                img.id = "groupAvatarImg";
-                avatarEl.appendChild(img);
-            }
+            let img = el.querySelector("img");
+            if (!img) { img = document.createElement("img"); img.id = "groupAvatarImg"; el.appendChild(img); }
             img.src = data.imageUrl;
             showToast("✅ Foto actualizada");
-        } else {
-            showToast("❌ No se pudo actualizar la foto");
         }
-    } catch (err) {
-        showToast("❌ Error al subir la imagen");
-    }
+    } catch { showToast("❌ Error al subir"); }
 }
 
+// ── NOMBRE ───────────────────────────────
 async function updateName() {
     const name = document.getElementById("newGroupName").value.trim();
     if (!name) return;
@@ -388,14 +499,11 @@ async function updateName() {
         body: `groupId=${groupId}&name=${encodeURIComponent(name)}&__RequestVerificationToken=${encodeURIComponent(token())}`
     });
     const data = await res.json();
-    if (data.success) {
-        document.getElementById("groupNameDisplay").textContent = name;
-        showToast("✅ Nombre actualizado");
-    } else {
-        showToast("❌ No se pudo actualizar");
-    }
+    if (data.success) { document.getElementById("groupNameDisplay").textContent = name; showToast("✅ Nombre actualizado"); }
+    else showToast("❌ No se pudo actualizar");
 }
 
+// ── ELIMINAR MIEMBRO ─────────────────────
 async function removeMember(userId, username) {
     if (!confirm(`¿Eliminar a ${username} del grupo?`)) return;
     const res = await fetch("/Group/RemoveMember", {
@@ -405,19 +513,43 @@ async function removeMember(userId, username) {
     });
     const data = await res.json();
     if (data.success) {
-        showToast(`✅ ${username} eliminado del grupo`);
+        showToast(`✅ ${username} eliminado`);
         const row = document.getElementById("member-row-" + userId);
-        if (row) {
-            row.style.opacity = "0";
-            row.style.transition = "0.3s";
-            setTimeout(() => row.remove(), 300);
-        }
-    } else {
-        showToast("❌ No se pudo eliminar");
-    }
+        if (row) { row.style.opacity = "0"; row.style.transition = "0.3s"; setTimeout(() => row.remove(), 300); }
+    } else showToast("❌ " + (data.message ?? "Error"));
 }
 
-// 🔥 silenciar desde Details
+// ── PROMOVER ADMIN ───────────────────────
+async function promoverAdmin(userId, username) {
+    if (!confirm(`¿Dar permisos de admin a ${username}?`)) return;
+    const res = await fetch("/Group/PromoteToAdmin", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: `groupId=${groupId}&memberId=${userId}&__RequestVerificationToken=${encodeURIComponent(token())}`
+    });
+    const data = await res.json();
+    if (data.success) {
+        showToast(`⭐ ${username} ahora es admin`);
+        setTimeout(() => location.reload(), 1200);
+    } else showToast("❌ " + (data.message ?? "Error"));
+}
+
+// ── QUITAR ADMIN ─────────────────────────
+async function quitarAdmin(userId, username) {
+    if (!confirm(`¿Quitar admin a ${username}?`)) return;
+    const res = await fetch("/Group/DemoteAdmin", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: `groupId=${groupId}&memberId=${userId}&__RequestVerificationToken=${encodeURIComponent(token())}`
+    });
+    const data = await res.json();
+    if (data.success) {
+        showToast(`↓ ${username} ya no es admin`);
+        setTimeout(() => location.reload(), 1200);
+    } else showToast("❌ " + (data.message ?? "Error"));
+}
+
+// ── SILENCIAR ────────────────────────────
 async function toggleMute() {
     const res = await fetch("/Group/ToggleMute", {
         method: "POST",
@@ -429,16 +561,113 @@ async function toggleMute() {
         isMuted = data.isMuted;
         document.getElementById("muteIcon").textContent = isMuted ? "🔕" : "🔔";
         document.getElementById("muteLabel").textContent = isMuted ? "Notificaciones silenciadas" : "Silenciar notificaciones";
-        const btn = document.getElementById("muteActionBtn");
-        btn.classList.toggle("active-mute", isMuted);
-        showToast(isMuted ? "🔕 Notificaciones silenciadas" : "🔔 Notificaciones activadas");
+        document.getElementById("muteActionBtn").classList.toggle("active-mute", isMuted);
+        showToast(isMuted ? "🔕 Silenciadas" : "🔔 Activadas");
     }
 }
 
+// ── MODAL AÑADIR MIEMBRO ─────────────────
+async function openAddMember() {
+    selectedMembers.clear();
+    document.getElementById("addMemberSearch").value = "";
+    document.getElementById("addMemberConfirm").disabled = true;
+    document.getElementById("addMemberModal").style.display = "flex";
+    document.getElementById("addMemberList").innerHTML = '<div class="add-member-empty">Cargando...</div>';
+
+    try {
+        const res = await fetch(`/Group/GetFriendsToAdd?groupId=${groupId}`);
+        allFriends = await res.json();
+        renderFriendsList(allFriends);
+    } catch {
+        document.getElementById("addMemberList").innerHTML = '<div class="add-member-empty">Error al cargar</div>';
+    }
+}
+
+function renderFriendsList(friends) {
+    const list = document.getElementById("addMemberList");
+    if (!friends.length) {
+        list.innerHTML = '<div class="add-member-empty">No hay amigos disponibles para agregar</div>';
+        return;
+    }
+    list.innerHTML = friends.map(f => {
+        const avatarHTML = f.img
+            ? `<img src="${f.img}" style="width:100%;height:100%;object-fit:cover;" />`
+            : f.username.charAt(0).toUpperCase();
+        return `
+        <div class="add-member-item" id="friend-item-${f.id}" onclick="toggleSelectFriend(${f.id})">
+            <div class="add-member-avatar">${avatarHTML}</div>
+            <div class="add-member-name">${f.username}</div>
+            <span class="add-member-check">✓</span>
+        </div>`;
+    }).join("");
+}
+
+function filtrarAmigosModal(q) {
+    q = q.toLowerCase().trim();
+    const filtered = q ? allFriends.filter(f => f.username.toLowerCase().includes(q)) : allFriends;
+    renderFriendsList(filtered);
+    // restaurar seleccionados
+    selectedMembers.forEach(id => {
+        const item = document.getElementById("friend-item-" + id);
+        if (item) item.classList.add("selected");
+    });
+}
+
+function toggleSelectFriend(id) {
+    const item = document.getElementById("friend-item-" + id);
+    if (!item) return;
+    if (selectedMembers.has(id)) {
+        selectedMembers.delete(id);
+        item.classList.remove("selected");
+    } else {
+        selectedMembers.add(id);
+        item.classList.add("selected");
+    }
+    document.getElementById("addMemberConfirm").disabled = selectedMembers.size === 0;
+    const btn = document.getElementById("addMemberConfirm");
+    btn.textContent = selectedMembers.size > 0 ? `Agregar (${selectedMembers.size})` : "Agregar";
+}
+
+async function confirmarAgregar() {
+    if (!selectedMembers.size) return;
+    const btn = document.getElementById("addMemberConfirm");
+    btn.disabled = true; btn.textContent = "⏳ Agregando...";
+
+    let ok = 0, fail = 0;
+    for (const memberId of selectedMembers) {
+        try {
+            const res = await fetch("/Group/AddMember", {
+                method: "POST",
+                headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                body: `groupId=${groupId}&newUserId=${memberId}&__RequestVerificationToken=${encodeURIComponent(token())}`
+            });
+            const data = await res.json();
+            if (data.success) ok++; else fail++;
+        } catch { fail++; }
+    }
+
+    closeAddMember();
+    if (ok > 0) {
+        showToast(`✅ ${ok} miembro${ok !== 1 ? "s" : ""} agregado${ok !== 1 ? "s" : ""}`);
+        setTimeout(() => location.reload(), 1200);
+    }
+    if (fail > 0) showToast(`⚠️ ${fail} no se pudo agregar`);
+}
+
+function closeAddMember() {
+    document.getElementById("addMemberModal").style.display = "none";
+    selectedMembers.clear();
+}
+document.getElementById("addMemberModal").addEventListener("click", function(e) {
+    if (e.target === this) closeAddMember();
+});
+
+// ── SALIR ────────────────────────────────
 function confirmarSalir() {
     document.getElementById("leaveModal").style.display = "flex";
 }
 
+// ── REPORTAR ─────────────────────────────
 function reportarGrupo() {
     selectedReason = null;
     document.getElementById("sendReportBtn").disabled = true;
@@ -447,7 +676,6 @@ function reportarGrupo() {
     });
     document.getElementById("reportModal").style.display = "flex";
 }
-
 function seleccionarMotivo(btn, motivo) {
     document.querySelectorAll("#reportModal button[onclick^='seleccionar']").forEach(b => {
         b.style.borderColor = "#1e293b"; b.style.color = "#94a3b8";
@@ -456,7 +684,6 @@ function seleccionarMotivo(btn, motivo) {
     selectedReason = motivo;
     document.getElementById("sendReportBtn").disabled = false;
 }
-
 async function enviarReporte() {
     if (!selectedReason) return;
     document.getElementById("reportModal").style.display = "none";
@@ -469,15 +696,13 @@ async function enviarReporte() {
     showToast(data.success ? "✅ Reporte enviado" : "⚠️ " + (data.message ?? "Error"));
 }
 
+// ── ELIMINAR GRUPO ───────────────────────
 async function eliminarGrupo() {
-    if (!confirm("¿Eliminar este grupo permanentemente? Esta acción no se puede deshacer.")) return;
+    if (!confirm("¿Eliminar este grupo permanentemente?")) return;
     const form = document.createElement("form");
     form.method = "POST"; form.action = "/Group/Delete";
-    const input = document.createElement("input");
-    input.type = "hidden"; input.name = "groupId"; input.value = groupId;
-    const tok = document.createElement("input");
-    tok.type = "hidden"; tok.name = "__RequestVerificationToken";
-    tok.value = token();
+    const input = document.createElement("input"); input.type = "hidden"; input.name = "groupId"; input.value = groupId;
+    const tok = document.createElement("input"); tok.type = "hidden"; tok.name = "__RequestVerificationToken"; tok.value = token();
     form.appendChild(input); form.appendChild(tok);
     document.body.appendChild(form); form.submit();
 }

@@ -537,6 +537,89 @@ namespace HabitTrackerApp.Controllers
             return Json(new { success = true });
         }
 
+
+        // 🔥 promover a admin (solo el creador del grupo)
+        [HttpPost]
+        public async Task<IActionResult> PromoteToAdmin(int groupId, int memberId)
+        {
+            var userId = int.Parse(User.FindFirst("UserId").Value);
+            var group = _context.Groups.FirstOrDefault(g => g.Id == groupId && g.IsActive);
+            if (group == null) return Json(new { success = false });
+
+            // solo el creador puede dar admin
+            if (group.CreatorId != userId) return Json(new { success = false, message = "Solo el creador puede dar admin." });
+
+            var member = _context.GroupMembers
+                .FirstOrDefault(m => m.GroupId == groupId && m.UserId == memberId && m.IsActive);
+            if (member == null) return Json(new { success = false });
+
+            member.Role = "Admin";
+            await _context.SaveChangesAsync();
+
+            var creator = _context.Users.FirstOrDefault(u => u.Id == userId);
+            var promoted = _context.Users.FirstOrDefault(u => u.Id == memberId);
+
+            await CreateSystemMessage(groupId, $"⭐ {creator?.Username} nombró admin a {promoted?.Username}");
+            await SendNotification(memberId, $"Ahora eres admin del grupo \"{group.Name}\"", $"/Group/Chat/{groupId}", userId);
+
+            return Json(new { success = true });
+        }
+
+        // 🔥 quitar admin (solo el creador del grupo)
+        [HttpPost]
+        public async Task<IActionResult> DemoteAdmin(int groupId, int memberId)
+        {
+            var userId = int.Parse(User.FindFirst("UserId").Value);
+            var group = _context.Groups.FirstOrDefault(g => g.Id == groupId && g.IsActive);
+            if (group == null) return Json(new { success = false });
+
+            // solo el creador puede quitar admin
+            if (group.CreatorId != userId) return Json(new { success = false, message = "Solo el creador puede quitar admin." });
+
+            // no puede quitarse a sí mismo
+            if (memberId == userId) return Json(new { success = false, message = "No puedes quitarte el admin a ti mismo." });
+
+            var member = _context.GroupMembers
+                .FirstOrDefault(m => m.GroupId == groupId && m.UserId == memberId && m.IsActive);
+            if (member == null) return Json(new { success = false });
+
+            member.Role = "Member";
+            await _context.SaveChangesAsync();
+
+            var creator = _context.Users.FirstOrDefault(u => u.Id == userId);
+            var demoted = _context.Users.FirstOrDefault(u => u.Id == memberId);
+
+            await CreateSystemMessage(groupId, $"⬇️ {creator?.Username} quitó el admin a {demoted?.Username}");
+
+            return Json(new { success = true });
+        }
+
+        // 🔥 buscar amigos que no están en el grupo para añadir
+        [HttpGet]
+        public IActionResult GetFriendsToAdd(int groupId)
+        {
+            var userId = int.Parse(User.FindFirst("UserId").Value);
+            var isAdmin = _context.GroupMembers
+                .Any(m => m.GroupId == groupId && m.UserId == userId && m.Role == "Admin" && m.IsActive);
+            if (!isAdmin) return Json(new { success = false });
+
+            var currentMemberIds = _context.GroupMembers
+                .Where(m => m.GroupId == groupId && m.IsActive)
+                .Select(m => m.UserId).ToList();
+
+            var friendIds = _context.FriendRequests
+                .Where(f => (f.SenderId == userId || f.ReceiverId == userId) && f.Status == "Accepted")
+                .Select(f => f.SenderId == userId ? f.ReceiverId : f.SenderId)
+                .ToList();
+
+            var available = _context.Users
+                .Where(u => friendIds.Contains(u.Id) && !currentMemberIds.Contains(u.Id))
+                .Select(u => new { u.Id, u.Username, img = u.ProfileImage ?? u.ProfilePicture ?? "" })
+                .ToList();
+
+            return Json(available);
+        }
+
         [HttpPost]
         public async Task<IActionResult> Delete(int groupId)
         {
@@ -548,10 +631,14 @@ namespace HabitTrackerApp.Controllers
             return RedirectToAction("Index");
         }
     }
+    
+
 
     public class ReportGroupDto
     {
         public int GroupId { get; set; }
         public string Reason { get; set; }
     }
+
+
 }
