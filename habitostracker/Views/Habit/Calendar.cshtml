@@ -15,179 +15,357 @@
 
     var firstDay = new DateTime(year, month, 1);
     var daysInMonth = DateTime.DaysInMonth(year, month);
-
     var prevMonth = firstDay.AddMonths(-1).ToString("yyyy-MM-dd");
     var nextMonth = firstDay.AddMonths(1).ToString("yyyy-MM-dd");
-
     var startDayOfWeek = (int)firstDay.DayOfWeek;
+    var today = DateTime.Today;
+    var isCurrentMonth = year == today.Year && month == today.Month;
+    var culture = new System.Globalization.CultureInfo("es-ES");
+    var monthName = firstDay.ToString("MMMM yyyy", culture);
+
+    int goal = ViewBag.MonthlyGoal ?? 0;
+    int done = ViewBag.MonthlyCompleted ?? 0;
+    int progress = goal > 0 ? (int)((double)done / goal * 100) : 0;
+    int consistency = ViewBag.Consistency ?? 0;
+    int weeklyCompleted = ViewBag.WeeklyCompleted ?? 0;
+    int weeklyFailed = ViewBag.WeeklyFailed ?? 0;
 }
 
-<div class="container mt-5" style="max-width:1000px;">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
 
-    <!-- HEADER -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
+<style>
+.cal-page {
+    max-width: 900px; margin: 0 auto;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    padding-bottom: 40px;
+}
 
-        <a class="btn btn-outline-secondary rounded-pill"
-           asp-action="Calendar"
-           asp-route-month="@prevMonth">⬅</a>
+/* HERO */
+.cal-hero {
+    background: linear-gradient(135deg, #1e293b, #0f172a);
+    border-radius: 24px; padding: 28px 32px; margin-bottom: 20px;
+    position: relative; overflow: hidden;
+    border: 1px solid rgba(255,255,255,0.06);
+}
+.cal-hero::before {
+    content:""; position:absolute; top:-50px; right:-50px;
+    width:200px; height:200px;
+    background: radial-gradient(circle, rgba(99,102,241,0.2), transparent 70%);
+    border-radius:50%;
+}
+.cal-hero::after {
+    content:""; position:absolute; bottom:-30px; left:80px;
+    width:140px; height:140px;
+    background: radial-gradient(circle, rgba(34,197,94,0.12), transparent 70%);
+    border-radius:50%;
+}
+.cal-hero-top {
+    display: flex; align-items: center; justify-content: space-between;
+    flex-wrap: wrap; gap: 16px; position: relative; z-index:1;
+    margin-bottom: 24px;
+}
+.cal-hero-title { font-size: 22px; font-weight: 800; color: white; margin: 0 0 4px; }
+.cal-hero-sub { font-size: 13px; color: rgba(255,255,255,0.4); margin: 0; }
 
-        <h3 class="fw-bold text-capitalize mb-0">
-            @firstDay.ToString("MMMM yyyy")
-        </h3>
+.cal-nav { display: flex; align-items: center; gap: 14px; }
+.cal-nav-btn {
+    width: 38px; height: 38px; border-radius: 50%;
+    background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.1);
+    color: white; display: flex; align-items: center; justify-content: center;
+    text-decoration: none; font-size: 16px; transition: 0.2s; cursor: pointer;
+}
+.cal-nav-btn:hover { background: rgba(255,255,255,0.15); color: white; transform: scale(1.08); }
+.cal-month-label {
+    font-size: 17px; font-weight: 800; color: white;
+    text-transform: capitalize; min-width: 160px; text-align: center;
+}
 
-        <a class="btn btn-outline-secondary rounded-pill"
-           asp-action="Calendar"
-           asp-route-month="@nextMonth">➡</a>
-    </div>
+/* STATS */
+.cal-stats {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;
+    position: relative; z-index:1;
+}
+.cal-stat {
+    background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 16px; padding: 14px 16px; text-align: center;
+}
+.cal-stat-icon { font-size: 20px; margin-bottom: 6px; }
+.cal-stat-num { font-size: 22px; font-weight: 800; color: white; margin-bottom: 2px; }
+.cal-stat-label { font-size: 11px; color: rgba(255,255,255,0.4); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+.cal-stat-bar { height: 4px; background: rgba(255,255,255,0.1); border-radius: 10px; margin-top: 8px; overflow: hidden; }
+.cal-stat-bar-fill { height: 100%; border-radius: 10px; transition: width 0.8s ease; }
 
-    <!-- STATS -->
-    <div class="row mb-4 text-center">
+/* BEST DAY */
+.cal-best-day {
+    background: rgba(34,197,94,0.1); border: 1px solid rgba(34,197,94,0.25);
+    border-radius: 16px; padding: 14px 20px; margin-bottom: 16px;
+    display: flex; align-items: center; gap: 12px;
+    font-size: 14px; color: #4ade80; font-weight: 600;
+}
+.cal-best-day-icon { font-size: 22px; }
 
-        <div class="col-md-3">
-            <div class="card shadow-sm rounded-4 p-3 border-0">
-                <h6>Consistencia</h6>
-                <h4 class="text-primary">@ViewBag.Consistency%</h4>
+/* LEGEND */
+.cal-legend {
+    display: flex; gap: 16px; align-items: center;
+    margin-bottom: 16px; flex-wrap: wrap;
+}
+.cal-legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; color: #6b7280; }
+.cal-legend-dot { width: 14px; height: 14px; border-radius: 5px; }
+
+/* CALENDAR CARD */
+.cal-card {
+    background: white; border-radius: 24px; padding: 24px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.07);
+    border: 1px solid rgba(0,0,0,0.05);
+}
+
+/* DAYS GRID */
+.cal-grid {
+    display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px;
+}
+.cal-day-header {
+    text-align: center; font-size: 11px; font-weight: 700;
+    color: #9ca3af; text-transform: uppercase; letter-spacing: 0.5px;
+    padding: 8px 0 12px;
+}
+
+.cal-cell {
+    aspect-ratio: 1; border-radius: 14px;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    font-weight: 700; font-size: 14px; transition: 0.2s;
+    position: relative; cursor: default;
+}
+.cal-cell:hover { transform: scale(1.08); z-index: 2; }
+.cal-cell-num { font-size: 14px; font-weight: 800; line-height: 1; }
+.cal-cell-count {
+    font-size: 10px; font-weight: 700; margin-top: 3px;
+    opacity: 0.8; line-height: 1;
+}
+
+/* ESTADOS */
+.cal-empty { background: transparent; }
+
+/* Día futuro o sin datos */
+.cal-level-0 {
+    background: #f3f4f6; color: #9ca3af;
+}
+/* Día con algún hábito completado */
+.cal-level-1 {
+    background: linear-gradient(135deg, #bbf7d0, #86efac); color: #166534;
+    box-shadow: 0 2px 8px rgba(34,197,94,0.2);
+}
+/* Día bien completado */
+.cal-level-2 {
+    background: linear-gradient(135deg, #4ade80, #22c55e); color: white;
+    box-shadow: 0 4px 12px rgba(34,197,94,0.35);
+}
+/* Día excelente */
+.cal-level-3 {
+    background: linear-gradient(135deg, #22c55e, #15803d); color: white;
+    box-shadow: 0 6px 16px rgba(21,128,61,0.45);
+}
+/* Día fallido (marcado como no completado) */
+.cal-level-failed {
+    background: linear-gradient(135deg, #fecaca, #fca5a5); color: #991b1b;
+    box-shadow: 0 2px 8px rgba(239,68,68,0.2);
+}
+/* Día de hoy */
+.cal-today {
+    ring: 2px solid #6366f1;
+    outline: 2.5px solid #6366f1;
+    outline-offset: 2px;
+}
+.cal-today.cal-level-0 { background: #ede9fe; color: #4f46e5; }
+
+/* TOOLTIPS */
+.cal-cell::after {
+    content: attr(data-tip);
+    position: absolute; bottom: calc(100% + 6px); left: 50%;
+    transform: translateX(-50%);
+    background: #1e293b; color: white; font-size: 11px; font-weight: 600;
+    padding: 5px 10px; border-radius: 8px; white-space: nowrap;
+    opacity: 0; pointer-events: none; transition: 0.15s; z-index: 10;
+}
+.cal-cell:hover::after { opacity: 1; }
+
+/* DARK */
+body.bg-dark .cal-card { background: #1e293b !important; border-color: #2d3748 !important; }
+body.bg-dark .cal-day-header { color: #475569 !important; }
+body.bg-dark .cal-level-0 { background: #2d3748 !important; color: #64748b !important; }
+body.bg-dark .cal-today.cal-level-0 { background: rgba(99,102,241,0.15) !important; color: #818cf8 !important; }
+body.bg-dark .cal-legend-item { color: #64748b !important; }
+body.bg-dark .cal-best-day { background: rgba(34,197,94,0.08) !important; }
+
+@@media (max-width: 640px) {
+    .cal-stats { grid-template-columns: repeat(2, 1fr); }
+    .cal-hero { padding: 20px; }
+    .cal-cell-count { display: none; }
+    .cal-cell-num { font-size: 13px; }
+}
+</style>
+
+<div class="cal-page">
+
+    <!-- HERO -->
+    <div class="cal-hero">
+        <div class="cal-hero-top">
+            <div>
+                <div class="cal-hero-title">📅 Calendario de hábitos</div>
+                <div class="cal-hero-sub">Visualiza tu progreso mes a mes</div>
+            </div>
+            <div class="cal-nav">
+                <a class="cal-nav-btn" asp-action="Calendar" asp-route-month="@prevMonth">‹</a>
+                <div class="cal-month-label">@monthName</div>
+                <a class="cal-nav-btn" asp-action="Calendar" asp-route-month="@nextMonth">›</a>
             </div>
         </div>
 
-        <div class="col-md-3">
-            <div class="card shadow-sm rounded-4 p-3 border-0">
-                <h6>Semana ✔</h6>
-                <h4 class="text-success">@ViewBag.WeeklyCompleted</h4>
-            </div>
-        </div>
-
-        <div class="col-md-3">
-            <div class="card shadow-sm rounded-4 p-3 border-0">
-                <h6>Semana ✖</h6>
-                <h4 class="text-danger">@ViewBag.WeeklyFailed</h4>
-            </div>
-        </div>
-
-        <div class="col-md-3">
-            <div class="card shadow-sm rounded-4 p-3 border-0">
-                <h6>Meta mensual</h6>
-                @{
-                    int goal = ViewBag.MonthlyGoal ?? 0;
-                    int done = ViewBag.MonthlyCompleted ?? 0;
-                    int progress = goal > 0 ? (int)((double)done / goal * 100) : 0;
-                }
-                <div class="progress mt-2" style="height:8px;">
-                    <div class="progress-bar bg-warning"
-                         style="width:@progress%"></div>
+        <!-- STATS -->
+        <div class="cal-stats">
+            <div class="cal-stat">
+                <div class="cal-stat-icon">🎯</div>
+                <div class="cal-stat-num">@consistency<span style="font-size:14px;">%</span></div>
+                <div class="cal-stat-label">Consistencia</div>
+                <div class="cal-stat-bar">
+                    <div class="cal-stat-bar-fill"
+                         style="width:@consistency%;background:linear-gradient(90deg,#6366f1,#2563eb)"></div>
                 </div>
-                <small>@done / @goal</small>
+            </div>
+            <div class="cal-stat">
+                <div class="cal-stat-icon">✅</div>
+                <div class="cal-stat-num" style="color:#4ade80;">@weeklyCompleted</div>
+                <div class="cal-stat-label">Esta semana</div>
+            </div>
+            <div class="cal-stat">
+                <div class="cal-stat-icon">❌</div>
+                <div class="cal-stat-num" style="color:#f87171;">@weeklyFailed</div>
+                <div class="cal-stat-label">Fallidos</div>
+            </div>
+            <div class="cal-stat">
+                <div class="cal-stat-icon">🏆</div>
+                <div class="cal-stat-num" style="color:#fbbf24;">@done<span style="font-size:14px;opacity:0.6;">/@goal</span></div>
+                <div class="cal-stat-label">Meta mensual</div>
+                <div class="cal-stat-bar">
+                    <div class="cal-stat-bar-fill"
+                         style="width:@progress%;background:linear-gradient(90deg,#f59e0b,#ef4444)"></div>
+                </div>
             </div>
         </div>
-
     </div>
 
     <!-- MEJOR DÍA -->
     @if (ViewBag.BestDay != null)
     {
-        <div class="alert alert-success rounded-4 text-center shadow-sm mb-4">
-            🏆 Mejor día:
-            <strong>@(((DateTime)ViewBag.BestDay.Date).ToString("dd MMM"))</strong>
-            con <strong>@ViewBag.BestDay.Count</strong> hábitos completados
+        <div class="cal-best-day">
+            <div class="cal-best-day-icon">🏆</div>
+            <div>
+                Mejor día del mes:
+                <strong>@(((DateTime)ViewBag.BestDay.Date).ToString("dddd dd 'de' MMMM", culture))</strong>
+                — <strong>@ViewBag.BestDay.Count</strong> hábitos completados
+            </div>
         </div>
     }
 
-    <!-- CALENDARIO -->
-    <div class="calendar-grid">
-
-        <div class="day-header">Dom</div>
-        <div class="day-header">Lun</div>
-        <div class="day-header">Mar</div>
-        <div class="day-header">Mié</div>
-        <div class="day-header">Jue</div>
-        <div class="day-header">Vie</div>
-        <div class="day-header">Sáb</div>
-
-        @for (int i = 0; i < startDayOfWeek; i++)
+    <!-- LEYENDA -->
+    <div class="cal-legend">
+        <div class="cal-legend-item">
+            <div class="cal-legend-dot" style="background:#f3f4f6;border:1px solid #e5e7eb;"></div>
+            Sin datos
+        </div>
+        <div class="cal-legend-item">
+            <div class="cal-legend-dot" style="background:linear-gradient(135deg,#bbf7d0,#86efac);"></div>
+            Alguno completado
+        </div>
+        <div class="cal-legend-item">
+            <div class="cal-legend-dot" style="background:linear-gradient(135deg,#22c55e,#15803d);"></div>
+            Excelente día
+        </div>
+        <div class="cal-legend-item">
+            <div class="cal-legend-dot" style="background:linear-gradient(135deg,#fecaca,#fca5a5);"></div>
+            Día fallido
+        </div>
+        @if (isCurrentMonth)
         {
-            <div></div>
-        }
-
-        @for (int day = 1; day <= daysInMonth; day++)
-        {
-            var date = new DateTime(year, month, day);
-            var completedCount = Model.Count(h => h.Date.Date == date.Date && h.Completed);
-
-            string levelClass = "level-0";
-            if (completedCount == 1) levelClass = "level-1";
-            else if (completedCount == 2) levelClass = "level-2";
-            else if (completedCount >= 3) levelClass = "level-3";
-
-            <div class="calendar-cell @levelClass"
-                 title="@date.ToString("dd/MM/yyyy") - @completedCount completados">
-
-                <span>@day</span>
-
+            <div class="cal-legend-item">
+                <div class="cal-legend-dot" style="background:#ede9fe;outline:2px solid #6366f1;outline-offset:1px;"></div>
+                Hoy
             </div>
         }
+    </div>
 
+    <!-- CALENDARIO -->
+    <div class="cal-card">
+        <div class="cal-grid">
+            @foreach (var d in new[] { "Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb" })
+            {
+                <div class="cal-day-header">@d</div>
+            }
+
+            @for (int i = 0; i < startDayOfWeek; i++)
+            {
+                <div class="cal-empty"></div>
+            }
+
+            @for (int day = 1; day <= daysInMonth; day++)
+            {
+                var date = new DateTime(year, month, day);
+                var dayHistory = Model.Where(h => h.Date.Date == date.Date).ToList();
+                var completedCount = dayHistory.Count(h => h.Completed);
+                var failedCount = dayHistory.Count(h => !h.Completed);
+                var hasData = dayHistory.Any();
+                var isFuture = date.Date > today;
+                var isToday = date.Date == today;
+
+                string levelClass;
+                string tooltip;
+
+                if (isFuture)
+                {
+                    levelClass = "cal-level-0";
+                    tooltip = date.ToString("dd MMM", culture);
+                }
+                else if (!hasData)
+                {
+                    levelClass = "cal-level-0";
+                    tooltip = $"{date.ToString("dd MMM", culture)} — Sin registro";
+                }
+                else if (completedCount == 0 && failedCount > 0)
+                {
+                    levelClass = "cal-level-failed";
+                    tooltip = $"{date.ToString("dd MMM", culture)} — {failedCount} fallido{(failedCount != 1 ? "s" : "")}";
+                }
+                else if (completedCount == 1)
+                {
+                    levelClass = "cal-level-1";
+                    tooltip = $"{date.ToString("dd MMM", culture)} — {completedCount} completado";
+                }
+                else if (completedCount == 2)
+                {
+                    levelClass = "cal-level-2";
+                    tooltip = $"{date.ToString("dd MMM", culture)} — {completedCount} completados";
+                }
+                else
+                {
+                    levelClass = "cal-level-3";
+                    tooltip = $"{date.ToString("dd MMM", culture)} — {completedCount} completados 🔥";
+                }
+
+                if (isToday) levelClass += " cal-today";
+
+                <div class="cal-cell @levelClass" data-tip="@tooltip">
+                    <div class="cal-cell-num">@day</div>
+                    @if (hasData && !isFuture)
+                    {
+                        <div class="cal-cell-count">
+                            @if (completedCount > 0) { @($"✓{completedCount}") }
+                            @if (failedCount > 0 && completedCount > 0) { <text> </text> }
+                            @if (failedCount > 0) { @($"✗{failedCount}") }
+                        </div>
+                    }
+                </div>
+            }
+        </div>
     </div>
 
 </div>
-
-<style>
-
-    .calendar-grid {
-        display: grid;
-        grid-template-columns: repeat(7, 1fr);
-        gap: 8px;
-    }
-
-    .day-header {
-        text-align: center;
-        font-weight: 600;
-        opacity: 0.6;
-    }
-
-    .calendar-cell {
-        height: 70px;
-        border-radius: 12px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-weight: 600;
-        transition: 0.2s ease;
-    }
-
-        .calendar-cell:hover {
-            transform: translateY(-3px);
-        }
-
-    .level-0 {
-        background-color: #f3f4f6;
-    }
-
-    .level-1 {
-        background-color: #86efac;
-    }
-
-    .level-2 {
-        background-color: #22c55e;
-    }
-
-    .level-3 {
-        background-color: #15803d;
-    }
-
-    body.bg-dark .level-0 {
-        background-color: #374151;
-    }
-
-    body.bg-dark .level-1 {
-        background-color: #166534;
-    }
-
-    body.bg-dark .level-2 {
-        background-color: #15803d;
-    }
-
-    body.bg-dark .level-3 {
-        background-color: #22c55e;
-    }
-
-</style>

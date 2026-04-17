@@ -1,20 +1,135 @@
 ﻿@model HabitTrackerApp.Models.Habit
 
-<h2>Editar Hábito</h2>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
 
-<form asp-action="Edit" method="post">
-    <input type="hidden" asp-for="Id" />
+<style>
+.edit-page {
+    max-width: 480px; margin: 0 auto;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    padding-bottom: 40px;
+}
 
-    <div class="mb-3">
-        <label asp-for="Name" class="form-label">Nombre</label>
-        <input asp-for="Name" class="form-control" />
+.edit-hero {
+    background: linear-gradient(135deg, #1e293b, #0f172a);
+    border-radius: 24px; padding: 28px; margin-bottom: 20px;
+    display: flex; align-items: center; gap: 16px;
+    border: 1px solid rgba(255,255,255,0.06);
+    position: relative; overflow: hidden;
+}
+.edit-hero::before {
+    content:""; position:absolute; top:-40px; right:-40px;
+    width:160px; height:160px;
+    background: radial-gradient(circle, rgba(99,102,241,0.2), transparent 70%);
+    border-radius:50%;
+}
+.edit-hero-icon {
+    width: 54px; height: 54px; border-radius: 16px;
+    background: linear-gradient(135deg, #6366f1, #4f46e5);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 24px; flex-shrink: 0; position: relative; z-index:1;
+    box-shadow: 0 8px 20px rgba(99,102,241,0.4);
+}
+.edit-hero-title { font-size: 20px; font-weight: 800; color: white; margin: 0 0 4px; position: relative; z-index:1; }
+.edit-hero-sub { font-size: 13px; color: rgba(255,255,255,0.4); margin: 0; position: relative; z-index:1; }
+
+.edit-card {
+    background: white; border-radius: 22px; padding: 28px;
+    box-shadow: 0 2px 16px rgba(0,0,0,0.07);
+    border: 1px solid rgba(0,0,0,0.05);
+}
+
+.edit-field { margin-bottom: 20px; }
+.edit-label {
+    display: block; font-size: 12px; font-weight: 700;
+    color: #374151; text-transform: uppercase;
+    letter-spacing: 0.6px; margin-bottom: 8px;
+}
+.edit-input {
+    width: 100%; padding: 13px 16px;
+    border: 1.5px solid #e5e7eb; border-radius: 14px;
+    font-size: 15px; font-family: inherit; outline: none;
+    transition: 0.2s; background: #f9fafb; color: #111827;
+    box-sizing: border-box;
+}
+.edit-input:focus {
+    border-color: #6366f1; background: white;
+    box-shadow: 0 0 0 3px rgba(99,102,241,0.1);
+}
+.edit-input::placeholder { color: #9ca3af; }
+
+.edit-current {
+    display: flex; align-items: center; gap: 8px;
+    padding: 10px 14px; background: rgba(99,102,241,0.06);
+    border: 1px solid rgba(99,102,241,0.15); border-radius: 12px;
+    margin-bottom: 10px;
+}
+.edit-current-label { font-size: 11px; font-weight: 700; color: #6366f1; text-transform: uppercase; letter-spacing: 0.5px; }
+.edit-current-value { font-size: 14px; font-weight: 600; color: #4f46e5; }
+
+.edit-btns { display: flex; gap: 10px; margin-top: 8px; }
+.edit-save {
+    flex: 1; padding: 13px; border-radius: 14px; border: none;
+    background: linear-gradient(135deg, #6366f1, #4f46e5);
+    color: white; font-size: 14px; font-weight: 800;
+    cursor: pointer; font-family: inherit; transition: 0.2s;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    box-shadow: 0 6px 18px rgba(99,102,241,0.35);
+}
+.edit-save:hover { transform: translateY(-1px); box-shadow: 0 10px 24px rgba(99,102,241,0.45); }
+.edit-save:active { transform: translateY(0); }
+.edit-cancel {
+    padding: 13px 22px; border-radius: 14px;
+    border: 1.5px solid #e5e7eb; background: white;
+    color: #374151; font-size: 14px; font-weight: 700;
+    cursor: pointer; font-family: inherit; transition: 0.2s;
+    text-decoration: none; display: flex; align-items: center; gap: 6px;
+}
+.edit-cancel:hover { background: #f9fafb; border-color: #d1d5db; color: #111827; }
+
+/* DARK */
+body.bg-dark .edit-card { background: #1e293b !important; border-color: #2d3748 !important; }
+body.bg-dark .edit-label { color: #94a3b8 !important; }
+body.bg-dark .edit-input { background: #2d3748 !important; border-color: #3d4d60 !important; color: #f1f5f9 !important; }
+body.bg-dark .edit-input:focus { background: #334155 !important; }
+body.bg-dark .edit-cancel { background: #2d3748 !important; border-color: #3d4d60 !important; color: #94a3b8 !important; }
+body.bg-dark .edit-cancel:hover { background: #334155 !important; color: #f1f5f9 !important; }
+body.bg-dark .edit-current { background: rgba(99,102,241,0.1) !important; border-color: rgba(99,102,241,0.2) !important; }
+</style>
+
+<div class="edit-page">
+
+    <div class="edit-hero">
+        <div class="edit-hero-icon">✏️</div>
+        <div>
+            <div class="edit-hero-title">Editar hábito</div>
+            <div class="edit-hero-sub">Actualiza el nombre de tu hábito</div>
+        </div>
     </div>
 
-    <button type="submit" class="btn btn-primary">
-        Guardar Cambios
-    </button>
+    <div class="edit-card">
+        <div class="edit-current">
+            <span class="edit-current-label">Actual:</span>
+            <span class="edit-current-value" id="currentName">@Model.Name</span>
+        </div>
 
-    <a asp-action="Index" class="btn btn-secondary">
-        Cancelar
-    </a>
-</form>
+        <form asp-action="Edit" method="post">
+            <input type="hidden" asp-for="Id" />
+
+            <div class="edit-field">
+                <label asp-for="Name" class="edit-label">Nuevo nombre</label>
+                <input asp-for="Name" class="edit-input"
+                       placeholder="Ej: Ejercicio diario, Leer 30 min..."
+                       oninput="document.getElementById('currentName').textContent = this.value || '@Model.Name'"
+                       autocomplete="off" />
+            </div>
+
+            <div class="edit-btns">
+                <a asp-action="Index" class="edit-cancel">← Cancelar</a>
+                <button type="submit" class="edit-save">
+                    💾 Guardar cambios
+                </button>
+            </div>
+        </form>
+    </div>
+
+</div>

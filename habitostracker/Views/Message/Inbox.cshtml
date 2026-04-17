@@ -4,6 +4,7 @@
     ViewData["Title"] = "Mensajes";
     var myId = int.Parse(User.FindFirst("UserId").Value);
     var myUser = ViewBag.MyUser as HabitTrackerApp.Models.User;
+    var pendingRequests = ViewBag.PendingRequests as List<HabitTrackerApp.Models.MessageRequest> ?? new();
     var pinnedIds = (myUser?.PinnedChats ?? "").Split(',')
         .Where(x => !string.IsNullOrEmpty(x))
         .Select(int.Parse).ToList();
@@ -13,19 +14,306 @@
     var ordered = pinned.Concat(unpinned).ToList();
 }
 
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+<style>
+.inbox-page { max-width: 680px; margin: 0 auto; font-family: 'Plus Jakarta Sans', sans-serif; padding-bottom: 40px; }
+
+/* HEADER */
+.inbox-hero {
+    background: linear-gradient(135deg, #1e293b, #0f172a);
+    border-radius: 22px; padding: 24px 28px; margin-bottom: 16px;
+    display: flex; align-items: center; justify-content: space-between;
+    border: 1px solid rgba(255,255,255,0.06); position: relative; overflow: hidden;
+}
+.inbox-hero::before {
+    content:""; position:absolute; top:-40px; right:-40px;
+    width:160px; height:160px;
+    background: radial-gradient(circle, rgba(99,102,241,0.2), transparent 70%);
+    border-radius:50%;
+}
+.inbox-hero-left { position: relative; z-index:1; }
+.inbox-hero-title { font-size: 20px; font-weight: 800; color: white; margin: 0 0 4px; }
+.inbox-hero-sub { font-size: 13px; color: rgba(255,255,255,0.4); margin: 0; }
+.inbox-hero-badge {
+    position: relative; z-index:1;
+    background: rgba(99,102,241,0.15); border: 1px solid rgba(99,102,241,0.3);
+    color: #818cf8; font-size: 12px; font-weight: 700;
+    padding: 6px 14px; border-radius: 20px;
+}
+
+/* SOLICITUDES */
+.inbox-requests-card {
+    background: white; border-radius: 20px; margin-bottom: 14px;
+    border: 1px solid rgba(99,102,241,0.2);
+    box-shadow: 0 2px 12px rgba(99,102,241,0.08); overflow: hidden;
+}
+.inbox-requests-header {
+    display: flex; align-items: center; gap: 10px;
+    padding: 16px 20px; border-bottom: 1px solid #f1f5f9;
+    cursor: pointer; transition: 0.15s;
+}
+.inbox-requests-header:hover { background: #f9fafb; }
+.inbox-requests-icon {
+    width: 36px; height: 36px; border-radius: 10px;
+    background: linear-gradient(135deg, #6366f1, #4f46e5);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; flex-shrink: 0;
+}
+.inbox-requests-title { font-size: 14px; font-weight: 700; color: #111827; }
+.inbox-requests-sub { font-size: 12px; color: #9ca3af; }
+.inbox-req-count {
+    margin-left: auto; background: #ef4444; color: white;
+    font-size: 11px; font-weight: 800; padding: 3px 9px;
+    border-radius: 20px; flex-shrink: 0;
+}
+.inbox-req-chevron { margin-left: 4px; color: #9ca3af; font-size: 12px; transition: 0.2s; }
+.inbox-req-chevron.open { transform: rotate(90deg); }
+
+.inbox-req-list { display: none; }
+.inbox-req-list.open { display: block; }
+
+.inbox-req-item {
+    display: flex; align-items: flex-start; gap: 12px;
+    padding: 14px 20px; border-bottom: 1px solid #f9fafb;
+}
+.inbox-req-item:last-child { border-bottom: none; }
+.inbox-req-avatar {
+    width: 44px; height: 44px; border-radius: 50%; flex-shrink: 0;
+    object-fit: cover; border: 2px solid #e5e7eb;
+}
+.inbox-req-avatar-letter {
+    width: 44px; height: 44px; border-radius: 50%; flex-shrink: 0;
+    background: linear-gradient(135deg, #6366f1, #4f46e5);
+    display: flex; align-items: center; justify-content: center;
+    color: white; font-size: 17px; font-weight: 800;
+}
+.inbox-req-info { flex: 1; min-width: 0; }
+.inbox-req-name { font-size: 14px; font-weight: 700; color: #111827; margin-bottom: 3px; }
+.inbox-req-msg {
+    font-size: 13px; color: #374151; line-height: 1.5;
+    background: #f8fafc; border-radius: 12px; padding: 8px 12px;
+    margin-bottom: 10px; border: 1px solid #f1f5f9;
+    font-style: italic;
+}
+.inbox-req-time { font-size: 11px; color: #9ca3af; margin-bottom: 10px; }
+.inbox-req-btns { display: flex; gap: 8px; }
+.inbox-req-accept {
+    padding: 8px 18px; border-radius: 10px; border: none;
+    background: linear-gradient(135deg, #22c55e, #16a34a);
+    color: white; font-size: 13px; font-weight: 700;
+    cursor: pointer; font-family: inherit; transition: 0.2s;
+}
+.inbox-req-accept:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(34,197,94,0.35); }
+.inbox-req-reject {
+    padding: 8px 18px; border-radius: 10px; border: none;
+    background: #fef2f2; color: #dc2626;
+    font-size: 13px; font-weight: 700;
+    cursor: pointer; font-family: inherit; transition: 0.2s;
+}
+.inbox-req-reject:hover { background: #fee2e2; }
+
+/* SEARCH */
+.inbox-search-wrap { position: relative; margin-bottom: 14px; }
+.inbox-search-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); font-size: 16px; pointer-events: none; }
+.inbox-search {
+    width: 100%; padding: 11px 16px 11px 44px;
+    border: 1.5px solid #e5e7eb; border-radius: 50px;
+    font-size: 14px; background: white; outline: none;
+    transition: 0.2s; box-sizing: border-box; font-family: inherit; color: #111827;
+}
+.inbox-search:focus { border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99,102,241,0.1); }
+
+/* SECTION LABELS */
+.inbox-section-label {
+    font-size: 11px; font-weight: 700; color: #9ca3af;
+    text-transform: uppercase; letter-spacing: 0.7px;
+    padding: 0 4px 8px; display: flex; align-items: center; gap: 8px;
+}
+.inbox-section-label::after { content:""; flex:1; height:1px; background:#f1f5f9; }
+.inbox-section-divider { height: 1px; background: #f1f5f9; margin: 4px 0; }
+
+/* LISTA CONVERSACIONES */
+.inbox-list {
+    background: white; border-radius: 20px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    border: 1px solid rgba(0,0,0,0.04); overflow: hidden;
+}
+
+.inbox-item {
+    display: flex; align-items: center; gap: 14px;
+    padding: 14px 18px; text-decoration: none; color: inherit;
+    border-bottom: 1px solid #f9fafb; transition: 0.15s;
+    position: relative;
+}
+.inbox-item:last-child { border-bottom: none; }
+.inbox-item:hover { background: #f9fafb; }
+.inbox-item.unread { background: linear-gradient(135deg, rgba(99,102,241,0.04), rgba(37,99,235,0.04)); }
+.inbox-item.unread:hover { background: rgba(99,102,241,0.08); }
+.inbox-item.pinned { border-left: 3px solid #6366f1; }
+
+.inbox-avatar-wrap { position: relative; flex-shrink: 0; }
+.inbox-avatar {
+    width: 52px; height: 52px; border-radius: 50%;
+    object-fit: cover; border: 2px solid #e5e7eb;
+}
+.avatar-letter {
+    background: linear-gradient(135deg, #6366f1, #7c3aed); color: white;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 800; font-size: 20px;
+    width: 52px; height: 52px; border-radius: 50%;
+    border: 2px solid #e5e7eb;
+}
+.inbox-online-dot {
+    position: absolute; bottom: 2px; right: 2px;
+    width: 13px; height: 13px; border-radius: 50%;
+    background: #22c55e; border: 2px solid white; display: none;
+}
+
+.inbox-info { flex: 1; min-width: 0; }
+.inbox-name {
+    font-size: 15px; font-weight: 700; color: #111827;
+    margin-bottom: 3px; display: flex; align-items: center; gap: 6px;
+}
+.pin-icon { font-size: 11px; }
+.inbox-preview {
+    font-size: 13px; color: #9ca3af;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 240px;
+}
+.inbox-item.unread .inbox-preview { color: #374151; font-weight: 600; }
+.inbox-you { color: #9ca3af; font-weight: 400; }
+
+.inbox-right { display: flex; flex-direction: column; align-items: flex-end; gap: 5px; flex-shrink: 0; }
+.inbox-time { font-size: 11px; color: #9ca3af; }
+.inbox-item.unread .inbox-time { color: #6366f1; font-weight: 700; }
+.inbox-unread-dot {
+    width: 10px; height: 10px; border-radius: 50%; background: #6366f1;
+}
+.inbox-seen { font-size: 12px; color: #6366f1; letter-spacing: -1px; }
+
+/* EMPTY */
+.inbox-empty {
+    text-align: center; padding: 60px 20px; background: white;
+    border-radius: 20px; box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    border: 1px solid rgba(0,0,0,0.04);
+}
+.inbox-empty-icon { font-size: 52px; margin-bottom: 14px; }
+.inbox-empty h5 { font-size: 18px; font-weight: 700; color: #111827; margin-bottom: 8px; }
+.inbox-empty p { font-size: 14px; color: #9ca3af; margin: 0; }
+
+/* TOAST */
+.inbox-toast {
+    position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%);
+    background: #1e293b; color: white; padding: 10px 20px;
+    border-radius: 20px; font-size: 13px; font-weight: 600;
+    z-index: 99999; box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    animation: toastIn 0.3s ease;
+}
+@@keyframes toastIn { from{opacity:0;transform:translateX(-50%) translateY(10px);} to{opacity:1;transform:translateX(-50%) translateY(0);} }
+
+/* DARK */
+body.bg-dark .inbox-list,
+body.bg-dark .inbox-empty,
+body.bg-dark .inbox-requests-card { background: #1e293b !important; border-color: #2d3748 !important; }
+body.bg-dark .inbox-item { border-color: #2d3748 !important; color: #f1f5f9 !important; }
+body.bg-dark .inbox-item:hover { background: #2d3748 !important; }
+body.bg-dark .inbox-item.unread { background: rgba(99,102,241,0.08) !important; }
+body.bg-dark .inbox-item.pinned { border-left-color: #818cf8 !important; }
+body.bg-dark .inbox-name { color: #f1f5f9 !important; }
+body.bg-dark .inbox-empty h5 { color: #f1f5f9 !important; }
+body.bg-dark .inbox-section-label { color: #475569 !important; }
+body.bg-dark .inbox-section-label::after { background: #2d3748 !important; }
+body.bg-dark .inbox-section-divider { background: #2d3748 !important; }
+body.bg-dark .inbox-search { background: #1e293b !important; border-color: #2d3748 !important; color: #f1f5f9 !important; }
+body.bg-dark .inbox-requests-header { color: #f1f5f9 !important; }
+body.bg-dark .inbox-requests-header:hover { background: #2d3748 !important; }
+body.bg-dark .inbox-requests-title { color: #f1f5f9 !important; }
+body.bg-dark .inbox-req-name { color: #f1f5f9 !important; }
+body.bg-dark .inbox-req-msg { background: #2d3748 !important; border-color: #334155 !important; color: #cbd5e1 !important; }
+body.bg-dark .inbox-req-reject { background: #3f1010 !important; color: #f87171 !important; }
+</style>
+
 <div class="inbox-page">
 
-    <div class="inbox-header">
-        <h2 class="inbox-title">💬 Conversaciones</h2>
-        <p class="inbox-subtitle">Tus mensajes directos</p>
+    <!-- HERO -->
+    <div class="inbox-hero">
+        <div class="inbox-hero-left">
+            <div class="inbox-hero-title">💬 Mensajes</div>
+            <div class="inbox-hero-sub">Tus conversaciones directas</div>
+        </div>
+        @if (pendingRequests.Any())
+        {
+            <div class="inbox-hero-badge">@pendingRequests.Count solicitud@(pendingRequests.Count != 1 ? "es" : "") nueva@(pendingRequests.Count != 1 ? "s" : "")</div>
+        }
     </div>
+
+    <!-- 🔥 SOLICITUDES DE MENSAJE -->
+    @if (pendingRequests.Any())
+    {
+        <div class="inbox-requests-card" id="requestsCard">
+            <div class="inbox-requests-header" onclick="toggleRequests()">
+                <div class="inbox-requests-icon">💬</div>
+                <div>
+                    <div class="inbox-requests-title">Solicitudes de mensaje</div>
+                    <div class="inbox-requests-sub">Personas que quieren chatear contigo</div>
+                </div>
+                <span class="inbox-req-count">@pendingRequests.Count</span>
+                <span class="inbox-req-chevron open" id="reqChevron">›</span>
+            </div>
+
+            <div class="inbox-req-list open" id="reqList">
+                @foreach (var req in pendingRequests)
+                {
+                    var senderImg = req.Sender?.ProfileImage ?? req.Sender?.ProfilePicture ?? "";
+                    var senderLetter = (req.Sender?.Username ?? "?").Substring(0, 1).ToUpper();
+                    var timeAgo = (DateTime.UtcNow - req.CreatedAt).TotalMinutes < 60
+                        ? $"Hace {(int)(DateTime.UtcNow - req.CreatedAt).TotalMinutes} min"
+                        : req.CreatedAt.ToLocalTime().ToString("dd MMM · HH:mm");
+
+                    <div class="inbox-req-item" id="req-item-@req.Id">
+                        @if (!string.IsNullOrEmpty(senderImg))
+                        { <img src="@senderImg" class="inbox-req-avatar" /> }
+                        else
+                        { <div class="inbox-req-avatar-letter">@senderLetter</div> }
+
+                        <div class="inbox-req-info">
+                            <div class="inbox-req-name">@req.Sender?.Username</div>
+                            <div class="inbox-req-msg">"@req.FirstMessage"</div>
+                            <div class="inbox-req-time">📅 @timeAgo</div>
+                            <div class="inbox-req-btns">
+                                <button class="inbox-req-accept"
+                                        onclick="responderSolicitud(@req.Id, true, '@req.Sender?.Username', @req.SenderId)">
+                                    ✅ Aceptar
+                                </button>
+                                <button class="inbox-req-reject"
+                                        onclick="responderSolicitud(@req.Id, false, '@req.Sender?.Username', @req.SenderId)">
+                                    ❌ Rechazar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+
+    <!-- BÚSQUEDA -->
+    @if (Model.Any())
+    {
+        <div class="inbox-search-wrap">
+            <span class="inbox-search-icon">🔍</span>
+            <input type="text" class="inbox-search" placeholder="Buscar conversaciones..."
+                   oninput="filtrarConversaciones(this.value)" />
+        </div>
+    }
 
     @if (!Model.Any())
     {
         <div class="inbox-empty">
             <div class="inbox-empty-icon">📭</div>
             <h5>Sin conversaciones</h5>
-            <p>Aún no tienes mensajes. ¡Busca a alguien y empieza a chatear!</p>
+            <p>¡Busca a alguien y empieza a chatear!</p>
         </div>
     }
     else
@@ -34,7 +322,8 @@
         {
             <div class="inbox-section-label">📌 Anclados</div>
         }
-        <div class="inbox-list">
+
+        <div class="inbox-list" id="inboxList">
             @foreach (var msg in ordered)
             {
                 var otherUserId = msg.SenderId == myId ? msg.ReceiverId : msg.SenderId;
@@ -51,26 +340,22 @@
                     <div class="inbox-section-divider"></div>
                 }
 
-                <a href="/Message/Chat?userId=@otherUserId" class="inbox-item @(isUnread ? "unread" : "") @(isPinned ? "pinned" : "")">
+                <a href="/Message/Chat?userId=@otherUserId"
+                   class="inbox-item @(isUnread ? "unread" : "") @(isPinned ? "pinned" : "")"
+                   data-username="@username.ToLower()">
+
                     <div class="inbox-avatar-wrap">
                         @if (!string.IsNullOrEmpty(profileImage))
-                        {
-                            <img src="@profileImage" class="inbox-avatar" />
-                        }
+                        { <img src="@profileImage" class="inbox-avatar" /> }
                         else
-                        {
-                            <div class="inbox-avatar avatar-letter">@firstLetter</div>
-                        }
-                        <div class="inbox-online-dot" id="dot-@otherUserId" style="display:none;"></div>
+                        { <div class="inbox-avatar avatar-letter">@firstLetter</div> }
+                        <div class="inbox-online-dot" id="dot-@otherUserId"></div>
                     </div>
 
                     <div class="inbox-info">
                         <div class="inbox-name">
                             @username
-                            @if (isPinned)
-                            {
-                                <span class="pin-icon">📌</span>
-                            }
+                            @if (isPinned) { <span class="pin-icon">📌</span> }
                         </div>
                         <div class="inbox-preview">
                             @if (isMe) { <span class="inbox-you">Tú: </span> }
@@ -86,13 +371,9 @@
                     <div class="inbox-right">
                         <div class="inbox-time">@msg.SentAt.ToString("HH:mm")</div>
                         @if (isUnread)
-                        {
-                            <div class="inbox-unread-badge">●</div>
-                        }
+                        { <div class="inbox-unread-dot"></div> }
                         else if (isMe && msg.IsRead)
-                        {
-                            <div class="inbox-seen">✔✔</div>
-                        }
+                        { <div class="inbox-seen">✔✔</div> }
                     </div>
                 </a>
             }
@@ -100,118 +381,11 @@
     }
 </div>
 
-<style>
-.inbox-page { max-width: 680px; margin: 0 auto; }
-
-.inbox-header { margin-bottom: 20px; }
-.inbox-title { font-size: 24px; font-weight: 800; color: #111827; margin: 0 0 4px; }
-.inbox-subtitle { font-size: 14px; color: #9ca3af; margin: 0; }
-
-.inbox-section-label {
-    font-size: 12px; font-weight: 700; color: #6366f1;
-    padding: 0 4px 8px; letter-spacing: 0.5px;
-}
-
-.inbox-section-divider {
-    height: 1px; background: #e5e7eb;
-    margin: 4px 0 4px;
-}
-
-.inbox-empty {
-    text-align: center; padding: 60px 20px; background: white;
-    border-radius: 20px; box-shadow: 0 2px 12px rgba(0,0,0,0.06);
-    border: 1px solid rgba(0,0,0,0.04);
-}
-
-.inbox-empty-icon { font-size: 52px; margin-bottom: 14px; }
-.inbox-empty h5 { font-size: 18px; font-weight: 700; color: #111827; margin-bottom: 8px; }
-.inbox-empty p { font-size: 14px; color: #9ca3af; margin: 0; }
-
-.inbox-list {
-    background: white; border-radius: 20px;
-    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
-    border: 1px solid rgba(0,0,0,0.04); overflow: hidden;
-}
-
-.inbox-item {
-    display: flex; align-items: center; gap: 14px;
-    padding: 14px 18px; text-decoration: none; color: inherit;
-    border-bottom: 1px solid #f9fafb; transition: background 0.15s;
-    position: relative;
-}
-
-.inbox-item:last-child { border-bottom: none; }
-.inbox-item:hover { background: #f9fafb; }
-.inbox-item.unread { background: #eff6ff; }
-.inbox-item.unread:hover { background: #dbeafe; }
-.inbox-item.pinned { border-left: 3px solid #6366f1; }
-
-.inbox-avatar-wrap { position: relative; flex-shrink: 0; }
-
-.inbox-avatar {
-    width: 52px; height: 52px; border-radius: 50%;
-    object-fit: cover; border: 2px solid #e5e7eb;
-}
-
-.avatar-letter {
-    background: linear-gradient(135deg, #2563eb, #7c3aed); color: white;
-    display: flex; align-items: center; justify-content: center;
-    font-weight: 800; font-size: 20px;
-    width: 52px; height: 52px; border-radius: 50%;
-}
-
-.inbox-online-dot {
-    position: absolute; bottom: 2px; right: 2px;
-    width: 12px; height: 12px; border-radius: 50%;
-    background: #16a34a; border: 2px solid white;
-}
-
-.inbox-info { flex: 1; min-width: 0; }
-
-.inbox-name {
-    font-size: 15px; font-weight: 700; color: #111827;
-    margin-bottom: 3px; display: flex; align-items: center; gap: 6px;
-}
-
-.pin-icon { font-size: 11px; }
-
-.inbox-preview {
-    font-size: 13px; color: #9ca3af;
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-    max-width: 220px;
-}
-
-.inbox-item.unread .inbox-preview { color: #374151; font-weight: 500; }
-.inbox-you { color: #6b7280; }
-
-.inbox-right {
-    display: flex; flex-direction: column;
-    align-items: flex-end; gap: 4px; flex-shrink: 0;
-}
-
-.inbox-time { font-size: 12px; color: #9ca3af; }
-.inbox-item.unread .inbox-time { color: #2563eb; font-weight: 600; }
-.inbox-unread-badge { color: #2563eb; font-size: 18px; }
-.inbox-seen { font-size: 12px; color: #2563eb; }
-
-/* DARK MODE */
-body.bg-dark .inbox-title { color: #f1f5f9 !important; }
-body.bg-dark .inbox-list,
-body.bg-dark .inbox-empty { background: #1e1e2e !important; border-color: #2d2d3d !important; }
-body.bg-dark .inbox-item { border-color: #2d2d3d !important; color: #f1f5f9 !important; }
-body.bg-dark .inbox-item:hover { background: #2d2d3d !important; }
-body.bg-dark .inbox-item.unread { background: #1e3a5f !important; }
-body.bg-dark .inbox-item.pinned { border-left-color: #818cf8 !important; }
-body.bg-dark .inbox-name { color: #f1f5f9 !important; }
-body.bg-dark .inbox-empty h5 { color: #f1f5f9 !important; }
-body.bg-dark .inbox-section-label { color: #818cf8 !important; }
-body.bg-dark .inbox-section-divider { background: #2d2d3d !important; }
-</style>
-
 <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
 <script>
 const myId = "@myId";
-const conn = new signalR.HubConnectionBuilder().withUrl("/chatHub").withAutomaticReconnect().build();
+const conn = new signalR.HubConnectionBuilder()
+    .withUrl("/chatHub").withAutomaticReconnect().build();
 
 conn.start().then(() => conn.invoke("JoinUserGroup", myId));
 
@@ -219,9 +393,89 @@ conn.on("UserOnline", (userId) => {
     const dot = document.getElementById("dot-" + userId);
     if (dot) dot.style.display = "block";
 });
-
 conn.on("UserOffline", (userId) => {
     const dot = document.getElementById("dot-" + userId);
     if (dot) dot.style.display = "none";
 });
+
+// cargar online al inicio
+fetch("/User/GetOnlineUsers")
+    .then(r => r.json())
+    .then(users => {
+        users.forEach(id => {
+            const dot = document.getElementById("dot-" + id);
+            if (dot) dot.style.display = "block";
+        });
+    }).catch(() => {});
+
+// 🔥 toggle solicitudes
+function toggleRequests() {
+    const list = document.getElementById("reqList");
+    const chevron = document.getElementById("reqChevron");
+    const isOpen = list.classList.contains("open");
+    list.classList.toggle("open", !isOpen);
+    chevron.classList.toggle("open", !isOpen);
+}
+
+// 🔥 responder solicitud
+async function responderSolicitud(requestId, accept, senderName, senderId) {
+    const item = document.getElementById("req-item-" + requestId);
+    const btns = item.querySelectorAll("button");
+    btns.forEach(b => b.disabled = true);
+
+    try {
+        const res = await fetch("/Message/RespondMessageRequest", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ requestId, accept })
+        });
+        const data = await res.json();
+
+        if (data.success) {
+            // animación de salida
+            item.style.transition = "0.3s";
+            item.style.opacity = "0";
+            item.style.transform = "translateX(20px)";
+            setTimeout(() => {
+                item.remove();
+                // actualizar contador
+                const remaining = document.querySelectorAll(".inbox-req-item").length;
+                const countEl = document.querySelector(".inbox-req-count");
+                if (countEl) countEl.textContent = remaining;
+                if (remaining === 0) {
+                    document.getElementById("requestsCard")?.remove();
+                    document.querySelector(".inbox-hero-badge")?.remove();
+                }
+            }, 300);
+
+            if (accept) {
+                showInboxToast(`✅ Aceptaste el mensaje de ${senderName}`);
+                // redirigir al chat después de un momento
+                setTimeout(() => window.location.href = `/Message/Chat?userId=${senderId}`, 1500);
+            } else {
+                showInboxToast(`❌ Rechazaste la solicitud de ${senderName}`);
+            }
+        }
+    } catch (err) {
+        btns.forEach(b => b.disabled = false);
+        showInboxToast("❌ Error al responder");
+    }
+}
+
+// 🔥 buscar conversaciones
+function filtrarConversaciones(q) {
+    q = q.toLowerCase().trim();
+    document.querySelectorAll(".inbox-item").forEach(item => {
+        const username = item.getAttribute("data-username") ?? "";
+        item.style.display = !q || username.includes(q) ? "flex" : "none";
+    });
+}
+
+function showInboxToast(msg) {
+    const t = document.createElement("div");
+    t.className = "inbox-toast";
+    t.textContent = msg;
+    document.body.appendChild(t);
+    setTimeout(() => t.remove(), 3000);
+}
 </script>
