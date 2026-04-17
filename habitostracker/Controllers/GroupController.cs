@@ -533,17 +533,20 @@ namespace HabitTrackerApp.Controllers
             member.LeftAt = DateTime.UtcNow;
             await _context.SaveChangesAsync();
 
-            // 🔥 mensaje de sistema
             var sysMsg = $"🚫 {admin?.Username} eliminó a {removedUser?.Username} del grupo";
             await CreateSystemMessage(groupId, sysMsg);
 
-            // 🔥 notificar en tiempo real a todos en el chat
+            // 🔥 notificar a todos en el chat (mensaje de sistema)
             await _hub.Clients.Group("group-" + groupId)
                 .SendAsync("MemberRemovedFromGroup", memberId.ToString(), sysMsg);
 
+            // 🔥 notificar DIRECTAMENTE al usuario eliminado por su canal personal
+            var personalMsg = $"🚫 {admin?.Username} te eliminó del grupo";
+            await _hub.Clients.Group(memberId.ToString())
+                .SendAsync("YouWereRemovedFromGroup", groupId.ToString(), personalMsg);
+
             return Json(new { success = true });
         }
-
         // 🔥 promover a admin (solo el creador del grupo)
         [HttpPost]
         public async Task<IActionResult> PromoteToAdmin(int groupId, int memberId)

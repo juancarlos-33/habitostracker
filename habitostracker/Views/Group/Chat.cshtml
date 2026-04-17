@@ -505,7 +505,7 @@ grpConnection.on("ReceiveGroupMessage", (senderId, senderName, senderImage, cont
     const empty = document.getElementById("emptyState");
     if (empty) empty.remove();
 
-    // 🔥 mensaje de sistema
+    // mensaje de sistema
     if (fileType === "system" || senderId === "0") {
         const row = document.createElement("div");
         row.className = "grp-msg-system";
@@ -576,6 +576,48 @@ grpConnection.on("GroupUserStoppedTyping", () => {
     document.getElementById("typingIndicator").style.display = "none";
 });
 
+// 🔥 para TODOS en el chat — mostrar mensaje de sistema
+grpConnection.on("MemberRemovedFromGroup", (removedUserId, systemMessage) => {
+    const empty = document.getElementById("emptyState");
+    if (empty) empty.remove();
+
+    const sysRow = document.createElement("div");
+    sysRow.className = "grp-msg-system";
+    sysRow.innerHTML = `<div class="grp-msg-system-bubble">${escapeHtml(systemMessage)}</div>`;
+    chatBox.insertBefore(sysRow, document.getElementById("typingIndicator"));
+    chatBox.scrollTop = chatBox.scrollHeight;
+});
+
+// 🔥 para EL ELIMINADO — bloquear chat en tiempo real
+grpConnection.on("YouWereRemovedFromGroup", (removedGroupId, message) => {
+    if (String(removedGroupId) !== String(groupId)) return;
+
+    const empty = document.getElementById("emptyState");
+    if (empty) empty.remove();
+
+    // mensaje de sistema rojo
+    const sysRow = document.createElement("div");
+    sysRow.className = "grp-msg-system";
+    sysRow.innerHTML = `<div class="grp-msg-system-bubble" style="background:rgba(239,68,68,0.1);color:#dc2626;border:1px solid rgba(239,68,68,0.2);">${escapeHtml(message)}</div>`;
+    chatBox.insertBefore(sysRow, document.getElementById("typingIndicator"));
+    chatBox.scrollTop = chatBox.scrollHeight;
+
+    // quitar controles
+    document.querySelector(".grp-input-bar")?.remove();
+    document.getElementById("grpPreview")?.remove();
+    document.getElementById("grpAudioPreview")?.remove();
+    document.getElementById("grpRecording")?.remove();
+    document.getElementById("emojiPanel")?.remove();
+
+    // banner rojo
+    const banner = document.createElement("div");
+    banner.style.cssText = "flex-shrink:0;padding:14px 16px;background:rgba(239,68,68,0.1);border-top:1px solid rgba(239,68,68,0.2);display:flex;align-items:center;gap:10px;font-size:13px;color:#dc2626;font-weight:700;font-family:'Plus Jakarta Sans',sans-serif;";
+    banner.innerHTML = `<span>🚫</span><span>${escapeHtml(message)}</span>`;
+    document.querySelector(".grp-chat-page").appendChild(banner);
+
+    showToast("🚫 " + message);
+});
+
 // 🔥 silenciar
 async function toggleMute() {
     const res = await fetch("/Group/ToggleMute", {
@@ -640,7 +682,7 @@ function cancelarArchivo() {
     document.getElementById("grpPreview").style.display = "none";
     document.getElementById("grpPreviewImg").style.display = "none";
     document.getElementById("grpPreviewVid").style.display = "none";
-    sendBtn.disabled = msgInput.value.trim() === "";
+    sendBtn.disabled = msgInput?.value.trim() === "";
 }
 
 async function toggleGrabacion() {
@@ -809,49 +851,6 @@ document.addEventListener("click", (e) => {
         const panel = document.getElementById("emojiPanel");
         if (panel) panel.style.display = "none";
         document.getElementById("emojiBtn")?.classList.remove("active");
-    }
-});
-// 🔥 escuchar si te sacan del grupo en tiempo real
-grpConnection.on("MemberRemovedFromGroup", (removedUserId, systemMessage) => {
-    // mostrar mensaje de sistema en el chat para todos
-    const empty = document.getElementById("emptyState");
-    if (empty) empty.remove();
-
-    const sysRow = document.createElement("div");
-    sysRow.className = "grp-msg-system";
-    sysRow.innerHTML = `<div class="grp-msg-system-bubble">${escapeHtml(systemMessage)}</div>`;
-    chatBox.insertBefore(sysRow, document.getElementById("typingIndicator"));
-    chatBox.scrollTop = chatBox.scrollHeight;
-
-    // 🔥 si ME sacaron a mí
-    if (String(removedUserId) === String(myId)) {
-        // deshabilitar input inmediatamente
-        const inputBar = document.querySelector(".grp-input-bar");
-        const preview = document.getElementById("grpPreview");
-        const audioPreview = document.getElementById("grpAudioPreview");
-        const recording = document.getElementById("grpRecording");
-        const emojiPanel = document.getElementById("emojiPanel");
-
-        if (inputBar) inputBar.remove();
-        if (preview) preview.remove();
-        if (audioPreview) audioPreview.remove();
-        if (recording) recording.remove();
-        if (emojiPanel) emojiPanel.remove();
-
-        // mostrar banner de expulsado
-        const banner = document.createElement("div");
-        banner.className = "grp-left-banner";
-        banner.style.cssText = "flex-shrink:0;padding:14px 16px;background:rgba(239,68,68,0.1);border-top:1px solid rgba(239,68,68,0.2);display:flex;align-items:center;gap:10px;font-size:13px;color:#dc2626;font-weight:700;";
-        banner.innerHTML = `
-            <span>🚫</span>
-            <span>Un admin te eliminó de este grupo. Solo puedes ver el historial.</span>
-        `;
-
-        const chatPage = document.querySelector(".grp-chat-page");
-        chatPage.appendChild(banner);
-
-        // toast
-        showToast("🚫 Fuiste eliminado del grupo");
     }
 });
 </script>
