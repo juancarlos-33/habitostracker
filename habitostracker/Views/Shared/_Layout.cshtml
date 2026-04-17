@@ -97,7 +97,7 @@ body { font-family: 'Plus Jakarta Sans', sans-serif; transition: background 0.3s
 .ht-dropdown { position: relative; }
 .ht-dropdown-menu {
     position: absolute; top: calc(100% + 10px); right: 0;
-    min-width: 260px;
+    min-width: 270px;
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: 20px;
@@ -139,6 +139,7 @@ body { font-family: 'Plus Jakarta Sans', sans-serif; transition: background 0.3s
     margin-left: auto; background: #ef4444; color: white;
     font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 20px;
 }
+.ht-menu-item .mi-badge.green { background: #22c55e; }
 .ht-menu-divider { height: 1px; background: var(--border); margin: 6px 8px; }
 
 /* ── SIDEBAR ────────────────────────────── */
@@ -173,7 +174,7 @@ body { font-family: 'Plus Jakarta Sans', sans-serif; transition: background 0.3s
     padding: 10px 14px; border-radius: 12px;
     color: rgba(255,255,255,0.65); text-decoration: none;
     font-size: 13px; font-weight: 600;
-    transition: all 0.15s;
+    transition: all 0.15s; position: relative;
 }
 .ht-sidebar-link:hover {
     background: rgba(255,255,255,0.08);
@@ -184,6 +185,11 @@ body { font-family: 'Plus Jakarta Sans', sans-serif; transition: background 0.3s
     color: white; box-shadow: 0 4px 14px rgba(37,99,235,0.35);
 }
 .ht-sidebar-link .sl-icon { font-size: 16px; width: 20px; text-align: center; flex-shrink: 0; }
+.ht-sidebar-link .sl-badge {
+    margin-left: auto; background: #ef4444; color: white;
+    font-size: 10px; font-weight: 800; padding: 2px 7px;
+    border-radius: 20px;
+}
 
 /* ── OVERLAY ────────────────────────────── */
 #ht-overlay {
@@ -223,7 +229,6 @@ body.bg-dark .ht-menu-item:hover { background: rgba(99,102,241,0.12); }
 body.bg-dark .ht-menu-divider { background: rgba(255,255,255,0.07); }
 body.bg-dark .ht-dropdown-header { border-color: rgba(255,255,255,0.07); }
 
-/* legacy compat */
 body.bg-dark { color: #e4e6eb; }
 body.bg-dark h1,body.bg-dark h2,body.bg-dark h3,body.bg-dark h4,body.bg-dark h5 { color: #fff; }
 body.bg-dark label { color: #ccc !important; }
@@ -282,6 +287,9 @@ body.bg-dark .modal-content { background: #1e293b !important; color: #f1f5f9 !im
 body.bg-dark .modal-content .text-muted { color: #94a3b8 !important; }
 body.bg-dark .modal-content .btn-outline-secondary { border-color: #475569; color: #94a3b8; }
 body.bg-dark .modal-content .btn-outline-secondary:hover { background: #334155; color: #f1f5f9; }
+
+/* ── LOCAL TIME ─────────────────────────── */
+.ht-local-time { /* elementos con data-utc se convierten automáticamente */ }
 </style>
 </head>
 
@@ -302,11 +310,12 @@ body.bg-dark .modal-content .btn-outline-secondary:hover { background: #334155; 
     <a class="ht-sidebar-link guest-block" asp-controller="Post" asp-action="Index"><span class="sl-icon">📸</span> Publicaciones</a>
     <a class="ht-sidebar-link guest-block" asp-controller="User" asp-action="Index"><span class="sl-icon">👥</span> Amigos</a>
     <a class="ht-sidebar-link guest-block" asp-controller="User" asp-action="FriendRequests"><span class="sl-icon">📩</span> Solicitudes</a>
+    <a class="ht-sidebar-link guest-block" asp-controller="Message" asp-action="Inbox" id="sidebar-msg-link">
+        <span class="sl-icon">💬</span> Mensajes
+        <span class="sl-badge" id="sidebar-msg-badge" style="display:none;"></span>
+    </a>
     <a class="ht-sidebar-link guest-block" asp-controller="Post" asp-action="SavedPosts"><span class="sl-icon">🔖</span> Guardados</a>
-
-    <a class="ht-sidebar-link guest-block" asp-controller="Group" asp-action="Index">
-    <span class="sl-icon">👥</span> Grupos
-</a>
+    <a class="ht-sidebar-link guest-block" asp-controller="Group" asp-action="Index"><span class="sl-icon">👥</span> Grupos</a>
 
     <div class="ht-sidebar-section">Más</div>
     <a class="ht-sidebar-link guest-block" asp-controller="Support" asp-action="Chat"><span class="sl-icon">😔</span> Me siento mal</a>
@@ -343,19 +352,22 @@ body.bg-dark .modal-content .btn-outline-secondary:hover { background: #334155; 
                   User.IsInRole("Admin") ? "🛡️ Admin" :
                   User.IsInRole("Guest") ? "👤 Invitado" : "✨ Usuario";
 
-
     <nav class="ht-navbar">
-        <!-- IZQUIERDA -->
         <div class="ht-nav-left">
             <button class="ht-icon-btn" data-no-loader onclick="toggleSidebar()" title="Menú">☰</button>
         </div>
 
-        <!-- CENTRO -->
         <a class="ht-brand" asp-controller="Habit" asp-action="Index">🚀 HabitTracker</a>
 
-        <!-- DERECHA -->
         <div class="ht-nav-right">
             <button onclick="toggleDarkMode()" data-no-loader class="ht-icon-btn" title="Tema">🌙</button>
+
+            <!-- 🔥 Botón solicitudes de mensaje -->
+            <a href="/Message/Inbox" class="ht-icon-btn guest-block" title="Solicitudes de mensaje"
+               id="msgReqNavBtn" style="display:none; position:relative;">
+                💬
+                <span class="notif-dot" id="msgReqDot"></span>
+            </a>
 
             <!-- Dropdown usuario -->
             <div class="ht-dropdown" id="ht-user-dropdown">
@@ -367,7 +379,6 @@ body.bg-dark .modal-content .btn-outline-secondary:hover { background: #334155; 
                 </button>
 
                 <div class="ht-dropdown-menu" id="ht-user-menu">
-                    <!-- Header -->
                     <div class="ht-dropdown-header">
                         @if (!string.IsNullOrWhiteSpace(navProfileImage))
                         { <img src="@navProfileImage" class="ht-dh-avatar" /> }
@@ -379,7 +390,6 @@ body.bg-dark .modal-content .btn-outline-secondary:hover { background: #334155; 
                         </div>
                     </div>
 
-                    <!-- Items -->
                     <a class="ht-menu-item guest-block" asp-controller="Account" asp-action="Profile">
                         <span class="mi-icon">👤</span><span>Mi Perfil</span>
                     </a>
@@ -391,6 +401,13 @@ body.bg-dark .modal-content .btn-outline-secondary:hover { background: #334155; 
                         <span class="mi-icon">📨</span><span>Mensajes</span>
                         @if (ViewBag.NewMessages != null && (int)ViewBag.NewMessages > 0)
                         { <span class="mi-badge">@ViewBag.NewMessages</span> }
+                    </a>
+                    <!-- 🔥 Solicitudes de mensaje en dropdown -->
+                    <a class="ht-menu-item guest-block" asp-controller="Message" asp-action="Inbox"
+                       id="msgReqMenuItem" style="display:none;">
+                        <span class="mi-icon">💬</span>
+                        <span>Solicitudes de mensaje</span>
+                        <span class="mi-badge green" id="msgReqMenuBadge">0</span>
                     </a>
                     <a class="ht-menu-item guest-block" asp-controller="Habit" asp-action="Achievements">
                         <span class="mi-icon">🏆</span><span>Logros</span>
@@ -427,11 +444,11 @@ body.bg-dark .modal-content .btn-outline-secondary:hover { background: #334155; 
                 <p class="text-muted small mt-1">Tendrás que volver a ingresar tus datos.</p>
                 <div class="d-flex justify-content-center gap-3 mt-4">
                     <button type="button" class="btn btn-secondary rounded-pill px-4" data-bs-dismiss="modal">Cancelar</button>
-                   <form asp-controller="Account" asp-action="Logout" method="post" class="d-inline">
-    @Html.AntiForgeryToken()
-    <input type="hidden" name="sessionToken" value="@User.FindFirst("SessionToken")?.Value" />
-    <button type="submit" class="btn btn-danger rounded-pill px-4">Sí, salir</button>
-</form>
+                    <form asp-controller="Account" asp-action="Logout" method="post" class="d-inline">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="sessionToken" value="@User.FindFirst("SessionToken")?.Value" />
+                        <button type="submit" class="btn btn-danger rounded-pill px-4">Sí, salir</button>
+                    </form>
                 </div>
             </div>
         </div>
@@ -469,6 +486,75 @@ body.bg-dark .modal-content .btn-outline-secondary:hover { background: #334155; 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
 
 <script>
+// ══════════════════════════════════════════
+// 🔥 FECHAS LOCALES — convierte todas las
+//    fechas UTC a la hora local del usuario
+// ══════════════════════════════════════════
+document.addEventListener("DOMContentLoaded", function() {
+    convertirFechasLocales();
+});
+
+function convertirFechasLocales() {
+    // elementos con data-utc="2026-04-17T10:30:00Z"
+    document.querySelectorAll("[data-utc]").forEach(el => {
+        const utcStr = el.getAttribute("data-utc");
+        if (!utcStr) return;
+        try {
+            const date = new Date(utcStr);
+            const formato = el.getAttribute("data-format") || "datetime";
+            el.textContent = formatearFecha(date, formato);
+        } catch(e) {}
+    });
+
+    // elementos con data-utc-time (solo hora)
+    document.querySelectorAll("[data-utc-time]").forEach(el => {
+        const utcStr = el.getAttribute("data-utc-time");
+        if (!utcStr) return;
+        try {
+            const date = new Date(utcStr);
+            el.textContent = date.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' });
+        } catch(e) {}
+    });
+}
+
+function formatearFecha(date, formato) {
+    const ahora = new Date();
+    const diffMs = ahora - date;
+    const diffMin = Math.floor(diffMs / 60000);
+    const diffH = Math.floor(diffMs / 3600000);
+    const diffD = Math.floor(diffMs / 86400000);
+
+    if (formato === "relative") {
+        if (diffMin < 1) return "ahora";
+        if (diffMin < 60) return `hace ${diffMin} min`;
+        if (diffH < 24) return `hace ${diffH}h`;
+        if (diffD === 1) return "ayer";
+        if (diffD < 7) return `hace ${diffD} días`;
+        return date.toLocaleDateString('es-CO', { day: '2-digit', month: 'short' });
+    }
+
+    if (formato === "time") {
+        return date.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' });
+    }
+
+    if (formato === "date") {
+        return date.toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' });
+    }
+
+    // datetime (default)
+    const esHoy = date.toDateString() === ahora.toDateString();
+    const esAyer = new Date(ahora - 86400000).toDateString() === date.toDateString();
+    const hora = date.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' });
+    if (esHoy) return hora;
+    if (esAyer) return `ayer ${hora}`;
+    return date.toLocaleDateString('es-CO', { day: '2-digit', month: 'short' }) + ` ${hora}`;
+}
+
+// uso global — llama esto si agregas contenido dinámico
+window.htConvertirFechas = convertirFechasLocales;
+</script>
+
+<script>
 const isSuperAdmin = @(User.IsInRole("SuperAdmin").ToString().ToLower());
 
 // ── SIGNALR GLOBAL ───────────────────────
@@ -476,7 +562,7 @@ const connectionGlobal = new signalR.HubConnectionBuilder().withUrl("/chatHub").
 
 connectionGlobal.on("ForceLogout", function(message) {
     document.body.innerHTML = `<div style="height:100vh;display:flex;align-items:center;justify-content:center;background:#0f172a;font-family:sans-serif;color:white;text-align:center;"><div style="background:#1e293b;padding:50px;border-radius:14px;"><h2 style="color:#f59e0b">⚠ Atención</h2><p>${message}</p><p style="opacity:0.6">Cerrando sesión...</p></div></div>`;
-   setTimeout(() => window.location.href="/Account/LogoutGet", 2500);
+    setTimeout(() => window.location.href="/Account/LogoutGet", 2500);
 });
 
 connectionGlobal.on("IPBlocked", function(blockedIp) {
@@ -508,17 +594,14 @@ connectionGlobal.on("UserConnectedNotification", function(username) {
     showToastNotif(username, "● En línea", "", null);
 });
 
-// 🔥 nueva sesión detectada en tiempo real
 connectionGlobal.on("NewSessionDetected", function() {
-    if (window.location.pathname.toLowerCase().includes("/security")) {
-        location.reload();
-    }
+    if (window.location.pathname.toLowerCase().includes("/security")) location.reload();
 });
-// 🔥 cerrar sesión específica
+
 connectionGlobal.on("ForceLogoutSession", function(targetToken) {
     const myToken = '@User.FindFirst("SessionToken")?.Value';
     if (targetToken === myToken) {
-        document.body.innerHTML = `<div style="height:100vh;display:flex;align-items:center;justify-content:center;background:#0f172a;font-family:sans-serif;color:white;text-align:center;"><div style="background:#1e293b;padding:50px;border-radius:14px;"><h2 style="color:#f59e0b">⚠ Sesión cerrada</h2><p>Tu sesión fue cerrada desde otro dispositivo.</p><p style="opacity:0.6">Redirigiendo...</p></div></div>`;
+        document.body.innerHTML = `<div style="height:100vh;display:flex;align-items:center;justify-content:center;background:#0f172a;font-family:sans-serif;color:white;text-align:center;"><div style="background:#1e293b;padding:50px;border-radius:14px;"><h2 style="color:#f59e0b">⚠ Sesión cerrada</h2><p>Tu sesión fue cerrada desde otro dispositivo.</p></div></div>`;
         setTimeout(() => window.location.href="/Account/LogoutGet", 2500);
     }
 });
@@ -576,11 +659,6 @@ function showToastNotif(username, message, userImage, link) {
         setTimeout(() => card.remove(), 400);
     }, 4000);
 }
-
-function handleNotificationClick(message, senderId, habitId, commentId) {
-    if (message.toLowerCase().includes("coment")) window.location = `/Post/Details/${habitId}#comment-${commentId}`;
-    else if (message.toLowerCase().includes("mensaje")) window.location = `/Message/Chat?userId=${senderId}`;
-}
 </script>
 
 <script>
@@ -624,25 +702,20 @@ window.addEventListener("pageshow", function(e) {
 <script>
 // ── DARK MODE ────────────────────────────
 const body = document.body;
-
 function toggleDarkMode() {
     body.classList.contains("bg-dark") ? disableDarkMode() : enableDarkMode();
 }
-
 function enableDarkMode() {
     body.classList.remove("bg-light","text-dark");
     body.classList.add("bg-dark","text-light");
     localStorage.setItem("darkMode","enabled");
 }
-
 function disableDarkMode() {
     body.classList.remove("bg-dark","text-light");
     body.classList.add("bg-light","text-dark");
     localStorage.setItem("darkMode","disabled");
 }
-
 if (localStorage.getItem("darkMode") === "enabled") enableDarkMode();
-
 document.addEventListener("DOMContentLoaded", function() {
     if (localStorage.getItem("darkMode") === "enabled") enableDarkMode();
 });
@@ -658,13 +731,11 @@ function toggleSidebar() {
     overlay.classList.toggle("show", !isOpen);
     document.body.style.overflow = !isOpen ? "hidden" : "";
 }
-
 document.getElementById("ht-overlay").addEventListener("click", () => {
     document.getElementById("ht-sidebar").classList.remove("show");
     document.getElementById("ht-overlay").classList.remove("show");
     document.body.style.overflow = "";
 });
-
 document.querySelectorAll(".ht-sidebar-link").forEach(link => {
     link.addEventListener("click", () => {
         document.getElementById("ht-sidebar").classList.remove("show");
@@ -679,11 +750,44 @@ document.querySelectorAll(".ht-sidebar-link").forEach(link => {
 function toggleUserDropdown() {
     document.getElementById("ht-user-dropdown").classList.toggle("open");
 }
-
 document.addEventListener("click", function(e) {
     const dd = document.getElementById("ht-user-dropdown");
     if (dd && !dd.contains(e.target)) dd.classList.remove("open");
 });
+</script>
+
+<script>
+// 🔥 SOLICITUDES DE MENSAJE — cargar contador
+@if (User.Identity.IsAuthenticated && !User.IsInRole("Guest"))
+{
+    <text>
+    document.addEventListener("DOMContentLoaded", function() {
+        cargarSolicitudesMensaje();
+    });
+
+    function cargarSolicitudesMensaje() {
+        fetch("/Message/GetPendingRequestCount")
+            .then(r => r.json())
+            .then(data => {
+                const count = data.count ?? 0;
+                const navBtn = document.getElementById("msgReqNavBtn");
+                const menuItem = document.getElementById("msgReqMenuItem");
+                const menuBadge = document.getElementById("msgReqMenuBadge");
+                const sidebarBadge = document.getElementById("sidebar-msg-badge");
+
+                if (count > 0) {
+                    if (navBtn) navBtn.style.display = "flex";
+                    if (menuItem) menuItem.style.display = "flex";
+                    if (menuBadge) menuBadge.textContent = count;
+                    if (sidebarBadge) {
+                        sidebarBadge.style.display = "inline";
+                        sidebarBadge.textContent = count;
+                    }
+                }
+            }).catch(() => {});
+    }
+    </text>
+}
 </script>
 
 <script>
@@ -718,12 +822,10 @@ document.addEventListener("DOMContentLoaded", function() {
 
     modalEl.addEventListener('hidden.bs.modal', cleanBackdrop);
 
-    // 🔥 auto-abrir si viene del filtro
     if (window.location.search.includes("showGuestModal=true")) {
         setTimeout(() => guestModal.show(), 300);
     }
 
-    // 🔥 interceptar clicks en elementos guest-block
     document.addEventListener("click", function(e) {
         if (!isGuest) return;
         const target = e.target.closest(".guest-block");

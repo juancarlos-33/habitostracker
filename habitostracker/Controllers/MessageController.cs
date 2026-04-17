@@ -63,6 +63,15 @@ namespace HabitTrackerApp.Controllers
             return View(conversations);
         }
 
+        [HttpGet]
+        public IActionResult GetPendingRequestCount()
+        {
+            var myId = int.Parse(User.FindFirst("UserId").Value);
+            var count = _context.MessageRequests
+                .Count(r => r.ReceiverId == myId && r.Status == "Pending");
+            return Json(new { count });
+        }
+
         public async Task<IActionResult> Chat(int userId)
         {
             var myId = int.Parse(User.FindFirst("UserId").Value);
