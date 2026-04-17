@@ -811,4 +811,47 @@ document.addEventListener("click", (e) => {
         document.getElementById("emojiBtn")?.classList.remove("active");
     }
 });
+// 🔥 escuchar si te sacan del grupo en tiempo real
+grpConnection.on("MemberRemovedFromGroup", (removedUserId, systemMessage) => {
+    // mostrar mensaje de sistema en el chat para todos
+    const empty = document.getElementById("emptyState");
+    if (empty) empty.remove();
+
+    const sysRow = document.createElement("div");
+    sysRow.className = "grp-msg-system";
+    sysRow.innerHTML = `<div class="grp-msg-system-bubble">${escapeHtml(systemMessage)}</div>`;
+    chatBox.insertBefore(sysRow, document.getElementById("typingIndicator"));
+    chatBox.scrollTop = chatBox.scrollHeight;
+
+    // 🔥 si ME sacaron a mí
+    if (String(removedUserId) === String(myId)) {
+        // deshabilitar input inmediatamente
+        const inputBar = document.querySelector(".grp-input-bar");
+        const preview = document.getElementById("grpPreview");
+        const audioPreview = document.getElementById("grpAudioPreview");
+        const recording = document.getElementById("grpRecording");
+        const emojiPanel = document.getElementById("emojiPanel");
+
+        if (inputBar) inputBar.remove();
+        if (preview) preview.remove();
+        if (audioPreview) audioPreview.remove();
+        if (recording) recording.remove();
+        if (emojiPanel) emojiPanel.remove();
+
+        // mostrar banner de expulsado
+        const banner = document.createElement("div");
+        banner.className = "grp-left-banner";
+        banner.style.cssText = "flex-shrink:0;padding:14px 16px;background:rgba(239,68,68,0.1);border-top:1px solid rgba(239,68,68,0.2);display:flex;align-items:center;gap:10px;font-size:13px;color:#dc2626;font-weight:700;";
+        banner.innerHTML = `
+            <span>🚫</span>
+            <span>Un admin te eliminó de este grupo. Solo puedes ver el historial.</span>
+        `;
+
+        const chatPage = document.querySelector(".grp-chat-page");
+        chatPage.appendChild(banner);
+
+        // toast
+        showToast("🚫 Fuiste eliminado del grupo");
+    }
+});
 </script>

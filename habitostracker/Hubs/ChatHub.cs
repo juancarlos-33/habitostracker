@@ -278,6 +278,14 @@ namespace HabitTrackerApp.Hubs
                 .SendAsync("GroupUserStoppedTyping");
         }
 
+        // 🔥 notificar en tiempo real que un miembro fue eliminado
+        public async Task RemoveMemberFromGroup(string groupId, string removedUserId, string message)
+        {
+            // notificar a todos en el chat del grupo
+            await Clients.Group("group-" + groupId)
+                .SendAsync("MemberRemovedFromGroup", removedUserId, message);
+        }
+
         // 🔥 nueva sesión detectada
         public async Task NewSessionDetected(string userId)
         {

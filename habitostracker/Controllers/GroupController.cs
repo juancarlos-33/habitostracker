@@ -518,10 +518,12 @@ namespace HabitTrackerApp.Controllers
         public async Task<IActionResult> RemoveMember(int groupId, int memberId)
         {
             var userId = int.Parse(User.FindFirst("UserId").Value);
-            var isAdmin = _context.GroupMembers.Any(m => m.GroupId == groupId && m.UserId == userId && m.Role == "Admin" && m.IsActive);
+            var isAdmin = _context.GroupMembers
+                .Any(m => m.GroupId == groupId && m.UserId == userId && m.Role == "Admin" && m.IsActive);
             if (!isAdmin) return Json(new { success = false });
 
-            var member = _context.GroupMembers.FirstOrDefault(m => m.GroupId == groupId && m.UserId == memberId && m.IsActive);
+            var member = _context.GroupMembers
+                .FirstOrDefault(m => m.GroupId == groupId && m.UserId == memberId && m.IsActive);
             if (member == null) return Json(new { success = false });
 
             var admin = _context.Users.FirstOrDefault(u => u.Id == userId);
@@ -532,11 +534,15 @@ namespace HabitTrackerApp.Controllers
             await _context.SaveChangesAsync();
 
             // 🔥 mensaje de sistema
-            await CreateSystemMessage(groupId, $"🚫 {admin?.Username} eliminó a {removedUser?.Username} del grupo");
+            var sysMsg = $"🚫 {admin?.Username} eliminó a {removedUser?.Username} del grupo";
+            await CreateSystemMessage(groupId, sysMsg);
+
+            // 🔥 notificar en tiempo real a todos en el chat
+            await _hub.Clients.Group("group-" + groupId)
+                .SendAsync("MemberRemovedFromGroup", memberId.ToString(), sysMsg);
 
             return Json(new { success = true });
         }
-
 
         // 🔥 promover a admin (solo el creador del grupo)
         [HttpPost]
