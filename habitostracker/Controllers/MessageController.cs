@@ -29,6 +29,7 @@ namespace HabitTrackerApp.Controllers
         public IActionResult Inbox()
         {
             var myId = int.Parse(User.FindFirst("UserId").Value);
+
             var conversations = _context.Messages
                 .Where(m => m.SenderId == myId || m.ReceiverId == myId)
                 .OrderByDescending(m => m.SentAt)
@@ -46,12 +47,17 @@ namespace HabitTrackerApp.Controllers
             var me = _context.Users.FirstOrDefault(u => u.Id == myId);
             ViewBag.MyUser = me;
 
-            // 🔥 solicitudes de mensaje pendientes
+            // 🔥 cargar solicitudes con Sender incluido
             var pendingRequests = _context.MessageRequests
                 .Where(r => r.ReceiverId == myId && r.Status == "Pending")
-                .Include(r => r.Sender)
-                .OrderByDescending(r => r.CreatedAt)
                 .ToList();
+
+            foreach (var req in pendingRequests)
+            {
+                req.Sender = _context.Users.FirstOrDefault(u => u.Id == req.SenderId);
+            }
+
+            pendingRequests = pendingRequests.OrderByDescending(r => r.CreatedAt).ToList();
             ViewBag.PendingRequests = pendingRequests;
 
             return View(conversations);
@@ -117,6 +123,12 @@ namespace HabitTrackerApp.Controllers
             // amigos siempre pueden chatear
             if (IsFriend(myId, otherId)) return true;
 
+            // si ya tienen mensajes previos (conversación existente)
+            var hasMessages = _context.Messages
+                .Any(m => (m.SenderId == myId && m.ReceiverId == otherId) ||
+                           (m.SenderId == otherId && m.ReceiverId == myId));
+            if (hasMessages) return true;
+
             // si ya hay solicitud aceptada
             var accepted = _context.MessageRequests
                 .Any(r => ((r.SenderId == myId && r.ReceiverId == otherId) ||
@@ -124,7 +136,6 @@ namespace HabitTrackerApp.Controllers
                           r.Status == "Accepted");
             return accepted;
         }
-
         private bool IsFriend(int myId, int otherId)
         {
             return _context.FriendRequests.Any(f =>
