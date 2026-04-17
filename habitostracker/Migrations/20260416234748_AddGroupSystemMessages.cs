@@ -40,7 +40,7 @@ namespace habitostracker.Migrations
             migrationBuilder.AddColumn<DateTime>(
                 name: "LeftAt",
                 table: "GroupMembers",
-             type: "datetime(6)",
+            type: "timestamp without time zone",
                 nullable: true);
 
             migrationBuilder.AddForeignKey(
