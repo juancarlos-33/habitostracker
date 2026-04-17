@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace HabitTrackerApp.Models
 {
@@ -6,14 +7,15 @@ namespace HabitTrackerApp.Models
     {
         public int Id { get; set; }
         public int GroupId { get; set; }
-        public ICollection<GroupMessageRead> Reads { get; set; } = new List<GroupMessageRead>();
         public Group Group { get; set; }
-        public int SenderId { get; set; }
+        public ICollection<GroupMessageRead> Reads { get; set; } = new List<GroupMessageRead>();
+        public int? SenderId { get; set; }
         public User Sender { get; set; }
         public string Content { get; set; }
         public string? FileUrl { get; set; }
         public string? Reaction { get; set; }
         public DateTime SentAt { get; set; } = DateTime.UtcNow;
         public bool IsDeleted { get; set; } = false;
+        public bool IsSystem { get; set; } = false; // 🔥 mensajes de sistema
     }
 }

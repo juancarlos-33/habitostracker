@@ -8,175 +8,336 @@
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
 
 <style>
-.grp-create-page { max-width: 560px; margin: 0 auto; font-family: 'Plus Jakarta Sans', sans-serif; padding-bottom: 40px; }
+.grp-create-page {
+    max-width: 580px; margin: 0 auto;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    padding-bottom: 40px;
+}
 
+/* HERO */
 .grp-create-hero {
-    background: linear-gradient(135deg, #1e293b, #0f172a);
-    border-radius: 22px; padding: 26px 28px; margin-bottom: 16px;
-    display: flex; align-items: center; gap: 16px;
-    border: 1px solid rgba(255,255,255,0.06); position: relative; overflow: hidden;
+    background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+    border-radius: 24px; padding: 28px; margin-bottom: 16px;
+    display: flex; align-items: center; gap: 18px;
+    border: 1px solid rgba(255,255,255,0.06);
+    position: relative; overflow: hidden;
 }
 .grp-create-hero::before {
-    content:""; position:absolute; top:-30px; right:-30px;
-    width:120px; height:120px;
-    background: radial-gradient(circle, rgba(99,102,241,0.2), transparent 70%);
+    content:""; position:absolute; top:-40px; right:-40px;
+    width:160px; height:160px;
+    background: radial-gradient(circle, rgba(99,102,241,0.25), transparent 70%);
+    border-radius:50%;
+}
+.grp-create-hero::after {
+    content:""; position:absolute; bottom:-30px; left:60px;
+    width:100px; height:100px;
+    background: radial-gradient(circle, rgba(37,99,235,0.15), transparent 70%);
     border-radius:50%;
 }
 .grp-create-hero-icon {
-    width:50px; height:50px; border-radius:15px;
+    width:56px; height:56px; border-radius:18px;
     background: linear-gradient(135deg, #6366f1, #2563eb);
     display:flex; align-items:center; justify-content:center;
-    font-size:22px; flex-shrink:0;
-    box-shadow: 0 6px 16px rgba(99,102,241,0.35);
+    font-size:26px; flex-shrink:0;
+    box-shadow: 0 8px 20px rgba(99,102,241,0.4);
     position: relative; z-index:1;
 }
-.grp-create-hero-title { font-size:18px; font-weight:800; color:white; margin:0 0 4px; position:relative; z-index:1; }
-.grp-create-hero-sub { font-size:12px; color:rgba(255,255,255,0.4); margin:0; position:relative; z-index:1; }
+.grp-hero-text { position: relative; z-index:1; }
+.grp-create-hero-title { font-size:20px; font-weight:800; color:white; margin:0 0 5px; }
+.grp-create-hero-sub { font-size:13px; color:rgba(255,255,255,0.4); margin:0; }
 
+/* STEP INDICATOR */
+.grp-steps {
+    display: flex; gap: 8px; margin-bottom: 16px; align-items: center;
+}
+.grp-step {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 12px; font-weight: 700; color: #9ca3af;
+    padding: 6px 14px; border-radius: 20px;
+    border: 1.5px solid #e5e7eb; background: white;
+    transition: 0.2s;
+}
+.grp-step.active { color: #6366f1; border-color: #6366f1; background: rgba(99,102,241,0.06); }
+.grp-step.done { color: #16a34a; border-color: #86efac; background: #f0fdf4; }
+.grp-step-num {
+    width: 18px; height: 18px; border-radius: 50%;
+    background: #e5e7eb; color: #6b7280;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10px; font-weight: 800;
+}
+.grp-step.active .grp-step-num { background: #6366f1; color: white; }
+.grp-step.done .grp-step-num { background: #16a34a; color: white; }
+.grp-step-divider { flex: 1; height: 1px; background: #e5e7eb; }
+
+/* CARDS */
 .grp-form-card {
     background: white; border-radius: 20px; padding: 22px 24px;
     margin-bottom: 12px; border: 1px solid rgba(0,0,0,0.05);
     box-shadow: 0 2px 12px rgba(0,0,0,0.05);
+    transition: 0.2s;
 }
+.grp-form-card:focus-within { box-shadow: 0 4px 20px rgba(99,102,241,0.1); border-color: rgba(99,102,241,0.2); }
 .grp-form-card-title {
     font-size: 11px; font-weight: 700; color: #6b7280;
     text-transform: uppercase; letter-spacing: 0.7px; margin-bottom: 16px;
+    display: flex; align-items: center; gap: 6px;
 }
-.grp-field { margin-bottom: 12px; }
+
+.grp-field { margin-bottom: 14px; }
+.grp-field:last-child { margin-bottom: 0; }
 .grp-field label {
-    display: block; font-size: 11px; font-weight: 700; color: #6b7280;
-    text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 7px;
+    display: block; font-size: 12px; font-weight: 700; color: #374151;
+    margin-bottom: 7px;
 }
 .grp-input {
-    width: 100%; padding: 11px 14px; border: 1.5px solid #e5e7eb;
-    border-radius: 12px; font-size: 14px; font-family: inherit;
-    outline: none; transition: 0.2s; background: white; color: #111827;
+    width: 100%; padding: 12px 16px; border: 1.5px solid #e5e7eb;
+    border-radius: 13px; font-size: 14px; font-family: inherit;
+    outline: none; transition: 0.2s; background: #f9fafb; color: #111827;
     box-sizing: border-box;
 }
-.grp-input:focus { border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99,102,241,0.1); }
+.grp-input:focus { border-color: #6366f1; background: white; box-shadow: 0 0 0 3px rgba(99,102,241,0.1); }
+.grp-input::placeholder { color: #9ca3af; }
+.grp-char-count { font-size: 11px; color: #9ca3af; text-align: right; margin-top: 4px; }
 
+/* MEMBERS HEADER */
+.grp-members-header {
+    display: flex; align-items: center; margin-bottom: 14px; gap: 10px;
+}
+.grp-members-search {
+    flex: 1; padding: 8px 14px; border: 1.5px solid #e5e7eb;
+    border-radius: 24px; font-size: 13px; font-family: inherit;
+    outline: none; transition: 0.2s; background: #f9fafb; color: #111827;
+}
+.grp-members-search:focus { border-color: #6366f1; background: white; }
 .selected-count {
-    font-size: 12px; font-weight: 600; color: #6366f1;
+    font-size: 12px; font-weight: 700; color: #6366f1;
     background: rgba(99,102,241,0.08); border: 1px solid rgba(99,102,241,0.2);
-    border-radius: 20px; padding: 4px 12px; margin-left: auto;
+    border-radius: 20px; padding: 5px 14px; white-space: nowrap; flex-shrink: 0;
 }
 
-.friend-grid { display: flex; flex-direction: column; gap: 8px; }
-.friend-item {
-    display: flex; align-items: center; gap: 12px;
-    padding: 11px 14px; border-radius: 13px;
-    border: 1.5px solid #e5e7eb; cursor: pointer;
-    transition: 0.15s; user-select: none;
+/* SELECTED CHIPS */
+.grp-selected-chips {
+    display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px;
+    min-height: 0; transition: 0.2s;
 }
-.friend-item:hover { border-color: #6366f1; background: rgba(99,102,241,0.04); }
-.friend-item.selected { border-color: #6366f1; background: rgba(99,102,241,0.08); }
-.friend-avatar {
-    width: 38px; height: 38px; border-radius: 50%; flex-shrink: 0;
+.grp-chip {
+    display: flex; align-items: center; gap: 5px;
+    padding: 4px 10px 4px 6px; border-radius: 20px;
+    background: rgba(99,102,241,0.1); border: 1px solid rgba(99,102,241,0.2);
+    font-size: 12px; font-weight: 600; color: #4f46e5;
+    animation: chipIn 0.2s cubic-bezier(0.34,1.56,0.64,1);
+}
+@@keyframes chipIn { from{opacity:0;transform:scale(0.7);} to{opacity:1;transform:scale(1);} }
+.grp-chip-avatar {
+    width: 18px; height: 18px; border-radius: 50%;
     background: linear-gradient(135deg, #6366f1, #2563eb);
     display: flex; align-items: center; justify-content: center;
-    color: white; font-weight: 800; font-size: 15px; overflow: hidden;
+    color: white; font-size: 9px; font-weight: 800; overflow: hidden;
+}
+.grp-chip-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.grp-chip-remove {
+    width: 14px; height: 14px; border-radius: 50%;
+    background: #6366f1; color: white; border: none;
+    font-size: 8px; cursor: pointer; display: flex;
+    align-items: center; justify-content: center;
+    font-family: inherit; padding: 0; line-height: 1;
+}
+
+/* FRIEND LIST */
+.friend-grid { display: flex; flex-direction: column; gap: 6px; max-height: 320px; overflow-y: auto; }
+.friend-grid::-webkit-scrollbar { width: 4px; }
+.friend-grid::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
+
+.friend-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 11px 14px; border-radius: 14px;
+    border: 1.5px solid #f1f5f9; cursor: pointer;
+    transition: 0.15s; user-select: none; background: #f9fafb;
+}
+.friend-item:hover { border-color: #6366f1; background: rgba(99,102,241,0.04); }
+.friend-item.selected { border-color: #6366f1; background: rgba(99,102,241,0.07); }
+.friend-item.hidden { display: none; }
+.friend-avatar {
+    width: 40px; height: 40px; border-radius: 50%; flex-shrink: 0;
+    background: linear-gradient(135deg, #6366f1, #2563eb);
+    display: flex; align-items: center; justify-content: center;
+    color: white; font-weight: 800; font-size: 16px; overflow: hidden;
+    border: 2px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
 .friend-avatar img { width: 100%; height: 100%; object-fit: cover; }
-.friend-name { font-size: 14px; font-weight: 600; color: #111827; flex: 1; }
+.friend-info { flex: 1; min-width: 0; }
+.friend-name { font-size: 14px; font-weight: 700; color: #111827; }
 .friend-check {
     width: 22px; height: 22px; border-radius: 7px;
     border: 2px solid #e5e7eb; flex-shrink: 0;
     display: flex; align-items: center; justify-content: center;
     transition: 0.15s; font-size: 12px; color: transparent;
+    background: white;
 }
 .friend-item.selected .friend-check {
     background: #6366f1; border-color: #6366f1; color: white;
 }
 
 .grp-empty-friends {
-    text-align: center; padding: 24px; color: #9ca3af;
-    font-size: 13px; background: #f9fafb; border-radius: 12px;
+    text-align: center; padding: 30px 24px; color: #9ca3af;
+    font-size: 13px; background: #f9fafb; border-radius: 14px;
 }
+.grp-empty-friends-icon { font-size: 36px; margin-bottom: 10px; }
 
+/* ERROR */
+.grp-error {
+    background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.25);
+    color: #dc2626; padding: 12px 16px; border-radius: 14px;
+    font-size: 13px; font-weight: 600; margin-bottom: 12px;
+    display: flex; align-items: center; gap: 8px;
+    animation: errIn 0.3s ease;
+}
+@@keyframes errIn { from{opacity:0;transform:translateY(-6px);} to{opacity:1;transform:translateY(0);} }
+
+/* SUBMIT */
+.grp-submit-wrap { position: sticky; bottom: 16px; z-index: 10; }
 .grp-submit-btn {
-    width: 100%; padding: 13px; border: none; border-radius: 13px;
+    width: 100%; padding: 14px; border: none; border-radius: 16px;
     background: linear-gradient(135deg, #6366f1, #2563eb);
-    color: white; font-size: 14px; font-weight: 700;
+    color: white; font-size: 15px; font-weight: 800;
     font-family: inherit; cursor: pointer; transition: 0.2s;
-    display: flex; align-items: center; justify-content: center; gap: 8px;
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+    box-shadow: 0 8px 24px rgba(99,102,241,0.4);
 }
-.grp-submit-btn:hover { transform: translateY(-1px); box-shadow: 0 8px 20px rgba(99,102,241,0.4); }
-.grp-submit-btn:disabled { background: #cbd5e1; cursor: not-allowed; transform: none; box-shadow: none; }
+.grp-submit-btn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 12px 28px rgba(99,102,241,0.5); }
+.grp-submit-btn:disabled {
+    background: linear-gradient(135deg, #cbd5e1, #94a3b8);
+    cursor: not-allowed; transform: none; box-shadow: none;
+}
+.grp-submit-count {
+    background: rgba(255,255,255,0.2); padding: 2px 10px;
+    border-radius: 20px; font-size: 12px; font-weight: 700;
+}
 
+/* DARK */
 body.bg-dark .grp-form-card { background: #1e293b !important; border-color: #2d3748 !important; }
+body.bg-dark .grp-form-card:focus-within { border-color: rgba(99,102,241,0.3) !important; }
 body.bg-dark .grp-form-card-title { color: #64748b !important; }
+body.bg-dark .grp-field label { color: #94a3b8 !important; }
 body.bg-dark .grp-input { background: #2d3748 !important; border-color: #3d4d60 !important; color: #f1f5f9 !important; }
-body.bg-dark .friend-item { border-color: #2d3748 !important; }
-body.bg-dark .friend-item:hover { background: rgba(99,102,241,0.08) !important; border-color: #6366f1 !important; }
-body.bg-dark .friend-item.selected { background: rgba(99,102,241,0.12) !important; }
+body.bg-dark .grp-input:focus { background: #334155 !important; }
+body.bg-dark .grp-members-search { background: #2d3748 !important; border-color: #3d4d60 !important; color: #f1f5f9 !important; }
+body.bg-dark .friend-item { border-color: #2d3748 !important; background: #2d3748 !important; }
+body.bg-dark .friend-item:hover { background: rgba(99,102,241,0.1) !important; border-color: #6366f1 !important; }
+body.bg-dark .friend-item.selected { background: rgba(99,102,241,0.15) !important; }
 body.bg-dark .friend-name { color: #f1f5f9 !important; }
+body.bg-dark .friend-check { background: #334155 !important; border-color: #475569 !important; }
 body.bg-dark .grp-empty-friends { background: #2d3748 !important; }
+body.bg-dark .grp-step { background: #1e293b !important; border-color: #2d3748 !important; }
+body.bg-dark .grp-step.active { background: rgba(99,102,241,0.1) !important; }
+body.bg-dark .grp-step-divider { background: #2d3748 !important; }
 </style>
 
 <div class="grp-create-page">
 
+    <!-- HERO -->
     <div class="grp-create-hero">
         <div class="grp-create-hero-icon">👥</div>
-        <div>
+        <div class="grp-hero-text">
             <div class="grp-create-hero-title">Crear nuevo grupo</div>
-            <div class="grp-create-hero-sub">Agrega amigos y empieza a chatear</div>
+            <div class="grp-create-hero-sub">Ponle nombre, agrega amigos y empieza a chatear</div>
         </div>
     </div>
 
+    <!-- STEPS -->
+    <div class="grp-steps">
+        <div class="grp-step active" id="step1">
+            <div class="grp-step-num">1</div>
+            Información
+        </div>
+        <div class="grp-step-divider"></div>
+        <div class="grp-step" id="step2">
+            <div class="grp-step-num">2</div>
+            Miembros
+        </div>
+        <div class="grp-step-divider"></div>
+        <div class="grp-step" id="step3">
+            <div class="grp-step-num">3</div>
+            Listo
+        </div>
+    </div>
+
+    <div id="errorBox"></div>
+
     @if (TempData["Error"] != null)
     {
-        <div style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.25);color:#ef4444;padding:12px 16px;border-radius:14px;font-size:13px;font-weight:600;margin-bottom:12px;">
-            ❌ @TempData["Error"]
-        </div>
+        <div class="grp-error">❌ @TempData["Error"]</div>
     }
 
-    <form asp-controller="Group" asp-action="Create" method="post">
+    <form asp-controller="Group" asp-action="Create" method="post" id="createForm">
         @Html.AntiForgeryToken()
 
+        <!-- PASO 1: INFO -->
         <div class="grp-form-card">
             <div class="grp-form-card-title">📝 Información del grupo</div>
             <div class="grp-field">
                 <label>Nombre del grupo *</label>
-                <input name="name" type="text" class="grp-input"
-                       placeholder="Ej: Los del gym, Familia, Amigos..." required
-                       value="@nombreInicial" />
+                <input name="name" id="groupName" type="text" class="grp-input"
+                       placeholder="Ej: Los del gym, Familia, Proyecto..." required
+                       value="@nombreInicial" maxlength="50"
+                       oninput="updateNameCount(this)" />
+                <div class="grp-char-count"><span id="nameCount">@nombreInicial.Length</span>/50</div>
             </div>
-            <div class="grp-field" style="margin:0;">
-                <label>Descripción (opcional)</label>
+            <div class="grp-field">
+                <label>Descripción <span style="color:#9ca3af;font-weight:400;">(opcional)</span></label>
                 <input name="description" type="text" class="grp-input"
-                       placeholder="¿De qué va el grupo?" />
+                       placeholder="¿De qué va el grupo?" maxlength="100"
+                       oninput="updateDescCount(this)" />
+                <div class="grp-char-count"><span id="descCount">0</span>/100</div>
             </div>
         </div>
 
+        <!-- PASO 2: MIEMBROS -->
         <div class="grp-form-card">
-            <div style="display:flex;align-items:center;margin-bottom:16px;">
+            <div class="grp-members-header">
                 <div class="grp-form-card-title" style="margin:0;">👥 Agregar amigos</div>
                 <span class="selected-count" id="selectedCount">0 seleccionados</span>
             </div>
 
+            <!-- CHIPS de seleccionados -->
+            <div class="grp-selected-chips" id="chipsContainer"></div>
+
             @if (!amigos.Any())
             {
                 <div class="grp-empty-friends">
-                    No tienes amigos para agregar todavía.
+                    <div class="grp-empty-friends-icon">👤</div>
+                    <div>No tienes amigos para agregar todavía.</div>
+                    <div style="font-size:12px;margin-top:4px;">Agrega amigos primero para crear un grupo.</div>
                 </div>
             }
             else
             {
-                <div class="friend-grid">
+                <!-- BÚSQUEDA -->
+                <input type="text" class="grp-members-search" id="friendSearch"
+                       placeholder="🔍 Buscar amigos..." oninput="filtrarAmigos(this.value)" />
+                <div style="height:10px;"></div>
+
+                <div class="friend-grid" id="friendGrid">
                     @foreach (var amigo in amigos)
                     {
                         var img = amigo.ProfileImage ?? amigo.ProfilePicture ?? "";
                         var letter = (amigo.Username ?? "?").Substring(0, 1).ToUpper();
                         var isPreselected = amigo.Id == preselect;
                         <div class="friend-item @(isPreselected ? "selected" : "")"
-                             onclick="toggleFriend(this)">
+                             onclick="toggleFriend(this)"
+                             data-username="@amigo.Username.ToLower()"
+                             data-id="@amigo.Id"
+                             data-name="@amigo.Username"
+                             data-img="@img"
+                             data-letter="@letter">
                             <div class="friend-avatar">
                                 @if (!string.IsNullOrEmpty(img))
                                 { <img src="@img" /> }
-                                else
-                                { @letter }
+                                else { @letter }
                             </div>
-                            <span class="friend-name">@amigo.Username</span>
+                            <div class="friend-info">
+                                <div class="friend-name">@amigo.Username</div>
+                            </div>
                             <div class="friend-check">✓</div>
                             <input type="checkbox" name="memberIds" value="@amigo.Id"
                                    style="display:none;" @(isPreselected ? "checked" : "") />
@@ -186,26 +347,168 @@ body.bg-dark .grp-empty-friends { background: #2d3748 !important; }
             }
         </div>
 
-        <button type="submit" class="grp-submit-btn" id="submitBtn">
-            🚀 Crear grupo
-        </button>
+        <!-- SUBMIT -->
+        <div class="grp-submit-wrap">
+            <button type="submit" class="grp-submit-btn" id="submitBtn" disabled>
+                <span>🚀 Crear grupo</span>
+                <span class="grp-submit-count" id="submitCount" style="display:none;">0 miembros</span>
+            </button>
+        </div>
     </form>
 </div>
 
 <script>
-// actualizar contador al cargar
-document.addEventListener("DOMContentLoaded", updateCount);
+document.addEventListener("DOMContentLoaded", () => {
+    updateCount();
+    updateSteps();
+    // preseleccionados al cargar
+    document.querySelectorAll(".friend-item.selected").forEach(el => {
+        addChip(el);
+    });
+});
+
+function updateNameCount(el) {
+    document.getElementById("nameCount").textContent = el.value.length;
+    updateSteps();
+}
+
+function updateDescCount(el) {
+    document.getElementById("descCount").textContent = el.value.length;
+}
+
+function updateSteps() {
+    const name = document.getElementById("groupName").value.trim();
+    const count = document.querySelectorAll(".friend-item.selected").length;
+
+    const s1 = document.getElementById("step1");
+    const s2 = document.getElementById("step2");
+    const s3 = document.getElementById("step3");
+
+    if (name.length > 0) { s1.className = "grp-step done"; } 
+    else { s1.className = "grp-step active"; }
+
+    if (count > 0) { s2.className = "grp-step done"; }
+    else if (name.length > 0) { s2.className = "grp-step active"; }
+    else { s2.className = "grp-step"; }
+
+    if (name.length > 0 && count > 0) { s3.className = "grp-step done"; }
+    else if (count > 0) { s3.className = "grp-step active"; }
+    else { s3.className = "grp-step"; }
+}
 
 function toggleFriend(el) {
     el.classList.toggle("selected");
     const cb = el.querySelector('input[type="checkbox"]');
-    if (cb) cb.checked = !cb.checked;
+    if (cb) cb.checked = el.classList.contains("selected");
+
+    if (el.classList.contains("selected")) {
+        addChip(el);
+    } else {
+        removeChip(el.dataset.id);
+    }
+
     updateCount();
+    updateSteps();
+    // limpiar error si hay
+    const err = document.getElementById("errorBox");
+    if (err) err.innerHTML = "";
+}
+
+function addChip(el) {
+    const id = el.dataset.id;
+    const name = el.dataset.name;
+    const img = el.dataset.img;
+    const letter = el.dataset.letter;
+
+    if (document.getElementById("chip-" + id)) return;
+
+    const chip = document.createElement("div");
+    chip.className = "grp-chip";
+    chip.id = "chip-" + id;
+
+    const avatarHTML = img
+        ? `<img src="${img}" style="width:100%;height:100%;object-fit:cover;" />`
+        : letter;
+
+    chip.innerHTML = `
+        <div class="grp-chip-avatar">${avatarHTML}</div>
+        <span>${name}</span>
+        <button type="button" class="grp-chip-remove" onclick="removeByChip('${id}')">✕</button>`;
+
+    document.getElementById("chipsContainer").appendChild(chip);
+}
+
+function removeChip(id) {
+    const chip = document.getElementById("chip-" + id);
+    if (chip) chip.remove();
+}
+
+function removeByChip(id) {
+    removeChip(id);
+    const item = document.querySelector(`.friend-item[data-id="${id}"]`);
+    if (item) {
+        item.classList.remove("selected");
+        const cb = item.querySelector('input[type="checkbox"]');
+        if (cb) cb.checked = false;
+    }
+    updateCount();
+    updateSteps();
 }
 
 function updateCount() {
     const count = document.querySelectorAll(".friend-item.selected").length;
-    document.getElementById("selectedCount").textContent =
-        count === 0 ? "0 seleccionados" : `${count} seleccionado${count !== 1 ? "s" : ""}`;
+    const countEl = document.getElementById("selectedCount");
+    const btn = document.getElementById("submitBtn");
+    const submitCount = document.getElementById("submitCount");
+
+    countEl.textContent = count === 0 ? "0 seleccionados" : `${count} seleccionado${count !== 1 ? "s" : ""}`;
+
+    const name = document.getElementById("groupName")?.value.trim() ?? "";
+    const canSubmit = count > 0 && name.length > 0;
+    btn.disabled = !canSubmit;
+
+    if (count > 0) {
+        submitCount.style.display = "inline";
+        submitCount.textContent = `${count + 1} miembro${count + 1 !== 1 ? "s" : ""}`;
+    } else {
+        submitCount.style.display = "none";
+    }
 }
+
+function filtrarAmigos(query) {
+    const q = query.toLowerCase().trim();
+    document.querySelectorAll(".friend-item").forEach(item => {
+        const username = item.dataset.username ?? "";
+        item.classList.toggle("hidden", q !== "" && !username.includes(q));
+    });
+}
+
+// validar antes de enviar
+document.getElementById("createForm").addEventListener("submit", function(e) {
+    const count = document.querySelectorAll(".friend-item.selected").length;
+    const name = document.getElementById("groupName").value.trim();
+    const errorBox = document.getElementById("errorBox");
+
+    if (!name) {
+        e.preventDefault();
+        errorBox.innerHTML = `<div class="grp-error">❌ El nombre del grupo es requerido.</div>`;
+        document.getElementById("groupName").focus();
+        return;
+    }
+
+    if (count === 0) {
+        e.preventDefault();
+        errorBox.innerHTML = `<div class="grp-error">❌ Debes agregar al menos un miembro al grupo.</div>`;
+        errorBox.scrollIntoView({ behavior: "smooth", block: "center" });
+        return;
+    }
+
+    // animación de carga en botón
+    const btn = document.getElementById("submitBtn");
+    btn.innerHTML = `<span>⏳ Creando grupo...</span>`;
+    btn.disabled = true;
+});
+
+// actualizar botón cuando cambia el nombre
+document.getElementById("groupName")?.addEventListener("input", updateCount);
 </script>

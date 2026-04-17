@@ -4,6 +4,7 @@
     ViewData["Title"] = Model.Name;
     var isAdmin = (bool)ViewBag.IsAdmin;
     var currentUserId = (int)ViewBag.CurrentUserId;
+    var isMuted = (bool)(ViewBag.IsMuted ?? false);
     var members = Model.Members?.Where(m => m.IsActive).ToList() ?? new();
 }
 
@@ -24,28 +25,35 @@
     background: radial-gradient(circle, rgba(99,102,241,0.2), transparent 70%);
     border-radius:50%;
 }
+
+/* AVATAR con cambio de foto */
+.grp-details-avatar-wrap {
+    position: relative; display: inline-block;
+    margin: 0 auto 16px; z-index: 1;
+}
 .grp-details-avatar {
     width: 80px; height: 80px; border-radius: 22px;
     background: linear-gradient(135deg, #6366f1, #2563eb);
     display: flex; align-items: center; justify-content: center;
     font-size: 34px; color: white; font-weight: 800;
-    margin: 0 auto 16px; position: relative; z-index:1;
     box-shadow: 0 10px 24px rgba(99,102,241,0.4);
-    overflow: hidden;
+    overflow: hidden; cursor: @(isAdmin ? "pointer" : "default");
+    transition: 0.2s;
 }
 .grp-details-avatar img { width: 100%; height: 100%; object-fit: cover; }
-.grp-details-name {
-    font-size: 20px; font-weight: 800; color: white;
-    margin: 0 0 6px; position: relative; z-index:1;
+.grp-details-avatar:hover { @(isAdmin ? "opacity: 0.85;" : "") }
+.grp-avatar-edit-badge {
+    position: absolute; bottom: -6px; right: -6px;
+    width: 26px; height: 26px; border-radius: 50%;
+    background: #6366f1; color: white; border: 2px solid #0f172a;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; cursor: pointer; transition: 0.2s;
 }
-.grp-details-desc {
-    font-size: 13px; color: rgba(255,255,255,0.4);
-    margin: 0 0 6px; position: relative; z-index:1;
-}
-.grp-details-meta {
-    font-size: 12px; color: rgba(255,255,255,0.3);
-    position: relative; z-index:1;
-}
+.grp-avatar-edit-badge:hover { background: #4f46e5; transform: scale(1.1); }
+
+.grp-details-name { font-size: 20px; font-weight: 800; color: white; margin: 0 0 6px; position: relative; z-index:1; }
+.grp-details-desc { font-size: 13px; color: rgba(255,255,255,0.4); margin: 0 0 6px; position: relative; z-index:1; }
+.grp-details-meta { font-size: 12px; color: rgba(255,255,255,0.3); position: relative; z-index:1; }
 
 .grp-back-btn {
     display: inline-flex; align-items: center; gap: 6px;
@@ -67,19 +75,18 @@
     text-transform: uppercase; letter-spacing: 0.7px; margin-bottom: 14px;
 }
 
-/* ACCIONES */
 .grp-action-list { display: flex; flex-direction: column; gap: 6px; }
 .grp-action-item {
     display: flex; align-items: center; gap: 12px;
     padding: 12px 14px; border-radius: 13px;
-    background: #f9fafb; border: 1px solid rgba(0,0,0,0.04);
-    cursor: pointer; transition: 0.15s; font-size: 14px;
+    background: #f9fafb; cursor: pointer; transition: 0.15s; font-size: 14px;
     font-weight: 600; color: #111827; border: none;
     width: 100%; text-align: left; font-family: inherit;
 }
 .grp-action-item:hover { background: #f3f4f6; }
 .grp-action-item.danger { color: #dc2626; }
 .grp-action-item.danger:hover { background: #fef2f2; }
+.grp-action-item.active-mute { color: #f59e0b; background: rgba(245,158,11,0.06); }
 .grp-action-icon {
     width: 36px; height: 36px; border-radius: 10px;
     display: flex; align-items: center; justify-content: center;
@@ -89,10 +96,8 @@
 .grp-action-icon.red { background: rgba(239,68,68,0.1); }
 .grp-action-icon.orange { background: rgba(249,115,22,0.1); }
 .grp-action-icon.purple { background: rgba(99,102,241,0.1); }
-.grp-action-icon.green { background: rgba(34,197,94,0.1); }
 .grp-action-chevron { margin-left: auto; color: #9ca3af; font-size: 12px; }
 
-/* MIEMBROS */
 .grp-member-row {
     display: flex; align-items: center; gap: 12px;
     padding: 10px 0; border-bottom: 1px solid #f3f4f6;
@@ -106,7 +111,8 @@
     text-decoration: none;
 }
 .grp-member-avatar img { width: 100%; height: 100%; object-fit: cover; }
-.grp-member-name { font-size: 14px; font-weight: 600; color: #111827; flex: 1; }
+.grp-member-info { flex: 1; }
+.grp-member-name { font-size: 14px; font-weight: 600; color: #111827; }
 .grp-member-badge {
     font-size: 10px; font-weight: 700; padding: 2px 8px;
     border-radius: 20px; background: #ede9fe; color: #6366f1;
@@ -119,7 +125,6 @@
 }
 .grp-remove-btn:hover { background: #dc2626; color: white; }
 
-/* EDIT NAME */
 .grp-edit-field { display: flex; gap: 8px; margin-bottom: 12px; }
 .grp-edit-input {
     flex: 1; padding: 10px 14px; border: 1.5px solid #e5e7eb;
@@ -135,13 +140,12 @@
 }
 .grp-edit-btn:hover { transform: translateY(-1px); }
 
-/* TOAST */
 .grp-toast {
     position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%);
     background: #1e293b; color: white; padding: 10px 20px;
     border-radius: 20px; font-size: 13px; font-weight: 600;
     z-index: 99999; box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-    animation: toastIn 0.3s ease;
+    animation: toastIn 0.3s ease; font-family: 'Plus Jakarta Sans', sans-serif;
 }
 @@keyframes toastIn { from{opacity:0;transform:translateX(-50%) translateY(10px);} to{opacity:1;transform:translateX(-50%) translateY(0);} }
 
@@ -157,19 +161,33 @@ body.bg-dark .grp-member-row { border-color: #2d3748 !important; }
 body.bg-dark .grp-edit-input { background: #2d3748 !important; border-color: #3d4d60 !important; color: #f1f5f9 !important; }
 </style>
 
+<input type="file" id="groupImageInput" accept="image/*" style="display:none;"
+       onchange="uploadGroupImage(this)" />
+
 <div class="grp-details-page">
 
     <div class="grp-details-hero">
         <a asp-controller="Group" asp-action="Chat" asp-route-id="@Model.Id" class="grp-back-btn">
             ← Volver al chat
         </a>
-        <div class="grp-details-avatar">
-            @if (!string.IsNullOrEmpty(Model.ImageUrl))
-            { <img src="@Model.ImageUrl" /> }
-            else
-            { @Model.Name.Substring(0, 1).ToUpper() }
+
+        <div class="grp-details-avatar-wrap">
+            <div class="grp-details-avatar" id="groupAvatarEl"
+                 onclick="@(isAdmin ? "document.getElementById('groupImageInput').click()" : "")">
+                @if (!string.IsNullOrEmpty(Model.ImageUrl))
+                { <img src="@Model.ImageUrl" id="groupAvatarImg" /> }
+                else
+                { <span id="groupAvatarLetter">@Model.Name.Substring(0, 1).ToUpper()</span> }
+            </div>
+            @if (isAdmin)
+            {
+                <div class="grp-avatar-edit-badge" onclick="document.getElementById('groupImageInput').click()">
+                    📷
+                </div>
+            }
         </div>
-        <div class="grp-details-name">@Model.Name</div>
+
+        <div class="grp-details-name" id="groupNameDisplay">@Model.Name</div>
         @if (!string.IsNullOrEmpty(Model.Description))
         {
             <div class="grp-details-desc">@Model.Description</div>
@@ -199,15 +217,14 @@ body.bg-dark .grp-edit-input { background: #2d3748 !important; border-color: #3d
             var img = m.User?.ProfileImage ?? m.User?.ProfilePicture ?? "";
             var letter = (m.User?.Username ?? "?").Substring(0, 1).ToUpper();
             var isMe = m.UserId == currentUserId;
-            <div class="grp-member-row">
+            <div class="grp-member-row" id="member-row-@m.UserId">
                 <a asp-controller="User" asp-action="Profile" asp-route-id="@m.UserId"
                    class="grp-member-avatar">
                     @if (!string.IsNullOrEmpty(img))
                     { <img src="@img" /> }
-                    else
-                    { @letter }
+                    else { @letter }
                 </a>
-                <div>
+                <div class="grp-member-info">
                     <div class="grp-member-name">
                         @m.User?.Username @(isMe ? "(Tú)" : "")
                     </div>
@@ -218,20 +235,24 @@ body.bg-dark .grp-edit-input { background: #2d3748 !important; border-color: #3d
                 }
                 @if (isAdmin && !isMe && m.Role != "Admin")
                 {
-                    <button class="grp-remove-btn" onclick="removeMember(@m.UserId, '@m.User?.Username')"
+                    <button class="grp-remove-btn"
+                            onclick="removeMember(@m.UserId, '@m.User?.Username')"
                             title="Eliminar del grupo">✕</button>
                 }
             </div>
         }
     </div>
 
-    <!-- ACCIONES -->
+    <!-- OPCIONES -->
     <div class="grp-card">
         <div class="grp-card-title">⚙️ Opciones</div>
         <div class="grp-action-list">
-            <button class="grp-action-item" onclick="silenciarGrupo()">
-                <div class="grp-action-icon orange">🔕</div>
-                <span>Silenciar notificaciones</span>
+            <button class="grp-action-item @(isMuted ? "active-mute" : "")"
+                    id="muteActionBtn" onclick="toggleMute()">
+                <div class="grp-action-icon orange">
+                    <span id="muteIcon">@(isMuted ? "🔕" : "🔔")</span>
+                </div>
+                <span id="muteLabel">@(isMuted ? "Notificaciones silenciadas" : "Silenciar notificaciones")</span>
                 <span class="grp-action-chevron">›</span>
             </button>
             <button class="grp-action-item" onclick="reportarGrupo()">
@@ -262,7 +283,7 @@ body.bg-dark .grp-edit-input { background: #2d3748 !important; border-color: #3d
     <div style="background:#0f172a;border-radius:22px;padding:32px 28px;max-width:340px;width:90%;border:1px solid rgba(255,255,255,0.08);text-align:center;">
         <div style="font-size:40px;margin-bottom:14px;">🚪</div>
         <h4 style="color:white;font-weight:800;margin:0 0 10px;">¿Salir del grupo?</h4>
-        <p style="color:rgba(255,255,255,0.4);font-size:13px;margin:0 0 22px;line-height:1.6;">Ya no podrás ver los mensajes de este grupo.</p>
+        <p style="color:rgba(255,255,255,0.4);font-size:13px;margin:0 0 22px;line-height:1.6;">Podrás ver el historial pero no podrás escribir.</p>
         <div style="display:flex;gap:10px;">
             <button onclick="document.getElementById('leaveModal').style.display='none'"
                     style="flex:1;padding:11px;border-radius:11px;border:1px solid #1e293b;background:#1e293b;color:#64748b;font-weight:700;font-size:13px;cursor:pointer;font-family:inherit;">
@@ -306,9 +327,14 @@ body.bg-dark .grp-edit-input { background: #2d3748 !important; border-color: #3d
     </div>
 </div>
 
+@Html.AntiForgeryToken()
+
 <script>
 const groupId = @Model.Id;
 let selectedReason = null;
+let isMuted = @isMuted.ToString().ToLower();
+
+const token = () => document.querySelector('input[name="__RequestVerificationToken"]')?.value ?? "";
 
 function showToast(msg) {
     const t = document.createElement("div");
@@ -318,17 +344,56 @@ function showToast(msg) {
     setTimeout(() => t.remove(), 3000);
 }
 
+// 🔥 cambiar foto del grupo
+async function uploadGroupImage(input) {
+    const file = input.files[0];
+    if (!file) return;
+
+    showToast("⏳ Subiendo imagen...");
+    const formData = new FormData();
+    formData.append("image", file);
+    formData.append("groupId", groupId);
+    formData.append("__RequestVerificationToken", token());
+
+    try {
+        const res = await fetch("/Group/UpdateImage", { method: "POST", body: formData });
+        const data = await res.json();
+        if (data.success) {
+            // actualizar avatar en pantalla
+            const avatarEl = document.getElementById("groupAvatarEl");
+            const letter = document.getElementById("groupAvatarLetter");
+            if (letter) letter.remove();
+            let img = avatarEl.querySelector("img");
+            if (!img) {
+                img = document.createElement("img");
+                img.id = "groupAvatarImg";
+                avatarEl.appendChild(img);
+            }
+            img.src = data.imageUrl;
+            showToast("✅ Foto actualizada");
+        } else {
+            showToast("❌ No se pudo actualizar la foto");
+        }
+    } catch (err) {
+        showToast("❌ Error al subir la imagen");
+    }
+}
+
 async function updateName() {
     const name = document.getElementById("newGroupName").value.trim();
     if (!name) return;
     const res = await fetch("/Group/UpdateName", {
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: `groupId=${groupId}&name=${encodeURIComponent(name)}`
+        body: `groupId=${groupId}&name=${encodeURIComponent(name)}&__RequestVerificationToken=${encodeURIComponent(token())}`
     });
     const data = await res.json();
-    if (data.success) showToast("✅ Nombre actualizado");
-    else showToast("❌ No se pudo actualizar");
+    if (data.success) {
+        document.getElementById("groupNameDisplay").textContent = name;
+        showToast("✅ Nombre actualizado");
+    } else {
+        showToast("❌ No se pudo actualizar");
+    }
 }
 
 async function removeMember(userId, username) {
@@ -336,11 +401,38 @@ async function removeMember(userId, username) {
     const res = await fetch("/Group/RemoveMember", {
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: `groupId=${groupId}&memberId=${userId}`
+        body: `groupId=${groupId}&memberId=${userId}&__RequestVerificationToken=${encodeURIComponent(token())}`
     });
     const data = await res.json();
-    if (data.success) { showToast("✅ Miembro eliminado"); setTimeout(() => location.reload(), 1200); }
-    else showToast("❌ No se pudo eliminar");
+    if (data.success) {
+        showToast(`✅ ${username} eliminado del grupo`);
+        const row = document.getElementById("member-row-" + userId);
+        if (row) {
+            row.style.opacity = "0";
+            row.style.transition = "0.3s";
+            setTimeout(() => row.remove(), 300);
+        }
+    } else {
+        showToast("❌ No se pudo eliminar");
+    }
+}
+
+// 🔥 silenciar desde Details
+async function toggleMute() {
+    const res = await fetch("/Group/ToggleMute", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: `groupId=${groupId}&__RequestVerificationToken=${encodeURIComponent(token())}`
+    });
+    const data = await res.json();
+    if (data.success) {
+        isMuted = data.isMuted;
+        document.getElementById("muteIcon").textContent = isMuted ? "🔕" : "🔔";
+        document.getElementById("muteLabel").textContent = isMuted ? "Notificaciones silenciadas" : "Silenciar notificaciones";
+        const btn = document.getElementById("muteActionBtn");
+        btn.classList.toggle("active-mute", isMuted);
+        showToast(isMuted ? "🔕 Notificaciones silenciadas" : "🔔 Notificaciones activadas");
+    }
 }
 
 function confirmarSalir() {
@@ -377,22 +469,16 @@ async function enviarReporte() {
     showToast(data.success ? "✅ Reporte enviado" : "⚠️ " + (data.message ?? "Error"));
 }
 
-function silenciarGrupo() {
-    showToast("🔕 Silenciar — próximamente");
-}
-
 async function eliminarGrupo() {
     if (!confirm("¿Eliminar este grupo permanentemente? Esta acción no se puede deshacer.")) return;
     const form = document.createElement("form");
     form.method = "POST"; form.action = "/Group/Delete";
     const input = document.createElement("input");
     input.type = "hidden"; input.name = "groupId"; input.value = groupId;
-    const token = document.createElement("input");
-    token.type = "hidden"; token.name = "__RequestVerificationToken";
-    token.value = document.querySelector('input[name="__RequestVerificationToken"]')?.value ?? "";
-    form.appendChild(input); form.appendChild(token);
+    const tok = document.createElement("input");
+    tok.type = "hidden"; tok.name = "__RequestVerificationToken";
+    tok.value = token();
+    form.appendChild(input); form.appendChild(tok);
     document.body.appendChild(form); form.submit();
 }
 </script>
-
-@Html.AntiForgeryToken()

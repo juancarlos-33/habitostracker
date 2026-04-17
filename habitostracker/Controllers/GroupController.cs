@@ -5,6 +5,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using CloudinaryDotNet;
 using CloudinaryDotNet.Actions;
+using Microsoft.AspNetCore.SignalR;
+using HabitTrackerApp.Hubs;
 
 namespace HabitTrackerApp.Controllers
 {
@@ -13,11 +15,13 @@ namespace HabitTrackerApp.Controllers
     {
         private readonly HabitDbContext _context;
         private readonly IConfiguration _config;
+        private readonly IHubContext<ChatHub> _hub;
 
-        public GroupController(HabitDbContext context, IConfiguration config)
+        public GroupController(HabitDbContext context, IConfiguration config, IHubContext<ChatHub> hub)
         {
             _context = context;
             _config = config;
+            _hub = hub;
         }
 
         private Cloudinary GetCloudinary()
@@ -27,6 +31,51 @@ namespace HabitTrackerApp.Controllers
                 _config["Cloudinary:ApiKey"],
                 _config["Cloudinary:ApiSecret"]);
             return new Cloudinary(account);
+        }
+
+        // 🔥 helper para crear mensaje de sistema
+        private async Task<GroupMessage> CreateSystemMessage(int groupId, string content)
+        {
+            var msg = new GroupMessage
+            {
+                GroupId = groupId,
+                SenderId = null,
+                Content = content,
+                SentAt = DateTime.UtcNow,
+                IsDeleted = false,
+                IsSystem = true
+            };
+            _context.GroupMessages.Add(msg);
+            await _context.SaveChangesAsync();
+
+            // notificar via SignalR
+            await _hub.Clients.Group("group-" + groupId)
+                .SendAsync("ReceiveGroupMessage", "0", "Sistema", "", content,
+                    DateTime.Now.ToString("hh:mm tt"), msg.Id.ToString(), "", "system");
+
+            return msg;
+        }
+
+        // 🔥 helper para enviar notificación a un usuario
+        private async Task SendNotification(int toUserId, string message, string link, int fromUserId)
+        {
+            var fromUser = _context.Users.FirstOrDefault(u => u.Id == fromUserId);
+            var notif = new Notification
+            {
+                UserId = toUserId,
+                Message = message,
+                Link = link,
+                IsRead = false,
+                CreatedAt = DateTime.UtcNow,
+                FromUserId = fromUserId,
+                FromUserImage = fromUser?.ProfileImage ?? fromUser?.ProfilePicture ?? "",
+                FromUsername = fromUser?.Username ?? ""
+            };
+            _context.Notifications.Add(notif);
+            await _context.SaveChangesAsync();
+
+            await _hub.Clients.Group(toUserId.ToString())
+                .SendAsync("ReceiveNotification", message);
         }
 
         [HttpGet]
@@ -63,11 +112,21 @@ namespace HabitTrackerApp.Controllers
         public async Task<IActionResult> Create(string name, string? description, List<int> memberIds)
         {
             var userId = int.Parse(User.FindFirst("UserId").Value);
+
             if (string.IsNullOrWhiteSpace(name))
             {
                 TempData["Error"] = "El nombre del grupo es requerido.";
                 return RedirectToAction("Create");
             }
+
+            // 🔥 mínimo un miembro además del creador
+            var validMembers = memberIds.Distinct().Where(id => id != userId).ToList();
+            if (!validMembers.Any())
+            {
+                TempData["Error"] = "Debes agregar al menos un miembro al grupo.";
+                return RedirectToAction("Create");
+            }
+
             var group = new Group
             {
                 Name = name.Trim(),
@@ -88,9 +147,10 @@ namespace HabitTrackerApp.Controllers
                 IsActive = true
             });
 
-            foreach (var memberId in memberIds.Distinct())
+            var creator = _context.Users.FirstOrDefault(u => u.Id == userId);
+
+            foreach (var memberId in validMembers)
             {
-                if (memberId == userId) continue;
                 _context.GroupMembers.Add(new GroupMember
                 {
                     GroupId = group.Id,
@@ -101,6 +161,21 @@ namespace HabitTrackerApp.Controllers
                 });
             }
             await _context.SaveChangesAsync();
+
+            // 🔥 notificar a cada miembro añadido
+            foreach (var memberId in validMembers)
+            {
+                await SendNotification(
+                    memberId,
+                    $"{creator?.Username} te añadió al grupo \"{group.Name}\"",
+                    $"/Group/Chat/{group.Id}",
+                    userId
+                );
+            }
+
+            // 🔥 mensaje de sistema: grupo creado
+            await CreateSystemMessage(group.Id, $"🎉 Grupo creado por {creator?.Username}");
+
             return RedirectToAction("Chat", new { id = group.Id });
         }
 
@@ -108,15 +183,18 @@ namespace HabitTrackerApp.Controllers
         public IActionResult Chat(int id)
         {
             var userId = int.Parse(User.FindFirst("UserId").Value);
+
+            // 🔥 permitir ver el chat aunque no sea miembro activo (para ver historial)
             var member = _context.GroupMembers
-                .FirstOrDefault(m => m.GroupId == id && m.UserId == userId && m.IsActive);
-            if (member == null) return RedirectToAction("Index");
+                .FirstOrDefault(m => m.GroupId == id && m.UserId == userId);
 
             var group = _context.Groups
                 .Include(g => g.Creator)
                 .Include(g => g.Members.Where(m => m.IsActive)).ThenInclude(m => m.User)
                 .FirstOrDefault(g => g.Id == id && g.IsActive);
+
             if (group == null) return RedirectToAction("Index");
+            if (member == null) return RedirectToAction("Index");
 
             var messages = _context.GroupMessages
                 .Where(m => m.GroupId == id && !m.IsDeleted)
@@ -125,23 +203,29 @@ namespace HabitTrackerApp.Controllers
                 .OrderBy(m => m.SentAt)
                 .ToList();
 
-            var unreadIds = messages
-                .Where(m => m.SenderId != userId && !m.Reads.Any(r => r.UserId == userId))
-                .Select(m => m.Id).ToList();
+            // solo marcar leídos si es miembro activo
+            if (member.IsActive)
+            {
+                var unreadIds = messages
+                    .Where(m => m.SenderId != userId && !m.Reads.Any(r => r.UserId == userId))
+                    .Select(m => m.Id).ToList();
 
-            foreach (var msgId in unreadIds)
-                _context.GroupMessageReads.Add(new GroupMessageRead
-                {
-                    GroupMessageId = msgId,
-                    UserId = userId,
-                    ReadAt = DateTime.UtcNow
-                });
-            if (unreadIds.Any()) _context.SaveChanges();
+                foreach (var msgId in unreadIds)
+                    _context.GroupMessageReads.Add(new GroupMessageRead
+                    {
+                        GroupMessageId = msgId,
+                        UserId = userId,
+                        ReadAt = DateTime.UtcNow
+                    });
+                if (unreadIds.Any()) _context.SaveChanges();
+            }
 
             ViewBag.Messages = messages;
             ViewBag.CurrentUserId = userId;
-            ViewBag.IsAdmin = member.Role == "Admin";
+            ViewBag.IsAdmin = member.Role == "Admin" && member.IsActive;
+            ViewBag.IsMember = member.IsActive;
             ViewBag.TotalMembers = group.Members.Count(m => m.IsActive);
+            ViewBag.IsMuted = member.IsMuted;
             return View(group);
         }
 
@@ -161,10 +245,10 @@ namespace HabitTrackerApp.Controllers
 
             ViewBag.IsAdmin = member.Role == "Admin";
             ViewBag.CurrentUserId = userId;
+            ViewBag.IsMuted = member.IsMuted;
             return View(group);
         }
 
-        // 🔥 enviar mensaje de texto
         [HttpPost]
         public async Task<IActionResult> SendMessage(int groupId, string content)
         {
@@ -194,6 +278,18 @@ namespace HabitTrackerApp.Controllers
             });
             await _context.SaveChangesAsync();
 
+            // 🔥 enviar notificación push a miembros no silenciados
+            var otherMembers = _context.GroupMembers
+                .Where(m => m.GroupId == groupId && m.IsActive && m.UserId != userId && !m.IsMuted)
+                .ToList();
+
+            var group = _context.Groups.FirstOrDefault(g => g.Id == groupId);
+            foreach (var m in otherMembers)
+            {
+                await _hub.Clients.Group(m.UserId.ToString())
+                    .SendAsync("ReceiveNotification", $"💬 {sender?.Username} en {group?.Name}: {content.Substring(0, Math.Min(content.Length, 40))}");
+            }
+
             var totalMembers = _context.GroupMembers.Count(m => m.GroupId == groupId && m.IsActive);
             return Json(new
             {
@@ -209,165 +305,84 @@ namespace HabitTrackerApp.Controllers
             });
         }
 
-        // 🔥 enviar archivo (foto/video)
         [HttpPost]
         public async Task<IActionResult> SendFile(int groupId, IFormFile file)
         {
             var userId = int.Parse(User.FindFirst("UserId").Value);
             var member = _context.GroupMembers
                 .FirstOrDefault(m => m.GroupId == groupId && m.UserId == userId && m.IsActive);
-            if (member == null || file == null)
-                return Json(new { success = false });
+            if (member == null || file == null) return Json(new { success = false });
 
             var sender = _context.Users.FirstOrDefault(u => u.Id == userId);
             var cloudinary = GetCloudinary();
-
-            string fileUrl = "";
-            string fileType = "image";
+            string fileUrl = ""; string fileType = "image";
 
             using var stream = file.OpenReadStream();
             if (file.ContentType.StartsWith("video"))
             {
                 fileType = "video";
-                var uploadParams = new VideoUploadParams
-                {
-                    File = new FileDescription(file.FileName, stream),
-                    Folder = "group_videos"
-                };
-                var result = await cloudinary.UploadAsync(uploadParams);
-                fileUrl = result.SecureUrl.ToString();
+                var r = await cloudinary.UploadAsync(new VideoUploadParams { File = new FileDescription(file.FileName, stream), Folder = "group_videos" });
+                fileUrl = r.SecureUrl.ToString();
             }
             else
             {
-                var uploadParams = new ImageUploadParams
-                {
-                    File = new FileDescription(file.FileName, stream),
-                    Folder = "group_images"
-                };
-                var result = await cloudinary.UploadAsync(uploadParams);
-                fileUrl = result.SecureUrl.ToString();
+                var r = await cloudinary.UploadAsync(new ImageUploadParams { File = new FileDescription(file.FileName, stream), Folder = "group_images" });
+                fileUrl = r.SecureUrl.ToString();
             }
 
-            var msg = new GroupMessage
-            {
-                GroupId = groupId,
-                SenderId = userId,
-                Content = "",
-                FileUrl = fileUrl,
-                SentAt = DateTime.UtcNow,
-                IsDeleted = false
-            };
+            var msg = new GroupMessage { GroupId = groupId, SenderId = userId, Content = "", FileUrl = fileUrl, SentAt = DateTime.UtcNow };
             _context.GroupMessages.Add(msg);
             await _context.SaveChangesAsync();
-
-            _context.GroupMessageReads.Add(new GroupMessageRead
-            {
-                GroupMessageId = msg.Id,
-                UserId = userId,
-                ReadAt = DateTime.UtcNow
-            });
+            _context.GroupMessageReads.Add(new GroupMessageRead { GroupMessageId = msg.Id, UserId = userId, ReadAt = DateTime.UtcNow });
             await _context.SaveChangesAsync();
 
             var totalMembers = _context.GroupMembers.Count(m => m.GroupId == groupId && m.IsActive);
-            return Json(new
-            {
-                success = true,
-                id = msg.Id,
-                content = "",
-                sentAt = msg.SentAt.ToLocalTime().ToString("hh:mm tt"),
-                senderName = sender?.Username ?? "Usuario",
-                senderImage = sender?.ProfileImage ?? sender?.ProfilePicture ?? "",
-                fileUrl,
-                fileType,
-                totalMembers
-            });
+            return Json(new { success = true, id = msg.Id, content = "", sentAt = msg.SentAt.ToLocalTime().ToString("hh:mm tt"), senderName = sender?.Username ?? "Usuario", senderImage = sender?.ProfileImage ?? sender?.ProfilePicture ?? "", fileUrl, fileType, totalMembers });
         }
 
-        // 🔥 enviar audio
         [HttpPost]
         public async Task<IActionResult> SendAudio(int groupId, IFormFile audio)
         {
             var userId = int.Parse(User.FindFirst("UserId").Value);
             var member = _context.GroupMembers
                 .FirstOrDefault(m => m.GroupId == groupId && m.UserId == userId && m.IsActive);
-            if (member == null || audio == null)
-                return Json(new { success = false });
+            if (member == null || audio == null) return Json(new { success = false });
 
             var sender = _context.Users.FirstOrDefault(u => u.Id == userId);
             var cloudinary = GetCloudinary();
-
             using var stream = audio.OpenReadStream();
-            var uploadParams = new RawUploadParams
-            {
-                File = new FileDescription(audio.FileName, stream),
-                Folder = "group_audios",
-                PublicId = $"audio_{Guid.NewGuid()}"
-            };
-            var result = await cloudinary.UploadAsync(uploadParams);
+            var result = await cloudinary.UploadAsync(new RawUploadParams { File = new FileDescription(audio.FileName, stream), Folder = "group_audios", PublicId = $"audio_{Guid.NewGuid()}" });
             var audioUrl = result.SecureUrl.ToString();
 
-            var msg = new GroupMessage
-            {
-                GroupId = groupId,
-                SenderId = userId,
-                Content = audioUrl,
-                FileUrl = "",
-                SentAt = DateTime.UtcNow,
-                IsDeleted = false
-            };
+            var msg = new GroupMessage { GroupId = groupId, SenderId = userId, Content = audioUrl, SentAt = DateTime.UtcNow };
             _context.GroupMessages.Add(msg);
             await _context.SaveChangesAsync();
-
-            _context.GroupMessageReads.Add(new GroupMessageRead
-            {
-                GroupMessageId = msg.Id,
-                UserId = userId,
-                ReadAt = DateTime.UtcNow
-            });
+            _context.GroupMessageReads.Add(new GroupMessageRead { GroupMessageId = msg.Id, UserId = userId, ReadAt = DateTime.UtcNow });
             await _context.SaveChangesAsync();
 
             var totalMembers = _context.GroupMembers.Count(m => m.GroupId == groupId && m.IsActive);
-            return Json(new
-            {
-                success = true,
-                id = msg.Id,
-                audioUrl,
-                sentAt = msg.SentAt.ToLocalTime().ToString("hh:mm tt"),
-                senderName = sender?.Username ?? "Usuario",
-                senderImage = sender?.ProfileImage ?? sender?.ProfilePicture ?? "",
-                totalMembers
-            });
+            return Json(new { success = true, id = msg.Id, audioUrl, sentAt = msg.SentAt.ToLocalTime().ToString("hh:mm tt"), senderName = sender?.Username ?? "Usuario", senderImage = sender?.ProfileImage ?? sender?.ProfilePicture ?? "", totalMembers });
         }
 
-        // 🔥 cambiar foto del grupo (solo admin)
         [HttpPost]
         public async Task<IActionResult> UpdateImage(int groupId, IFormFile image)
         {
             var userId = int.Parse(User.FindFirst("UserId").Value);
-            var isAdmin = _context.GroupMembers
-                .Any(m => m.GroupId == groupId && m.UserId == userId && m.Role == "Admin" && m.IsActive);
-            if (!isAdmin || image == null)
-                return Json(new { success = false });
+            var isAdmin = _context.GroupMembers.Any(m => m.GroupId == groupId && m.UserId == userId && m.Role == "Admin" && m.IsActive);
+            if (!isAdmin || image == null) return Json(new { success = false });
 
             var group = _context.Groups.FirstOrDefault(g => g.Id == groupId);
             if (group == null) return Json(new { success = false });
 
             var cloudinary = GetCloudinary();
             using var stream = image.OpenReadStream();
-            var uploadParams = new ImageUploadParams
-            {
-                File = new FileDescription(image.FileName, stream),
-                Folder = "group_images",
-                Transformation = new Transformation().Width(300).Height(300).Crop("fill")
-            };
-            var result = await cloudinary.UploadAsync(uploadParams);
+            var result = await cloudinary.UploadAsync(new ImageUploadParams { File = new FileDescription(image.FileName, stream), Folder = "group_images", Transformation = new Transformation().Width(300).Height(300).Crop("fill") });
             group.ImageUrl = result.SecureUrl.ToString();
             await _context.SaveChangesAsync();
 
             return Json(new { success = true, imageUrl = group.ImageUrl });
         }
 
-        // 🔥 marcar mensajes como leídos
         [HttpPost]
         public async Task<IActionResult> MarkRead(int groupId)
         {
@@ -381,12 +396,7 @@ namespace HabitTrackerApp.Controllers
             {
                 if (!msg.Reads.Any(r => r.UserId == userId))
                 {
-                    _context.GroupMessageReads.Add(new GroupMessageRead
-                    {
-                        GroupMessageId = msg.Id,
-                        UserId = userId,
-                        ReadAt = DateTime.UtcNow
-                    });
+                    _context.GroupMessageReads.Add(new GroupMessageRead { GroupMessageId = msg.Id, UserId = userId, ReadAt = DateTime.UtcNow });
                     added.Add(msg.Id);
                 }
             }
@@ -409,84 +419,121 @@ namespace HabitTrackerApp.Controllers
         public async Task<IActionResult> UpdateName(int groupId, string name)
         {
             var userId = int.Parse(User.FindFirst("UserId").Value);
-            var isAdmin = _context.GroupMembers
-                .Any(m => m.GroupId == groupId && m.UserId == userId && m.Role == "Admin" && m.IsActive);
-            if (!isAdmin || string.IsNullOrWhiteSpace(name))
-                return Json(new { success = false });
+            var isAdmin = _context.GroupMembers.Any(m => m.GroupId == groupId && m.UserId == userId && m.Role == "Admin" && m.IsActive);
+            if (!isAdmin || string.IsNullOrWhiteSpace(name)) return Json(new { success = false });
 
             var group = _context.Groups.FirstOrDefault(g => g.Id == groupId);
             if (group == null) return Json(new { success = false });
-
             group.Name = name.Trim();
             await _context.SaveChangesAsync();
             return Json(new { success = true });
+        }
+
+        // 🔥 silenciar/activar notificaciones
+        [HttpPost]
+        public async Task<IActionResult> ToggleMute(int groupId)
+        {
+            var userId = int.Parse(User.FindFirst("UserId").Value);
+            var member = _context.GroupMembers
+                .FirstOrDefault(m => m.GroupId == groupId && m.UserId == userId && m.IsActive);
+            if (member == null) return Json(new { success = false });
+
+            member.IsMuted = !member.IsMuted;
+            await _context.SaveChangesAsync();
+            return Json(new { success = true, isMuted = member.IsMuted });
         }
 
         [HttpPost]
         public async Task<IActionResult> Report([FromBody] ReportGroupDto dto)
         {
             var userId = int.Parse(User.FindFirst("UserId").Value);
-            var yaReporto = _context.GroupReports
-                .Any(r => r.GroupId == dto.GroupId && r.ReporterId == userId);
-            if (yaReporto)
-                return Json(new { success = false, message = "Ya reportaste este grupo." });
+            var yaReporto = _context.GroupReports.Any(r => r.GroupId == dto.GroupId && r.ReporterId == userId);
+            if (yaReporto) return Json(new { success = false, message = "Ya reportaste este grupo." });
 
-            _context.GroupReports.Add(new GroupReport
-            {
-                GroupId = dto.GroupId,
-                ReporterId = userId,
-                Reason = dto.Reason,
-                CreatedAt = DateTime.UtcNow
-            });
+            _context.GroupReports.Add(new GroupReport { GroupId = dto.GroupId, ReporterId = userId, Reason = dto.Reason, CreatedAt = DateTime.UtcNow });
             await _context.SaveChangesAsync();
             return Json(new { success = true });
         }
 
+        // 🔥 salir del grupo — queda el historial, sale el aviso
         [HttpPost]
         public async Task<IActionResult> Leave(int groupId)
         {
             var userId = int.Parse(User.FindFirst("UserId").Value);
             var member = _context.GroupMembers
                 .FirstOrDefault(m => m.GroupId == groupId && m.UserId == userId && m.IsActive);
-            if (member != null) { member.IsActive = false; await _context.SaveChangesAsync(); }
+            if (member == null) return RedirectToAction("Index");
+
+            var user = _context.Users.FirstOrDefault(u => u.Id == userId);
+            member.IsActive = false;
+            member.LeftAt = DateTime.UtcNow;
+            await _context.SaveChangesAsync();
+
+            // 🔥 mensaje de sistema
+            await CreateSystemMessage(groupId, $"👋 {user?.Username} salió del grupo");
+
             return RedirectToAction("Index");
         }
 
+        // 🔥 agregar miembro con notificación
         [HttpPost]
         public async Task<IActionResult> AddMember(int groupId, int newUserId)
         {
             var userId = int.Parse(User.FindFirst("UserId").Value);
-            var isAdmin = _context.GroupMembers
-                .Any(m => m.GroupId == groupId && m.UserId == userId && m.Role == "Admin" && m.IsActive);
+            var isAdmin = _context.GroupMembers.Any(m => m.GroupId == groupId && m.UserId == userId && m.Role == "Admin" && m.IsActive);
             if (!isAdmin) return Json(new { success = false, message = "No tienes permisos." });
 
-            var yaEsMiembro = _context.GroupMembers
-                .Any(m => m.GroupId == groupId && m.UserId == newUserId && m.IsActive);
+            var yaEsMiembro = _context.GroupMembers.Any(m => m.GroupId == groupId && m.UserId == newUserId && m.IsActive);
             if (yaEsMiembro) return Json(new { success = false, message = "Ya es miembro." });
 
-            _context.GroupMembers.Add(new GroupMember
+            // si salió antes, reactivar
+            var exMember = _context.GroupMembers.FirstOrDefault(m => m.GroupId == groupId && m.UserId == newUserId);
+            if (exMember != null)
             {
-                GroupId = groupId,
-                UserId = newUserId,
-                Role = "Member",
-                JoinedAt = DateTime.UtcNow,
-                IsActive = true
-            });
+                exMember.IsActive = true;
+                exMember.LeftAt = null;
+                exMember.JoinedAt = DateTime.UtcNow;
+            }
+            else
+            {
+                _context.GroupMembers.Add(new GroupMember { GroupId = groupId, UserId = newUserId, Role = "Member", JoinedAt = DateTime.UtcNow, IsActive = true });
+            }
             await _context.SaveChangesAsync();
+
+            var adder = _context.Users.FirstOrDefault(u => u.Id == userId);
+            var newUser = _context.Users.FirstOrDefault(u => u.Id == newUserId);
+            var group = _context.Groups.FirstOrDefault(g => g.Id == groupId);
+
+            // 🔥 mensaje de sistema
+            await CreateSystemMessage(groupId, $"➕ {adder?.Username} añadió a {newUser?.Username}");
+
+            // 🔥 notificación al nuevo miembro
+            await SendNotification(newUserId, $"{adder?.Username} te añadió al grupo \"{group?.Name}\"", $"/Group/Chat/{groupId}", userId);
+
             return Json(new { success = true });
         }
 
+        // 🔥 eliminar miembro (solo admin) con aviso
         [HttpPost]
         public async Task<IActionResult> RemoveMember(int groupId, int memberId)
         {
             var userId = int.Parse(User.FindFirst("UserId").Value);
-            var isAdmin = _context.GroupMembers
-                .Any(m => m.GroupId == groupId && m.UserId == userId && m.Role == "Admin" && m.IsActive);
+            var isAdmin = _context.GroupMembers.Any(m => m.GroupId == groupId && m.UserId == userId && m.Role == "Admin" && m.IsActive);
             if (!isAdmin) return Json(new { success = false });
 
-            var member = _context.GroupMembers
-                .FirstOrDefault(m => m.GroupId == groupId && m.UserId == memberId && m.IsActive);
-            if (member != null) { member.IsActive = false; await _context.SaveChangesAsync(); }
+            var member = _context.GroupMembers.FirstOrDefault(m => m.GroupId == groupId && m.UserId == memberId && m.IsActive);
+            if (member == null) return Json(new { success = false });
+
+            var admin = _context.Users.FirstOrDefault(u => u.Id == userId);
+            var removedUser = _context.Users.FirstOrDefault(u => u.Id == memberId);
+
+            member.IsActive = false;
+            member.LeftAt = DateTime.UtcNow;
+            await _context.SaveChangesAsync();
+
+            // 🔥 mensaje de sistema
+            await CreateSystemMessage(groupId, $"🚫 {admin?.Username} eliminó a {removedUser?.Username} del grupo");
+
             return Json(new { success = true });
         }
 
