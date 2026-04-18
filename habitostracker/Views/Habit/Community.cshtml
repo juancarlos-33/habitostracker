@@ -1,0 +1,393 @@
+﻿@model List<HabitTrackerApp.Models.HabitProgress>
+
+@{
+    ViewData["Title"] = "Comunidad";
+    var currentUserId = (int)ViewBag.CurrentUserId;
+    var culture = new System.Globalization.CultureInfo("es-ES");
+}
+
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+<style>
+.comm-page { max-width: 680px; margin: 0 auto; font-family: 'Plus Jakarta Sans', sans-serif; padding-bottom: 40px; }
+
+.comm-hero {
+    background: linear-gradient(135deg, #1e293b, #0f172a);
+    border-radius: 24px; padding: 28px 32px; margin-bottom: 20px;
+    position: relative; overflow: hidden;
+    border: 1px solid rgba(255,255,255,0.06);
+}
+.comm-hero::before {
+    content:""; position:absolute; top:-40px; right:-40px;
+    width:160px; height:160px;
+    background: radial-gradient(circle, rgba(99,102,241,0.2), transparent 70%);
+    border-radius:50%;
+}
+.comm-hero::after {
+    content:""; position:absolute; bottom:-30px; left:60px;
+    width:120px; height:120px;
+    background: radial-gradient(circle, rgba(34,197,94,0.12), transparent 70%);
+    border-radius:50%;
+}
+.comm-hero-title { font-size: 22px; font-weight: 800; color: white; margin: 0 0 6px; position: relative; z-index:1; }
+.comm-hero-sub { font-size: 13px; color: rgba(255,255,255,0.4); margin: 0 0 16px; position: relative; z-index:1; }
+.comm-hero-stats {
+    display: flex; gap: 0; position: relative; z-index:1;
+    background: rgba(255,255,255,0.05); border-radius: 14px;
+    border: 1px solid rgba(255,255,255,0.06); overflow: hidden;
+    width: fit-content;
+}
+.comm-hero-stat { padding: 10px 20px; text-align: center; position: relative; }
+.comm-hero-stat:not(:last-child)::after {
+    content:""; position:absolute; right:0; top:20%; height:60%;
+    width:1px; background: rgba(255,255,255,0.08);
+}
+.comm-hero-stat-num { font-size: 18px; font-weight: 800; color: white; display: block; }
+.comm-hero-stat-label { font-size: 10px; color: rgba(255,255,255,0.4); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+
+.comm-card {
+    background: white; border-radius: 22px; padding: 20px 22px;
+    margin-bottom: 14px; border: 1px solid rgba(0,0,0,0.05);
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06); transition: 0.2s;
+}
+.comm-card:hover { box-shadow: 0 6px 20px rgba(0,0,0,0.1); transform: translateY(-2px); }
+
+.comm-card-header { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+.comm-avatar {
+    width: 44px; height: 44px; border-radius: 50%; flex-shrink: 0;
+    background: linear-gradient(135deg, #6366f1, #2563eb);
+    display: flex; align-items: center; justify-content: center;
+    color: white; font-size: 16px; font-weight: 800; overflow: hidden;
+    text-decoration: none; transition: 0.2s;
+}
+.comm-avatar:hover { transform: scale(1.08); }
+.comm-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.comm-user-info { flex: 1; }
+.comm-username { font-size: 14px; font-weight: 700; color: #111827; text-decoration: none; }
+.comm-username:hover { color: #6366f1; }
+.comm-habit-tag {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: 11px; font-weight: 700; padding: 3px 10px;
+    border-radius: 20px; background: rgba(99,102,241,0.1);
+    color: #6366f1; margin-top: 3px;
+    text-decoration: none;
+}
+.comm-habit-tag:hover { background: rgba(99,102,241,0.18); }
+.comm-time { font-size: 11px; color: #9ca3af; margin-left: auto; flex-shrink: 0; }
+
+.comm-stats { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+.comm-stat-chip {
+    padding: 5px 14px; border-radius: 20px; font-size: 12px; font-weight: 700;
+}
+.comm-stat-chip.streak { background: rgba(34,197,94,0.1); color: #16a34a; }
+.comm-stat-chip.rate { background: rgba(99,102,241,0.1); color: #6366f1; }
+
+.comm-msg {
+    font-size: 14px; color: #374151; line-height: 1.65;
+    margin-bottom: 14px;
+    background: #f9fafb; border-radius: 14px; padding: 12px 16px;
+    border-left: 3px solid #6366f1;
+}
+
+.comm-bar-wrap { height: 5px; background: #f1f5f9; border-radius: 10px; margin-bottom: 16px; overflow: hidden; }
+.comm-bar { height: 100%; border-radius: 10px; background: linear-gradient(90deg, #6366f1, #2563eb); transition: width 1s ease; }
+
+.comm-reactions { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+.comm-react-btn {
+    padding: 6px 13px; border-radius: 20px; border: 1.5px solid #e5e7eb;
+    background: white; font-size: 13px; cursor: pointer; transition: 0.15s;
+    font-family: inherit; display: flex; align-items: center; gap: 5px; font-weight: 600;
+}
+.comm-react-btn:hover { border-color: #6366f1; background: rgba(99,102,241,0.04); transform: scale(1.05); }
+.comm-react-btn.mine { border-color: #6366f1; background: rgba(99,102,241,0.08); color: #6366f1; }
+.comm-react-count { font-size: 12px; color: #6b7280; }
+
+.comm-divider { height: 1px; background: #f3f4f6; margin: 12px 0; }
+
+.comm-comments { margin-bottom: 10px; }
+.comm-comment-item { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 8px; }
+.comm-comment-avatar {
+    width: 30px; height: 30px; border-radius: 50%; flex-shrink: 0;
+    background: linear-gradient(135deg, #6366f1, #2563eb);
+    display: flex; align-items: center; justify-content: center;
+    color: white; font-size: 11px; font-weight: 800; overflow: hidden;
+}
+.comm-comment-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.comm-comment-bubble {
+    background: #f9fafb; border-radius: 14px 14px 14px 4px;
+    padding: 8px 12px; font-size: 13px; color: #374151; flex: 1;
+    border: 1px solid #f1f5f9;
+}
+.comm-comment-bubble strong { color: #111827; font-size: 12px; display: block; margin-bottom: 2px; }
+
+.comm-comment-input-wrap { display: flex; gap: 8px; margin-top: 8px; }
+.comm-comment-input {
+    flex: 1; padding: 9px 16px; border-radius: 24px;
+    border: 1.5px solid #e5e7eb; font-size: 13px; font-family: inherit;
+    outline: none; transition: 0.2s; background: white; color: #111827;
+}
+.comm-comment-input:focus { border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99,102,241,0.1); }
+.comm-comment-input::placeholder { color: #9ca3af; }
+.comm-comment-send {
+    width: 38px; height: 38px; border-radius: 50%; border: none;
+    background: linear-gradient(135deg, #6366f1, #4f46e5);
+    color: white; cursor: pointer; transition: 0.2s; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center; font-size: 14px;
+    box-shadow: 0 4px 12px rgba(99,102,241,0.35);
+}
+.comm-comment-send:hover { transform: scale(1.08); box-shadow: 0 6px 16px rgba(99,102,241,0.45); }
+
+.comm-empty {
+    text-align: center; padding: 70px 20px;
+    background: white; border-radius: 22px;
+    border: 1px solid rgba(0,0,0,0.05);
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+}
+.comm-empty-icon { font-size: 60px; margin-bottom: 16px; }
+.comm-empty-title { font-size: 18px; font-weight: 800; color: #111827; margin: 0 0 8px; }
+.comm-empty-sub { font-size: 13px; color: #9ca3af; line-height: 1.6; margin: 0 0 20px; }
+.comm-empty-btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 12px 24px; border-radius: 14px; border: none;
+    background: linear-gradient(135deg, #6366f1, #4f46e5);
+    color: white; font-size: 14px; font-weight: 700;
+    text-decoration: none; transition: 0.2s;
+    box-shadow: 0 6px 18px rgba(99,102,241,0.35);
+}
+.comm-empty-btn:hover { transform: translateY(-2px); color: white; }
+
+.comm-toast {
+    position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%);
+    background: #1e293b; color: white; padding: 10px 20px;
+    border-radius: 20px; font-size: 13px; font-weight: 600;
+    z-index: 99999; box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    animation: toastIn 0.3s ease;
+}
+@@keyframes toastIn { from{opacity:0;transform:translateX(-50%) translateY(10px);} to{opacity:1;transform:translateX(-50%) translateY(0);} }
+
+/* DARK */
+body.bg-dark .comm-card { background: #1e293b !important; border-color: #2d3748 !important; }
+body.bg-dark .comm-card:hover { box-shadow: 0 6px 20px rgba(0,0,0,0.3) !important; }
+body.bg-dark .comm-username { color: #f1f5f9 !important; }
+body.bg-dark .comm-msg { background: #2d3748 !important; color: #cbd5e1 !important; }
+body.bg-dark .comm-bar-wrap { background: #2d3748 !important; }
+body.bg-dark .comm-react-btn { background: #2d3748 !important; border-color: #3d4d60 !important; color: #94a3b8 !important; }
+body.bg-dark .comm-react-btn.mine { border-color: #6366f1 !important; background: rgba(99,102,241,0.15) !important; color: #818cf8 !important; }
+body.bg-dark .comm-comment-bubble { background: #2d3748 !important; border-color: #3d4d60 !important; color: #cbd5e1 !important; }
+body.bg-dark .comm-comment-bubble strong { color: #f1f5f9 !important; }
+body.bg-dark .comm-comment-input { background: #2d3748 !important; border-color: #3d4d60 !important; color: #f1f5f9 !important; }
+body.bg-dark .comm-empty { background: #1e293b !important; border-color: #2d3748 !important; }
+body.bg-dark .comm-empty-title { color: #f1f5f9 !important; }
+body.bg-dark .comm-divider { background: #2d3748 !important; }
+
+@@media (max-width: 640px) {
+    .comm-hero { padding: 20px; }
+    .comm-hero-stats { width: 100%; }
+    .comm-card { padding: 16px; }
+}
+</style>
+
+<div class="comm-page">
+
+    <!-- HERO -->
+    <div class="comm-hero">
+        <div class="comm-hero-title">🌍 Comunidad de hábitos</div>
+        <div class="comm-hero-sub">Inspírate con el progreso de otros usuarios y comparte el tuyo</div>
+        <div class="comm-hero-stats">
+            <div class="comm-hero-stat">
+                <span class="comm-hero-stat-num">@Model.Count</span>
+                <span class="comm-hero-stat-label">Publicaciones</span>
+            </div>
+            <div class="comm-hero-stat">
+                <span class="comm-hero-stat-num">@Model.Select(p => p.UserId).Distinct().Count()</span>
+                <span class="comm-hero-stat-label">Usuarios</span>
+            </div>
+            <div class="comm-hero-stat">
+                <span class="comm-hero-stat-num">@Model.Sum(p => p.Reactions.Count)</span>
+                <span class="comm-hero-stat-label">Reacciones</span>
+            </div>
+        </div>
+    </div>
+
+    @if (!Model.Any())
+    {
+        <div class="comm-empty">
+            <div class="comm-empty-icon">🌱</div>
+            <div class="comm-empty-title">La comunidad está esperando</div>
+            <div class="comm-empty-sub">
+                Sé el primero en compartir tu progreso.<br>
+                Entra a un hábito y toca "🚀 Compartir progreso".
+            </div>
+            <a href="/Habit/Index" class="comm-empty-btn">🎯 Ver mis hábitos</a>
+        </div>
+    }
+    else
+    {
+        @foreach (var p in Model)
+        {
+            var pImg = p.User?.ProfileImage ?? p.User?.ProfilePicture ?? "";
+            var pLetter = (p.User?.Username ?? "?").Substring(0, 1).ToUpper();
+            var diffMin = (int)(DateTime.UtcNow - p.SharedAt).TotalMinutes;
+            var diffH = (int)(DateTime.UtcNow - p.SharedAt).TotalHours;
+            var diffD = (int)(DateTime.UtcNow - p.SharedAt).TotalDays;
+            string timeAgo = diffMin < 1 ? "ahora" :
+                             diffMin < 60 ? $"hace {diffMin} min" :
+                             diffH < 24 ? $"hace {diffH}h" :
+                             diffD == 1 ? "ayer" :
+                             p.SharedAt.ToLocalTime().ToString("dd MMM", culture);
+
+            var reactionGroups = p.Reactions.GroupBy(r => r.Emoji).ToDictionary(g => g.Key, g => g.Count());
+            var myReaction = p.Reactions.FirstOrDefault(r => r.UserId == currentUserId)?.Emoji;
+
+            <div class="comm-card" id="comm-progress-@p.Id">
+                <div class="comm-card-header">
+                    <a href="/User/Profile/@p.UserId" class="comm-avatar">
+                        @if (!string.IsNullOrEmpty(pImg)) { <img src="@pImg" /> }
+                        else { @pLetter }
+                    </a>
+                    <div class="comm-user-info">
+                        <a href="/User/Profile/@p.UserId" class="comm-username">@p.User?.Username</a>
+                        <div>
+                            <a href="/Habit/Detail/@p.HabitId" class="comm-habit-tag">
+                                🎯 @p.Habit?.Name
+                            </a>
+                        </div>
+                    </div>
+                    <div class="comm-time">@timeAgo</div>
+                </div>
+
+                <div class="comm-stats">
+                    <span class="comm-stat-chip streak">🔥 @p.StreakDays días de racha</span>
+                    <span class="comm-stat-chip rate">📊 @p.CompletionRate% esta semana</span>
+                </div>
+
+                <div class="comm-msg">@p.Message</div>
+
+                <div class="comm-bar-wrap">
+                    <div class="comm-bar" style="width:@p.CompletionRate%"></div>
+                </div>
+
+                <!-- REACCIONES -->
+                <div class="comm-reactions" id="comm-reactions-@p.Id">
+                    @foreach (var emoji in new[] { "🔥", "💪", "❤️", "👏", "🎯" })
+                    {
+                        var count = reactionGroups.ContainsKey(emoji) ? reactionGroups[emoji] : 0;
+                        <button class="comm-react-btn @(myReaction == emoji ? "mine" : "")"
+                                onclick="reaccionar(@p.Id, '@emoji', this)">
+                            @emoji
+                            @if (count > 0) { <span class="comm-react-count">@count</span> }
+                        </button>
+                    }
+                </div>
+
+                <div class="comm-divider"></div>
+
+                <!-- COMENTARIOS -->
+                <div class="comm-comments" id="comm-comments-@p.Id">
+                    @foreach (var c in p.Comments.OrderBy(c => c.CreatedAt))
+                    {
+                        var cImg = c.User?.ProfileImage ?? c.User?.ProfilePicture ?? "";
+                        var cLetter = (c.User?.Username ?? "?").Substring(0, 1).ToUpper();
+                        <div class="comm-comment-item">
+                            <div class="comm-comment-avatar">
+                                @if (!string.IsNullOrEmpty(cImg)) { <img src="@cImg" /> }
+                                else { @cLetter }
+                            </div>
+                            <div class="comm-comment-bubble">
+                                <strong>@c.User?.Username</strong>
+                                @c.Content
+                            </div>
+                        </div>
+                    }
+                </div>
+
+                <div class="comm-comment-input-wrap">
+                    <input type="text" class="comm-comment-input"
+                           placeholder="Escribe algo motivador... 💪"
+                           id="commInput-@p.Id"
+                           onkeydown="if(event.key==='Enter') comentar(@p.Id, this)" />
+                    <button class="comm-comment-send"
+                            onclick="comentar(@p.Id, document.getElementById('commInput-@p.Id'))">➤</button>
+                </div>
+            </div>
+        }
+    }
+</div>
+
+<script>
+function escapeHtml(text) {
+    return String(text).replace(/&/g,"&amp;").replace(/</g,"&lt;")
+                       .replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+}
+
+function showToast(msg) {
+    const t = document.createElement("div");
+    t.className = "comm-toast";
+    t.textContent = msg;
+    document.body.appendChild(t);
+    setTimeout(() => t.remove(), 3000);
+}
+
+async function reaccionar(progressId, emoji, btn) {
+    try {
+        const res = await fetch("/Habit/ReactProgress", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ progressId, emoji })
+        });
+        const data = await res.json();
+        if (!data.success) return;
+
+        const container = document.getElementById("comm-reactions-" + progressId);
+        if (!container) return;
+
+        const wasMine = btn.classList.contains("mine");
+        container.querySelectorAll(".comm-react-btn").forEach(b => {
+            const btnEmoji = b.textContent.trim().charAt(0);
+            const found = data.counts.find(c => c.emoji === btnEmoji);
+            const count = found ? found.count : 0;
+            b.innerHTML = btnEmoji + (count > 0 ? ` <span class="comm-react-count">${count}</span>` : "");
+            b.classList.remove("mine");
+        });
+        if (!wasMine) btn.classList.add("mine");
+    } catch (err) { console.error(err); }
+}
+
+async function comentar(progressId, input) {
+    const content = input.value.trim();
+    if (!content) return;
+    input.value = "";
+    input.disabled = true;
+
+    try {
+        const res = await fetch("/Habit/CommentProgress", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ progressId, content })
+        });
+        const data = await res.json();
+        if (!data.success) { input.disabled = false; return; }
+
+        const avatarHTML = data.avatar && data.avatar.trim() !== ""
+            ? `<img src="${data.avatar}" style="width:100%;height:100%;object-fit:cover;" />`
+            : data.username.charAt(0).toUpperCase();
+
+        const el = document.createElement("div");
+        el.className = "comm-comment-item";
+        el.style.animation = "none";
+        el.innerHTML = `
+            <div class="comm-comment-avatar">${avatarHTML}</div>
+            <div class="comm-comment-bubble">
+                <strong>${escapeHtml(data.username)}</strong>
+                ${escapeHtml(data.content)}
+            </div>`;
+
+        document.getElementById("comm-comments-" + progressId).appendChild(el);
+        el.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    } catch (err) { console.error(err); }
+
+    input.disabled = false;
+    input.focus();
+}
+</script>
