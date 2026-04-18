@@ -496,23 +496,7 @@ let selectedFile = null;
 let mediaRecorder = null, audioChunks = [], isRecording = false, recInterval = null;
 let recordedBlob = null;
 
-// 🔥 fix envío en móvil — usar touchend en vez de click
-sendBtn.addEventListener("touchend", function(e) {
-    e.preventDefault();
-    e.stopPropagation();
-    sendGroupMessage();
-}, { passive: false });
 
-sendBtn.addEventListener("click", function(e) {
-    sendGroupMessage();
-});
-
-// 🔥 fix botones barra móvil
-document.querySelectorAll(".grp-bar-btn").forEach(btn => {
-    btn.addEventListener("touchend", function(e) {
-        e.preventDefault();
-    }, { passive: false });
-});
 
 window.addEventListener("load", () => chatBox.scrollTop = chatBox.scrollHeight);
 
