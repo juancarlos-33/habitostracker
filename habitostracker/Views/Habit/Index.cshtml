@@ -191,7 +191,13 @@
                 @foreach (var habit in Model)
                 {
                     <tr>
-                        <td class="habit-name">@habit.Name</td>
+                      <td class="habit-name">
+    <a href="/Habit/Detail/@habit.Id" 
+       style="color:inherit;text-decoration:none;font-weight:600;display:flex;align-items:center;gap:6px;">
+        @habit.Name
+        <span style="font-size:10px;padding:2px 8px;border-radius:20px;background:rgba(99,102,241,0.1);color:#6366f1;font-weight:700;">Ver →</span>
+    </a>
+</td>
                         <td>
                             @if (habit.LastCheckDate == DateTime.Today && habit.Completed)
                             { <span class="status-badge success">✔ Completado</span> }

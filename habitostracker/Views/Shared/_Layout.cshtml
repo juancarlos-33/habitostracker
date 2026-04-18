@@ -12,43 +12,47 @@
 <style>
 :root {
     --primary: #2563eb;
-    --primary-dark: #1d4ed8;
     --accent: #7c3aed;
     --surface: #ffffff;
     --surface-2: #f8fafc;
     --border: rgba(0,0,0,0.07);
     --text: #111827;
     --text-muted: #6b7280;
-    --nav-bg: rgba(255,255,255,0.88);
+    --nav-bg: rgba(255,255,255,0.92);
     --sidebar-bg: linear-gradient(180deg, #0f172a 0%, #1e293b 100%);
-    --radius: 16px;
     --shadow: 0 8px 32px rgba(0,0,0,0.08);
+    --bottom-nav-bg: rgba(255,255,255,0.96);
 }
-
 body.bg-dark {
-    --surface: #0f172a;
-    --surface-2: #1e293b;
-    --border: rgba(255,255,255,0.07);
-    --text: #f1f5f9;
-    --text-muted: #64748b;
-    --nav-bg: rgba(15,23,42,0.92);
+    --surface: #0f172a; --surface-2: #1e293b;
+    --border: rgba(255,255,255,0.07); --text: #f1f5f9;
+    --text-muted: #64748b; --nav-bg: rgba(15,23,42,0.95);
+    --bottom-nav-bg: rgba(15,23,42,0.97);
 }
 
-* { box-sizing: border-box; }
-body { font-family: 'Plus Jakarta Sans', sans-serif; transition: background 0.3s, color 0.3s; background: var(--surface-2); color: var(--text); }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    transition: background 0.3s, color 0.3s;
+    background: var(--surface-2); color: var(--text);
+    padding-bottom: 70px; /* espacio para bottom nav móvil */
+}
+@@media (min-width: 769px) { body { padding-bottom: 0; } }
 
-/* ── NAVBAR ─────────────────────────────── */
+/* ══════════════════════════════════
+   NAVBAR TOP
+══════════════════════════════════ */
 .ht-navbar {
     position: sticky; top: 0; z-index: 1000;
     display: flex; align-items: center; justify-content: space-between;
     padding: 10px 20px; margin: 10px 12px; border-radius: 18px;
-    background: var(--nav-bg); backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
+    background: var(--nav-bg); backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
     border: 1px solid var(--border); box-shadow: var(--shadow);
-    transition: background 0.3s, border 0.3s;
+    transition: all 0.3s;
 }
 .ht-nav-left { display: flex; align-items: center; gap: 10px; }
-.ht-nav-right { display: flex; align-items: center; gap: 8px; }
+.ht-nav-right { display: flex; align-items: center; gap: 6px; }
 .ht-brand {
     font-size: 17px; font-weight: 800; letter-spacing: -0.3px;
     background: linear-gradient(135deg, var(--primary), var(--accent));
@@ -56,24 +60,13 @@ body { font-family: 'Plus Jakarta Sans', sans-serif; transition: background 0.3s
     text-decoration: none;
 }
 
-/* ── AVATAR ─────────────────────────────── */
-.ht-avatar-btn { background: none; border: none; padding: 0; cursor: pointer; flex-shrink: 0; position: relative; }
-.ht-avatar-img { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; border: 2px solid rgba(99,102,241,0.4); transition: 0.2s; }
-.ht-avatar-letter {
-    width: 36px; height: 36px; border-radius: 50%;
-    background: linear-gradient(135deg, var(--primary), var(--accent));
-    color: white; display: flex; align-items: center; justify-content: center;
-    font-size: 14px; font-weight: 800; border: 2px solid rgba(99,102,241,0.4); transition: 0.2s;
-}
-.ht-avatar-btn:hover .ht-avatar-img,
-.ht-avatar-btn:hover .ht-avatar-letter { transform: scale(1.05); box-shadow: 0 0 0 3px rgba(99,102,241,0.3); }
-
-/* ── ICON BTNS ──────────────────────────── */
+/* ── ICON BTNS ── */
 .ht-icon-btn {
     width: 36px; height: 36px; border-radius: 10px;
     border: none; background: transparent; cursor: pointer;
     display: flex; align-items: center; justify-content: center;
     font-size: 17px; transition: 0.15s; color: var(--text); position: relative;
+    text-decoration: none;
 }
 .ht-icon-btn:hover { background: rgba(99,102,241,0.1); transform: scale(1.05); }
 .ht-icon-btn .notif-dot {
@@ -84,21 +77,34 @@ body { font-family: 'Plus Jakarta Sans', sans-serif; transition: background 0.3s
 }
 @@keyframes pulseDot { 0%,100%{transform:scale(1);} 50%{transform:scale(1.3);} }
 
-/* ── DROPDOWN ───────────────────────────── */
+/* ── AVATAR ── */
+.ht-avatar-btn { background: none; border: none; padding: 0; cursor: pointer; flex-shrink: 0; }
+.ht-avatar-img { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; border: 2px solid rgba(99,102,241,0.4); transition: 0.2s; }
+.ht-avatar-letter {
+    width: 36px; height: 36px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--primary), var(--accent));
+    color: white; display: flex; align-items: center; justify-content: center;
+    font-size: 14px; font-weight: 800; border: 2px solid rgba(99,102,241,0.4); transition: 0.2s;
+}
+.ht-avatar-btn:hover .ht-avatar-img,
+.ht-avatar-btn:hover .ht-avatar-letter { transform: scale(1.05); box-shadow: 0 0 0 3px rgba(99,102,241,0.3); }
+
+/* ══════════════════════════════════
+   DROPDOWN
+══════════════════════════════════ */
 .ht-dropdown { position: relative; }
 .ht-dropdown-menu {
     position: absolute; top: calc(100% + 10px); right: 0;
     min-width: 280px; background: var(--surface);
     border: 1px solid var(--border); border-radius: 20px; padding: 8px;
-    box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+    box-shadow: 0 24px 64px rgba(0,0,0,0.15);
     opacity: 0; transform: translateY(-8px) scale(0.97);
     pointer-events: none; transition: opacity 0.18s, transform 0.18s; z-index: 9999;
 }
 .ht-dropdown.open .ht-dropdown-menu { opacity: 1; transform: translateY(0) scale(1); pointer-events: all; }
-
 .ht-dropdown-header {
     display: flex; align-items: center; gap: 12px;
-    padding: 12px 14px 10px; border-bottom: 1px solid var(--border); margin-bottom: 6px;
+    padding: 12px 14px 12px; border-bottom: 1px solid var(--border); margin-bottom: 6px;
 }
 .ht-dh-avatar { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; flex-shrink: 0; border: 2px solid var(--border); }
 .ht-dh-letter {
@@ -109,7 +115,6 @@ body { font-family: 'Plus Jakarta Sans', sans-serif; transition: background 0.3s
 }
 .ht-dh-name { font-weight: 700; font-size: 14px; color: var(--text); }
 .ht-dh-role { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
-
 .ht-menu-item {
     display: flex; align-items: center; gap: 10px;
     padding: 9px 12px; border-radius: 12px;
@@ -128,7 +133,9 @@ body { font-family: 'Plus Jakarta Sans', sans-serif; transition: background 0.3s
 .ht-menu-item .mi-badge.green { background: #22c55e; }
 .ht-menu-divider { height: 1px; background: var(--border); margin: 6px 8px; }
 
-/* ── SIDEBAR ────────────────────────────── */
+/* ══════════════════════════════════
+   SIDEBAR (desktop)
+══════════════════════════════════ */
 .ht-sidebar {
     width: 250px; height: 100vh;
     background: var(--sidebar-bg); padding: 24px 14px;
@@ -140,7 +147,6 @@ body { font-family: 'Plus Jakarta Sans', sans-serif; transition: background 0.3s
 .ht-sidebar.show { left: 0; }
 .ht-sidebar::-webkit-scrollbar { width: 3px; }
 .ht-sidebar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
-
 .ht-sidebar-logo {
     font-size: 16px; font-weight: 800; color: white;
     padding: 12px 14px; border-radius: 14px;
@@ -170,7 +176,64 @@ body { font-family: 'Plus Jakarta Sans', sans-serif; transition: background 0.3s
 }
 .ht-sidebar-link .sl-badge.green { background: #22c55e; }
 
-/* ── OVERLAY ────────────────────────────── */
+/* ══════════════════════════════════
+   BOTTOM NAV (móvil — como Instagram)
+══════════════════════════════════ */
+.ht-bottom-nav {
+    display: none;
+    position: fixed; bottom: 0; left: 0; right: 0; z-index: 1000;
+    background: var(--bottom-nav-bg);
+    backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+    border-top: 1px solid var(--border);
+    padding: 8px 0 env(safe-area-inset-bottom, 8px);
+    box-shadow: 0 -8px 32px rgba(0,0,0,0.08);
+}
+@@media (max-width: 768px) {
+    .ht-bottom-nav { display: flex; }
+}
+.ht-bottom-nav-inner {
+    display: flex; align-items: center; justify-content: space-around;
+    width: 100%; max-width: 560px; margin: 0 auto; padding: 0 8px;
+}
+.ht-bn-item {
+    display: flex; flex-direction: column; align-items: center; gap: 3px;
+    padding: 6px 12px; border-radius: 14px; text-decoration: none;
+    color: var(--text-muted); font-size: 10px; font-weight: 700;
+    transition: 0.2s; position: relative; min-width: 52px;
+    border: none; background: transparent; cursor: pointer; font-family: inherit;
+}
+.ht-bn-item:hover { color: var(--primary); }
+.ht-bn-item.active { color: var(--primary); }
+.ht-bn-icon { font-size: 22px; line-height: 1; }
+.ht-bn-label { font-size: 10px; font-weight: 700; letter-spacing: 0.3px; }
+.ht-bn-badge {
+    position: absolute; top: 2px; right: 6px;
+    background: #ef4444; color: white;
+    font-size: 9px; font-weight: 800; padding: 1px 5px;
+    border-radius: 20px; border: 2px solid var(--bottom-nav-bg);
+    min-width: 16px; text-align: center;
+}
+/* indicador activo */
+.ht-bn-item.active::after {
+    content:""; position:absolute; bottom:-8px; left:50%;
+    transform:translateX(-50%);
+    width:20px; height:3px; border-radius:10px;
+    background: linear-gradient(90deg, var(--primary), var(--accent));
+}
+/* botón central (crear/compartir) */
+.ht-bn-center {
+    width: 48px; height: 48px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--primary), var(--accent));
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px; box-shadow: 0 6px 20px rgba(99,102,241,0.45);
+    border: none; cursor: pointer; transition: 0.2s; text-decoration: none;
+    margin-top: -8px;
+}
+.ht-bn-center:hover { transform: scale(1.1); box-shadow: 0 8px 24px rgba(99,102,241,0.6); }
+
+/* ══════════════════════════════════
+   OVERLAY
+══════════════════════════════════ */
 #ht-overlay {
     position: fixed; inset: 0; background: rgba(0,0,0,0.4);
     backdrop-filter: blur(3px); opacity: 0; visibility: hidden;
@@ -178,7 +241,9 @@ body { font-family: 'Plus Jakarta Sans', sans-serif; transition: background 0.3s
 }
 #ht-overlay.show { opacity: 1; visibility: visible; }
 
-/* ── LOADER ─────────────────────────────── */
+/* ══════════════════════════════════
+   LOADER
+══════════════════════════════════ */
 #ht-loader {
     position: fixed; inset: 0; z-index: 99999;
     display: none; flex-direction: column;
@@ -194,18 +259,41 @@ body { font-family: 'Plus Jakarta Sans', sans-serif; transition: background 0.3s
 .ht-loader-bar-wrap { width: 180px; height: 4px; background: rgba(255,255,255,0.2); border-radius: 10px; margin-top: 10px; overflow: hidden; }
 .ht-loader-bar { height: 100%; background: linear-gradient(90deg, #4ade80, #22c55e); border-radius: 10px; transition: width 0.2s; width: 0%; }
 
-/* ── NOTIF CONTAINER ────────────────────── */
+/* ══════════════════════════════════
+   NOTIF TOASTS
+══════════════════════════════════ */
 #ht-notifs {
     position: fixed; top: 76px; right: 16px; z-index: 999999;
     display: flex; flex-direction: column; gap: 10px;
     pointer-events: none; max-width: 340px; width: calc(100vw - 32px);
 }
+.ht-notif-card {
+    background: rgba(15,23,42,0.96); backdrop-filter: blur(16px);
+    border: 1px solid rgba(255,255,255,0.08); border-radius: 18px;
+    padding: 14px 16px; display: flex; align-items: center; gap: 12px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4); cursor: pointer; pointer-events: all;
+    transform: translateX(120%); transition: transform 0.4s cubic-bezier(0.34,1.56,0.64,1), opacity 0.3s;
+    opacity: 0; position: relative; overflow: hidden;
+}
+.ht-notif-card.show { transform: translateX(0); opacity: 1; }
+.ht-notif-card.hide { transform: translateX(120%); opacity: 0; }
+.ht-notif-progress {
+    position: absolute; bottom: 0; left: 0; height: 3px;
+    background: linear-gradient(90deg, var(--primary), var(--accent));
+    border-radius: 0 0 18px 18px; width: 100%; transition: width 4s linear;
+}
 
-/* ── CONTENT ────────────────────────────── */
+/* ══════════════════════════════════
+   CONTENT
+══════════════════════════════════ */
 .ht-content { padding: 24px 20px; min-height: 100vh; }
+@@media (max-width: 768px) { .ht-content { padding: 16px 14px; } }
 
-/* ── DARK MODE ──────────────────────────── */
-body.bg-dark .ht-navbar { background: var(--nav-bg); border-color: var(--border); }
+/* ══════════════════════════════════
+   DARK MODE
+══════════════════════════════════ */
+body.bg-dark .ht-navbar,
+body.bg-dark .ht-bottom-nav { background: var(--nav-bg); border-color: var(--border); }
 body.bg-dark .ht-dropdown-menu { background: #0f172a; border-color: rgba(255,255,255,0.08); }
 body.bg-dark .ht-menu-item:hover { background: rgba(99,102,241,0.12); }
 body.bg-dark .ht-menu-divider { background: rgba(255,255,255,0.07); }
@@ -226,42 +314,19 @@ body.bg-dark .notification-message { color: #f1f5f9 !important; }
 body.bg-dark .notification-time { color: #94a3b8 !important; }
 body.bg-dark .dropdown-menu { background-color: #1e1e1e; border: 1px solid #333; }
 body.bg-dark .dropdown-menu a { color: #fff !important; }
-body.bg-dark .sec-card { background: #1e1e1e !important; color: #fff !important; border: 1px solid #333; }
-body.bg-dark .help-card { background-color: #1e1e1e !important; color: #fff !important; border: 1px solid #333; }
-body.bg-dark .guest-container { background-color: #1e1e1e !important; color: #fff !important; border: 1px solid #333; }
+body.bg-dark .sec-card,body.bg-dark .help-card,body.bg-dark .guest-container { background: #1e1e1e !important; color: #fff !important; border: 1px solid #333 !important; }
 body.bg-dark .table { color: white !important; }
 body.bg-dark .table thead { background-color: #2a2a3d !important; }
-
-/* ── TOAST NOTIF ────────────────────────── */
-.ht-notif-card {
-    background: rgba(15,23,42,0.94); backdrop-filter: blur(14px);
-    border: 1px solid rgba(255,255,255,0.08); border-radius: 18px;
-    padding: 14px 16px; display: flex; align-items: center; gap: 12px;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.4); cursor: pointer; pointer-events: all;
-    transform: translateX(120%); transition: transform 0.4s cubic-bezier(0.34,1.56,0.64,1), opacity 0.3s;
-    opacity: 0; position: relative; overflow: hidden;
-}
-.ht-notif-card.show { transform: translateX(0); opacity: 1; }
-.ht-notif-card.hide { transform: translateX(120%); opacity: 0; }
-.ht-notif-progress {
-    position: absolute; bottom: 0; left: 0; height: 3px;
-    background: linear-gradient(90deg, var(--primary), var(--accent));
-    border-radius: 0 0 18px 18px; width: 100%; transition: width 4s linear;
-}
-@@keyframes spin { 0%{transform:rotate(0deg);} 100%{transform:rotate(360deg);} }
-
-/* ── MOBILE ─────────────────────────────── */
-@@media (max-width: 768px) {
-    .ht-content { padding: 16px 14px; }
-    .ht-navbar { margin: 8px; padding: 8px 14px; }
-}
-
-/* ── MODAL ──────────────────────────────── */
-.modal-content { border-radius: 20px !important; }
-body.bg-dark .modal-content { background: #1e293b !important; color: #f1f5f9 !important; border: 1px solid rgba(255,255,255,0.08) !important; }
+body.bg-dark .ht-bn-item { color: #475569; }
+body.bg-dark .ht-bn-item.active { color: #818cf8; }
 body.bg-dark .modal-content .text-muted { color: #94a3b8 !important; }
 body.bg-dark .modal-content .btn-outline-secondary { border-color: #475569; color: #94a3b8; }
-body.bg-dark .modal-content .btn-outline-secondary:hover { background: #334155; color: #f1f5f9; }
+
+/* ══════════════════════════════════
+   MODAL
+══════════════════════════════════ */
+.modal-content { border-radius: 20px !important; }
+body.bg-dark .modal-content { background: #1e293b !important; color: #f1f5f9 !important; border: 1px solid rgba(255,255,255,0.08) !important; }
 </style>
 </head>
 
@@ -283,7 +348,6 @@ body.bg-dark .modal-content .btn-outline-secondary:hover { background: #334155; 
     <a class="ht-sidebar-link" asp-controller="Habit" asp-action="Calendar">
         <span class="sl-icon">📅</span> Calendario
     </a>
-    <!-- 🔥 Comunidad -->
     <a class="ht-sidebar-link guest-block" asp-controller="Habit" asp-action="Community">
         <span class="sl-icon">🌍</span> Comunidad
     </a>
@@ -342,7 +406,7 @@ body.bg-dark .modal-content .btn-outline-secondary:hover { background: #334155; 
     <div class="ht-loader-bar-wrap"><div class="ht-loader-bar" id="ht-loader-bar"></div></div>
 </div>
 
-<!-- NAVBAR -->
+<!-- NAVBAR TOP -->
 @if (User.Identity.IsAuthenticated && Context.Request.Query["blocked"] != "true")
 {
     var navUserName = User.Identity.Name ?? "U";
@@ -364,11 +428,12 @@ body.bg-dark .modal-content .btn-outline-secondary:hover { background: #334155; 
         <div class="ht-nav-right">
             <button onclick="toggleDarkMode()" data-no-loader class="ht-icon-btn" title="Tema">🌙</button>
 
-            <!-- 🔥 Comunidad acceso rápido -->
-            <a href="/Habit/Community" class="ht-icon-btn guest-block" title="Comunidad">🌍</a>
+            <!-- Comunidad -->
+            <a href="/Habit/Community" class="ht-icon-btn guest-block" title="Comunidad"
+               style="display:none;" id="communityNavBtn">🌍</a>
 
-            <!-- 🔥 Solicitudes de mensaje -->
-            <a href="/Message/Inbox" class="ht-icon-btn guest-block" title="Solicitudes de mensaje"
+            <!-- Solicitudes de mensaje -->
+            <a href="/Message/Inbox" class="ht-icon-btn guest-block" title="Mensajes"
                id="msgReqNavBtn" style="display:none; position:relative;">
                 💬
                 <span class="notif-dot" id="msgReqDot"></span>
@@ -407,19 +472,20 @@ body.bg-dark .modal-content .btn-outline-secondary:hover { background: #334155; 
                         @if (ViewBag.NewMessages != null && (int)ViewBag.NewMessages > 0)
                         { <span class="mi-badge">@ViewBag.NewMessages</span> }
                     </a>
-                    <!-- 🔥 Solicitudes de mensaje -->
                     <a class="ht-menu-item guest-block" asp-controller="Message" asp-action="Inbox"
                        id="msgReqMenuItem" style="display:none;">
                         <span class="mi-icon">💬</span>
                         <span>Solicitudes de mensaje</span>
                         <span class="mi-badge green" id="msgReqMenuBadge">0</span>
                     </a>
-                    <!-- 🔥 Comunidad -->
                     <a class="ht-menu-item guest-block" asp-controller="Habit" asp-action="Community">
                         <span class="mi-icon">🌍</span><span>Comunidad</span>
                     </a>
                     <a class="ht-menu-item guest-block" asp-controller="Habit" asp-action="Achievements">
                         <span class="mi-icon">🏆</span><span>Logros</span>
+                    </a>
+                    <a class="ht-menu-item guest-block" asp-controller="Group" asp-action="Index">
+                        <span class="mi-icon">👥</span><span>Grupos</span>
                     </a>
 
                     @if (User.IsInRole("Admin") || User.IsInRole("SuperAdmin"))
@@ -437,6 +503,47 @@ body.bg-dark .modal-content .btn-outline-secondary:hover { background: #334155; 
             </div>
         </div>
     </nav>
+
+    <!-- ══════════════════════════════════
+         BOTTOM NAV MÓVIL (estilo Instagram)
+    ══════════════════════════════════ -->
+
+    var currentPath = Context.Request.Path.Value?.ToLower() ?? "";
+    
+    bool isHome = currentPath == "/" || currentPath.Contains("/habit/index") || currentPath == "/habit";
+    bool isCommunity = currentPath.Contains("/habit/community");
+    bool isMessages = currentPath.Contains("/message");
+    bool isFriends = currentPath.Contains("/user/index");
+    bool isProfile = currentPath.Contains("/account/profile");
+
+
+<nav class="ht-bottom-nav" id="htBottomNav">
+    <div class="ht-bottom-nav-inner">
+        <a href="/Habit/Index" class="ht-bn-item @(isHome ? "active" : "")">
+            <span class="ht-bn-icon">🏠</span>
+            <span class="ht-bn-label">Inicio</span>
+        </a>
+        <a href="/User/Index" class="ht-bn-item guest-block @(isFriends ? "active" : "")">
+            <span class="ht-bn-icon">👥</span>
+            <span class="ht-bn-label">Amigos</span>
+        </a>
+        
+        <a href="/Habit/Create" class="ht-bn-center guest-block" title="Nuevo hábito">➕</a>
+
+        <a href="/Message/Inbox" class="ht-bn-item guest-block @(isMessages ? "active" : "")" id="bnMessages">
+            <span class="ht-bn-icon">💬</span>
+            <span class="ht-bn-label">Mensajes</span>
+            <span class="ht-bn-badge" id="bnMsgBadge" style="display:none;"></span>
+        </a>
+
+        <a href="/Habit/Community" class="ht-bn-item guest-block @(isCommunity ? "active" : "")">
+            <span class="ht-bn-icon">🌍</span>
+            <span class="ht-bn-label">Comunidad</span>
+        </a>
+    </div>
+</nav>
+
+
 }
 
 <!-- CONTENIDO -->
@@ -496,185 +603,117 @@ body.bg-dark .modal-content .btn-outline-secondary:hover { background: #334155; 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
 
 <script>
-// ══════════════════════════════════════════
-// 🔥 FECHAS LOCALES
-// ══════════════════════════════════════════
-document.addEventListener("DOMContentLoaded", function() {
-    convertirFechasLocales();
-});
+// ══ FECHAS LOCALES ══════════════════════
+document.addEventListener("DOMContentLoaded", convertirFechasLocales);
 
 function convertirFechasLocales() {
     document.querySelectorAll("[data-utc]").forEach(el => {
         const utcStr = el.getAttribute("data-utc");
         if (!utcStr) return;
-        try {
-            const date = new Date(utcStr);
-            const formato = el.getAttribute("data-format") || "datetime";
-            el.textContent = formatearFecha(date, formato);
-        } catch(e) {}
+        try { el.textContent = formatearFecha(new Date(utcStr), el.getAttribute("data-format") || "datetime"); } catch(e) {}
     });
     document.querySelectorAll("[data-utc-time]").forEach(el => {
         const utcStr = el.getAttribute("data-utc-time");
         if (!utcStr) return;
-        try {
-            const date = new Date(utcStr);
-            el.textContent = date.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' });
-        } catch(e) {}
+        try { el.textContent = new Date(utcStr).toLocaleTimeString('es-CO', { hour:'2-digit', minute:'2-digit' }); } catch(e) {}
     });
 }
 
 function formatearFecha(date, formato) {
     const ahora = new Date();
-    const diffMs = ahora - date;
-    const diffMin = Math.floor(diffMs / 60000);
-    const diffH = Math.floor(diffMs / 3600000);
-    const diffD = Math.floor(diffMs / 86400000);
-
+    const diffMin = Math.floor((ahora - date) / 60000);
+    const diffH = Math.floor((ahora - date) / 3600000);
+    const diffD = Math.floor((ahora - date) / 86400000);
     if (formato === "relative") {
         if (diffMin < 1) return "ahora";
         if (diffMin < 60) return `hace ${diffMin} min`;
         if (diffH < 24) return `hace ${diffH}h`;
         if (diffD === 1) return "ayer";
         if (diffD < 7) return `hace ${diffD} días`;
-        return date.toLocaleDateString('es-CO', { day: '2-digit', month: 'short' });
+        return date.toLocaleDateString('es-CO', { day:'2-digit', month:'short' });
     }
-    if (formato === "time") return date.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' });
-    if (formato === "date") return date.toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' });
-
+    if (formato === "time") return date.toLocaleTimeString('es-CO', { hour:'2-digit', minute:'2-digit' });
+    if (formato === "date") return date.toLocaleDateString('es-CO', { day:'2-digit', month:'short', year:'numeric' });
     const esHoy = date.toDateString() === ahora.toDateString();
     const esAyer = new Date(ahora - 86400000).toDateString() === date.toDateString();
-    const hora = date.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' });
+    const hora = date.toLocaleTimeString('es-CO', { hour:'2-digit', minute:'2-digit' });
     if (esHoy) return hora;
     if (esAyer) return `ayer ${hora}`;
-    return date.toLocaleDateString('es-CO', { day: '2-digit', month: 'short' }) + ` ${hora}`;
+    return date.toLocaleDateString('es-CO', { day:'2-digit', month:'short' }) + ` ${hora}`;
 }
-
 window.htConvertirFechas = convertirFechasLocales;
 </script>
 
 <script>
 const isSuperAdmin = @(User.IsInRole("SuperAdmin").ToString().ToLower());
 
-// ── SIGNALR GLOBAL ───────────────────────
+// ══ SIGNALR GLOBAL ══════════════════════
 const connectionGlobal = new signalR.HubConnectionBuilder().withUrl("/chatHub").build();
 
-connectionGlobal.on("ForceLogout", function(message) {
-    document.body.innerHTML = `<div style="height:100vh;display:flex;align-items:center;justify-content:center;background:#0f172a;font-family:sans-serif;color:white;text-align:center;"><div style="background:#1e293b;padding:50px;border-radius:14px;"><h2 style="color:#f59e0b">⚠ Atención</h2><p>${message}</p><p style="opacity:0.6">Cerrando sesión...</p></div></div>`;
+connectionGlobal.on("ForceLogout", msg => {
+    document.body.innerHTML = `<div style="height:100vh;display:flex;align-items:center;justify-content:center;background:#0f172a;font-family:sans-serif;color:white;text-align:center;"><div style="background:#1e293b;padding:50px;border-radius:14px;"><h2 style="color:#f59e0b">⚠ Atención</h2><p>${msg}</p></div></div>`;
     setTimeout(() => window.location.href="/Account/LogoutGet", 2500);
 });
-
-connectionGlobal.on("IPBlocked", function(blockedIp) {
+connectionGlobal.on("IPBlocked", ip => {
     fetch("/Home/GetMyIP").then(r => r.text()).then(myIp => {
-        if (myIp === blockedIp) {
-            document.body.innerHTML = `<div style="height:100vh;display:flex;align-items:center;justify-content:center;background:#0f172a;font-family:sans-serif;color:white;text-align:center;"><div style="background:#1e293b;padding:50px;border-radius:14px;"><h2 style="color:#ef4444">🚫 IP bloqueada</h2><p>Tu IP ha sido bloqueada</p></div></div>`;
-            setTimeout(() => window.location.href="/Account/Login?ipblocked=true", 2500);
-        }
+        if (myIp === ip) { document.body.innerHTML = `<div style="height:100vh;display:flex;align-items:center;justify-content:center;background:#0f172a;font-family:sans-serif;color:white;text-align:center;"><div style="background:#1e293b;padding:50px;border-radius:14px;"><h2 style="color:#ef4444">🚫 IP bloqueada</h2></div></div>`; setTimeout(() => window.location.href="/Account/Login?ipblocked=true", 2500); }
     });
 });
-
-connectionGlobal.on("ConnectionBlocked", function(message) {
-    if (isSuperAdmin) return;
-    alert(message);
-    setTimeout(() => window.location.href="/Home/ConnectionBlocked", 1500);
-});
-
-connectionGlobal.on("IPBlockedNow", function(message) {
-    document.body.innerHTML = `<div style="height:100vh;display:flex;align-items:center;justify-content:center;background:#020617;color:white;font-family:sans-serif;text-align:center;"><div style="background:#1e293b;padding:50px;border-radius:16px;"><h2 style="color:#ef4444">🚫 Acceso bloqueado</h2><p>${message}</p><p style="opacity:0.6">Redirigiendo...</p></div></div>`;
-    setTimeout(() => window.location.href="/Account/Login?ipblocked=true", 2000);
-});
-
-connectionGlobal.on("UserDeleted", function(userId) {
-    const myId = '@User.FindFirst("UserId")?.Value';
-    if (myId == userId) { alert("⚠ Esta cuenta fue eliminada."); setTimeout(() => window.location.href="/Account/Login", 1500); }
-});
-
-connectionGlobal.on("UserConnectedNotification", function(username) {
-    showToastNotif(username, "● En línea", "", null);
-});
-
-connectionGlobal.on("NewSessionDetected", function() {
-    if (window.location.pathname.toLowerCase().includes("/security")) location.reload();
-});
-
-connectionGlobal.on("ForceLogoutSession", function(targetToken) {
-    const myToken = '@User.FindFirst("SessionToken")?.Value';
-    if (targetToken === myToken) {
-        document.body.innerHTML = `<div style="height:100vh;display:flex;align-items:center;justify-content:center;background:#0f172a;font-family:sans-serif;color:white;text-align:center;"><div style="background:#1e293b;padding:50px;border-radius:14px;"><h2 style="color:#f59e0b">⚠ Sesión cerrada</h2><p>Tu sesión fue cerrada desde otro dispositivo.</p></div></div>`;
-        setTimeout(() => window.location.href="/Account/LogoutGet", 2500);
-    }
-});
-
-connectionGlobal.start().catch(err => console.error("SignalR global:", err));
+connectionGlobal.on("ConnectionBlocked", msg => { if (!isSuperAdmin) { alert(msg); setTimeout(() => window.location.href="/Home/ConnectionBlocked", 1500); } });
+connectionGlobal.on("IPBlockedNow", msg => { document.body.innerHTML = `<div style="height:100vh;display:flex;align-items:center;justify-content:center;background:#020617;color:white;font-family:sans-serif;text-align:center;"><div style="background:#1e293b;padding:50px;border-radius:16px;"><h2 style="color:#ef4444">🚫 Acceso bloqueado</h2><p>${msg}</p></div></div>`; setTimeout(() => window.location.href="/Account/Login?ipblocked=true", 2000); });
+connectionGlobal.on("UserDeleted", uid => { const myId = '@User.FindFirst("UserId")?.Value'; if (myId == uid) { alert("⚠ Esta cuenta fue eliminada."); setTimeout(() => window.location.href="/Account/Login", 1500); } });
+connectionGlobal.on("UserConnectedNotification", u => showToastNotif(u, "● En línea", "", null));
+connectionGlobal.on("NewSessionDetected", () => { if (window.location.pathname.toLowerCase().includes("/security")) location.reload(); });
+connectionGlobal.on("ForceLogoutSession", token => { const myToken = '@User.FindFirst("SessionToken")?.Value'; if (token === myToken) { document.body.innerHTML = `<div style="height:100vh;display:flex;align-items:center;justify-content:center;background:#0f172a;font-family:sans-serif;color:white;text-align:center;"><div style="background:#1e293b;padding:50px;border-radius:14px;"><h2 style="color:#f59e0b">⚠ Sesión cerrada</h2></div></div>`; setTimeout(() => window.location.href="/Account/LogoutGet", 2500); } });
+connectionGlobal.start().catch(e => console.error("SignalR global:", e));
 </script>
 
 <script>
-// ── SIGNALR NOTIFICACIONES ───────────────
+// ══ SIGNALR NOTIFICACIONES ══════════════
 const connection = new signalR.HubConnectionBuilder().withUrl("/chatHub").build();
-
-connection.start().then(function() {
+connection.start().then(() => {
     const userId = '@(User.Identity.IsAuthenticated ? User.FindFirst("UserId")?.Value : "")';
     if (userId) connection.invoke("JoinUserGroup", userId);
-    connection.on("ReceiveNotification", function(uid, message, username, userImage, link) {
-        showToastNotif(username, message, userImage, link);
-    });
+    connection.on("ReceiveNotification", (uid, msg, username, img, link) => showToastNotif(username, msg, img, link));
     connection.on("UserOnline", () => {});
     connection.on("UserOffline", () => {});
-}).catch(err => console.error("SignalR notif:", err));
+}).catch(e => console.error("SignalR notif:", e));
 
 function showToastNotif(username, message, userImage, link) {
-    const firstLetter = username ? username.charAt(0).toUpperCase() : "?";
-    const avatarHTML = (userImage && userImage.trim() !== "")
+    const letter = username ? username.charAt(0).toUpperCase() : "?";
+    const avatarHTML = (userImage && userImage.trim())
         ? `<img src="${userImage}" style="width:40px;height:40px;border-radius:50%;object-fit:cover;flex-shrink:0;" />`
-        : `<div style="width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#2563eb,#7c3aed);color:white;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:16px;flex-shrink:0;">${firstLetter}</div>`;
+        : `<div style="width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#2563eb,#7c3aed);color:white;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:16px;flex-shrink:0;">${letter}</div>`;
 
     const card = document.createElement("div");
     card.className = "ht-notif-card";
-    card.innerHTML = `
-        ${avatarHTML}
-        <div style="flex:1;min-width:0;">
-            <div style="font-weight:700;font-size:13px;color:#f1f5f9;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${username}</div>
-            <div style="font-size:12px;color:#94a3b8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${message}</div>
-        </div>
-        <button onclick="event.stopPropagation();this.closest('.ht-notif-card').remove();" style="background:none;border:none;color:#64748b;font-size:15px;cursor:pointer;padding:0;flex-shrink:0;">✕</button>`;
+    card.innerHTML = `${avatarHTML}<div style="flex:1;min-width:0;"><div style="font-weight:700;font-size:13px;color:#f1f5f9;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${username}</div><div style="font-size:12px;color:#94a3b8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${message}</div></div><button onclick="event.stopPropagation();this.closest('.ht-notif-card').remove();" style="background:none;border:none;color:#64748b;font-size:15px;cursor:pointer;padding:0;flex-shrink:0;">✕</button>`;
 
-    const progress = document.createElement("div");
-    progress.className = "ht-notif-progress";
-    card.appendChild(progress);
-
+    const bar = document.createElement("div");
+    bar.className = "ht-notif-progress";
+    card.appendChild(bar);
     if (link) card.addEventListener("click", () => window.location.href = link);
 
     document.getElementById("ht-notifs").appendChild(card);
-    requestAnimationFrame(() => requestAnimationFrame(() => {
-        card.classList.add("show");
-        progress.style.width = "0%";
-    }));
-
-    setTimeout(() => {
-        card.classList.remove("show");
-        card.classList.add("hide");
-        setTimeout(() => card.remove(), 400);
-    }, 4000);
+    requestAnimationFrame(() => requestAnimationFrame(() => { card.classList.add("show"); bar.style.width = "0%"; }));
+    setTimeout(() => { card.classList.remove("show"); card.classList.add("hide"); setTimeout(() => card.remove(), 400); }, 4000);
 }
 </script>
 
 <script>
-// ── LOADER ───────────────────────────────
+// ══ LOADER ══════════════════════════════
 const htLoader = document.getElementById("ht-loader");
 const htBar = document.getElementById("ht-loader-bar");
-const isChatPage = window.location.pathname.toLowerCase().includes("/message");
+const isChatPage = window.location.pathname.toLowerCase().includes("/message") ||
+                   window.location.pathname.toLowerCase().includes("/group/chat");
 let loaderProgress = 0;
 
 if (!isChatPage) {
     document.querySelectorAll("a").forEach(link => {
-        link.addEventListener("click", function() {
-            if (link.hasAttribute("data-no-loader")) return;
-            if (htLoader) htLoader.style.display = "flex";
-        });
+        link.addEventListener("click", () => { if (!link.hasAttribute("data-no-loader") && htLoader) htLoader.style.display = "flex"; });
     });
     document.querySelectorAll("form").forEach(form => {
-        form.addEventListener("submit", function() {
-            if (!form.hasAttribute("data-no-loader")) { if(htLoader) htLoader.style.display = "flex"; }
-        });
+        form.addEventListener("submit", () => { if (!form.hasAttribute("data-no-loader") && htLoader) htLoader.style.display = "flex"; });
     });
 }
 
@@ -682,83 +721,66 @@ const loaderInterval = setInterval(() => {
     if (loaderProgress < 88) { loaderProgress += Math.random() * 12; if(htBar) htBar.style.width = loaderProgress + "%"; }
 }, 200);
 
-window.addEventListener("load", function() {
+window.addEventListener("load", () => {
     if(htBar) htBar.style.width = "100%";
     setTimeout(() => {
         if(htLoader) { htLoader.style.opacity = "0"; htLoader.style.transition = "opacity 0.4s"; }
         setTimeout(() => { if(htLoader) htLoader.style.display = "none"; clearInterval(loaderInterval); }, 400);
     }, 500);
 });
-
-window.addEventListener("pageshow", function(e) {
-    if (e.persisted && htLoader) htLoader.style.display = "none";
-});
+window.addEventListener("pageshow", e => { if (e.persisted && htLoader) htLoader.style.display = "none"; });
 </script>
 
 <script>
-// ── DARK MODE ────────────────────────────
+// ══ DARK MODE ════════════════════════════
 const body = document.body;
-function toggleDarkMode() {
-    body.classList.contains("bg-dark") ? disableDarkMode() : enableDarkMode();
-}
-function enableDarkMode() {
-    body.classList.remove("bg-light","text-dark");
-    body.classList.add("bg-dark","text-light");
-    localStorage.setItem("darkMode","enabled");
-}
-function disableDarkMode() {
-    body.classList.remove("bg-dark","text-light");
-    body.classList.add("bg-light","text-dark");
-    localStorage.setItem("darkMode","disabled");
-}
+function toggleDarkMode() { body.classList.contains("bg-dark") ? disableDarkMode() : enableDarkMode(); }
+function enableDarkMode() { body.classList.remove("bg-light","text-dark"); body.classList.add("bg-dark","text-light"); localStorage.setItem("darkMode","enabled"); }
+function disableDarkMode() { body.classList.remove("bg-dark","text-light"); body.classList.add("bg-light","text-dark"); localStorage.setItem("darkMode","disabled"); }
 if (localStorage.getItem("darkMode") === "enabled") enableDarkMode();
-document.addEventListener("DOMContentLoaded", function() {
-    if (localStorage.getItem("darkMode") === "enabled") enableDarkMode();
-});
+document.addEventListener("DOMContentLoaded", () => { if (localStorage.getItem("darkMode") === "enabled") enableDarkMode(); });
 </script>
 
 <script>
-// ── SIDEBAR ──────────────────────────────
+// ══ SIDEBAR ══════════════════════════════
 function toggleSidebar() {
-    const sidebar = document.getElementById("ht-sidebar");
-    const overlay = document.getElementById("ht-overlay");
-    const isOpen = sidebar.classList.contains("show");
-    sidebar.classList.toggle("show");
-    overlay.classList.toggle("show", !isOpen);
-    document.body.style.overflow = !isOpen ? "hidden" : "";
+    const s = document.getElementById("ht-sidebar");
+    const o = document.getElementById("ht-overlay");
+    const open = s.classList.contains("show");
+    s.classList.toggle("show"); o.classList.toggle("show", !open);
+    document.body.style.overflow = !open ? "hidden" : "";
 }
 document.getElementById("ht-overlay").addEventListener("click", () => {
     document.getElementById("ht-sidebar").classList.remove("show");
     document.getElementById("ht-overlay").classList.remove("show");
     document.body.style.overflow = "";
 });
-document.querySelectorAll(".ht-sidebar-link").forEach(link => {
-    link.addEventListener("click", () => {
-        document.getElementById("ht-sidebar").classList.remove("show");
-        document.getElementById("ht-overlay").classList.remove("show");
-        document.body.style.overflow = "";
-    });
-});
+document.querySelectorAll(".ht-sidebar-link").forEach(l => l.addEventListener("click", () => {
+    document.getElementById("ht-sidebar").classList.remove("show");
+    document.getElementById("ht-overlay").classList.remove("show");
+    document.body.style.overflow = "";
+}));
 </script>
 
 <script>
-// ── USER DROPDOWN ────────────────────────
-function toggleUserDropdown() {
-    document.getElementById("ht-user-dropdown").classList.toggle("open");
-}
-document.addEventListener("click", function(e) {
+// ══ USER DROPDOWN ════════════════════════
+function toggleUserDropdown() { document.getElementById("ht-user-dropdown").classList.toggle("open"); }
+document.addEventListener("click", e => {
     const dd = document.getElementById("ht-user-dropdown");
     if (dd && !dd.contains(e.target)) dd.classList.remove("open");
 });
 </script>
 
 <script>
-// 🔥 SOLICITUDES DE MENSAJE
+// ══ SOLICITUDES DE MENSAJE ═══════════════
 @if (User.Identity.IsAuthenticated && !User.IsInRole("Guest"))
 {
     <text>
-    document.addEventListener("DOMContentLoaded", function() {
+    document.addEventListener("DOMContentLoaded", () => {
         cargarSolicitudesMensaje();
+        // mostrar botones en navbar después de cargar
+        const communityBtn = document.getElementById("communityNavBtn");
+        if (communityBtn) communityBtn.style.display = "flex";
     });
 
     function cargarSolicitudesMensaje() {
@@ -770,11 +792,15 @@ document.addEventListener("click", function(e) {
                 const menuItem = document.getElementById("msgReqMenuItem");
                 const menuBadge = document.getElementById("msgReqMenuBadge");
                 const sidebarBadge = document.getElementById("sidebar-msg-badge");
+                const bnBadge = document.getElementById("bnMsgBadge");
+
+                if (navBtn) navBtn.style.display = "flex";
+
                 if (count > 0) {
-                    if (navBtn) navBtn.style.display = "flex";
                     if (menuItem) menuItem.style.display = "flex";
                     if (menuBadge) menuBadge.textContent = count;
                     if (sidebarBadge) { sidebarBadge.style.display = "inline"; sidebarBadge.textContent = count; }
+                    if (bnBadge) { bnBadge.style.display = "inline"; bnBadge.textContent = count; }
                 }
             }).catch(() => {});
     }
@@ -783,23 +809,19 @@ document.addEventListener("click", function(e) {
 </script>
 
 <script>
-// ── GEOLOCATION ──────────────────────────
-window.addEventListener("load", function() {
+// ══ GEOLOCATION ══════════════════════════
+window.addEventListener("load", () => {
     if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(function(pos) {
-            fetch("/Account/SaveLocation", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ latitude: pos.coords.latitude, longitude: pos.coords.longitude })
-            });
+        navigator.geolocation.getCurrentPosition(pos => {
+            fetch("/Account/SaveLocation", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ latitude: pos.coords.latitude, longitude: pos.coords.longitude }) });
         });
     }
 });
 </script>
 
 <script>
-// ── GUEST MODAL ──────────────────────────
-document.addEventListener("DOMContentLoaded", function() {
+// ══ GUEST MODAL ══════════════════════════
+document.addEventListener("DOMContentLoaded", () => {
     const modalEl = document.getElementById('guestModal');
     const guestModal = new bootstrap.Modal(modalEl, { backdrop: true, keyboard: true });
 
@@ -813,37 +835,25 @@ document.addEventListener("DOMContentLoaded", function() {
     }
 
     modalEl.addEventListener('hidden.bs.modal', cleanBackdrop);
+    if (window.location.search.includes("showGuestModal=true")) setTimeout(() => guestModal.show(), 300);
 
-    if (window.location.search.includes("showGuestModal=true")) {
-        setTimeout(() => guestModal.show(), 300);
-    }
-
-    document.addEventListener("click", function(e) {
+    document.addEventListener("click", e => {
         if (!isGuest) return;
         const target = e.target.closest(".guest-block");
-        if (!target) return;
-        if (modalEl.contains(target)) return;
-        if (target.closest("#logoutModal")) return;
-        e.preventDefault();
-        e.stopImmediatePropagation();
+        if (!target || modalEl.contains(target) || target.closest("#logoutModal")) return;
+        e.preventDefault(); e.stopImmediatePropagation();
         document.getElementById("ht-sidebar").classList.remove("show");
         document.getElementById("ht-overlay").classList.remove("show");
         document.body.style.overflow = "";
         guestModal.show();
     }, true);
 
-    document.addEventListener("submit", function(e) {
-        if (!isGuest) return;
-        if (!e.target.classList.contains("guest-block-form")) return;
-        if (modalEl.contains(e.target)) return;
-        e.preventDefault();
-        guestModal.show();
+    document.addEventListener("submit", e => {
+        if (!isGuest || !e.target.classList.contains("guest-block-form") || modalEl.contains(e.target)) return;
+        e.preventDefault(); guestModal.show();
     }, true);
 
-    document.getElementById("closeGuestModal").addEventListener("click", function() {
-        guestModal.hide();
-        cleanBackdrop();
-    });
+    document.getElementById("closeGuestModal").addEventListener("click", () => { guestModal.hide(); cleanBackdrop(); });
 });
 </script>
 

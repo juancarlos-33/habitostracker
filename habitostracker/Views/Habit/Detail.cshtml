@@ -17,7 +17,6 @@
 <style>
 .detail-page { max-width: 720px; margin: 0 auto; font-family: 'Plus Jakarta Sans', sans-serif; padding-bottom: 60px; }
 
-/* HERO */
 .detail-hero {
     background: linear-gradient(135deg, #1e293b, #0f172a);
     border-radius: 24px; padding: 28px 32px; margin-bottom: 16px;
@@ -30,10 +29,15 @@
     background: radial-gradient(circle, rgba(99,102,241,0.2), transparent 70%);
     border-radius:50%;
 }
+.detail-hero::after {
+    content:""; position:absolute; bottom:-30px; left:60px;
+    width:140px; height:140px;
+    background: radial-gradient(circle, rgba(34,197,94,0.1), transparent 70%);
+    border-radius:50%;
+}
 .detail-hero-top {
     display: flex; align-items: center; justify-content: space-between;
-    flex-wrap: wrap; gap: 14px; position: relative; z-index:1;
-    margin-bottom: 20px;
+    flex-wrap: wrap; gap: 12px; position: relative; z-index:1; margin-bottom: 18px;
 }
 .detail-back {
     display: inline-flex; align-items: center; gap: 6px;
@@ -43,18 +47,14 @@
     text-decoration: none; transition: 0.2s;
 }
 .detail-back:hover { background: rgba(255,255,255,0.14); color: white; }
-.detail-habit-name {
-    font-size: 24px; font-weight: 800; color: white;
-    position: relative; z-index:1; margin: 0 0 6px;
-}
+.detail-habit-name { font-size: 26px; font-weight: 800; color: white; margin: 0 0 6px; position: relative; z-index:1; }
 .detail-habit-meta { font-size: 13px; color: rgba(255,255,255,0.4); position: relative; z-index:1; }
 
-/* STATS ROW */
 .detail-stats {
     display: flex; gap: 0; position: relative; z-index:1;
     background: rgba(255,255,255,0.05); border-radius: 16px;
     border: 1px solid rgba(255,255,255,0.06); overflow: hidden;
-    width: fit-content; margin-top: 18px;
+    width: fit-content; margin-top: 20px;
 }
 .detail-stat { padding: 14px 28px; text-align: center; position: relative; }
 .detail-stat:not(:last-child)::after {
@@ -64,7 +64,6 @@
 .detail-stat-num { font-size: 22px; font-weight: 800; color: white; display: block; }
 .detail-stat-label { font-size: 11px; color: rgba(255,255,255,0.4); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
 
-/* CARDS */
 .detail-card {
     background: white; border-radius: 22px; padding: 24px;
     margin-bottom: 14px; border: 1px solid rgba(0,0,0,0.05);
@@ -79,16 +78,13 @@
     border-radius: 20px; background: #ede9fe; color: #6366f1; margin-left: auto;
 }
 
-/* GRÁFICA */
-.detail-chart-wrap { position: relative; height: 200px; }
-
 /* ACCIONES */
 .detail-actions { display: flex; gap: 10px; flex-wrap: wrap; }
 .detail-action-btn {
-    flex: 1; min-width: 120px; padding: 13px;
-    border-radius: 14px; border: none; font-size: 14px; font-weight: 700;
+    flex: 1; min-width: 110px; padding: 13px;
+    border-radius: 14px; border: none; font-size: 13px; font-weight: 700;
     cursor: pointer; font-family: inherit; transition: 0.2s;
-    display: flex; align-items: center; justify-content: center; gap: 8px;
+    display: flex; align-items: center; justify-content: center; gap: 7px;
     text-decoration: none;
 }
 .detail-action-btn.complete {
@@ -96,54 +92,49 @@
     box-shadow: 0 4px 14px rgba(34,197,94,0.35);
 }
 .detail-action-btn.complete:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(34,197,94,0.45); }
-.detail-action-btn.fail {
-    background: #fef2f2; color: #dc2626; border: 1.5px solid #fecaca;
-}
+.detail-action-btn.fail { background: #fef2f2; color: #dc2626; border: 1.5px solid #fecaca; }
 .detail-action-btn.fail:hover { background: #fee2e2; }
 .detail-action-btn.share {
     background: linear-gradient(135deg, #6366f1, #4f46e5); color: white;
     box-shadow: 0 4px 14px rgba(99,102,241,0.35);
 }
 .detail-action-btn.share:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(99,102,241,0.45); }
-.detail-action-btn.edit {
-    background: #fef9c3; color: #d97706; border: 1.5px solid #fde68a;
-    flex: 0; padding: 13px 18px;
+.detail-action-btn.edit { background: #fef9c3; color: #d97706; border: 1.5px solid #fde68a; flex: 0; padding: 13px 18px; }
+.detail-action-btn.community {
+    background: linear-gradient(135deg, #0f172a, #1e293b); color: white;
+    border: 1px solid rgba(255,255,255,0.1);
 }
+.detail-action-btn.community:hover { transform: translateY(-1px); }
 
-/* PROGRESS RING */
-.detail-ring-wrap {
-    display: flex; align-items: center; gap: 24px; margin-bottom: 18px;
-}
+/* RING */
+.detail-ring-wrap { display: flex; align-items: center; gap: 24px; margin-bottom: 18px; }
 .detail-ring { position: relative; width: 100px; height: 100px; flex-shrink: 0; }
 .detail-ring svg { transform: rotate(-90deg); }
 .detail-ring-bg { fill: none; stroke: #f1f5f9; stroke-width: 8; }
-.detail-ring-fill { fill: none; stroke: #6366f1; stroke-width: 8; stroke-linecap: round; transition: stroke-dashoffset 1s ease; }
-.detail-ring-text {
-    position: absolute; inset: 0; display: flex; flex-direction: column;
-    align-items: center; justify-content: center; text-align: center;
-}
+.detail-ring-fill { fill: none; stroke: #6366f1; stroke-width: 8; stroke-linecap: round; transition: stroke-dashoffset 1.2s cubic-bezier(0.4,0,0.2,1); }
+.detail-ring-text { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
 .detail-ring-pct { font-size: 20px; font-weight: 800; color: #111827; line-height: 1; }
 .detail-ring-sub { font-size: 10px; color: #9ca3af; font-weight: 600; text-transform: uppercase; }
 .detail-ring-info { flex: 1; }
 .detail-ring-info-title { font-size: 16px; font-weight: 800; color: #111827; margin-bottom: 6px; }
 .detail-ring-info-sub { font-size: 13px; color: #6b7280; line-height: 1.6; }
 
-/* HISTORIAL MINI */
-.detail-history-grid {
-    display: flex; flex-wrap: wrap; gap: 6px;
-}
+/* HISTORIAL 30 DÍAS */
+.detail-history-grid { display: flex; flex-wrap: wrap; gap: 5px; }
 .detail-history-dot {
     width: 32px; height: 32px; border-radius: 8px;
     display: flex; align-items: center; justify-content: center;
-    font-size: 11px; font-weight: 700; cursor: default;
-    position: relative;
+    font-size: 11px; font-weight: 700;
 }
 .detail-history-dot.ok { background: #dcfce7; color: #16a34a; }
 .detail-history-dot.fail { background: #fee2e2; color: #dc2626; }
 .detail-history-dot.none { background: #f3f4f6; color: #9ca3af; }
 .detail-history-dot.today { outline: 2.5px solid #6366f1; outline-offset: 2px; }
 
-/* COMPARTIR MODAL */
+/* CHART */
+.detail-chart-wrap { position: relative; height: 200px; }
+
+/* SHARE MODAL */
 .share-modal {
     display: none; position: fixed; inset: 0;
     background: rgba(0,0,0,0.65); z-index: 99999;
@@ -155,24 +146,28 @@
     max-width: 420px; width: 90%;
     border: 1px solid rgba(255,255,255,0.08);
     box-shadow: 0 40px 80px rgba(0,0,0,0.6);
+    animation: cardIn 0.4s cubic-bezier(0.34,1.56,0.64,1);
 }
+@@keyframes cardIn { from{opacity:0;transform:scale(0.9) translateY(20px);} to{opacity:1;transform:scale(1) translateY(0);} }
+
 .share-preview {
     background: linear-gradient(135deg, #6366f1, #2563eb);
     border-radius: 18px; padding: 22px; margin-bottom: 20px;
     text-align: center; position: relative; overflow: hidden;
 }
 .share-preview::before {
-    content:""; position:absolute; top:-30px; right:-30px;
-    width:120px; height:120px;
+    content:""; position:absolute; top:-20px; right:-20px;
+    width:100px; height:100px;
     background: radial-gradient(circle, rgba(255,255,255,0.15), transparent 70%);
     border-radius:50%;
 }
 .share-preview-habit { font-size: 13px; color: rgba(255,255,255,0.6); font-weight: 600; margin-bottom: 6px; }
-.share-preview-streak { font-size: 36px; font-weight: 800; color: white; margin-bottom: 4px; line-height: 1; }
+.share-preview-streak { font-size: 40px; font-weight: 800; color: white; line-height: 1; margin-bottom: 4px; }
 .share-preview-label { font-size: 12px; color: rgba(255,255,255,0.6); font-weight: 600; margin-bottom: 14px; }
 .share-preview-bar-wrap { height: 6px; background: rgba(255,255,255,0.2); border-radius: 10px; overflow: hidden; margin-bottom: 6px; }
-.share-preview-bar { height: 100%; background: white; border-radius: 10px; transition: 0.8s; }
-.share-preview-rate { font-size: 11px; color: rgba(255,255,255,0.7); font-weight: 600; }
+.share-preview-bar { height: 100%; background: white; border-radius: 10px; }
+.share-preview-rate { font-size: 12px; color: rgba(255,255,255,0.7); font-weight: 600; }
+
 .share-title { font-size: 18px; font-weight: 800; color: white; margin: 0 0 4px; }
 .share-sub { font-size: 13px; color: rgba(255,255,255,0.4); margin: 0 0 16px; }
 .share-textarea {
@@ -185,6 +180,19 @@
 .share-textarea:focus { border-color: #6366f1; background: rgba(99,102,241,0.06); }
 .share-textarea::placeholder { color: rgba(255,255,255,0.25); }
 .share-chars { font-size: 11px; color: rgba(255,255,255,0.3); text-align: right; margin-bottom: 16px; }
+
+/* SHARE OPTIONS */
+.share-options { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+.share-option-btn {
+    flex: 1; padding: 10px; border-radius: 12px; border: 1.5px solid rgba(255,255,255,0.1);
+    background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.7);
+    font-size: 12px; font-weight: 700; cursor: pointer; font-family: inherit;
+    transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 6px;
+}
+.share-option-btn:hover { background: rgba(255,255,255,0.1); color: white; }
+.share-option-btn.community-btn { border-color: rgba(99,102,241,0.4); color: #818cf8; }
+.share-option-btn.community-btn:hover { background: rgba(99,102,241,0.15); }
+
 .share-btns { display: flex; gap: 10px; }
 .share-cancel {
     flex: 1; padding: 12px; border-radius: 13px;
@@ -193,19 +201,19 @@
     font-size: 13px; font-weight: 700; cursor: pointer; font-family: inherit;
 }
 .share-confirm {
-    flex: 1; padding: 12px; border-radius: 13px; border: none;
+    flex: 2; padding: 12px; border-radius: 13px; border: none;
     background: linear-gradient(135deg, #6366f1, #2563eb);
     color: white; font-size: 13px; font-weight: 700;
     cursor: pointer; font-family: inherit; transition: 0.2s;
+    box-shadow: 0 4px 14px rgba(99,102,241,0.4);
 }
 .share-confirm:hover { transform: translateY(-1px); }
-.share-confirm:disabled { background: #334155; cursor: not-allowed; transform: none; }
+.share-confirm:disabled { background: #334155; cursor: not-allowed; transform: none; box-shadow: none; }
 
-/* PROGRESO CARDS */
+/* PROGRESS CARDS */
 .progress-card {
     background: #f9fafb; border-radius: 18px; padding: 18px 20px;
-    margin-bottom: 12px; border: 1px solid rgba(0,0,0,0.04);
-    transition: 0.2s;
+    margin-bottom: 12px; border: 1px solid rgba(0,0,0,0.04); transition: 0.2s;
 }
 .progress-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.08); }
 .progress-card-header { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
@@ -218,31 +226,28 @@
 .progress-card-avatar img { width: 100%; height: 100%; object-fit: cover; }
 .progress-card-user { font-size: 14px; font-weight: 700; color: #111827; }
 .progress-card-time { font-size: 11px; color: #9ca3af; margin-top: 1px; }
-.progress-card-stats {
-    display: flex; gap: 8px; margin-bottom: 10px; flex-wrap: wrap;
-}
-.progress-stat-chip {
-    padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 700;
-}
+.progress-card-stats { display: flex; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
+.progress-stat-chip { padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 700; }
 .progress-stat-chip.streak { background: rgba(34,197,94,0.1); color: #16a34a; }
 .progress-stat-chip.rate { background: rgba(99,102,241,0.1); color: #6366f1; }
-.progress-card-msg { font-size: 14px; color: #374151; line-height: 1.6; margin-bottom: 12px; }
+.progress-card-msg {
+    font-size: 14px; color: #374151; line-height: 1.6; margin-bottom: 12px;
+    background: white; border-radius: 12px; padding: 10px 14px;
+    border-left: 3px solid #6366f1;
+}
+
 .progress-reactions { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
 .reaction-btn {
     padding: 6px 12px; border-radius: 20px; border: 1.5px solid #e5e7eb;
     background: white; font-size: 13px; cursor: pointer; transition: 0.15s;
-    font-family: inherit; display: flex; align-items: center; gap: 4px;
-    font-weight: 600;
+    font-family: inherit; display: flex; align-items: center; gap: 4px; font-weight: 600;
 }
-.reaction-btn:hover { border-color: #6366f1; background: rgba(99,102,241,0.04); }
+.reaction-btn:hover { border-color: #6366f1; background: rgba(99,102,241,0.04); transform: scale(1.05); }
 .reaction-btn.mine { border-color: #6366f1; background: rgba(99,102,241,0.08); color: #6366f1; }
 .reaction-count { font-size: 12px; color: #6b7280; }
 
-/* COMENTARIOS */
 .progress-comments { margin-top: 10px; }
-.comment-item-new {
-    display: flex; align-items: flex-start; gap: 8px; margin-bottom: 8px;
-}
+.comment-item-new { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 8px; }
 .comment-avatar-small {
     width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0;
     background: linear-gradient(135deg, #6366f1, #2563eb);
@@ -271,20 +276,15 @@
 }
 .comment-send-btn:hover { transform: scale(1.08); }
 
-/* EMPTY */
-.detail-empty {
-    text-align: center; padding: 40px 20px; color: #9ca3af;
-}
+.detail-empty { text-align: center; padding: 40px 20px; color: #9ca3af; }
 .detail-empty-icon { font-size: 40px; margin-bottom: 10px; }
 
-/* TOAST */
 .detail-toast {
     position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%);
     background: #1e293b; color: white; padding: 10px 20px;
     border-radius: 20px; font-size: 13px; font-weight: 600;
     z-index: 99999; box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-    font-family: 'Plus Jakarta Sans', sans-serif;
-    animation: toastIn 0.3s ease;
+    font-family: 'Plus Jakarta Sans', sans-serif; animation: toastIn 0.3s ease;
 }
 @@keyframes toastIn { from{opacity:0;transform:translateX(-50%) translateY(10px);} to{opacity:1;transform:translateX(-50%) translateY(0);} }
 
@@ -297,42 +297,65 @@ body.bg-dark .detail-ring-bg { stroke: #2d3748 !important; }
 body.bg-dark .detail-history-dot.none { background: #2d3748 !important; }
 body.bg-dark .progress-card { background: #2d3748 !important; border-color: #334155 !important; }
 body.bg-dark .progress-card-user { color: #f1f5f9 !important; }
-body.bg-dark .progress-card-msg { color: #cbd5e1 !important; }
+body.bg-dark .progress-card-msg { background: #1e293b !important; color: #cbd5e1 !important; }
 body.bg-dark .comment-bubble { background: #334155 !important; border-color: #3d4d60 !important; color: #cbd5e1 !important; }
 body.bg-dark .comment-bubble strong { color: #f1f5f9 !important; }
 body.bg-dark .comment-input-new { background: #2d3748 !important; border-color: #3d4d60 !important; color: #f1f5f9 !important; }
 body.bg-dark .reaction-btn { background: #2d3748 !important; border-color: #3d4d60 !important; }
+body.bg-dark .detail-ring-info-sub { color: #94a3b8 !important; }
 
 @@media (max-width: 640px) {
     .detail-stats { width: 100%; }
     .detail-stat { flex: 1; padding: 12px 14px; }
-    .detail-stat-num { font-size: 18px; }
     .detail-ring-wrap { flex-direction: column; align-items: flex-start; }
+    .detail-actions { flex-direction: column; }
+    .detail-action-btn { flex: none; width: 100%; }
+    .detail-action-btn.edit { width: auto; align-self: flex-start; }
 }
 </style>
 
 <!-- MODAL COMPARTIR -->
 <div class="share-modal" id="shareModal">
     <div class="share-card">
-        <div class="share-preview" id="sharePreview">
-            <div class="share-preview-habit">@Model.Name</div>
+        <!-- PREVIEW TARJETA -->
+        <div class="share-preview">
+            <div class="share-preview-habit">🎯 @Model.Name</div>
             <div class="share-preview-streak">@Model.StreakDays</div>
-            <div class="share-preview-label">días de racha 🔥</div>
+            <div class="share-preview-label">días de racha consecutivos 🔥</div>
             <div class="share-preview-bar-wrap">
-                <div class="share-preview-bar" id="shareBar" style="width:@completionRate%"></div>
+                <div class="share-preview-bar" style="width:@completionRate%"></div>
             </div>
             <div class="share-preview-rate">@completionRate% completado esta semana</div>
         </div>
+
         <div class="share-title">🚀 Compartir progreso</div>
-        <div class="share-sub">Cuéntale a la comunidad cómo vas</div>
+        <div class="share-sub">Escribe algo y elige cómo compartirlo</div>
+
         <textarea class="share-textarea" id="shareText" rows="3"
-                  placeholder="¡Llevo @Model.StreakDays días seguidos! Este hábito está cambiando mi vida..."
+                  placeholder="¡Llevo @Model.StreakDays días! Este hábito está cambiando mi vida..."
                   maxlength="300" oninput="updateShareChars()"></textarea>
         <div class="share-chars"><span id="shareCharsCount">0</span>/300</div>
+
+        <!-- OPCIONES DE COMPARTIR -->
+        <div class="share-options">
+            <button class="share-option-btn community-btn" onclick="compartirEnComunidad()">
+                🌍 Comunidad
+            </button>
+            <button class="share-option-btn" onclick="compartirWhatsApp()">
+                💬 WhatsApp
+            </button>
+            <button class="share-option-btn" onclick="compartirTwitter()">
+                🐦 Twitter/X
+            </button>
+            <button class="share-option-btn" onclick="copiarTexto()">
+                📋 Copiar
+            </button>
+        </div>
+
         <div class="share-btns">
             <button class="share-cancel" onclick="closeShare()">Cancelar</button>
-            <button class="share-confirm" id="shareConfirm" onclick="confirmarShare()" disabled>
-                🚀 Compartir
+            <button class="share-confirm" id="shareConfirm" onclick="compartirEnComunidad()" disabled>
+                🌍 Publicar en comunidad
             </button>
         </div>
     </div>
@@ -346,16 +369,19 @@ body.bg-dark .reaction-btn { background: #2d3748 !important; border-color: #3d4d
             <a href="/Habit/Index" class="detail-back">← Mis hábitos</a>
             @{
                 var statusLabel = Model.LastCheckDate == DateTime.Today && Model.Completed ? "✔ Completado hoy" :
-                                  Model.LastCheckDate == DateTime.Today && !Model.Completed ? "✖ Fallado hoy" : "⏳ Pendiente";
+                                  Model.LastCheckDate == DateTime.Today && !Model.Completed ? "✖ Fallado hoy" : "⏳ Pendiente hoy";
                 var statusColor = Model.LastCheckDate == DateTime.Today && Model.Completed ? "#22c55e" :
                                   Model.LastCheckDate == DateTime.Today && !Model.Completed ? "#ef4444" : "#f59e0b";
             }
-            <span style="padding:6px 14px;border-radius:20px;font-size:12px;font-weight:700;background:rgba(255,255,255,0.08);color:@statusColor;">
+            <span style="padding:6px 14px;border-radius:20px;font-size:12px;font-weight:700;background:rgba(255,255,255,0.08);color:@statusColor;position:relative;z-index:1;">
                 @statusLabel
             </span>
         </div>
+
         <div class="detail-habit-name">@Model.Name</div>
-        <div class="detail-habit-meta">Creado el @Model.CreatedDate.ToString("dd MMM yyyy", culture)</div>
+        <div class="detail-habit-meta">
+            📅 Creado el @Model.CreatedDate.ToString("dd MMM yyyy", culture)
+        </div>
 
         <div class="detail-stats">
             <div class="detail-stat">
@@ -375,11 +401,11 @@ body.bg-dark .reaction-btn { background: #2d3748 !important; border-color: #3d4d
 
     <!-- ACCIONES -->
     <div class="detail-card">
-        <div class="detail-card-title">⚡ Acciones rápidas</div>
+        <div class="detail-card-title">⚡ Acciones</div>
         <div class="detail-actions">
             <a href="/Habit/Complete/@Model.Id" class="detail-action-btn complete">✔ Completar hoy</a>
             <a href="/Habit/Fail/@Model.Id" class="detail-action-btn fail">✖ Marcar fallido</a>
-            <button class="detail-action-btn share" onclick="openShare()">🚀 Compartir progreso</button>
+            <button class="detail-action-btn share" onclick="openShare()">🚀 Compartir</button>
             <a href="/Habit/Edit/@Model.Id" class="detail-action-btn edit">✏️</a>
         </div>
     </div>
@@ -387,7 +413,7 @@ body.bg-dark .reaction-btn { background: #2d3748 !important; border-color: #3d4d
     <!-- PROGRESO VISUAL -->
     <div class="detail-card">
         <div class="detail-card-title">
-            🎯 Progreso esta semana
+            🎯 Progreso semanal
             <span class="detail-card-badge">Últimos 7 días</span>
         </div>
         <div class="detail-ring-wrap">
@@ -397,7 +423,7 @@ body.bg-dark .reaction-btn { background: #2d3748 !important; border-color: #3d4d
                     <circle class="detail-ring-fill" cx="50" cy="50" r="40"
                             id="ringFill"
                             stroke-dasharray="251.2"
-                            stroke-dashoffset="@(251.2 - (251.2 * completionRate / 100))" />
+                            stroke-dashoffset="251.2" />
                 </svg>
                 <div class="detail-ring-text">
                     <span class="detail-ring-pct">@completionRate%</span>
@@ -407,18 +433,17 @@ body.bg-dark .reaction-btn { background: #2d3748 !important; border-color: #3d4d
             <div class="detail-ring-info">
                 <div class="detail-ring-info-title">
                     @if (completionRate >= 80) { <text>🔥 ¡Excelente semana!</text> }
-                    else if (completionRate >= 50) { <text>💪 Vas por buen camino</text> }
+                    else if (completionRate >= 50) { <text>💪 Vas bien, sigue así</text> }
                     else if (completionRate > 0) { <text>📈 Sigue intentándolo</text> }
                     else { <text>🌱 Empieza hoy</text> }
                 </div>
                 <div class="detail-ring-info-sub">
-                    Racha actual de <strong>@Model.StreakDays días</strong>.<br>
-                    Tu mejor racha fue de <strong>@Model.MaxStreak días</strong>.
+                    Racha actual: <strong>@Model.StreakDays días</strong><br>
+                    Mejor racha: <strong>@Model.MaxStreak días</strong>
                 </div>
             </div>
         </div>
 
-        <!-- GRÁFICA -->
         <div class="detail-chart-wrap">
             <canvas id="detailChart"></canvas>
         </div>
@@ -471,8 +496,8 @@ body.bg-dark .reaction-btn { background: #2d3748 !important; border-color: #3d4d
             {
                 <div class="detail-empty" id="emptyProgress">
                     <div class="detail-empty-icon">🚀</div>
-                    <div style="font-weight:700;color:#374151;margin-bottom:4px;">Sin publicaciones aún</div>
-                    <div style="font-size:13px;">¡Comparte tu progreso y motiva a otros!</div>
+                    <div style="font-weight:700;color:#374151;margin-bottom:4px;">Sé el primero en compartir</div>
+                    <div style="font-size:13px;">¡Toca "Compartir" y motiva a otros!</div>
                 </div>
             }
 
@@ -480,9 +505,15 @@ body.bg-dark .reaction-btn { background: #2d3748 !important; border-color: #3d4d
             {
                 var pImg = p.User?.ProfileImage ?? p.User?.ProfilePicture ?? "";
                 var pLetter = (p.User?.Username ?? "?").Substring(0, 1).ToUpper();
-                var timeAgo = (DateTime.UtcNow - p.SharedAt).TotalMinutes < 60
-                    ? $"Hace {(int)(DateTime.UtcNow - p.SharedAt).TotalMinutes} min"
-                    : p.SharedAt.ToLocalTime().ToString("dd MMM · HH:mm");
+                var diffMin = (int)(DateTime.UtcNow - p.SharedAt).TotalMinutes;
+                var diffH = (int)(DateTime.UtcNow - p.SharedAt).TotalHours;
+                string timeAgo = diffMin < 1 ? "ahora" :
+                                 diffMin < 60 ? $"hace {diffMin} min" :
+                                 diffH < 24 ? $"hace {diffH}h" :
+                                 p.SharedAt.ToLocalTime().ToString("dd MMM", culture);
+
+                var reactionGroups = p.Reactions.GroupBy(r => r.Emoji).ToDictionary(g => g.Key, g => g.Count());
+                var myReaction = p.Reactions.FirstOrDefault(r => r.UserId == currentUserId)?.Emoji;
 
                 <div class="progress-card" id="progress-@p.Id">
                     <div class="progress-card-header">
@@ -501,12 +532,7 @@ body.bg-dark .reaction-btn { background: #2d3748 !important; border-color: #3d4d
                     </div>
                     <div class="progress-card-msg">@p.Message</div>
 
-                    <!-- REACCIONES -->
                     <div class="progress-reactions" id="reactions-@p.Id">
-                        @{
-                            var reactionGroups = p.Reactions.GroupBy(r => r.Emoji).ToDictionary(g => g.Key, g => g.Count());
-                            var myReaction = p.Reactions.FirstOrDefault(r => r.UserId == currentUserId)?.Emoji;
-                        }
                         @foreach (var emoji in new[] { "🔥", "💪", "❤️", "👏", "🎯" })
                         {
                             var count = reactionGroups.ContainsKey(emoji) ? reactionGroups[emoji] : 0;
@@ -517,7 +543,6 @@ body.bg-dark .reaction-btn { background: #2d3748 !important; border-color: #3d4d
                         }
                     </div>
 
-                    <!-- COMENTARIOS -->
                     <div class="progress-comments" id="comments-@p.Id">
                         @foreach (var c in p.Comments.OrderBy(c => c.CreatedAt))
                         {
@@ -536,10 +561,12 @@ body.bg-dark .reaction-btn { background: #2d3748 !important; border-color: #3d4d
                         }
                     </div>
                     <div class="comment-input-wrap">
-                        <input type="text" class="comment-input-new" placeholder="Escribe un comentario..."
+                        <input type="text" class="comment-input-new"
+                               placeholder="Escribe un comentario..."
                                id="commentInput-@p.Id"
                                onkeydown="if(event.key==='Enter') comentar(@p.Id, this)" />
-                        <button class="comment-send-btn" onclick="comentar(@p.Id, document.getElementById('commentInput-@p.Id'))">➤</button>
+                        <button class="comment-send-btn"
+                                onclick="comentar(@p.Id, document.getElementById('commentInput-@p.Id'))">➤</button>
                     </div>
                 </div>
             }
@@ -555,7 +582,7 @@ const habitName = "@Model.Name";
 const habitStreak = @Model.StreakDays;
 const habitRate = @completionRate;
 
-// ── GRÁFICA INDIVIDUAL ───────────────────
+// ── GRÁFICA ──────────────────────────────
 const labels = @Html.Raw(labels);
 const completedData = @Html.Raw(completed);
 const failedData = @Html.Raw(failed);
@@ -573,41 +600,25 @@ new Chart(document.getElementById('detailChart'), {
                 label: 'Completado',
                 data: completedData,
                 backgroundColor: 'rgba(34,197,94,0.8)',
-                borderRadius: 8,
-                borderSkipped: false,
+                borderRadius: 8, borderSkipped: false,
             },
             {
                 label: 'Fallado',
                 data: failedData,
                 backgroundColor: 'rgba(239,68,68,0.6)',
-                borderRadius: 8,
-                borderSkipped: false,
+                borderRadius: 8, borderSkipped: false,
             }
         ]
     },
     options: {
-        responsive: true,
-        maintainAspectRatio: false,
+        responsive: true, maintainAspectRatio: false,
         plugins: {
-            legend: {
-                labels: { color: textColor, font: { family: 'Plus Jakarta Sans', size: 12 } }
-            },
-            tooltip: {
-                callbacks: {
-                    label: ctx => ctx.dataset.label + ': ' + ctx.parsed.y + ' veces'
-                }
-            }
+            legend: { labels: { color: textColor, font: { family: 'Plus Jakarta Sans', size: 12 } } },
+            tooltip: { callbacks: { label: ctx => ctx.dataset.label + ': ' + ctx.parsed.y + ' veces' } }
         },
         scales: {
-            y: {
-                beginAtZero: true,
-                ticks: { color: textColor, stepSize: 1 },
-                grid: { color: gridColor }
-            },
-            x: {
-                ticks: { color: textColor },
-                grid: { color: gridColor }
-            }
+            y: { beginAtZero: true, ticks: { color: textColor, stepSize: 1 }, grid: { color: gridColor } },
+            x: { ticks: { color: textColor }, grid: { color: gridColor } }
         }
     }
 });
@@ -616,8 +627,9 @@ new Chart(document.getElementById('detailChart'), {
 window.addEventListener("load", () => {
     const ring = document.getElementById("ringFill");
     if (ring) {
-        const target = 251.2 - (251.2 * habitRate / 100);
-        ring.style.strokeDashoffset = target;
+        setTimeout(() => {
+            ring.style.strokeDashoffset = 251.2 - (251.2 * habitRate / 100);
+        }, 300);
     }
 });
 
@@ -635,11 +647,14 @@ function updateShareChars() {
     document.getElementById("shareConfirm").disabled = len === 0;
 }
 
-async function confirmarShare() {
+// ── COMPARTIR EN COMUNIDAD ───────────────
+async function compartirEnComunidad() {
     const msg = document.getElementById("shareText").value.trim();
-    if (!msg) return;
+    if (!msg) { showToast("✍️ Escribe algo primero"); return; }
+
     const btn = document.getElementById("shareConfirm");
-    btn.disabled = true; btn.textContent = "⏳ Compartiendo...";
+    const origText = btn.textContent;
+    btn.disabled = true; btn.textContent = "⏳ Publicando...";
 
     try {
         const res = await fetch("/Habit/ShareProgress", {
@@ -654,7 +669,6 @@ async function confirmarShare() {
             document.getElementById("shareText").value = "";
             document.getElementById("shareCharsCount").textContent = "0";
 
-            // agregar card al feed
             const empty = document.getElementById("emptyProgress");
             if (empty) empty.remove();
 
@@ -691,13 +705,41 @@ async function confirmarShare() {
 
             const feed = document.getElementById("progressFeed");
             feed.insertBefore(card, feed.firstChild);
-            showToast("🚀 ¡Progreso compartido!");
+            showToast("🌍 ¡Publicado en la comunidad!");
+        } else {
+            showToast("⚠️ " + (data.error ?? "Error al publicar"));
         }
     } catch (err) {
-        showToast("❌ Error al compartir");
+        showToast("❌ Error de conexión");
     }
 
-    btn.disabled = false; btn.textContent = "🚀 Compartir";
+    btn.disabled = false; btn.textContent = origText;
+}
+
+// ── COMPARTIR EXTERNO ────────────────────
+function getShareText() {
+    const msg = document.getElementById("shareText").value.trim();
+    const base = `🎯 "${habitName}" — ${habitStreak} días de racha 🔥 | ${habitRate}% esta semana`;
+    return msg ? `${msg}\n\n${base}` : base;
+}
+
+function compartirWhatsApp() {
+    const text = encodeURIComponent(getShareText() + "\n\n📱 HabitTracker Pro");
+    window.open(`https://api.whatsapp.com/send?text=${text}`, "_blank");
+}
+
+function compartirTwitter() {
+    const text = encodeURIComponent(getShareText() + " #HabitTracker #Hábitos");
+    window.open(`https://twitter.com/intent/tweet?text=${text}`, "_blank");
+}
+
+async function copiarTexto() {
+    try {
+        await navigator.clipboard.writeText(getShareText());
+        showToast("📋 ¡Copiado al portapapeles!");
+    } catch {
+        showToast("❌ No se pudo copiar");
+    }
 }
 
 document.getElementById("shareModal").addEventListener("click", function(e) {
@@ -715,16 +757,17 @@ async function reaccionar(progressId, emoji, btn) {
         const data = await res.json();
         if (!data.success) return;
 
-        // actualizar botones de reacción
         const container = document.getElementById("reactions-" + progressId);
         if (!container) return;
+        const wasMine = btn.classList.contains("mine");
         container.querySelectorAll(".reaction-btn").forEach(b => {
             const btnEmoji = b.textContent.trim().charAt(0);
             const found = data.counts.find(c => c.emoji === btnEmoji);
             const count = found ? found.count : 0;
             b.innerHTML = btnEmoji + (count > 0 ? ` <span class="reaction-count">${count}</span>` : "");
-            b.classList.toggle("mine", b === btn && !btn.classList.contains("mine"));
+            b.classList.remove("mine");
         });
+        if (!wasMine) btn.classList.add("mine");
     } catch (err) { console.error(err); }
 }
 
@@ -732,7 +775,7 @@ async function reaccionar(progressId, emoji, btn) {
 async function comentar(progressId, input) {
     const content = input.value.trim();
     if (!content) return;
-    input.value = "";
+    input.value = ""; input.disabled = true;
 
     try {
         const res = await fetch("/Habit/CommentProgress", {
@@ -741,23 +784,24 @@ async function comentar(progressId, input) {
             body: JSON.stringify({ progressId, content })
         });
         const data = await res.json();
-        if (!data.success) return;
+        if (!data.success) { input.disabled = false; return; }
 
         const avatarHTML = data.avatar
             ? `<img src="${data.avatar}" style="width:100%;height:100%;object-fit:cover;" />`
             : data.username.charAt(0).toUpperCase();
 
-        const commentEl = document.createElement("div");
-        commentEl.className = "comment-item-new";
-        commentEl.innerHTML = `
+        const el = document.createElement("div");
+        el.className = "comment-item-new";
+        el.innerHTML = `
             <div class="comment-avatar-small">${avatarHTML}</div>
             <div class="comment-bubble">
-                <strong>${data.username}</strong>
+                <strong>${escapeHtml(data.username)}</strong>
                 ${escapeHtml(data.content)}
             </div>`;
 
-        document.getElementById("comments-" + progressId).appendChild(commentEl);
+        document.getElementById("comments-" + progressId).appendChild(el);
     } catch (err) { console.error(err); }
+    input.disabled = false; input.focus();
 }
 
 function escapeHtml(text) {
