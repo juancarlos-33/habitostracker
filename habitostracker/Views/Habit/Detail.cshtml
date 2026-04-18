@@ -315,10 +315,11 @@ body.bg-dark .detail-ring-info-sub { color: #94a3b8 !important; }
 </style>
 
 <!-- MODAL COMPARTIR -->
-<div class="share-modal" id="shareModal">
+<div class="share-preview" id="sharePreviewCard" 
+     style="background:linear-gradient(135deg,#6366f1,#2563eb);border-radius:18px;padding:22px;text-align:center;position:relative;overflow:hidden;">
     <div class="share-card">
         <!-- PREVIEW TARJETA -->
-        <div class="share-preview">
+       <div class="share-preview" id="sharePreviewCard">
             <div class="share-preview-habit">🎯 @Model.Name</div>
             <div class="share-preview-streak">@Model.StreakDays</div>
             <div class="share-preview-label">días de racha consecutivos 🔥</div>
@@ -576,6 +577,7 @@ body.bg-dark .detail-ring-info-sub { color: #94a3b8 !important; }
 
 @section Scripts {
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script>
 const habitId = @Model.Id;
 const habitName = "@Model.Name";
@@ -722,10 +724,51 @@ function getShareText() {
     const base = `🎯 "${habitName}" — ${habitStreak} días de racha 🔥 | ${habitRate}% esta semana`;
     return msg ? `${msg}\n\n${base}` : base;
 }
+async function compartirWhatsApp() {
+    const btn = event.currentTarget;
+    const origText = btn.innerHTML;
+    btn.innerHTML = "⏳ Generando...";
+    btn.disabled = true;
 
-function compartirWhatsApp() {
-    const text = encodeURIComponent(getShareText() + "\n\n📱 HabitTracker Pro");
-    window.open(`https://api.whatsapp.com/send?text=${text}`, "_blank");
+    try {
+        // generar imagen de la preview card
+        const preview = document.getElementById("sharePreviewCard");
+        const canvas = await html2canvas(preview, {
+            scale: 3,
+            backgroundColor: null,
+            useCORS: true,
+            allowTaint: true,
+            logging: false
+        });
+
+        // descargar imagen
+        const link = document.createElement("a");
+        link.download = `progreso-${habitName.replace(/\s+g/, "-")}-${habitStreak}dias.png`;
+        link.href = canvas.toDataURL("image/png");
+        link.click();
+
+        // pequeño delay para que descargue, luego abrir WhatsApp
+        await new Promise(r => setTimeout(r, 800));
+
+        const msg = document.getElementById("shareText").value.trim();
+        const text = encodeURIComponent(
+            (msg ? msg + "\n\n" : "") +
+            `🎯 Hábito: ${habitName}\n` +
+            `🔥 Racha: ${habitStreak} días consecutivos\n` +
+            `📊 Esta semana: ${habitRate}% completado\n\n` +
+            `💪 Compartido desde HabitTracker Pro`
+        );
+        window.open(`https://api.whatsapp.com/send?text=${text}`, "_blank");
+
+        showToast("📸 Imagen descargada — pégala en WhatsApp");
+
+    } catch (err) {
+        console.error(err);
+        showToast("❌ Error generando imagen");
+    }
+
+    btn.innerHTML = origText;
+    btn.disabled = false;
 }
 
 function compartirTwitter() {

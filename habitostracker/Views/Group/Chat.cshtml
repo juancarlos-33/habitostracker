@@ -833,6 +833,16 @@ async function sendGroupMessage() {
     msgInput.focus();
 }
 
+// 🔥 fix teclado virtual móvil
+if (window.visualViewport) {
+    window.visualViewport.addEventListener("resize", () => {
+        const chatPage = document.querySelector(".grp-chat-page");
+        if (chatPage) {
+            chatPage.style.height = window.visualViewport.height + "px";
+        }
+    });
+}
+
 function toggleGroupEmoji() {
     const panel = document.getElementById("emojiPanel");
     const btn = document.getElementById("emojiBtn");

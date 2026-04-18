@@ -447,6 +447,8 @@ body.bg-dark .grp-member-btn.demote { background: #1e1b4b !important; }
 
 @Html.AntiForgeryToken()
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
 <script>
 const groupId = @Model.Id;
 const isCreator = @isCreator.ToString().ToLower();
