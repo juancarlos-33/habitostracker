@@ -165,6 +165,10 @@
     font-size: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center;
 }
 
+/* ocultar bottom nav en chat de grupo */
+.ht-bottom-nav { display: none !important; }
+body { padding-bottom: 0 !important; }
+
 /* RECORDING */
 .grp-recording {
     flex-shrink: 0; display: none; align-items: center; gap: 8px;
@@ -467,6 +471,25 @@ const myName = "@User.Identity.Name";
 let currentTotalMembers = @totalMembers;
 let isMuted = @isMuted.ToString().ToLower();
 const chatBox = document.getElementById("chatBox");
+// 🔥 fix teclado virtual móvil
+if (window.visualViewport) {
+    window.visualViewport.addEventListener("resize", () => {
+        const chatPage = document.querySelector(".grp-chat-page");
+        if (chatPage) {
+            const vh = window.visualViewport.height;
+            chatPage.style.height = vh + "px";
+            chatPage.style.top = window.visualViewport.offsetTop + "px";
+        }
+        chatBox.scrollTop = chatBox.scrollHeight;
+    });
+}
+
+// 🔥 focus en input mueve scroll al final
+if (msgInput) {
+    msgInput.addEventListener("focus", () => {
+        setTimeout(() => chatBox.scrollTop = chatBox.scrollHeight, 300);
+    });
+}
 const msgInput = document.getElementById("msgInput");
 const sendBtn = document.getElementById("sendBtn");
 let selectedFile = null;
