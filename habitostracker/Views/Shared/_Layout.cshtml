@@ -41,21 +41,14 @@ body { font-family: 'Plus Jakarta Sans', sans-serif; transition: background 0.3s
 .ht-navbar {
     position: sticky; top: 0; z-index: 1000;
     display: flex; align-items: center; justify-content: space-between;
-    padding: 10px 20px;
-    margin: 10px 12px;
-    border-radius: 18px;
-    background: var(--nav-bg);
-    backdrop-filter: blur(16px);
+    padding: 10px 20px; margin: 10px 12px; border-radius: 18px;
+    background: var(--nav-bg); backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
-    border: 1px solid var(--border);
-    box-shadow: var(--shadow);
+    border: 1px solid var(--border); box-shadow: var(--shadow);
     transition: background 0.3s, border 0.3s;
 }
-
 .ht-nav-left { display: flex; align-items: center; gap: 10px; }
-.ht-nav-center { position: absolute; left: 50%; transform: translateX(-50%); }
 .ht-nav-right { display: flex; align-items: center; gap: 8px; }
-
 .ht-brand {
     font-size: 17px; font-weight: 800; letter-spacing: -0.3px;
     background: linear-gradient(135deg, var(--primary), var(--accent));
@@ -70,8 +63,7 @@ body { font-family: 'Plus Jakarta Sans', sans-serif; transition: background 0.3s
     width: 36px; height: 36px; border-radius: 50%;
     background: linear-gradient(135deg, var(--primary), var(--accent));
     color: white; display: flex; align-items: center; justify-content: center;
-    font-size: 14px; font-weight: 800; border: 2px solid rgba(99,102,241,0.4);
-    transition: 0.2s;
+    font-size: 14px; font-weight: 800; border: 2px solid rgba(99,102,241,0.4); transition: 0.2s;
 }
 .ht-avatar-btn:hover .ht-avatar-img,
 .ht-avatar-btn:hover .ht-avatar-letter { transform: scale(1.05); box-shadow: 0 0 0 3px rgba(99,102,241,0.3); }
@@ -81,8 +73,7 @@ body { font-family: 'Plus Jakarta Sans', sans-serif; transition: background 0.3s
     width: 36px; height: 36px; border-radius: 10px;
     border: none; background: transparent; cursor: pointer;
     display: flex; align-items: center; justify-content: center;
-    font-size: 17px; transition: 0.15s; color: var(--text);
-    position: relative;
+    font-size: 17px; transition: 0.15s; color: var(--text); position: relative;
 }
 .ht-icon-btn:hover { background: rgba(99,102,241,0.1); transform: scale(1.05); }
 .ht-icon-btn .notif-dot {
@@ -97,16 +88,11 @@ body { font-family: 'Plus Jakarta Sans', sans-serif; transition: background 0.3s
 .ht-dropdown { position: relative; }
 .ht-dropdown-menu {
     position: absolute; top: calc(100% + 10px); right: 0;
-    min-width: 270px;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 20px;
-    padding: 8px;
+    min-width: 280px; background: var(--surface);
+    border: 1px solid var(--border); border-radius: 20px; padding: 8px;
     box-shadow: 0 20px 60px rgba(0,0,0,0.15);
     opacity: 0; transform: translateY(-8px) scale(0.97);
-    pointer-events: none;
-    transition: opacity 0.18s, transform 0.18s;
-    z-index: 9999;
+    pointer-events: none; transition: opacity 0.18s, transform 0.18s; z-index: 9999;
 }
 .ht-dropdown.open .ht-dropdown-menu { opacity: 1; transform: translateY(0) scale(1); pointer-events: all; }
 
@@ -145,41 +131,34 @@ body { font-family: 'Plus Jakarta Sans', sans-serif; transition: background 0.3s
 /* ── SIDEBAR ────────────────────────────── */
 .ht-sidebar {
     width: 250px; height: 100vh;
-    background: var(--sidebar-bg);
-    padding: 24px 14px;
+    background: var(--sidebar-bg); padding: 24px 14px;
     position: fixed; left: -270px; top: 0;
     display: flex; flex-direction: column; gap: 4px;
     transition: left 0.3s cubic-bezier(0.34,1.56,0.64,1);
     z-index: 9999; overflow-y: auto;
 }
 .ht-sidebar.show { left: 0; }
+.ht-sidebar::-webkit-scrollbar { width: 3px; }
+.ht-sidebar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
 
 .ht-sidebar-logo {
     font-size: 16px; font-weight: 800; color: white;
     padding: 12px 14px; border-radius: 14px;
     background: linear-gradient(135deg, var(--primary), var(--accent));
     box-shadow: 0 4px 20px rgba(37,99,235,0.4);
-    margin-bottom: 16px; text-align: center;
-    letter-spacing: -0.3px;
+    margin-bottom: 16px; text-align: center; letter-spacing: -0.3px;
 }
-
 .ht-sidebar-section {
     font-size: 10px; font-weight: 700; color: rgba(255,255,255,0.3);
-    text-transform: uppercase; letter-spacing: 1px;
-    padding: 8px 14px 4px;
+    text-transform: uppercase; letter-spacing: 1px; padding: 8px 14px 4px;
 }
-
 .ht-sidebar-link {
     display: flex; align-items: center; gap: 10px;
     padding: 10px 14px; border-radius: 12px;
     color: rgba(255,255,255,0.65); text-decoration: none;
-    font-size: 13px; font-weight: 600;
-    transition: all 0.15s; position: relative;
+    font-size: 13px; font-weight: 600; transition: all 0.15s; position: relative;
 }
-.ht-sidebar-link:hover {
-    background: rgba(255,255,255,0.08);
-    color: white; transform: translateX(4px);
-}
+.ht-sidebar-link:hover { background: rgba(255,255,255,0.08); color: white; transform: translateX(4px); }
 .ht-sidebar-link.active {
     background: linear-gradient(135deg, var(--primary), var(--accent));
     color: white; box-shadow: 0 4px 14px rgba(37,99,235,0.35);
@@ -187,15 +166,15 @@ body { font-family: 'Plus Jakarta Sans', sans-serif; transition: background 0.3s
 .ht-sidebar-link .sl-icon { font-size: 16px; width: 20px; text-align: center; flex-shrink: 0; }
 .ht-sidebar-link .sl-badge {
     margin-left: auto; background: #ef4444; color: white;
-    font-size: 10px; font-weight: 800; padding: 2px 7px;
-    border-radius: 20px;
+    font-size: 10px; font-weight: 800; padding: 2px 7px; border-radius: 20px;
 }
+.ht-sidebar-link .sl-badge.green { background: #22c55e; }
 
 /* ── OVERLAY ────────────────────────────── */
 #ht-overlay {
-    position: fixed; inset: 0;
-    background: rgba(0,0,0,0.4); backdrop-filter: blur(3px);
-    opacity: 0; visibility: hidden; transition: 0.3s; z-index: 9998;
+    position: fixed; inset: 0; background: rgba(0,0,0,0.4);
+    backdrop-filter: blur(3px); opacity: 0; visibility: hidden;
+    transition: 0.3s; z-index: 9998;
 }
 #ht-overlay.show { opacity: 1; visibility: visible; }
 
@@ -210,14 +189,17 @@ body { font-family: 'Plus Jakarta Sans', sans-serif; transition: background 0.3s
 @@keyframes fadeIn { from{opacity:0;} to{opacity:1;} }
 @@keyframes bounce { 0%,100%{transform:translateY(0);} 50%{transform:translateY(-12px);} }
 @@keyframes fadeText { 0%,100%{opacity:0.4;} 50%{opacity:1;} }
-
 .ht-loader-gif { width: 160px; height: 160px; animation: bounce 1.4s infinite; filter: drop-shadow(0 8px 20px rgba(0,0,0,0.2)); }
 .ht-loader-text { margin-top: 12px; font-size: 13px; font-weight: 600; color: white; animation: fadeText 1.4s infinite; }
 .ht-loader-bar-wrap { width: 180px; height: 4px; background: rgba(255,255,255,0.2); border-radius: 10px; margin-top: 10px; overflow: hidden; }
 .ht-loader-bar { height: 100%; background: linear-gradient(90deg, #4ade80, #22c55e); border-radius: 10px; transition: width 0.2s; width: 0%; }
 
 /* ── NOTIF CONTAINER ────────────────────── */
-#ht-notifs { position: fixed; top: 76px; right: 16px; z-index: 999999; display: flex; flex-direction: column; gap: 10px; pointer-events: none; max-width: 340px; width: calc(100vw - 32px); }
+#ht-notifs {
+    position: fixed; top: 76px; right: 16px; z-index: 999999;
+    display: flex; flex-direction: column; gap: 10px;
+    pointer-events: none; max-width: 340px; width: calc(100vw - 32px);
+}
 
 /* ── CONTENT ────────────────────────────── */
 .ht-content { padding: 24px 20px; min-height: 100vh; }
@@ -228,7 +210,6 @@ body.bg-dark .ht-dropdown-menu { background: #0f172a; border-color: rgba(255,255
 body.bg-dark .ht-menu-item:hover { background: rgba(99,102,241,0.12); }
 body.bg-dark .ht-menu-divider { background: rgba(255,255,255,0.07); }
 body.bg-dark .ht-dropdown-header { border-color: rgba(255,255,255,0.07); }
-
 body.bg-dark { color: #e4e6eb; }
 body.bg-dark h1,body.bg-dark h2,body.bg-dark h3,body.bg-dark h4,body.bg-dark h5 { color: #fff; }
 body.bg-dark label { color: #ccc !important; }
@@ -253,15 +234,11 @@ body.bg-dark .table thead { background-color: #2a2a3d !important; }
 
 /* ── TOAST NOTIF ────────────────────────── */
 .ht-notif-card {
-    background: rgba(15,23,42,0.94);
-    backdrop-filter: blur(14px);
-    border: 1px solid rgba(255,255,255,0.08);
-    border-radius: 18px; padding: 14px 16px;
-    display: flex; align-items: center; gap: 12px;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
-    cursor: pointer; pointer-events: all;
-    transform: translateX(120%);
-    transition: transform 0.4s cubic-bezier(0.34,1.56,0.64,1), opacity 0.3s;
+    background: rgba(15,23,42,0.94); backdrop-filter: blur(14px);
+    border: 1px solid rgba(255,255,255,0.08); border-radius: 18px;
+    padding: 14px 16px; display: flex; align-items: center; gap: 12px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4); cursor: pointer; pointer-events: all;
+    transform: translateX(120%); transition: transform 0.4s cubic-bezier(0.34,1.56,0.64,1), opacity 0.3s;
     opacity: 0; position: relative; overflow: hidden;
 }
 .ht-notif-card.show { transform: translateX(0); opacity: 1; }
@@ -269,10 +246,8 @@ body.bg-dark .table thead { background-color: #2a2a3d !important; }
 .ht-notif-progress {
     position: absolute; bottom: 0; left: 0; height: 3px;
     background: linear-gradient(90deg, var(--primary), var(--accent));
-    border-radius: 0 0 18px 18px; width: 100%;
-    transition: width 4s linear;
+    border-radius: 0 0 18px 18px; width: 100%; transition: width 4s linear;
 }
-
 @@keyframes spin { 0%{transform:rotate(0deg);} 100%{transform:rotate(360deg);} }
 
 /* ── MOBILE ─────────────────────────────── */
@@ -287,9 +262,6 @@ body.bg-dark .modal-content { background: #1e293b !important; color: #f1f5f9 !im
 body.bg-dark .modal-content .text-muted { color: #94a3b8 !important; }
 body.bg-dark .modal-content .btn-outline-secondary { border-color: #475569; color: #94a3b8; }
 body.bg-dark .modal-content .btn-outline-secondary:hover { background: #334155; color: #f1f5f9; }
-
-/* ── LOCAL TIME ─────────────────────────── */
-.ht-local-time { /* elementos con data-utc se convierten automáticamente */ }
 </style>
 </head>
 
@@ -302,31 +274,61 @@ body.bg-dark .modal-content .btn-outline-secondary:hover { background: #334155; 
     <div class="ht-sidebar-logo">🚀 HabitTracker Pro</div>
 
     <div class="ht-sidebar-section">Principal</div>
-    <a class="ht-sidebar-link" asp-controller="Habit" asp-action="Index"><span class="sl-icon">🏠</span> Inicio</a>
-    <a class="ht-sidebar-link" asp-controller="Habit" asp-action="History"><span class="sl-icon">📊</span> Historial</a>
-    <a class="ht-sidebar-link" asp-controller="Habit" asp-action="Calendar"><span class="sl-icon">📅</span> Calendario</a>
+    <a class="ht-sidebar-link" asp-controller="Habit" asp-action="Index">
+        <span class="sl-icon">🏠</span> Inicio
+    </a>
+    <a class="ht-sidebar-link" asp-controller="Habit" asp-action="History">
+        <span class="sl-icon">📊</span> Historial
+    </a>
+    <a class="ht-sidebar-link" asp-controller="Habit" asp-action="Calendar">
+        <span class="sl-icon">📅</span> Calendario
+    </a>
+    <!-- 🔥 Comunidad -->
+    <a class="ht-sidebar-link guest-block" asp-controller="Habit" asp-action="Community">
+        <span class="sl-icon">🌍</span> Comunidad
+    </a>
 
     <div class="ht-sidebar-section">Social</div>
-    <a class="ht-sidebar-link guest-block" asp-controller="Post" asp-action="Index"><span class="sl-icon">📸</span> Publicaciones</a>
-    <a class="ht-sidebar-link guest-block" asp-controller="User" asp-action="Index"><span class="sl-icon">👥</span> Amigos</a>
-    <a class="ht-sidebar-link guest-block" asp-controller="User" asp-action="FriendRequests"><span class="sl-icon">📩</span> Solicitudes</a>
+    <a class="ht-sidebar-link guest-block" asp-controller="Post" asp-action="Index">
+        <span class="sl-icon">📸</span> Publicaciones
+    </a>
+    <a class="ht-sidebar-link guest-block" asp-controller="User" asp-action="Index">
+        <span class="sl-icon">👥</span> Amigos
+    </a>
+    <a class="ht-sidebar-link guest-block" asp-controller="User" asp-action="FriendRequests">
+        <span class="sl-icon">📩</span> Solicitudes
+    </a>
     <a class="ht-sidebar-link guest-block" asp-controller="Message" asp-action="Inbox" id="sidebar-msg-link">
         <span class="sl-icon">💬</span> Mensajes
         <span class="sl-badge" id="sidebar-msg-badge" style="display:none;"></span>
     </a>
-    <a class="ht-sidebar-link guest-block" asp-controller="Post" asp-action="SavedPosts"><span class="sl-icon">🔖</span> Guardados</a>
-    <a class="ht-sidebar-link guest-block" asp-controller="Group" asp-action="Index"><span class="sl-icon">👥</span> Grupos</a>
+    <a class="ht-sidebar-link guest-block" asp-controller="Post" asp-action="SavedPosts">
+        <span class="sl-icon">🔖</span> Guardados
+    </a>
+    <a class="ht-sidebar-link guest-block" asp-controller="Group" asp-action="Index">
+        <span class="sl-icon">👥</span> Grupos
+    </a>
 
     <div class="ht-sidebar-section">Más</div>
-    <a class="ht-sidebar-link guest-block" asp-controller="Support" asp-action="Chat"><span class="sl-icon">😔</span> Me siento mal</a>
-    <a class="ht-sidebar-link guest-block" asp-controller="Account" asp-action="Security"><span class="sl-icon">🔐</span> Seguridad</a>
-    <a class="ht-sidebar-link guest-block" asp-controller="Help" asp-action="Index"><span class="sl-icon">🆘</span> Mesa de ayuda</a>
+    <a class="ht-sidebar-link guest-block" asp-controller="Support" asp-action="Chat">
+        <span class="sl-icon">😔</span> Me siento mal
+    </a>
+    <a class="ht-sidebar-link guest-block" asp-controller="Account" asp-action="Security">
+        <span class="sl-icon">🔐</span> Seguridad
+    </a>
+    <a class="ht-sidebar-link guest-block" asp-controller="Help" asp-action="Index">
+        <span class="sl-icon">🆘</span> Mesa de ayuda
+    </a>
 
     @if (User.IsInRole("SuperAdmin"))
     {
         <div class="ht-sidebar-section">Admin</div>
-        <a class="ht-sidebar-link" asp-controller="Admin" asp-action="Index"><span class="sl-icon">🛡️</span> Centro de Seguridad</a>
-        <a class="ht-sidebar-link" asp-controller="Admin" asp-action="Payments"><span class="sl-icon">💰</span> Pagos Premium</a>
+        <a class="ht-sidebar-link" asp-controller="Admin" asp-action="Index">
+            <span class="sl-icon">🛡️</span> Centro de Seguridad
+        </a>
+        <a class="ht-sidebar-link" asp-controller="Admin" asp-action="Payments">
+            <span class="sl-icon">💰</span> Pagos Premium
+        </a>
     }
 </div>
 
@@ -362,7 +364,10 @@ body.bg-dark .modal-content .btn-outline-secondary:hover { background: #334155; 
         <div class="ht-nav-right">
             <button onclick="toggleDarkMode()" data-no-loader class="ht-icon-btn" title="Tema">🌙</button>
 
-            <!-- 🔥 Botón solicitudes de mensaje -->
+            <!-- 🔥 Comunidad acceso rápido -->
+            <a href="/Habit/Community" class="ht-icon-btn guest-block" title="Comunidad">🌍</a>
+
+            <!-- 🔥 Solicitudes de mensaje -->
             <a href="/Message/Inbox" class="ht-icon-btn guest-block" title="Solicitudes de mensaje"
                id="msgReqNavBtn" style="display:none; position:relative;">
                 💬
@@ -402,16 +407,21 @@ body.bg-dark .modal-content .btn-outline-secondary:hover { background: #334155; 
                         @if (ViewBag.NewMessages != null && (int)ViewBag.NewMessages > 0)
                         { <span class="mi-badge">@ViewBag.NewMessages</span> }
                     </a>
-                    <!-- 🔥 Solicitudes de mensaje en dropdown -->
+                    <!-- 🔥 Solicitudes de mensaje -->
                     <a class="ht-menu-item guest-block" asp-controller="Message" asp-action="Inbox"
                        id="msgReqMenuItem" style="display:none;">
                         <span class="mi-icon">💬</span>
                         <span>Solicitudes de mensaje</span>
                         <span class="mi-badge green" id="msgReqMenuBadge">0</span>
                     </a>
+                    <!-- 🔥 Comunidad -->
+                    <a class="ht-menu-item guest-block" asp-controller="Habit" asp-action="Community">
+                        <span class="mi-icon">🌍</span><span>Comunidad</span>
+                    </a>
                     <a class="ht-menu-item guest-block" asp-controller="Habit" asp-action="Achievements">
                         <span class="mi-icon">🏆</span><span>Logros</span>
                     </a>
+
                     @if (User.IsInRole("Admin") || User.IsInRole("SuperAdmin"))
                     {
                         <div class="ht-menu-divider"></div>
@@ -487,15 +497,13 @@ body.bg-dark .modal-content .btn-outline-secondary:hover { background: #334155; 
 
 <script>
 // ══════════════════════════════════════════
-// 🔥 FECHAS LOCALES — convierte todas las
-//    fechas UTC a la hora local del usuario
+// 🔥 FECHAS LOCALES
 // ══════════════════════════════════════════
 document.addEventListener("DOMContentLoaded", function() {
     convertirFechasLocales();
 });
 
 function convertirFechasLocales() {
-    // elementos con data-utc="2026-04-17T10:30:00Z"
     document.querySelectorAll("[data-utc]").forEach(el => {
         const utcStr = el.getAttribute("data-utc");
         if (!utcStr) return;
@@ -505,8 +513,6 @@ function convertirFechasLocales() {
             el.textContent = formatearFecha(date, formato);
         } catch(e) {}
     });
-
-    // elementos con data-utc-time (solo hora)
     document.querySelectorAll("[data-utc-time]").forEach(el => {
         const utcStr = el.getAttribute("data-utc-time");
         if (!utcStr) return;
@@ -532,16 +538,9 @@ function formatearFecha(date, formato) {
         if (diffD < 7) return `hace ${diffD} días`;
         return date.toLocaleDateString('es-CO', { day: '2-digit', month: 'short' });
     }
+    if (formato === "time") return date.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' });
+    if (formato === "date") return date.toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' });
 
-    if (formato === "time") {
-        return date.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' });
-    }
-
-    if (formato === "date") {
-        return date.toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' });
-    }
-
-    // datetime (default)
     const esHoy = date.toDateString() === ahora.toDateString();
     const esAyer = new Date(ahora - 86400000).toDateString() === date.toDateString();
     const hora = date.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' });
@@ -550,7 +549,6 @@ function formatearFecha(date, formato) {
     return date.toLocaleDateString('es-CO', { day: '2-digit', month: 'short' }) + ` ${hora}`;
 }
 
-// uso global — llama esto si agregas contenido dinámico
 window.htConvertirFechas = convertirFechasLocales;
 </script>
 
@@ -616,11 +614,9 @@ const connection = new signalR.HubConnectionBuilder().withUrl("/chatHub").build(
 connection.start().then(function() {
     const userId = '@(User.Identity.IsAuthenticated ? User.FindFirst("UserId")?.Value : "")';
     if (userId) connection.invoke("JoinUserGroup", userId);
-
     connection.on("ReceiveNotification", function(uid, message, username, userImage, link) {
         showToastNotif(username, message, userImage, link);
     });
-
     connection.on("UserOnline", () => {});
     connection.on("UserOffline", () => {});
 }).catch(err => console.error("SignalR notif:", err));
@@ -757,7 +753,7 @@ document.addEventListener("click", function(e) {
 </script>
 
 <script>
-// 🔥 SOLICITUDES DE MENSAJE — cargar contador
+// 🔥 SOLICITUDES DE MENSAJE
 @if (User.Identity.IsAuthenticated && !User.IsInRole("Guest"))
 {
     <text>
@@ -774,15 +770,11 @@ document.addEventListener("click", function(e) {
                 const menuItem = document.getElementById("msgReqMenuItem");
                 const menuBadge = document.getElementById("msgReqMenuBadge");
                 const sidebarBadge = document.getElementById("sidebar-msg-badge");
-
                 if (count > 0) {
                     if (navBtn) navBtn.style.display = "flex";
                     if (menuItem) menuItem.style.display = "flex";
                     if (menuBadge) menuBadge.textContent = count;
-                    if (sidebarBadge) {
-                        sidebarBadge.style.display = "inline";
-                        sidebarBadge.textContent = count;
-                    }
+                    if (sidebarBadge) { sidebarBadge.style.display = "inline"; sidebarBadge.textContent = count; }
                 }
             }).catch(() => {});
     }

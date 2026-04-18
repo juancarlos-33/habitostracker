@@ -300,6 +300,239 @@ namespace HabitTrackerApp.Controllers
             }
         }
 
+        // 📊 DETALLE DEL HÁBITO CON GRÁFICA INDIVIDUAL
+        public IActionResult Detail(int id)
+        {
+            var userId = GetUserId();
+            var habit = _context.Habits
+                .FirstOrDefault(h => h.Id == id && h.UserId == userId);
+            if (habit == null) return RedirectToAction("Index");
+
+            var last7Days = Enumerable.Range(0, 7)
+                .Select(i => DateTime.Today.AddDays(-i))
+                .Reverse()
+                .ToList();
+
+            var histories = _context.HabitHistories
+                .Where(h => h.HabitId == id && h.Date >= DateTime.Today.AddDays(-6))
+                .ToList();
+
+            var dailyData = last7Days.Select(date => new
+            {
+                date = date.ToString("dd/MM"),
+                completed = histories.Count(h => h.Date.Date == date.Date && h.Completed),
+                failed = histories.Count(h => h.Date.Date == date.Date && !h.Completed)
+            }).ToList();
+
+            // % completado últimos 7 días
+            int totalLast7 = histories.Count;
+            int completedLast7 = histories.Count(h => h.Completed);
+            int completionRate7 = totalLast7 > 0 ? (int)((completedLast7 * 100.0) / totalLast7) : 0;
+
+            // historial completo para el calendario mini
+            var allHistory = _context.HabitHistories
+                .Where(h => h.HabitId == id)
+                .OrderByDescending(h => h.Date)
+                .Take(30)
+                .ToList();
+
+            ViewBag.Labels = System.Text.Json.JsonSerializer.Serialize(dailyData.Select(d => d.date));
+            ViewBag.Completed = System.Text.Json.JsonSerializer.Serialize(dailyData.Select(d => d.completed));
+            ViewBag.Failed = System.Text.Json.JsonSerializer.Serialize(dailyData.Select(d => d.failed));
+            ViewBag.CompletionRate7 = completionRate7;
+            ViewBag.AllHistory = allHistory;
+
+            // progresos compartidos de este hábito
+            var progresses = _context.HabitProgresses
+                .Where(p => p.HabitId == id)
+                .Include(p => p.User)
+                .Include(p => p.Reactions).ThenInclude(r => r.User)
+                .Include(p => p.Comments).ThenInclude(c => c.User)
+                .OrderByDescending(p => p.SharedAt)
+                .ToList();
+
+            ViewBag.Progresses = progresses;
+            ViewBag.CurrentUserId = userId;
+
+            return View(habit);
+        }
+
+        // 🚀 COMPARTIR PROGRESO
+        [HttpPost]
+        public async Task<IActionResult> ShareProgress(int habitId, string message)
+        {
+            var userId = GetUserId();
+            var habit = _context.Habits.FirstOrDefault(h => h.Id == habitId && h.UserId == userId);
+            if (habit == null) return Json(new { success = false });
+
+            if (string.IsNullOrWhiteSpace(message) || message.Length > 300)
+                return Json(new { success = false, error = "El mensaje debe tener entre 1 y 300 caracteres." });
+
+            // calcular % últimos 7 días
+            var histories = _context.HabitHistories
+                .Where(h => h.HabitId == habitId && h.Date >= DateTime.Today.AddDays(-6))
+                .ToList();
+            int total = histories.Count;
+            int completed = histories.Count(h => h.Completed);
+            int rate = total > 0 ? (int)((completed * 100.0) / total) : 0;
+
+            var progress = new HabitProgress
+            {
+                UserId = userId,
+                HabitId = habitId,
+                Message = message.Trim(),
+                StreakDays = habit.StreakDays,
+                CompletionRate = rate,
+                SharedAt = DateTime.UtcNow
+            };
+            _context.HabitProgresses.Add(progress);
+            await _context.SaveChangesAsync();
+
+            var user = _context.Users.FirstOrDefault(u => u.Id == userId);
+            return Json(new
+            {
+                success = true,
+                id = progress.Id,
+                username = user?.Username,
+                avatar = user?.ProfileImage ?? user?.ProfilePicture ?? "",
+                message = progress.Message,
+                streak = progress.StreakDays,
+                rate = progress.CompletionRate,
+                time = "ahora"
+            });
+        }
+
+        // 🔥 REACCIONAR A PROGRESO
+        [HttpPost]
+        public async Task<IActionResult> ReactProgress([FromBody] ReactProgressDto dto)
+        {
+            var userId = GetUserId();
+            var progress = _context.HabitProgresses.FirstOrDefault(p => p.Id == dto.ProgressId);
+            if (progress == null) return Json(new { success = false });
+
+            // si ya reaccionó con el mismo emoji, quitarlo (toggle)
+            var existing = _context.HabitProgressReactions
+                .FirstOrDefault(r => r.HabitProgressId == dto.ProgressId && r.UserId == userId && r.Emoji == dto.Emoji);
+
+            if (existing != null)
+            {
+                _context.HabitProgressReactions.Remove(existing);
+            }
+            else
+            {
+                // quitar reacción anterior si tenía otra
+                var old = _context.HabitProgressReactions
+                    .FirstOrDefault(r => r.HabitProgressId == dto.ProgressId && r.UserId == userId);
+                if (old != null) _context.HabitProgressReactions.Remove(old);
+
+                _context.HabitProgressReactions.Add(new HabitProgressReaction
+                {
+                    HabitProgressId = dto.ProgressId,
+                    UserId = userId,
+                    Emoji = dto.Emoji
+                });
+
+                // notificar al dueño del progreso
+                if (progress.UserId != userId)
+                {
+                    var me = _context.Users.FirstOrDefault(u => u.Id == userId);
+                    _context.Notifications.Add(new Notification
+                    {
+                        UserId = progress.UserId,
+                        FromUserId = userId,
+                        Message = $"{dto.Emoji} {me?.Username} reaccionó a tu progreso",
+                        CreatedAt = DateTime.UtcNow,
+                        IsRead = false,
+                        FromUsername = me?.Username ?? "",
+                        FromUserImage = me?.ProfileImage ?? ""
+                    });
+                }
+            }
+
+            await _context.SaveChangesAsync();
+
+            // contar reacciones agrupadas
+            var counts = _context.HabitProgressReactions
+                .Where(r => r.HabitProgressId == dto.ProgressId)
+                .GroupBy(r => r.Emoji)
+                .Select(g => new { emoji = g.Key, count = g.Count() })
+                .ToList();
+
+            return Json(new { success = true, counts });
+        }
+
+        // 💬 COMENTAR PROGRESO
+        [HttpPost]
+        public async Task<IActionResult> CommentProgress([FromBody] CommentProgressDto dto)
+        {
+            var userId = GetUserId();
+            if (string.IsNullOrWhiteSpace(dto.Content) || dto.Content.Length > 200)
+                return Json(new { success = false });
+
+            var progress = _context.HabitProgresses.FirstOrDefault(p => p.Id == dto.ProgressId);
+            if (progress == null) return Json(new { success = false });
+
+            var comment = new HabitProgressComment
+            {
+                HabitProgressId = dto.ProgressId,
+                UserId = userId,
+                Content = dto.Content.Trim(),
+                CreatedAt = DateTime.UtcNow
+            };
+            _context.HabitProgressComments.Add(comment);
+
+            // notificar
+            if (progress.UserId != userId)
+            {
+                var me = _context.Users.FirstOrDefault(u => u.Id == userId);
+                _context.Notifications.Add(new Notification
+                {
+                    UserId = progress.UserId,
+                    FromUserId = userId,
+                    Message = $"💬 {me?.Username} comentó tu progreso",
+                    CreatedAt = DateTime.UtcNow,
+                    IsRead = false,
+                    FromUsername = me?.Username ?? "",
+                    FromUserImage = me?.ProfileImage ?? ""
+                });
+            }
+
+            await _context.SaveChangesAsync();
+
+            var user = _context.Users.FirstOrDefault(u => u.Id == userId);
+            return Json(new
+            {
+                success = true,
+                id = comment.Id,
+                username = user?.Username,
+                avatar = user?.ProfileImage ?? user?.ProfilePicture ?? "",
+                content = comment.Content,
+                time = "ahora"
+            });
+        }
+
+        // 🌍 COMUNIDAD — todos los progresos
+        public IActionResult Community()
+        {
+            var userId = GetUserId();
+
+            var progresses = _context.HabitProgresses
+                .Include(p => p.User)
+                .Include(p => p.Habit)
+                .Include(p => p.Reactions).ThenInclude(r => r.User)
+                .Include(p => p.Comments).ThenInclude(c => c.User)
+                .OrderByDescending(p => p.SharedAt)
+                .Take(50)
+                .ToList();
+
+            ViewBag.CurrentUserId = userId;
+            return View(progresses);
+        }
+
+        // DTOs
+        public class ReactProgressDto { public int ProgressId { get; set; } public string Emoji { get; set; } }
+        public class CommentProgressDto { public int ProgressId { get; set; } public string Content { get; set; } }
+
         // 📅 CALENDARIO
         public IActionResult Calendar(DateTime? month)
         {
