@@ -1043,6 +1043,13 @@ namespace HabitTrackerApp.Controllers
             var groupMembers = _context.GroupMembers.Where(m => m.UserId == id);
             _context.GroupMembers.RemoveRange(groupMembers);
 
+            // 🔥 manejar mensajes de grupo (evitar error FK)
+            var groupMessages = _context.GroupMessages
+                .Where(m => m.SenderId == id)
+                .ToList();
+            foreach (var gm in groupMessages)
+                gm.SenderId = null;
+
             // 🔥 eliminar usuario
             _context.Users.Remove(user);
 

@@ -328,6 +328,11 @@ namespace HabitTrackerApp.Controllers
             // 🔥 eliminar membresías de grupos
             var groupMembers = _context.GroupMembers.Where(m => m.UserId == userId);
             _context.GroupMembers.RemoveRange(groupMembers);
+            var groupMessages = _context.GroupMessages
+    .Where(m => m.SenderId == userId)
+    .ToList();
+            foreach (var gm in groupMessages)
+                gm.SenderId = null;
             _context.Users.Remove(user);
             await _context.SaveChangesAsync();
 
