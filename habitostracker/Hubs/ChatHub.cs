@@ -243,10 +243,13 @@ namespace HabitTrackerApp.Hubs
                         content, time, msgId, fileUrl, fileType);
 
                 var group = await _context.Groups.FirstOrDefaultAsync(g => g.Id == int.Parse(groupId));
-                var groupName = group?.Name ?? "un grupo";
 
+                // ✅ filtrar directo en BD los que NO están muteados
                 var members = await _context.GroupMembers
-                    .Where(m => m.GroupId == int.Parse(groupId) && m.IsActive && m.UserId != int.Parse(senderId))
+                    .Where(m => m.GroupId == int.Parse(groupId)
+                             && m.IsActive
+                             && m.UserId != int.Parse(senderId)
+                             && !m.IsMuted)
                     .ToListAsync();
 
                 foreach (var member in members)

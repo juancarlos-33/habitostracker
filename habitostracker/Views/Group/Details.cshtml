@@ -12,112 +12,212 @@
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
 
 <style>
-.grp-details-page { max-width: 560px; margin: 0 auto; font-family: 'Plus Jakarta Sans', sans-serif; padding-bottom: 40px; }
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-.grp-details-hero {
+.grp-details-page {
+    max-width: 600px; margin: 0 auto;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    padding-bottom: 60px;
+}
+
+/* ── HERO BANNER ── */
+.grp-hero {
+    position: relative; overflow: hidden;
     background: linear-gradient(135deg, #1e293b, #0f172a);
-    border-radius: 24px; padding: 32px 24px; margin-bottom: 14px;
-    text-align: center; position: relative; overflow: hidden;
+    border-radius: 28px; margin-bottom: 16px;
     border: 1px solid rgba(255,255,255,0.06);
 }
-.grp-details-hero::before {
-    content:""; position:absolute; top:-40px; left:50%; transform:translateX(-50%);
-    width:200px; height:200px;
-    background: radial-gradient(circle, rgba(99,102,241,0.2), transparent 70%);
-    border-radius:50%;
+.grp-hero-bg {
+    position: absolute; inset: 0;
+    background: radial-gradient(ellipse at 30% 0%, rgba(99,102,241,0.25), transparent 60%),
+                radial-gradient(ellipse at 80% 100%, rgba(34,197,94,0.12), transparent 50%);
 }
-.grp-details-avatar-wrap { position: relative; display: inline-block; margin: 0 auto 16px; z-index: 1; }
-.grp-details-avatar {
-    width: 80px; height: 80px; border-radius: 22px;
+.grp-hero-cover {
+    height: 140px; width: 100%; object-fit: cover; opacity: 0.3;
+    display: block;
+}
+.grp-hero-cover-placeholder {
+    height: 140px;
+    background: linear-gradient(135deg, rgba(99,102,241,0.15), rgba(37,99,235,0.1));
+}
+.grp-hero-body {
+    padding: 0 24px 28px; position: relative; z-index: 1;
+    margin-top: -48px;
+}
+.grp-hero-avatar-wrap {
+    position: relative; display: inline-block; margin-bottom: 14px;
+}
+.grp-hero-avatar {
+    width: 90px; height: 90px; border-radius: 24px;
     background: linear-gradient(135deg, #6366f1, #2563eb);
     display: flex; align-items: center; justify-content: center;
-    font-size: 34px; color: white; font-weight: 800;
-    box-shadow: 0 10px 24px rgba(99,102,241,0.4); overflow: hidden;
-    cursor: @(isAdmin ? "pointer" : "default"); transition: 0.2s;
+    font-size: 38px; color: white; font-weight: 800;
+    box-shadow: 0 8px 32px rgba(99,102,241,0.5);
+    overflow: hidden; cursor: @(isAdmin ? "pointer" : "default");
+    border: 3px solid #0f172a; transition: 0.2s;
 }
-.grp-details-avatar img { width: 100%; height: 100%; object-fit: cover; }
-.grp-details-avatar:hover { @(isAdmin ? "opacity: 0.85;" : "") }
-.grp-avatar-edit-badge {
-    position: absolute; bottom: -6px; right: -6px;
-    width: 26px; height: 26px; border-radius: 50%;
-    background: #6366f1; color: white; border: 2px solid #0f172a;
+.grp-hero-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.grp-hero-avatar:hover { @(isAdmin ? "transform: scale(1.04);" : "") }
+.grp-hero-edit-badge {
+    position: absolute; bottom: -4px; right: -4px;
+    width: 28px; height: 28px; border-radius: 50%;
+    background: #6366f1; color: white;
+    border: 2px solid #0f172a;
     display: flex; align-items: center; justify-content: center;
     font-size: 12px; cursor: pointer; transition: 0.2s;
+    box-shadow: 0 2px 8px rgba(99,102,241,0.4);
 }
-.grp-avatar-edit-badge:hover { background: #4f46e5; transform: scale(1.1); }
-.grp-details-name { font-size: 20px; font-weight: 800; color: white; margin: 0 0 6px; position: relative; z-index:1; }
-.grp-details-desc { font-size: 13px; color: rgba(255,255,255,0.4); margin: 0 0 6px; position: relative; z-index:1; }
-.grp-details-meta { font-size: 12px; color: rgba(255,255,255,0.3); position: relative; z-index:1; }
+.grp-hero-edit-badge:hover { background: #4f46e5; transform: scale(1.1); }
+
+.grp-hero-name {
+    font-size: 22px; font-weight: 800; color: white;
+    margin-bottom: 4px; letter-spacing: -0.3px;
+}
+.grp-hero-desc {
+    font-size: 13px; color: rgba(255,255,255,0.45);
+    margin-bottom: 10px; line-height: 1.5;
+}
+.grp-hero-meta {
+    display: flex; align-items: center; gap: 16px;
+    flex-wrap: wrap;
+}
+.grp-hero-meta-item {
+    display: flex; align-items: center; gap: 5px;
+    font-size: 12px; color: rgba(255,255,255,0.35); font-weight: 600;
+}
+
+/* STATS ROW */
+.grp-stats {
+    display: flex; gap: 0;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 18px; overflow: hidden;
+    margin: 14px 0 0;
+}
+.grp-stat {
+    flex: 1; padding: 14px 10px; text-align: center; position: relative;
+}
+.grp-stat:not(:last-child)::after {
+    content: ''; position: absolute; right: 0; top: 20%; height: 60%;
+    width: 1px; background: rgba(255,255,255,0.07);
+}
+.grp-stat-num {
+    font-size: 20px; font-weight: 800; color: white; display: block; line-height: 1; margin-bottom: 3px;
+}
+.grp-stat-label {
+    font-size: 10px; color: rgba(255,255,255,0.3);
+    font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;
+}
+
+/* BACK BTN */
 .grp-back-btn {
     display: inline-flex; align-items: center; gap: 6px;
-    padding: 8px 16px; border-radius: 12px;
+    padding: 7px 14px; border-radius: 12px;
     background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.1);
     color: rgba(255,255,255,0.7); font-size: 13px; font-weight: 600;
-    text-decoration: none; transition: 0.2s; margin-bottom: 16px; position: relative; z-index:1;
+    text-decoration: none; transition: 0.2s;
+    position: absolute; top: 16px; left: 16px; z-index: 10;
 }
 .grp-back-btn:hover { background: rgba(255,255,255,0.14); color: white; }
 
+/* CHAT BTN */
+.grp-chat-btn {
+    display: inline-flex; align-items: center; gap: 7px;
+    padding: 10px 20px; border-radius: 14px; border: none;
+    background: linear-gradient(135deg, #6366f1, #2563eb);
+    color: white; font-size: 14px; font-weight: 700;
+    text-decoration: none; cursor: pointer; transition: 0.2s;
+    box-shadow: 0 4px 16px rgba(99,102,241,0.4);
+    font-family: inherit; margin-top: 16px;
+}
+.grp-chat-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(99,102,241,0.5); }
+
+/* ── CARDS ── */
 .grp-card {
-    background: white; border-radius: 20px; padding: 20px 22px;
+    background: white; border-radius: 22px; padding: 20px 22px;
     margin-bottom: 12px; border: 1px solid rgba(0,0,0,0.05);
     box-shadow: 0 2px 12px rgba(0,0,0,0.05);
 }
+.grp-card-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 16px;
+}
 .grp-card-title {
-    font-size: 11px; font-weight: 700; color: #6b7280;
-    text-transform: uppercase; letter-spacing: 0.7px; margin-bottom: 14px;
+    font-size: 11px; font-weight: 800; color: #6b7280;
+    text-transform: uppercase; letter-spacing: 0.8px;
 }
+.grp-card-action-btn {
+    padding: 6px 14px; border-radius: 10px; border: none;
+    background: linear-gradient(135deg, #6366f1, #2563eb);
+    color: white; font-size: 12px; font-weight: 700;
+    cursor: pointer; font-family: inherit; transition: 0.2s;
+    display: flex; align-items: center; gap: 5px;
+    box-shadow: 0 2px 8px rgba(99,102,241,0.3);
+}
+.grp-card-action-btn:hover { transform: translateY(-1px); }
 
-.grp-action-list { display: flex; flex-direction: column; gap: 6px; }
-.grp-action-item {
-    display: flex; align-items: center; gap: 12px;
-    padding: 12px 14px; border-radius: 13px;
-    background: #f9fafb; cursor: pointer; transition: 0.15s; font-size: 14px;
-    font-weight: 600; color: #111827; border: none;
-    width: 100%; text-align: left; font-family: inherit;
+/* ── EDIT FIELDS ── */
+.grp-edit-row { display: flex; gap: 8px; margin-bottom: 10px; }
+.grp-edit-input {
+    flex: 1; padding: 10px 14px; border: 1.5px solid #e5e7eb;
+    border-radius: 12px; font-size: 14px; font-family: inherit;
+    outline: none; transition: 0.2s; color: #111827; background: #f9fafb;
 }
-.grp-action-item:hover { background: #f3f4f6; }
-.grp-action-item.danger { color: #dc2626; }
-.grp-action-item.danger:hover { background: #fef2f2; }
-.grp-action-item.active-mute { color: #f59e0b; background: rgba(245,158,11,0.06); }
-.grp-action-icon {
-    width: 36px; height: 36px; border-radius: 10px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 17px; flex-shrink: 0;
+.grp-edit-input:focus { border-color: #6366f1; background: white; box-shadow: 0 0 0 3px rgba(99,102,241,0.1); }
+.grp-edit-btn {
+    padding: 10px 18px; border-radius: 12px; border: none;
+    background: linear-gradient(135deg, #6366f1, #2563eb);
+    color: white; font-size: 13px; font-weight: 700;
+    cursor: pointer; font-family: inherit; transition: 0.2s;
+    white-space: nowrap;
 }
-.grp-action-icon.blue { background: rgba(37,99,235,0.1); }
-.grp-action-icon.red { background: rgba(239,68,68,0.1); }
-.grp-action-icon.orange { background: rgba(249,115,22,0.1); }
-.grp-action-icon.purple { background: rgba(99,102,241,0.1); }
-.grp-action-icon.green { background: rgba(34,197,94,0.1); }
-.grp-action-chevron { margin-left: auto; color: #9ca3af; font-size: 12px; }
+.grp-edit-btn:hover { transform: translateY(-1px); }
 
-/* MEMBERS */
+/* ── MEMBERS ── */
 .grp-member-row {
     display: flex; align-items: center; gap: 12px;
-    padding: 10px 0; border-bottom: 1px solid #f3f4f6;
+    padding: 11px 0; border-bottom: 1px solid #f3f4f6;
+    transition: 0.15s;
 }
 .grp-member-row:last-child { border-bottom: none; padding-bottom: 0; }
+.grp-member-row:hover { background: #fafafa; border-radius: 12px; padding-left: 8px; padding-right: 8px; margin: 0 -8px; }
 .grp-member-avatar {
-    width: 40px; height: 40px; border-radius: 50%; flex-shrink: 0;
+    width: 44px; height: 44px; border-radius: 50%; flex-shrink: 0;
     background: linear-gradient(135deg, #6366f1, #2563eb);
     display: flex; align-items: center; justify-content: center;
-    color: white; font-size: 15px; font-weight: 800; overflow: hidden;
-    text-decoration: none;
+    color: white; font-size: 16px; font-weight: 800; overflow: hidden;
+    text-decoration: none; position: relative;
 }
 .grp-member-avatar img { width: 100%; height: 100%; object-fit: cover; }
-.grp-member-info { flex: 1; }
-.grp-member-name { font-size: 14px; font-weight: 600; color: #111827; }
-.grp-member-subrole { font-size: 11px; color: #9ca3af; margin-top: 1px; }
-.grp-member-badge {
-    font-size: 10px; font-weight: 700; padding: 2px 8px;
-    border-radius: 20px; background: #ede9fe; color: #6366f1;
+.grp-member-online {
+    position: absolute; bottom: 1px; right: 1px;
+    width: 11px; height: 11px; border-radius: 50%;
+    background: #22c55e; border: 2px solid white;
 }
+.grp-member-info { flex: 1; min-width: 0; }
+.grp-member-name {
+    font-size: 14px; font-weight: 700; color: #111827;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.grp-member-role {
+    font-size: 11px; color: #9ca3af; margin-top: 1px;
+    display: flex; align-items: center; gap: 4px;
+}
+.grp-member-badge {
+    display: inline-flex; align-items: center; gap: 3px;
+    font-size: 10px; font-weight: 700; padding: 2px 8px;
+    border-radius: 20px;
+}
+.grp-member-badge.admin { background: #ede9fe; color: #6366f1; }
 .grp-member-badge.creator { background: #111827; color: #fbbf24; }
-.grp-member-actions { display: flex; gap: 6px; align-items: center; }
+.grp-member-badge.me { background: #dcfce7; color: #16a34a; }
+
+.grp-member-actions { display: flex; gap: 5px; flex-shrink: 0; }
 .grp-member-btn {
-    width: 28px; height: 28px; border-radius: 8px;
-    border: none; cursor: pointer; font-size: 12px; transition: 0.15s;
+    width: 30px; height: 30px; border-radius: 9px;
+    border: none; cursor: pointer; font-size: 13px;
     display: flex; align-items: center; justify-content: center;
+    transition: 0.15s; font-family: inherit;
 }
 .grp-member-btn.remove { background: #fef2f2; color: #dc2626; }
 .grp-member-btn.remove:hover { background: #dc2626; color: white; }
@@ -125,93 +225,125 @@
 .grp-member-btn.promote:hover { background: #f59e0b; color: white; }
 .grp-member-btn.demote { background: #ede9fe; color: #6366f1; }
 .grp-member-btn.demote:hover { background: #6366f1; color: white; }
+.grp-member-btn.msg { background: #f0f9ff; color: #2563eb; }
+.grp-member-btn.msg:hover { background: #2563eb; color: white; }
 
-/* EDIT */
-.grp-edit-field { display: flex; gap: 8px; margin-bottom: 12px; }
-.grp-edit-input {
-    flex: 1; padding: 10px 14px; border: 1.5px solid #e5e7eb;
-    border-radius: 11px; font-size: 14px; font-family: inherit;
-    outline: none; transition: 0.2s; color: #111827;
+/* SEARCH MEMBERS */
+.grp-search-wrap { position: relative; margin-bottom: 14px; }
+.grp-search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); font-size: 14px; }
+.grp-search-input {
+    width: 100%; padding: 9px 14px 9px 34px;
+    border: 1.5px solid #e5e7eb; border-radius: 12px;
+    font-size: 13px; font-family: inherit; outline: none;
+    transition: 0.2s; color: #111827; background: #f9fafb;
 }
-.grp-edit-input:focus { border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99,102,241,0.1); }
-.grp-edit-btn {
-    padding: 10px 16px; border-radius: 11px; border: none;
-    background: linear-gradient(135deg, #6366f1, #2563eb);
-    color: white; font-size: 13px; font-weight: 700;
-    cursor: pointer; font-family: inherit; transition: 0.2s;
-}
-.grp-edit-btn:hover { transform: translateY(-1px); }
+.grp-search-input:focus { border-color: #6366f1; background: white; box-shadow: 0 0 0 3px rgba(99,102,241,0.1); }
 
-/* TOAST */
-.grp-toast {
-    position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%);
-    background: #1e293b; color: white; padding: 10px 20px;
-    border-radius: 20px; font-size: 13px; font-weight: 600;
-    z-index: 99999; box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-    animation: toastIn 0.3s ease; font-family: 'Plus Jakarta Sans', sans-serif;
+/* ── ACTIONS ── */
+.grp-action-list { display: flex; flex-direction: column; gap: 6px; }
+.grp-action-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 13px 14px; border-radius: 14px;
+    background: #f9fafb; cursor: pointer; transition: 0.15s;
+    font-size: 14px; font-weight: 600; color: #111827;
+    border: 1.5px solid transparent; width: 100%;
+    text-align: left; font-family: inherit;
 }
-@@keyframes toastIn { from{opacity:0;transform:translateX(-50%) translateY(10px);} to{opacity:1;transform:translateX(-50%) translateY(0);} }
+.grp-action-item:hover { background: #f3f4f6; border-color: #e5e7eb; }
+.grp-action-item.danger { color: #dc2626; }
+.grp-action-item.danger:hover { background: #fef2f2; border-color: #fecaca; }
+.grp-action-item.active-mute { color: #f59e0b; background: rgba(245,158,11,0.06); border-color: rgba(245,158,11,0.2); }
+.grp-action-icon {
+    width: 38px; height: 38px; border-radius: 11px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; flex-shrink: 0;
+}
+.grp-action-icon.blue { background: rgba(37,99,235,0.1); }
+.grp-action-icon.red { background: rgba(239,68,68,0.1); }
+.grp-action-icon.orange { background: rgba(249,115,22,0.1); }
+.grp-action-icon.purple { background: rgba(99,102,241,0.1); }
+.grp-action-icon.green { background: rgba(34,197,94,0.1); }
+.grp-action-icon.yellow { background: rgba(234,179,8,0.1); }
+.grp-action-chevron { margin-left: auto; color: #9ca3af; font-size: 14px; }
+.grp-action-sub { font-size: 11px; color: #9ca3af; font-weight: 500; margin-top: 1px; }
 
-/* MODAL AÑADIR MIEMBRO */
-.add-member-modal {
+/* ── MODALES ── */
+.grp-modal {
     display: none; position: fixed; inset: 0;
-    background: rgba(0,0,0,0.6); z-index: 99999;
+    background: rgba(0,0,0,0.65); z-index: 99999;
     align-items: center; justify-content: center;
-    backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px); padding: 20px;
 }
-.add-member-card {
-    background: #0f172a; border-radius: 24px; padding: 28px;
-    max-width: 380px; width: 90%;
+.grp-modal.open { display: flex; }
+.grp-modal-card {
+    background: #0f172a; border-radius: 26px; padding: 28px;
+    max-width: 400px; width: 100%;
     border: 1px solid rgba(255,255,255,0.08);
-    box-shadow: 0 30px 70px rgba(0,0,0,0.5);
+    box-shadow: 0 30px 70px rgba(0,0,0,0.6);
+    animation: modalIn 0.3s cubic-bezier(0.34,1.56,0.64,1);
 }
-.add-member-title { font-size: 17px; font-weight: 800; color: white; margin: 0 0 4px; }
-.add-member-sub { font-size: 13px; color: rgba(255,255,255,0.4); margin: 0 0 18px; }
-.add-member-search {
+@@keyframes modalIn { from{opacity:0;transform:scale(0.9) translateY(20px);} to{opacity:1;transform:scale(1) translateY(0);} }
+.grp-modal-title { font-size: 18px; font-weight: 800; color: white; margin-bottom: 4px; }
+.grp-modal-sub { font-size: 13px; color: rgba(255,255,255,0.4); margin-bottom: 18px; }
+.grp-modal-search {
     width: 100%; padding: 11px 14px; border-radius: 12px;
     border: 1.5px solid rgba(255,255,255,0.1);
     background: rgba(255,255,255,0.05); color: white;
     font-size: 14px; font-family: inherit; outline: none; margin-bottom: 12px;
-    transition: 0.2s; box-sizing: border-box;
+    transition: 0.2s;
 }
-.add-member-search:focus { border-color: #6366f1; }
-.add-member-search::placeholder { color: rgba(255,255,255,0.25); }
-.add-member-list { max-height: 260px; overflow-y: auto; margin-bottom: 14px; }
-.add-member-list::-webkit-scrollbar { width: 4px; }
-.add-member-list::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
-.add-member-item {
+.grp-modal-search:focus { border-color: #6366f1; }
+.grp-modal-search::placeholder { color: rgba(255,255,255,0.25); }
+.grp-modal-list { max-height: 260px; overflow-y: auto; margin-bottom: 16px; }
+.grp-modal-list::-webkit-scrollbar { width: 4px; }
+.grp-modal-list::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
+.grp-modal-item {
     display: flex; align-items: center; gap: 10px;
     padding: 10px 12px; border-radius: 12px; cursor: pointer;
-    transition: 0.15s; border: 1.5px solid transparent;
+    transition: 0.15s; border: 1.5px solid transparent; margin-bottom: 4px;
 }
-.add-member-item:hover { background: rgba(99,102,241,0.08); border-color: rgba(99,102,241,0.2); }
-.add-member-item.selected { background: rgba(99,102,241,0.12); border-color: #6366f1; }
-.add-member-avatar {
+.grp-modal-item:hover { background: rgba(99,102,241,0.08); border-color: rgba(99,102,241,0.2); }
+.grp-modal-item.selected { background: rgba(99,102,241,0.12); border-color: #6366f1; }
+.grp-modal-avatar {
     width: 38px; height: 38px; border-radius: 50%; flex-shrink: 0;
     background: linear-gradient(135deg, #6366f1, #2563eb);
     display: flex; align-items: center; justify-content: center;
     color: white; font-size: 14px; font-weight: 800; overflow: hidden;
 }
-.add-member-avatar img { width: 100%; height: 100%; object-fit: cover; }
-.add-member-name { font-size: 14px; font-weight: 600; color: white; flex: 1; }
-.add-member-check { color: #6366f1; font-size: 16px; display: none; }
-.add-member-item.selected .add-member-check { display: block; }
-.add-member-empty { text-align: center; padding: 20px; color: rgba(255,255,255,0.3); font-size: 13px; }
-.add-member-btns { display: flex; gap: 10px; }
-.add-member-cancel {
-    flex: 1; padding: 11px; border-radius: 12px;
+.grp-modal-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.grp-modal-name { font-size: 14px; font-weight: 600; color: white; flex: 1; }
+.grp-modal-check { color: #6366f1; font-size: 16px; display: none; }
+.grp-modal-item.selected .grp-modal-check { display: block; }
+.grp-modal-empty { text-align: center; padding: 24px; color: rgba(255,255,255,0.3); font-size: 13px; }
+.grp-modal-btns { display: flex; gap: 10px; }
+.grp-modal-cancel {
+    flex: 1; padding: 12px; border-radius: 13px;
     border: 1px solid rgba(255,255,255,0.1);
     background: rgba(255,255,255,0.04); color: rgba(255,255,255,0.5);
     font-size: 13px; font-weight: 700; cursor: pointer; font-family: inherit;
+    transition: 0.2s;
 }
-.add-member-confirm {
-    flex: 1; padding: 11px; border-radius: 12px; border: none;
+.grp-modal-cancel:hover { background: rgba(255,255,255,0.08); }
+.grp-modal-confirm {
+    flex: 2; padding: 12px; border-radius: 13px; border: none;
     background: linear-gradient(135deg, #6366f1, #2563eb);
     color: white; font-size: 13px; font-weight: 700;
     cursor: pointer; font-family: inherit; transition: 0.2s;
+    box-shadow: 0 4px 14px rgba(99,102,241,0.4);
 }
-.add-member-confirm:hover { transform: translateY(-1px); }
-.add-member-confirm:disabled { background: #334155; cursor: not-allowed; transform: none; }
+.grp-modal-confirm:hover { transform: translateY(-1px); }
+.grp-modal-confirm:disabled { background: #334155; cursor: not-allowed; transform: none; box-shadow: none; }
+
+/* TOAST */
+.grp-toast {
+    position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%);
+    background: #1e293b; color: white; padding: 10px 22px;
+    border-radius: 20px; font-size: 13px; font-weight: 600;
+    z-index: 999999; box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    animation: toastIn 0.3s ease; font-family: 'Plus Jakarta Sans', sans-serif;
+    white-space: nowrap; pointer-events: none;
+}
+@@keyframes toastIn { from{opacity:0;transform:translateX(-50%) translateY(10px);} to{opacity:1;transform:translateX(-50%) translateY(0);} }
 
 /* DARK */
 body.bg-dark .grp-card { background: #1e293b !important; border-color: #2d3748 !important; }
@@ -219,198 +351,45 @@ body.bg-dark .grp-card-title { color: #64748b !important; }
 body.bg-dark .grp-action-item { background: #2d3748 !important; color: #f1f5f9 !important; }
 body.bg-dark .grp-action-item:hover { background: #334155 !important; }
 body.bg-dark .grp-action-item.danger { color: #f87171 !important; }
-body.bg-dark .grp-action-item.danger:hover { background: #3f1010 !important; }
+body.bg-dark .grp-action-item.danger:hover { background: rgba(220,38,38,0.15) !important; }
 body.bg-dark .grp-member-name { color: #f1f5f9 !important; }
 body.bg-dark .grp-member-row { border-color: #2d3748 !important; }
+body.bg-dark .grp-member-row:hover { background: #2d3748 !important; }
 body.bg-dark .grp-edit-input { background: #2d3748 !important; border-color: #3d4d60 !important; color: #f1f5f9 !important; }
-body.bg-dark .grp-member-btn.remove { background: #3f1010 !important; }
-body.bg-dark .grp-member-btn.promote { background: #422006 !important; }
-body.bg-dark .grp-member-btn.demote { background: #1e1b4b !important; }
+body.bg-dark .grp-search-input { background: #2d3748 !important; border-color: #3d4d60 !important; color: #f1f5f9 !important; }
 </style>
 
 <input type="file" id="groupImageInput" accept="image/*" style="display:none;" onchange="uploadGroupImage(this)" />
 
 <!-- MODAL AÑADIR MIEMBRO -->
-<div class="add-member-modal" id="addMemberModal">
-    <div class="add-member-card">
-        <div class="add-member-title">➕ Añadir miembros</div>
-        <div class="add-member-sub">Selecciona amigos para agregar al grupo</div>
-        <input type="text" class="add-member-search" placeholder="🔍 Buscar amigos..."
+<div class="grp-modal" id="addMemberModal">
+    <div class="grp-modal-card">
+        <div class="grp-modal-title">➕ Añadir miembros</div>
+        <div class="grp-modal-sub">Selecciona amigos para agregar al grupo</div>
+        <input type="text" class="grp-modal-search" placeholder="🔍 Buscar amigos..."
                oninput="filtrarAmigosModal(this.value)" id="addMemberSearch" />
-        <div class="add-member-list" id="addMemberList">
-            <div class="add-member-empty">Cargando...</div>
+        <div class="grp-modal-list" id="addMemberList">
+            <div class="grp-modal-empty">Cargando...</div>
         </div>
-        <div class="add-member-btns">
-            <button class="add-member-cancel" onclick="closeAddMember()">Cancelar</button>
-            <button class="add-member-confirm" id="addMemberConfirm" onclick="confirmarAgregar()" disabled>
-                Agregar
-            </button>
-        </div>
-    </div>
-</div>
-
-<div class="grp-details-page">
-
-    <!-- HERO -->
-    <div class="grp-details-hero">
-        <a asp-controller="Group" asp-action="Chat" asp-route-id="@Model.Id" class="grp-back-btn">
-            ← Volver al chat
-        </a>
-        <div class="grp-details-avatar-wrap">
-            <div class="grp-details-avatar" id="groupAvatarEl"
-                 onclick="@(isAdmin ? "document.getElementById('groupImageInput').click()" : "")">
-                @if (!string.IsNullOrEmpty(Model.ImageUrl))
-                { <img src="@Model.ImageUrl" id="groupAvatarImg" /> }
-                else
-                { <span id="groupAvatarLetter">@Model.Name.Substring(0, 1).ToUpper()</span> }
-            </div>
-            @if (isAdmin)
-            {
-                <div class="grp-avatar-edit-badge" onclick="document.getElementById('groupImageInput').click()">📷</div>
-            }
-        </div>
-        <div class="grp-details-name" id="groupNameDisplay">@Model.Name</div>
-        @if (!string.IsNullOrEmpty(Model.Description))
-        { <div class="grp-details-desc">@Model.Description</div> }
-        <div class="grp-details-meta">
-            Creado por @(Model.Creator?.Username ?? "?") · @members.Count miembro@(members.Count != 1 ? "s" : "")
-        </div>
-    </div>
-
-    @if (isAdmin)
-    {
-        <div class="grp-card">
-            <div class="grp-card-title">✏️ Editar grupo</div>
-            <div class="grp-edit-field">
-                <input type="text" id="newGroupName" class="grp-edit-input"
-                       placeholder="Nuevo nombre..." value="@Model.Name" />
-                <button class="grp-edit-btn" onclick="updateName()">Guardar</button>
-            </div>
-        </div>
-    }
-
-    <!-- MIEMBROS -->
-    <div class="grp-card">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
-            <div class="grp-card-title" style="margin:0;">👥 Miembros (@members.Count)</div>
-            @if (isAdmin)
-            {
-                <button onclick="openAddMember()"
-                        style="padding:7px 14px;border-radius:10px;border:none;background:linear-gradient(135deg,#6366f1,#2563eb);color:white;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:5px;">
-                    ➕ Añadir
-                </button>
-            }
-        </div>
-
-        @foreach (var m in members.OrderByDescending(m => m.UserId == Model.CreatorId).ThenByDescending(m => m.Role == "Admin"))
-        {
-            var img = m.User?.ProfileImage ?? m.User?.ProfilePicture ?? "";
-            var letter = (m.User?.Username ?? "?").Substring(0, 1).ToUpper();
-            var isMe = m.UserId == currentUserId;
-            var isMemberCreator = m.UserId == Model.CreatorId;
-            var isMemberAdmin = m.Role == "Admin";
-
-            <div class="grp-member-row" id="member-row-@m.UserId">
-                <a asp-controller="User" asp-action="Profile" asp-route-id="@m.UserId" class="grp-member-avatar">
-                    @if (!string.IsNullOrEmpty(img)) { <img src="@img" /> }
-                    else { @letter }
-                </a>
-                <div class="grp-member-info">
-                    <div class="grp-member-name">
-                        @m.User?.Username @(isMe ? "(Tú)" : "")
-                    </div>
-                    <div class="grp-member-subrole">
-                        @if (isMemberCreator) { <text>👑 Creador</text> }
-                        else if (isMemberAdmin) { <text>⭐ Admin</text> }
-                        else { <text>👤 Miembro</text> }
-                    </div>
-                </div>
-
-                @if (isMemberCreator && !isMe)
-                {
-                    <!-- nadie puede tocar al creador -->
-                }
-                else if (!isMe && !isMemberCreator)
-                {
-                    <div class="grp-member-actions">
-                        @* Solo el creador puede dar/quitar admin *@
-                        @if (isCreator)
-                        {
-                            @if (!isMemberAdmin)
-                            {
-                                <button class="grp-member-btn promote"
-                                        onclick="promoverAdmin(@m.UserId, '@m.User?.Username')"
-                                        title="Dar admin">⭐</button>
-                            }
-                            else
-                            {
-                                <button class="grp-member-btn demote"
-                                        onclick="quitarAdmin(@m.UserId, '@m.User?.Username')"
-                                        title="Quitar admin">↓</button>
-                            }
-                        }
-                        @* Admin y creador pueden eliminar (no a otros admins si no eres creador) *@
-                        @if (isAdmin && (isCreator || !isMemberAdmin))
-                        {
-                            <button class="grp-member-btn remove"
-                                    onclick="removeMember(@m.UserId, '@m.User?.Username')"
-                                    title="Eliminar del grupo">✕</button>
-                        }
-                    </div>
-                }
-            </div>
-        }
-    </div>
-
-    <!-- OPCIONES -->
-    <div class="grp-card">
-        <div class="grp-card-title">⚙️ Opciones</div>
-        <div class="grp-action-list">
-            <button class="grp-action-item @(isMuted ? "active-mute" : "")"
-                    id="muteActionBtn" onclick="toggleMute()">
-                <div class="grp-action-icon orange">
-                    <span id="muteIcon">@(isMuted ? "🔕" : "🔔")</span>
-                </div>
-                <span id="muteLabel">@(isMuted ? "Notificaciones silenciadas" : "Silenciar notificaciones")</span>
-                <span class="grp-action-chevron">›</span>
-            </button>
-            <button class="grp-action-item" onclick="reportarGrupo()">
-                <div class="grp-action-icon purple">🚩</div>
-                <span>Reportar grupo</span>
-                <span class="grp-action-chevron">›</span>
-            </button>
-            <button class="grp-action-item danger" onclick="confirmarSalir()">
-                <div class="grp-action-icon red">🚪</div>
-                <span>Salir del grupo</span>
-                <span class="grp-action-chevron">›</span>
-            </button>
-            @if (isCreator)
-            {
-                <button class="grp-action-item danger" onclick="eliminarGrupo()">
-                    <div class="grp-action-icon red">🗑️</div>
-                    <span>Eliminar grupo</span>
-                    <span class="grp-action-chevron">›</span>
-                </button>
-            }
+        <div class="grp-modal-btns">
+            <button class="grp-modal-cancel" onclick="closeAddMember()">Cancelar</button>
+            <button class="grp-modal-confirm" id="addMemberConfirm" onclick="confirmarAgregar()" disabled>Agregar</button>
         </div>
     </div>
 </div>
 
 <!-- MODAL SALIR -->
-<div id="leaveModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:99999;align-items:center;justify-content:center;backdrop-filter:blur(8px);">
-    <div style="background:#0f172a;border-radius:22px;padding:32px 28px;max-width:340px;width:90%;border:1px solid rgba(255,255,255,0.08);text-align:center;">
-        <div style="font-size:40px;margin-bottom:14px;">🚪</div>
-        <h4 style="color:white;font-weight:800;margin:0 0 10px;">¿Salir del grupo?</h4>
-        <p style="color:rgba(255,255,255,0.4);font-size:13px;margin:0 0 22px;line-height:1.6;">Podrás ver el historial pero no podrás escribir.</p>
-        <div style="display:flex;gap:10px;">
-            <button onclick="document.getElementById('leaveModal').style.display='none'"
-                    style="flex:1;padding:11px;border-radius:11px;border:1px solid #1e293b;background:#1e293b;color:#64748b;font-weight:700;font-size:13px;cursor:pointer;font-family:inherit;">
-                Cancelar
-            </button>
-            <form asp-controller="Group" asp-action="Leave" method="post" style="flex:1;">
+<div class="grp-modal" id="leaveModal">
+    <div class="grp-modal-card" style="text-align:center;">
+        <div style="font-size:44px;margin-bottom:14px;">🚪</div>
+        <div class="grp-modal-title" style="justify-content:center;">¿Salir del grupo?</div>
+        <div class="grp-modal-sub" style="text-align:center;margin-bottom:22px;">Podrás ver el historial pero no podrás escribir.</div>
+        <div class="grp-modal-btns">
+            <button class="grp-modal-cancel" onclick="closeModal('leaveModal')">Cancelar</button>
+            <form asp-controller="Group" asp-action="Leave" method="post" style="flex:2;">
                 @Html.AntiForgeryToken()
                 <input type="hidden" name="groupId" value="@Model.Id" />
-                <button type="submit" style="width:100%;padding:11px;border-radius:11px;border:none;background:#dc2626;color:white;font-weight:700;font-size:13px;cursor:pointer;font-family:inherit;">
+                <button type="submit" style="width:100%;padding:12px;border-radius:13px;border:none;background:#dc2626;color:white;font-weight:700;font-size:13px;cursor:pointer;font-family:inherit;">
                     Sí, salir
                 </button>
             </form>
@@ -419,35 +398,209 @@ body.bg-dark .grp-member-btn.demote { background: #1e1b4b !important; }
 </div>
 
 <!-- MODAL REPORTAR -->
-<div id="reportModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:99999;align-items:center;justify-content:center;backdrop-filter:blur(8px);">
-    <div style="background:#0f172a;border-radius:22px;padding:32px 28px;max-width:340px;width:90%;border:1px solid rgba(255,255,255,0.08);">
-        <div style="font-size:32px;margin-bottom:12px;text-align:center;">🚩</div>
-        <h4 style="color:white;font-weight:800;margin:0 0 16px;text-align:center;">Reportar grupo</h4>
+<div class="grp-modal" id="reportModal">
+    <div class="grp-modal-card">
+        <div style="text-align:center;font-size:36px;margin-bottom:12px;">🚩</div>
+        <div class="grp-modal-title" style="text-align:center;">Reportar grupo</div>
+        <div class="grp-modal-sub" style="text-align:center;margin-bottom:16px;">¿Por qué reportas este grupo?</div>
         <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:18px;">
-            @foreach (var motivo in new[]{"Contenido inapropiado","Spam o publicidad","Acoso o intimidación","Lenguaje ofensivo","Otro"})
+            @foreach (var motivo in new[]{"Contenido inapropiado","Spam o publicidad","Acoso o intimidación","Lenguaje ofensivo","Desinformación","Otro"})
             {
                 <button onclick="seleccionarMotivo(this, '@motivo')"
-                        style="padding:10px 14px;border-radius:11px;border:1.5px solid #1e293b;background:#1e293b;color:#94a3b8;font-size:13px;font-weight:600;cursor:pointer;text-align:left;font-family:inherit;transition:0.15s;">
+                        style="padding:11px 14px;border-radius:12px;border:1.5px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.04);color:#94a3b8;font-size:13px;font-weight:600;cursor:pointer;text-align:left;font-family:inherit;transition:0.15s;">
                     @motivo
                 </button>
             }
         </div>
-        <div style="display:flex;gap:10px;">
-            <button onclick="document.getElementById('reportModal').style.display='none'"
-                    style="flex:1;padding:11px;border-radius:11px;border:1px solid #1e293b;background:#1e293b;color:#64748b;font-weight:700;font-size:13px;cursor:pointer;font-family:inherit;">
-                Cancelar
+        <div class="grp-modal-btns">
+            <button class="grp-modal-cancel" onclick="closeModal('reportModal')">Cancelar</button>
+            <button id="sendReportBtn" onclick="enviarReporte()" class="grp-modal-confirm" disabled>Reportar</button>
+        </div>
+    </div>
+</div>
+
+<div class="grp-details-page">
+
+    <!-- HERO -->
+    <div class="grp-hero">
+        <a asp-controller="Group" asp-action="Chat" asp-route-id="@Model.Id" class="grp-back-btn">← Chat</a>
+        <div class="grp-hero-cover-placeholder"></div>
+        <div class="grp-hero-bg"></div>
+        <div class="grp-hero-body">
+            <div class="grp-hero-avatar-wrap">
+                <div class="grp-hero-avatar" id="groupAvatarEl"
+                     onclick="@(isAdmin ? "document.getElementById('groupImageInput').click()" : "")">
+                    @if (!string.IsNullOrEmpty(Model.ImageUrl))
+                    { <img src="@Model.ImageUrl" id="groupAvatarImg" /> }
+                    else
+                    { <span id="groupAvatarLetter">@Model.Name.Substring(0, 1).ToUpper()</span> }
+                </div>
+                @if (isAdmin)
+                {
+                    <div class="grp-hero-edit-badge" onclick="document.getElementById('groupImageInput').click()">📷</div>
+                }
+            </div>
+            <div class="grp-hero-name" id="groupNameDisplay">@Model.Name</div>
+            @if (!string.IsNullOrEmpty(Model.Description))
+            { <div class="grp-hero-desc">@Model.Description</div> }
+            <div class="grp-hero-meta">
+                <div class="grp-hero-meta-item">👥 @members.Count miembro@(members.Count != 1 ? "s" : "")</div>
+                <div class="grp-hero-meta-item">👑 @(Model.Creator?.Username ?? "?")</div>
+                <div class="grp-hero-meta-item">📅 @Model.CreatedAt.ToString("MMM yyyy")</div>
+            </div>
+            <div class="grp-stats">
+                <div class="grp-stat">
+                    <span class="grp-stat-num">@members.Count</span>
+                    <span class="grp-stat-label">Miembros</span>
+                </div>
+                <div class="grp-stat">
+                    <span class="grp-stat-num">@(members.Count(m => m.Role == "Admin"))</span>
+                    <span class="grp-stat-label">Admins</span>
+                </div>
+                <div class="grp-stat">
+                    <span class="grp-stat-num">@(isAdmin ? "✓" : "—")</span>
+                    <span class="grp-stat-label">Tu rol</span>
+                </div>
+            </div>
+            <a asp-controller="Group" asp-action="Chat" asp-route-id="@Model.Id" class="grp-chat-btn">
+                💬 Ir al chat
+            </a>
+        </div>
+    </div>
+
+    @if (isAdmin)
+    {
+        <div class="grp-card">
+            <div class="grp-card-header">
+                <div class="grp-card-title">✏️ Editar grupo</div>
+            </div>
+            <div class="grp-edit-row">
+                <input type="text" id="newGroupName" class="grp-edit-input"
+                       placeholder="Nombre del grupo..." value="@Model.Name" />
+                <button class="grp-edit-btn" onclick="updateName()">Guardar</button>
+            </div>
+        </div>
+    }
+
+    <!-- MIEMBROS -->
+    <div class="grp-card">
+        <div class="grp-card-header">
+            <div class="grp-card-title">👥 Miembros (@members.Count)</div>
+            @if (isAdmin)
+            {
+                <button class="grp-card-action-btn" onclick="openAddMember()">➕ Añadir</button>
+            }
+        </div>
+
+        <!-- Buscador de miembros -->
+        <div class="grp-search-wrap">
+            <span class="grp-search-icon">🔍</span>
+            <input type="text" class="grp-search-input" placeholder="Buscar miembro..."
+                   oninput="filtrarMiembros(this.value)" />
+        </div>
+
+        <div id="membersList">
+            @foreach (var m in members.OrderByDescending(m => m.UserId == Model.CreatorId).ThenByDescending(m => m.Role == "Admin"))
+            {
+                var img = m.User?.ProfileImage ?? m.User?.ProfilePicture ?? "";
+                var letter = (m.User?.Username ?? "?").Substring(0, 1).ToUpper();
+                var isMe = m.UserId == currentUserId;
+                var isMemberCreator = m.UserId == Model.CreatorId;
+                var isMemberAdmin = m.Role == "Admin";
+
+                <div class="grp-member-row" id="member-row-@m.UserId" data-name="@m.User?.Username?.ToLower()">
+                    <a asp-controller="User" asp-action="Profile" asp-route-id="@m.UserId" class="grp-member-avatar">
+                        @if (!string.IsNullOrEmpty(img)) { <img src="@img" /> }
+                        else { @letter }
+                    </a>
+                    <div class="grp-member-info">
+                        <div class="grp-member-name">
+                            @m.User?.Username
+                            @if (isMe) { <span class="grp-member-badge me" style="margin-left:4px;">Tú</span> }
+                            @if (isMemberCreator) { <span class="grp-member-badge creator" style="margin-left:4px;">👑 Creador</span> }
+                            else if (isMemberAdmin) { <span class="grp-member-badge admin" style="margin-left:4px;">⭐ Admin</span> }
+                        </div>
+                        <div class="grp-member-role">
+                            @if (isMemberCreator) { <text>Fundador del grupo</text> }
+                            else if (isMemberAdmin) { <text>Administrador</text> }
+                            else { <text>Miembro</text> }
+                        </div>
+                    </div>
+                    <div class="grp-member-actions">
+                        @if (!isMe && !isMemberCreator)
+                        {
+                            <a href="/Message/Chat/@m.UserId" class="grp-member-btn msg" title="Mensaje privado">💬</a>
+                            @if (isCreator)
+                            {
+                                @if (!isMemberAdmin)
+                                {
+                                    <button class="grp-member-btn promote" onclick="promoverAdmin(@m.UserId, '@m.User?.Username')" title="Dar admin">⭐</button>
+                                }
+                                else
+                                {
+                                    <button class="grp-member-btn demote" onclick="quitarAdmin(@m.UserId, '@m.User?.Username')" title="Quitar admin">↓</button>
+                                }
+                            }
+                            @if (isAdmin && (isCreator || !isMemberAdmin))
+                            {
+                                <button class="grp-member-btn remove" onclick="removeMember(@m.UserId, '@m.User?.Username')" title="Eliminar">✕</button>
+                            }
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- OPCIONES -->
+    <div class="grp-card">
+        <div class="grp-card-header">
+            <div class="grp-card-title">⚙️ Opciones</div>
+        </div>
+        <div class="grp-action-list">
+            <button class="grp-action-item @(isMuted ? "active-mute" : "")" id="muteActionBtn" onclick="toggleMute()">
+                <div class="grp-action-icon orange"><span id="muteIcon">@(isMuted ? "🔕" : "🔔")</span></div>
+                <div>
+                    <div id="muteLabel">@(isMuted ? "Notificaciones silenciadas" : "Silenciar notificaciones")</div>
+                    <div class="grp-action-sub">@(isMuted ? "Toca para activar" : "No recibirás alertas de mensajes")</div>
+                </div>
+                <span class="grp-action-chevron">›</span>
             </button>
-            <button id="sendReportBtn" onclick="enviarReporte()"
-                    style="flex:1;padding:11px;border-radius:11px;border:none;background:#6366f1;color:white;font-weight:700;font-size:13px;cursor:pointer;font-family:inherit;" disabled>
-                Reportar
+
+            <button class="grp-action-item" onclick="reportarGrupo()">
+                <div class="grp-action-icon purple">🚩</div>
+                <div>
+                    <div>Reportar grupo</div>
+                    <div class="grp-action-sub">Ayúdanos a mantener la comunidad segura</div>
+                </div>
+                <span class="grp-action-chevron">›</span>
             </button>
+
+            <button class="grp-action-item danger" onclick="openModal('leaveModal')">
+                <div class="grp-action-icon red">🚪</div>
+                <div>
+                    <div>Salir del grupo</div>
+                    <div class="grp-action-sub" style="color:#fca5a5;">Dejarás de participar en el chat</div>
+                </div>
+                <span class="grp-action-chevron">›</span>
+            </button>
+
+            @if (isCreator)
+            {
+                <button class="grp-action-item danger" onclick="eliminarGrupo()">
+                    <div class="grp-action-icon red">🗑️</div>
+                    <div>
+                        <div>Eliminar grupo</div>
+                        <div class="grp-action-sub" style="color:#fca5a5;">Esta acción no se puede deshacer</div>
+                    </div>
+                    <span class="grp-action-chevron">›</span>
+                </button>
+            }
         </div>
     </div>
 </div>
 
 @Html.AntiForgeryToken()
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
 <script>
 const groupId = @Model.Id;
@@ -460,29 +613,43 @@ let allFriends = [];
 const token = () => document.querySelector('input[name="__RequestVerificationToken"]')?.value ?? "";
 
 function showToast(msg) {
+    const existing = document.querySelector('.grp-toast');
+    if (existing) existing.remove();
     const t = document.createElement("div");
-    t.className = "grp-toast";
-    t.textContent = msg;
+    t.className = "grp-toast"; t.textContent = msg;
     document.body.appendChild(t);
-    setTimeout(() => t.remove(), 3000);
+    setTimeout(() => { t.style.transition = "opacity 0.3s"; t.style.opacity = "0"; setTimeout(() => t.remove(), 300); }, 3000);
 }
 
-// ── FOTO GRUPO ───────────────────────────
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+document.querySelectorAll('.grp-modal').forEach(m => {
+    m.addEventListener('click', function(e) { if (e.target === this) this.classList.remove('open'); });
+});
+
+// ── BUSCAR MIEMBROS ──
+function filtrarMiembros(q) {
+    q = q.toLowerCase().trim();
+    document.querySelectorAll('#membersList .grp-member-row').forEach(row => {
+        const name = row.getAttribute('data-name') || '';
+        row.style.display = !q || name.includes(q) ? '' : 'none';
+    });
+}
+
+// ── FOTO GRUPO ──
 async function uploadGroupImage(input) {
-    const file = input.files[0];
-    if (!file) return;
+    const file = input.files[0]; if (!file) return;
     showToast("⏳ Subiendo imagen...");
     const formData = new FormData();
-    formData.append("image", file);
-    formData.append("groupId", groupId);
+    formData.append("image", file); formData.append("groupId", groupId);
     formData.append("__RequestVerificationToken", token());
     try {
         const res = await fetch("/Group/UpdateImage", { method: "POST", body: formData });
         const data = await res.json();
         if (data.success) {
             const el = document.getElementById("groupAvatarEl");
-            const letter = document.getElementById("groupAvatarLetter");
-            if (letter) letter.remove();
+            document.getElementById("groupAvatarLetter")?.remove();
             let img = el.querySelector("img");
             if (!img) { img = document.createElement("img"); img.id = "groupAvatarImg"; el.appendChild(img); }
             img.src = data.imageUrl;
@@ -491,7 +658,7 @@ async function uploadGroupImage(input) {
     } catch { showToast("❌ Error al subir"); }
 }
 
-// ── NOMBRE ───────────────────────────────
+// ── NOMBRE ──
 async function updateName() {
     const name = document.getElementById("newGroupName").value.trim();
     if (!name) return;
@@ -505,7 +672,7 @@ async function updateName() {
     else showToast("❌ No se pudo actualizar");
 }
 
-// ── ELIMINAR MIEMBRO ─────────────────────
+// ── ELIMINAR MIEMBRO ──
 async function removeMember(userId, username) {
     if (!confirm(`¿Eliminar a ${username} del grupo?`)) return;
     const res = await fetch("/Group/RemoveMember", {
@@ -521,7 +688,7 @@ async function removeMember(userId, username) {
     } else showToast("❌ " + (data.message ?? "Error"));
 }
 
-// ── PROMOVER ADMIN ───────────────────────
+// ── PROMOVER ──
 async function promoverAdmin(userId, username) {
     if (!confirm(`¿Dar permisos de admin a ${username}?`)) return;
     const res = await fetch("/Group/PromoteToAdmin", {
@@ -530,13 +697,11 @@ async function promoverAdmin(userId, username) {
         body: `groupId=${groupId}&memberId=${userId}&__RequestVerificationToken=${encodeURIComponent(token())}`
     });
     const data = await res.json();
-    if (data.success) {
-        showToast(`⭐ ${username} ahora es admin`);
-        setTimeout(() => location.reload(), 1200);
-    } else showToast("❌ " + (data.message ?? "Error"));
+    if (data.success) { showToast(`⭐ ${username} ahora es admin`); setTimeout(() => location.reload(), 1200); }
+    else showToast("❌ " + (data.message ?? "Error"));
 }
 
-// ── QUITAR ADMIN ─────────────────────────
+// ── QUITAR ADMIN ──
 async function quitarAdmin(userId, username) {
     if (!confirm(`¿Quitar admin a ${username}?`)) return;
     const res = await fetch("/Group/DemoteAdmin", {
@@ -545,13 +710,11 @@ async function quitarAdmin(userId, username) {
         body: `groupId=${groupId}&memberId=${userId}&__RequestVerificationToken=${encodeURIComponent(token())}`
     });
     const data = await res.json();
-    if (data.success) {
-        showToast(`↓ ${username} ya no es admin`);
-        setTimeout(() => location.reload(), 1200);
-    } else showToast("❌ " + (data.message ?? "Error"));
+    if (data.success) { showToast(`↓ ${username} ya no es admin`); setTimeout(() => location.reload(), 1200); }
+    else showToast("❌ " + (data.message ?? "Error"));
 }
 
-// ── SILENCIAR ────────────────────────────
+// ── SILENCIAR ──
 async function toggleMute() {
     const res = await fetch("/Group/ToggleMute", {
         method: "POST",
@@ -568,38 +731,30 @@ async function toggleMute() {
     }
 }
 
-// ── MODAL AÑADIR MIEMBRO ─────────────────
+// ── AÑADIR MIEMBRO ──
 async function openAddMember() {
     selectedMembers.clear();
     document.getElementById("addMemberSearch").value = "";
     document.getElementById("addMemberConfirm").disabled = true;
-    document.getElementById("addMemberModal").style.display = "flex";
-    document.getElementById("addMemberList").innerHTML = '<div class="add-member-empty">Cargando...</div>';
-
+    document.getElementById("addMemberConfirm").textContent = "Agregar";
+    openModal('addMemberModal');
+    document.getElementById("addMemberList").innerHTML = '<div class="grp-modal-empty">Cargando...</div>';
     try {
         const res = await fetch(`/Group/GetFriendsToAdd?groupId=${groupId}`);
         allFriends = await res.json();
         renderFriendsList(allFriends);
-    } catch {
-        document.getElementById("addMemberList").innerHTML = '<div class="add-member-empty">Error al cargar</div>';
-    }
+    } catch { document.getElementById("addMemberList").innerHTML = '<div class="grp-modal-empty">Error al cargar</div>'; }
 }
 
 function renderFriendsList(friends) {
     const list = document.getElementById("addMemberList");
-    if (!friends.length) {
-        list.innerHTML = '<div class="add-member-empty">No hay amigos disponibles para agregar</div>';
-        return;
-    }
+    if (!friends.length) { list.innerHTML = '<div class="grp-modal-empty">No hay amigos disponibles</div>'; return; }
     list.innerHTML = friends.map(f => {
-        const avatarHTML = f.img
-            ? `<img src="${f.img}" style="width:100%;height:100%;object-fit:cover;" />`
-            : f.username.charAt(0).toUpperCase();
-        return `
-        <div class="add-member-item" id="friend-item-${f.id}" onclick="toggleSelectFriend(${f.id})">
-            <div class="add-member-avatar">${avatarHTML}</div>
-            <div class="add-member-name">${f.username}</div>
-            <span class="add-member-check">✓</span>
+        const avatarHTML = f.img ? `<img src="${f.img}" style="width:100%;height:100%;object-fit:cover;" />` : f.username.charAt(0).toUpperCase();
+        return `<div class="grp-modal-item ${selectedMembers.has(f.id) ? 'selected' : ''}" id="friend-item-${f.id}" onclick="toggleSelectFriend(${f.id})">
+            <div class="grp-modal-avatar">${avatarHTML}</div>
+            <div class="grp-modal-name">${f.username}</div>
+            <span class="grp-modal-check">✓</span>
         </div>`;
     }).join("");
 }
@@ -608,25 +763,14 @@ function filtrarAmigosModal(q) {
     q = q.toLowerCase().trim();
     const filtered = q ? allFriends.filter(f => f.username.toLowerCase().includes(q)) : allFriends;
     renderFriendsList(filtered);
-    // restaurar seleccionados
-    selectedMembers.forEach(id => {
-        const item = document.getElementById("friend-item-" + id);
-        if (item) item.classList.add("selected");
-    });
 }
 
 function toggleSelectFriend(id) {
-    const item = document.getElementById("friend-item-" + id);
-    if (!item) return;
-    if (selectedMembers.has(id)) {
-        selectedMembers.delete(id);
-        item.classList.remove("selected");
-    } else {
-        selectedMembers.add(id);
-        item.classList.add("selected");
-    }
-    document.getElementById("addMemberConfirm").disabled = selectedMembers.size === 0;
+    const item = document.getElementById("friend-item-" + id); if (!item) return;
+    if (selectedMembers.has(id)) { selectedMembers.delete(id); item.classList.remove("selected"); }
+    else { selectedMembers.add(id); item.classList.add("selected"); }
     const btn = document.getElementById("addMemberConfirm");
+    btn.disabled = selectedMembers.size === 0;
     btn.textContent = selectedMembers.size > 0 ? `Agregar (${selectedMembers.size})` : "Agregar";
 }
 
@@ -634,7 +778,6 @@ async function confirmarAgregar() {
     if (!selectedMembers.size) return;
     const btn = document.getElementById("addMemberConfirm");
     btn.disabled = true; btn.textContent = "⏳ Agregando...";
-
     let ok = 0, fail = 0;
     for (const memberId of selectedMembers) {
         try {
@@ -647,40 +790,25 @@ async function confirmarAgregar() {
             if (data.success) ok++; else fail++;
         } catch { fail++; }
     }
-
     closeAddMember();
-    if (ok > 0) {
-        showToast(`✅ ${ok} miembro${ok !== 1 ? "s" : ""} agregado${ok !== 1 ? "s" : ""}`);
-        setTimeout(() => location.reload(), 1200);
-    }
+    if (ok > 0) { showToast(`✅ ${ok} miembro${ok !== 1 ? "s" : ""} agregado${ok !== 1 ? "s" : ""}`); setTimeout(() => location.reload(), 1200); }
     if (fail > 0) showToast(`⚠️ ${fail} no se pudo agregar`);
 }
 
-function closeAddMember() {
-    document.getElementById("addMemberModal").style.display = "none";
-    selectedMembers.clear();
-}
-document.getElementById("addMemberModal").addEventListener("click", function(e) {
-    if (e.target === this) closeAddMember();
-});
+function closeAddMember() { closeModal('addMemberModal'); selectedMembers.clear(); }
 
-// ── SALIR ────────────────────────────────
-function confirmarSalir() {
-    document.getElementById("leaveModal").style.display = "flex";
-}
-
-// ── REPORTAR ─────────────────────────────
+// ── REPORTAR ──
 function reportarGrupo() {
     selectedReason = null;
     document.getElementById("sendReportBtn").disabled = true;
     document.querySelectorAll("#reportModal button[onclick^='seleccionar']").forEach(b => {
-        b.style.borderColor = "#1e293b"; b.style.color = "#94a3b8";
+        b.style.borderColor = "rgba(255,255,255,0.08)"; b.style.color = "#94a3b8";
     });
-    document.getElementById("reportModal").style.display = "flex";
+    openModal('reportModal');
 }
 function seleccionarMotivo(btn, motivo) {
     document.querySelectorAll("#reportModal button[onclick^='seleccionar']").forEach(b => {
-        b.style.borderColor = "#1e293b"; b.style.color = "#94a3b8";
+        b.style.borderColor = "rgba(255,255,255,0.08)"; b.style.color = "#94a3b8";
     });
     btn.style.borderColor = "#6366f1"; btn.style.color = "#818cf8";
     selectedReason = motivo;
@@ -688,7 +816,7 @@ function seleccionarMotivo(btn, motivo) {
 }
 async function enviarReporte() {
     if (!selectedReason) return;
-    document.getElementById("reportModal").style.display = "none";
+    closeModal('reportModal');
     const res = await fetch("/Group/Report", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -698,9 +826,9 @@ async function enviarReporte() {
     showToast(data.success ? "✅ Reporte enviado" : "⚠️ " + (data.message ?? "Error"));
 }
 
-// ── ELIMINAR GRUPO ───────────────────────
+// ── ELIMINAR GRUPO ──
 async function eliminarGrupo() {
-    if (!confirm("¿Eliminar este grupo permanentemente?")) return;
+    if (!confirm("¿Eliminar este grupo permanentemente? Esta acción no se puede deshacer.")) return;
     const form = document.createElement("form");
     form.method = "POST"; form.action = "/Group/Delete";
     const input = document.createElement("input"); input.type = "hidden"; input.name = "groupId"; input.value = groupId;
