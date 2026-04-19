@@ -19,6 +19,7 @@ namespace HabitTrackerApp.Data
         public DbSet<Block> Blocks { get; set; }
         public DbSet<Report> Reports { get; set; }
         public DbSet<UserSession> UserSessions { get; set; }
+        public DbSet<GroupMessageReaction> GroupMessageReactions { get; set; }
 
         public DbSet<Group> Groups { get; set; }
         public DbSet<GroupMember> GroupMembers { get; set; }

@@ -2,6 +2,8 @@
 
 @{
     ViewData["Title"] = Model.Name;
+    var unreadCount = (int)(ViewBag.UnreadCount ?? 0);
+var firstUnreadId = (int)(ViewBag.FirstUnreadId ?? 0);
     var messages = ViewBag.Messages as List<HabitTrackerApp.Models.GroupMessage> ?? new();
     var currentUserId = (int)ViewBag.CurrentUserId;
     var isAdmin = (bool)ViewBag.IsAdmin;
@@ -38,6 +40,22 @@
     background: linear-gradient(135deg, #1e293b, #334155);
     flex-shrink: 0; z-index: 2; cursor: pointer; position: relative;
 }
+
+.grp-unread-sep {
+    display: flex; align-items: center; justify-content: center;
+    margin: 12px 0 8px; gap: 10px;
+}
+.grp-unread-sep::before, .grp-unread-sep::after {
+    content: ''; flex: 1; height: 1px; background: rgba(99,102,241,0.3);
+}
+.grp-unread-sep span {
+    color: #6366f1; padding: 3px 14px; border-radius: 20px;
+    font-size: 11px; font-weight: 700;
+    background: rgba(99,102,241,0.08);
+    border: 1px solid rgba(99,102,241,0.2);
+    white-space: nowrap;
+}
+body.bg-dark .grp-unread-sep span { background: rgba(99,102,241,0.15) !important; }
 .grp-header::after {
     content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 2px;
     background: linear-gradient(90deg, transparent, #6366f1, #2563eb, transparent); opacity: 0.7;
@@ -363,6 +381,12 @@ body.bg-dark #emptyState .empty-title { color: #f1f5f9 !important; }
                                    (msg.FileUrl.Contains("/image/upload/") || msg.FileUrl.EndsWith(".jpg") || msg.FileUrl.EndsWith(".png") || msg.FileUrl.EndsWith(".jpeg"));
                     bool isVideo = !string.IsNullOrEmpty(msg.FileUrl) &&
                                    (msg.FileUrl.Contains("/video/upload/") || msg.FileUrl.EndsWith(".mp4") || msg.FileUrl.EndsWith(".webm"));
+                                   @if (firstUnreadId != 0 && msg.Id == firstUnreadId)
+{
+    <div class="grp-unread-sep" id="unreadSeparator">
+        <span>⬇ @unreadCount mensaje@(unreadCount != 1 ? "s" : "") no leído@(unreadCount != 1 ? "s" : "")</span>
+    </div>
+}
                     <div class="grp-msg-row @(isMine ? "mine" : "theirs")" id="msg-@msg.Id">
                         @if (!isMine)
                         {
@@ -478,14 +502,22 @@ function mostrarBannerNoLeidos(count) {
 
 // ── AL CARGAR ──
 window.addEventListener("load", () => {
-    // scroll inmediato al último mensaje
-    chatBox.scrollTop = chatBox.scrollHeight;
+    const firstUnreadId = @firstUnreadId;
+    const unreadCount = @unreadCount;
 
-    // contar no leídos
-    fetch(`/Group/GetUnreadCount?groupId=${groupId}`)
-        .then(r => r.json())
-        .then(data => { if (data.count > 0) mostrarBannerNoLeidos(data.count); })
-        .catch(() => {});
+    if (firstUnreadId > 0 && unreadCount > 0) {
+        const sep = document.getElementById("unreadSeparator");
+        if (sep) {
+            sep.scrollIntoView({ behavior: "auto", block: "center" });
+            setTimeout(() => {
+                sep.style.transition = "opacity 0.5s";
+                sep.style.opacity = "0";
+                setTimeout(() => sep.remove(), 500);
+            }, 5000);
+        }
+    } else {
+        chatBox.scrollTop = chatBox.scrollHeight;
+    }
 });
 
 if (window.visualViewport) {

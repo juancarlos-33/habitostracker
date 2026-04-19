@@ -190,7 +190,6 @@ namespace HabitTrackerApp.Controllers
         {
             var userId = int.Parse(User.FindFirst("UserId").Value);
 
-            // 🔥 permitir ver el chat aunque no sea miembro activo (para ver historial)
             var member = _context.GroupMembers
                 .FirstOrDefault(m => m.GroupId == id && m.UserId == userId);
 
@@ -209,21 +208,28 @@ namespace HabitTrackerApp.Controllers
                 .OrderBy(m => m.SentAt)
                 .ToList();
 
-            // solo marcar leídos si es miembro activo
+            // ✅ calcular no leídos ANTES de marcarlos
+            int firstUnreadId = 0;
+            int unreadCount = 0;
+
             if (member.IsActive)
             {
-                var unreadIds = messages
+                var unreadMsgs = messages
                     .Where(m => m.SenderId != userId && !m.Reads.Any(r => r.UserId == userId))
-                    .Select(m => m.Id).ToList();
+                    .ToList();
 
-                foreach (var msgId in unreadIds)
+                unreadCount = unreadMsgs.Count;
+                firstUnreadId = unreadMsgs.FirstOrDefault()?.Id ?? 0;
+
+                // ahora sí marcar como leídos
+                foreach (var msg in unreadMsgs)
                     _context.GroupMessageReads.Add(new GroupMessageRead
                     {
-                        GroupMessageId = msgId,
+                        GroupMessageId = msg.Id,
                         UserId = userId,
                         ReadAt = DateTime.UtcNow
                     });
-                if (unreadIds.Any()) _context.SaveChanges();
+                if (unreadMsgs.Any()) _context.SaveChanges();
             }
 
             ViewBag.Messages = messages;
@@ -232,9 +238,10 @@ namespace HabitTrackerApp.Controllers
             ViewBag.IsMember = member.IsActive;
             ViewBag.TotalMembers = group.Members.Count(m => m.IsActive);
             ViewBag.IsMuted = member.IsMuted;
+            ViewBag.UnreadCount = unreadCount;
+            ViewBag.FirstUnreadId = firstUnreadId;
             return View(group);
         }
-
         [HttpGet]
         public IActionResult Details(int id)
         {
