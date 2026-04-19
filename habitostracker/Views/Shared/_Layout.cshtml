@@ -647,9 +647,10 @@ window.htConvertirFechas = convertirFechasLocales;
 <script>
 const isSuperAdmin = @(User.IsInRole("SuperAdmin").ToString().ToLower());
 
-// ══ SIGNALR GLOBAL ══════════════════════
+// ══ SIGNALR ÚNICO ══════════════════════
 const connectionGlobal = new signalR.HubConnectionBuilder().withUrl("/chatHub").build();
 
+// Eventos de seguridad y sistema
 connectionGlobal.on("ForceLogout", msg => {
     document.body.innerHTML = `<div style="height:100vh;display:flex;align-items:center;justify-content:center;background:#0f172a;font-family:sans-serif;color:white;text-align:center;"><div style="background:#1e293b;padding:50px;border-radius:14px;"><h2 style="color:#f59e0b">⚠ Atención</h2><p>${msg}</p></div></div>`;
     setTimeout(() => window.location.href="/Account/LogoutGet", 2500);
@@ -665,26 +666,20 @@ connectionGlobal.on("UserDeleted", uid => { const myId = '@User.FindFirst("UserI
 connectionGlobal.on("UserConnectedNotification", u => showToastNotif(u, "● En línea", "", null));
 connectionGlobal.on("NewSessionDetected", () => { if (window.location.pathname.toLowerCase().includes("/security")) location.reload(); });
 connectionGlobal.on("ForceLogoutSession", token => { const myToken = '@User.FindFirst("SessionToken")?.Value'; if (token === myToken) { document.body.innerHTML = `<div style="height:100vh;display:flex;align-items:center;justify-content:center;background:#0f172a;font-family:sans-serif;color:white;text-align:center;"><div style="background:#1e293b;padding:50px;border-radius:14px;"><h2 style="color:#f59e0b">⚠ Sesión cerrada</h2></div></div>`; setTimeout(() => window.location.href="/Account/LogoutGet", 2500); } });
-connectionGlobal.start().catch(e => console.error("SignalR global:", e));
-</script>
+connectionGlobal.on("UserOnline", () => {});
+connectionGlobal.on("UserOffline", () => {});
 
-<script>
-// ══ SIGNALR NOTIFICACIONES ══════════════
-const connection = new signalR.HubConnectionBuilder().withUrl("/chatHub").build();
-connection.start().then(() => {
+// ✅ Notificaciones — una sola vez, con filtro de grupo activo
+connectionGlobal.on("ReceiveNotification", (uid, msg, username, img, link) => {
+    const activeGroup = sessionStorage.getItem('activeGroupChat');
+    if (activeGroup && link && link.includes('/Group/Chat/' + activeGroup)) return;
+    showToastNotif(username, msg, img, link);
+});
+
+connectionGlobal.start().then(() => {
     const userId = '@(User.Identity.IsAuthenticated ? User.FindFirst("UserId")?.Value : "")';
-    if (userId) connection.invoke("JoinUserGroup", userId);
-
-    connection.on("ReceiveNotification", (uid, msg, username, img, link) => {
-        // No mostrar notificación si ya estamos en ese chat de grupo
-        const activeGroup = sessionStorage.getItem('activeGroupChat');
-        if (activeGroup && link && link.includes('/Group/Chat/' + activeGroup)) return;
-        showToastNotif(username, msg, img, link);
-    });
-
-    connection.on("UserOnline", () => {});
-    connection.on("UserOffline", () => {});
-}).catch(e => console.error("SignalR notif:", e));
+    if (userId) connectionGlobal.invoke("JoinUserGroup", userId);
+}).catch(e => console.error("SignalR global:", e));
 
 function showToastNotif(username, message, userImage, link) {
     const letter = username ? username.charAt(0).toUpperCase() : "?";
