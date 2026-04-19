@@ -775,25 +775,51 @@ function descargarImagen() {
 // ── WHATSAPP ──
 async function compartirWhatsApp() {
     const btn = document.getElementById('btnWhatsApp');
-    const orig = btn.innerHTML; btn.disabled = true; btn.innerHTML = '⏳';
+    const orig = btn.innerHTML;
+    btn.disabled = true; btn.innerHTML = '⏳ Preparando...';
 
-    descargarImagen();
-    await new Promise(r => setTimeout(r, 700));
+    try {
+        const canvas = document.getElementById('shareCanvas');
+        const msg = document.getElementById('shareText').value.trim();
+        const textoCompartir = '🎯 ' + habitName + ' — ' + habitStreak + ' días de racha 🔥\n' +
+            '📊 ' + habitRate + '% completado esta semana\n' +
+            (msg ? '\n"' + msg + '"' : '') +
+            '\n\n💪 HabitTracker';
 
-    const msg = document.getElementById('shareText').value.trim();
-    const text = encodeURIComponent(
-        (msg ? msg + '\n\n' : '') +
-        '🎯 Hábito: ' + habitName + '\n' +
-        '🔥 Racha: ' + habitStreak + ' días\n' +
-        '📊 Esta semana: ' + habitRate + '% completado\n\n' +
-        '💪 Compartido desde HabitTracker'
-    );
-    window.open('https://api.whatsapp.com/send?text=' + text, '_blank');
-    showToast('📸 Imagen descargada — pégala en WhatsApp');
+        // Intentar Web Share API con imagen (funciona en móvil)
+        if (navigator.share && navigator.canShare) {
+            const blob = await new Promise(res => canvas.toBlob(res, 'image/png'));
+            const file = new File([blob], 'progreso-habittracker.png', { type: 'image/png' });
+
+            if (navigator.canShare({ files: [file] })) {
+                await navigator.share({
+                    title: '🎯 ' + habitName + ' — Mi progreso',
+                    text: textoCompartir,
+                    files: [file]
+                });
+                showToast('✅ ¡Compartido exitosamente!');
+                btn.disabled = false; btn.innerHTML = orig;
+                return;
+            }
+        }
+
+        // Fallback para PC: descargar imagen + abrir WhatsApp con texto
+        descargarImagen();
+        await new Promise(r => setTimeout(r, 800));
+        showToast('📸 Imagen descargada — pégala en WhatsApp');
+        setTimeout(() => {
+            window.open('https://api.whatsapp.com/send?text=' + encodeURIComponent(textoCompartir), '_blank');
+        }, 1000);
+
+    } catch (err) {
+        if (err.name !== 'AbortError') {
+            showToast('❌ Error al compartir');
+            console.error(err);
+        }
+    }
 
     btn.disabled = false; btn.innerHTML = orig;
 }
-
 // ── TWITTER ──
 function compartirTwitter() {
     const msg = document.getElementById('shareText').value.trim();
