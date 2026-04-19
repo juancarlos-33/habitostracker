@@ -1031,6 +1031,18 @@ namespace HabitTrackerApp.Controllers
             await _hubContext.Clients.User(id.ToString())
                 .SendAsync("ForceLogout", "Tu cuenta fue eliminada por el SuperAdmin");
 
+            // 🔥 eliminar reacciones de mensajes de grupo
+            var groupReactions = _context.GroupMessageReactions.Where(r => r.UserId == id);
+            _context.GroupMessageReactions.RemoveRange(groupReactions);
+
+            // 🔥 eliminar lecturas de mensajes de grupo
+            var groupReads = _context.GroupMessageReads.Where(r => r.UserId == id);
+            _context.GroupMessageReads.RemoveRange(groupReads);
+
+            // 🔥 eliminar membresías de grupos
+            var groupMembers = _context.GroupMembers.Where(m => m.UserId == id);
+            _context.GroupMembers.RemoveRange(groupMembers);
+
             // 🔥 eliminar usuario
             _context.Users.Remove(user);
 

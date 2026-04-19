@@ -316,6 +316,18 @@ namespace HabitTrackerApp.Controllers
             _context.Follows.RemoveRange(follows);
 
             await SendGoodbyeEmail(user);
+
+            // 🔥 eliminar reacciones de mensajes de grupo
+            var groupReactions = _context.GroupMessageReactions.Where(r => r.UserId == userId);
+            _context.GroupMessageReactions.RemoveRange(groupReactions);
+
+            // 🔥 eliminar lecturas de mensajes de grupo
+            var groupReads = _context.GroupMessageReads.Where(r => r.UserId == userId);
+            _context.GroupMessageReads.RemoveRange(groupReads);
+
+            // 🔥 eliminar membresías de grupos
+            var groupMembers = _context.GroupMembers.Where(m => m.UserId == userId);
+            _context.GroupMembers.RemoveRange(groupMembers);
             _context.Users.Remove(user);
             await _context.SaveChangesAsync();
 

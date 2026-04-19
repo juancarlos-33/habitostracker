@@ -573,14 +573,12 @@ let replyToMessageId = null;
 let replyToContent = "";
 let replyToSender = "";
 
-// ── SCROLL ──
 function scrollToBottom(smooth) {
     if (smooth) chatBox.style.scrollBehavior = 'smooth';
     chatBox.scrollTop = chatBox.scrollHeight;
     if (smooth) setTimeout(() => chatBox.style.scrollBehavior = 'auto', 400);
 }
 
-// ── BANNER NO LEÍDOS ──
 function mostrarBannerNoLeidos(count) {
     document.getElementById('unreadBanner')?.remove();
     const banner = document.createElement('div');
@@ -591,11 +589,9 @@ function mostrarBannerNoLeidos(count) {
     setTimeout(() => banner.remove(), 5000);
 }
 
-// ── AL CARGAR ──
 window.addEventListener("load", () => {
     const firstUnreadId = @firstUnreadId;
     const unreadCount = @unreadCount;
-
     if (firstUnreadId > 0 && unreadCount > 0) {
         const sep = document.getElementById("unreadSeparator");
         if (sep) {
@@ -626,7 +622,6 @@ if (msgInput) {
     msgInput.addEventListener("focus", () => { setTimeout(() => chatBox.scrollTop = chatBox.scrollHeight, 300); });
 }
 
-// ── AJUSTAR ALTURA PC ──
 function ajustarAltura() {
     const navbar = document.querySelector('.ht-navbar');
     const chatPage = document.querySelector('.grp-chat-page');
@@ -644,15 +639,12 @@ setTimeout(ajustarAltura, 500);
 
 const token = () => document.querySelector('input[name="__RequestVerificationToken"]')?.value ?? "";
 
-// ── SIGNALR ──
 const grpConnection = new signalR.HubConnectionBuilder()
     .withUrl("/chatHub").withAutomaticReconnect().build();
 
 grpConnection.start().then(async () => {
     await grpConnection.invoke("JoinUserGroup", myId);
     await grpConnection.invoke("JoinGroupChat", groupId.toString());
-
-    // marcar leídos al entrar
     fetch("/Group/MarkRead", {
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -661,20 +653,16 @@ grpConnection.start().then(async () => {
         if (data.readIds) data.readIds.forEach(msgId =>
             grpConnection.invoke("NotifyGroupRead", groupId.toString(), msgId.toString()).catch(() => {}));
     }).catch(() => {});
-
 }).catch(err => console.error("SignalR grupo:", err));
 
-// ── ACTIVE USERS ──
 grpConnection.on("GroupActiveUsers", (gId, count) => {
     if (String(gId) === String(groupId)) activeUsersInChat = count;
 });
 
-// ── RECIBIR MENSAJE ──
 grpConnection.on("ReceiveGroupMessage", (senderId, senderName, senderImage, content, time, msgId, fileUrl, fileType) => {
     if (String(senderId) === String(myId)) return;
     document.getElementById("emptyState")?.remove();
     document.getElementById('unreadBanner')?.remove();
-
     if (fileType === "system" || senderId === "0") {
         const row = document.createElement("div");
         row.className = "grp-msg-system";
@@ -682,7 +670,6 @@ grpConnection.on("ReceiveGroupMessage", (senderId, senderName, senderImage, cont
         chatBox.insertBefore(row, document.getElementById("typingIndicator"));
         chatBox.scrollTop = chatBox.scrollHeight; return;
     }
-
     const letter = senderName ? senderName.charAt(0).toUpperCase() : "?";
     const avatarHTML = (senderImage && senderImage.trim() !== "")
         ? `<img src="${senderImage}" style="width:100%;height:100%;object-fit:cover;" />` : letter;
@@ -691,16 +678,12 @@ grpConnection.on("ReceiveGroupMessage", (senderId, senderName, senderImage, cont
     else if (fileType === "image") contentHTML = `<img src="${fileUrl}" class="grp-msg-media" onclick="window.open('${fileUrl}', '_blank')" />`;
     else if (fileType === "video") contentHTML = `<video controls class="grp-msg-media"><source src="${fileUrl}" /></video>`;
     else contentHTML = escapeHtml(content);
-
     const row = document.createElement("div");
     row.className = "grp-msg-row theirs";
     if (msgId) row.id = "msg-" + msgId;
-    row.innerHTML = `<a href="/User/Profile/${senderId}" class="grp-msg-avatar">${avatarHTML}</a><div class="grp-msg-wrap"><a href="/User/Profile/${senderId}" class="grp-msg-sender">${escapeHtml(senderName)}</a>
-    
-    ${contentHTML}</div><div class="grp-msg-footer"><span class="grp-msg-time">${time}</span></div></div>`;
+    row.innerHTML = `<a href="/User/Profile/${senderId}" class="grp-msg-avatar">${avatarHTML}</a><div class="grp-msg-wrap"><a href="/User/Profile/${senderId}" class="grp-msg-sender">${escapeHtml(senderName)}</a><div class="grp-msg-bubble" oncontextmenu="abrirReactionPicker(event,${msgId})" ondblclick="responderMensaje(${msgId},'${escapeHtml(senderName)}','${escapeHtml(content)}')" ontouchstart="iniciarLongPress(${msgId})" ontouchend="cancelarLongPress()" style="position:relative;">${contentHTML}</div><div class="grp-msg-footer"><span class="grp-msg-time">${time}</span></div></div><div class="grp-reactions" id="reactions-${msgId}"></div></div>`;
     chatBox.insertBefore(row, document.getElementById("typingIndicator"));
     chatBox.scrollTop = chatBox.scrollHeight;
-
     fetch("/Group/MarkRead", {
         method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" },
         body: `groupId=${groupId}&__RequestVerificationToken=${encodeURIComponent(token())}`
@@ -710,26 +693,14 @@ grpConnection.on("ReceiveGroupMessage", (senderId, senderName, senderImage, cont
     }).catch(() => {});
 });
 
-// ── CHULOS TIPO WHATSAPP ──
 grpConnection.on("GroupMessageRead", (msgId, readCount, activeInChat) => {
     const check = document.getElementById("check-" + msgId); if (!check) return;
-
     const inChat = activeInChat !== undefined ? activeInChat : activeUsersInChat;
-    // ✔✔ azul = todos los miembros están activamente en el chat
     const allInChat = inChat >= currentTotalMembers;
-    // ✔✔ gris = todos recibieron el mensaje (leyeron en BD)
     const allRead = parseInt(readCount) >= currentTotalMembers - 1 && currentTotalMembers > 1;
-
-    if (allInChat) {
-        check.textContent = "✔✔";
-        check.classList.add("seen"); // azul
-    } else if (allRead) {
-        check.textContent = "✔✔";
-        check.classList.remove("seen"); // gris
-    } else {
-        check.textContent = "✔";
-        check.classList.remove("seen");
-    }
+    if (allInChat) { check.textContent = "✔✔"; check.classList.add("seen"); }
+    else if (allRead) { check.textContent = "✔✔"; check.classList.remove("seen"); }
+    else { check.textContent = "✔"; check.classList.remove("seen"); }
 });
 
 grpConnection.on("GroupUserTyping", (senderName) => {
@@ -778,14 +749,16 @@ grpConnection.on("AddedToGroup", (gId, groupName, adderName) => {
     }
 });
 
-// ── SALIR DEL CHAT ──
+grpConnection.on("GroupMessageReaction", (msgId, reactions) => {
+    actualizarReacciones(msgId, reactions);
+});
+
 sessionStorage.setItem('activeGroupChat', groupId.toString());
 window.addEventListener('beforeunload', () => {
     sessionStorage.removeItem('activeGroupChat');
     grpConnection.invoke("LeaveGroupChat", groupId.toString()).catch(() => {});
 });
 
-// ── MUTE ──
 async function toggleMute() {
     const res = await fetch("/Group/ToggleMute", {
         method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -945,12 +918,7 @@ async function sendGroupMessage() {
                 const row = document.getElementById(tempId); if (row) row.id = "msg-" + data.id;
                 const check = document.getElementById("check-" + tempId); if (check) check.id = "check-" + data.id;
                 currentTotalMembers = data.totalMembers;
-                if (data.success) {
-    const row = document.getElementById(tempId); if (row) row.id = "msg-" + data.id;
-    const check = document.getElementById("check-" + tempId); if (check) check.id = "check-" + data.id;
-    currentTotalMembers = data.totalMembers;
-    cancelarReply();
-    await grpConnection.invoke("SendGroupMessage", groupId.toString(), myId, myName, content, data.id.toString(), "", "text");
+                cancelarReply();
                 await grpConnection.invoke("SendGroupMessage", groupId.toString(), myId, myName, content, data.id.toString(), "", "text");
             } else { document.getElementById(tempId)?.remove(); }
         } catch (err) { console.error(err); document.getElementById(tempId)?.remove(); }
@@ -998,31 +966,24 @@ document.addEventListener("click", (e) => {
         document.getElementById("emojiBtn")?.classList.remove("active");
     }
 });
-// ── REACCIONES ──
+
 const EMOJIS_REACCION = ["❤️", "👍", "😂", "😮", "😢", "🔥"];
 let longPressTimer = null;
 
 function iniciarLongPress(msgId) {
     longPressTimer = setTimeout(() => abrirReactionPicker(null, msgId), 600);
 }
-function cancelarLongPress() {
-    clearTimeout(longPressTimer);
-}
+function cancelarLongPress() { clearTimeout(longPressTimer); }
 
 function abrirReactionPicker(e, msgId) {
     if (e) e.preventDefault();
     document.querySelectorAll('.grp-reaction-picker').forEach(p => p.remove());
-
     const bubble = document.querySelector(`#msg-${msgId} .grp-msg-bubble`);
     if (!bubble) return;
-
     const picker = document.createElement("div");
     picker.className = "grp-reaction-picker";
-    picker.innerHTML = EMOJIS_REACCION.map(em =>
-        `<span onclick="reaccionar(${msgId}, '${em}')">${em}</span>`
-    ).join("");
+    picker.innerHTML = EMOJIS_REACCION.map(em => `<span onclick="reaccionar(${msgId}, '${em}')">${em}</span>`).join("");
     bubble.appendChild(picker);
-
     setTimeout(() => {
         document.addEventListener("click", function cerrar(ev) {
             if (!picker.contains(ev.target)) { picker.remove(); document.removeEventListener("click", cerrar); }
@@ -1048,14 +1009,7 @@ function actualizarReacciones(msgId, reactions) {
     if (!container) return;
     if (!reactions || reactions.length === 0) { container.innerHTML = ""; return; }
     container.innerHTML = reactions.map(r =>
-        `<button class="grp-reaction-btn" onclick="reaccionar(${msgId}, '${r.emoji}')">
-            ${r.emoji}<span>${r.count}</span>
-        </button>`
+        `<button class="grp-reaction-btn" onclick="reaccionar(${msgId}, '${r.emoji}')">${r.emoji}<span>${r.count}</span></button>`
     ).join("");
 }
-
-// recibir reacciones en tiempo real
-grpConnection.on("GroupMessageReaction", (msgId, reactions) => {
-    actualizarReacciones(msgId, reactions);
-});
 </script>
