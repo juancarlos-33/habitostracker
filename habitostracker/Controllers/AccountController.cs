@@ -898,7 +898,7 @@ namespace HabitTrackerApp.Controllers
               </div>
               <img src='https://res.cloudinary.com/dzrjag7ia/image/upload/v1776560628/NE_lmertz.jpg'
                    width='600'
-                   style='width:100%;max-width:600px;display:block;height:200px;object-fit:cover;opacity:0.45;'/>
+                   style='width:100%;max-width:600px;display:block;height:200px;object-fit:cover;'/>
             </td>
           </tr>
 
