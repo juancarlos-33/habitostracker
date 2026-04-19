@@ -445,7 +445,6 @@ body.bg-dark #emptyState .empty-title { color: #f1f5f9 !important; }
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
 <script>
-// ✅ TODAS LAS VARIABLES AL INICIO — fix del bug en móvil
 const groupId = @Model.Id;
 const myId = "@User.FindFirst("UserId").Value";
 const myName = "@User.Identity.Name";
@@ -457,92 +456,172 @@ const sendBtn = document.getElementById("sendBtn");
 let selectedFile = null;
 let mediaRecorder = null, audioChunks = [], isRecording = false, recInterval = null;
 let recordedBlob = null;
+let activeUsersInChat = 1;
 
-function scrollToBottom() { chatBox.scrollTop = chatBox.scrollHeight; }
-window.addEventListener("load", scrollToBottom);
+// ── SCROLL ──
+function scrollToBottom(smooth) {
+    if (smooth) chatBox.style.scrollBehavior = 'smooth';
+    chatBox.scrollTop = chatBox.scrollHeight;
+    if (smooth) setTimeout(() => chatBox.style.scrollBehavior = 'auto', 400);
+}
+
+// ── BANNER NO LEÍDOS ──
+function mostrarBannerNoLeidos(count) {
+    document.getElementById('unreadBanner')?.remove();
+    const banner = document.createElement('div');
+    banner.id = 'unreadBanner';
+    banner.style.cssText = 'position:sticky;bottom:10px;left:0;right:0;display:flex;justify-content:center;z-index:10;pointer-events:none;';
+    banner.innerHTML = `<div style="background:rgba(99,102,241,0.92);color:white;padding:6px 18px;border-radius:20px;font-size:12px;font-weight:700;box-shadow:0 4px 14px rgba(99,102,241,0.4);backdrop-filter:blur(8px);pointer-events:all;cursor:pointer;" onclick="scrollToBottom(true);this.parentElement.remove();">↓ ${count} mensaje${count!==1?'s':''} no leído${count!==1?'s':''}</div>`;
+    chatBox.appendChild(banner);
+    setTimeout(() => banner.remove(), 5000);
+}
+
+// ── AL CARGAR ──
+window.addEventListener("load", () => {
+    // scroll inmediato al último mensaje
+    chatBox.scrollTop = chatBox.scrollHeight;
+
+    // contar no leídos
+    fetch(`/Group/GetUnreadCount?groupId=${groupId}`)
+        .then(r => r.json())
+        .then(data => { if (data.count > 0) mostrarBannerNoLeidos(data.count); })
+        .catch(() => {});
+});
 
 if (window.visualViewport) {
     window.visualViewport.addEventListener("resize", () => {
         const chatPage = document.querySelector(".grp-chat-page");
-        if (chatPage) {
+        if (chatPage && window.innerWidth < 768) {
             chatPage.style.height = window.visualViewport.height + "px";
             chatPage.style.top = (window.visualViewport.offsetTop || 0) + "px";
         }
-        scrollToBottom();
+        chatBox.scrollTop = chatBox.scrollHeight;
     });
 }
 
 if (msgInput) {
-    msgInput.addEventListener("focus", () => { setTimeout(scrollToBottom, 300); });
+    msgInput.addEventListener("focus", () => { setTimeout(() => chatBox.scrollTop = chatBox.scrollHeight, 300); });
 }
+
+// ── AJUSTAR ALTURA PC ──
+function ajustarAltura() {
+    const navbar = document.querySelector('.ht-navbar');
+    const chatPage = document.querySelector('.grp-chat-page');
+    if (!chatPage) return;
+    if (window.innerWidth >= 768) {
+        const navH = navbar ? navbar.getBoundingClientRect().bottom : 0;
+        chatPage.style.height = (window.innerHeight - navH) + 'px';
+    }
+}
+ajustarAltura();
+window.addEventListener('resize', ajustarAltura);
+window.addEventListener('load', ajustarAltura);
+setTimeout(ajustarAltura, 100);
+setTimeout(ajustarAltura, 500);
 
 const token = () => document.querySelector('input[name="__RequestVerificationToken"]')?.value ?? "";
 
-fetch("/Group/MarkRead", {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: `groupId=${groupId}&__RequestVerificationToken=${encodeURIComponent(token())}`
-}).then(r => r.json()).then(data => {
-    if (data.readIds) data.readIds.forEach(msgId => grpConnection.invoke("NotifyGroupRead", groupId.toString(), msgId.toString()).catch(() => {}));
-}).catch(() => {});
-
+// ── SIGNALR ──
 const grpConnection = new signalR.HubConnectionBuilder()
     .withUrl("/chatHub").withAutomaticReconnect().build();
 
 grpConnection.start().then(async () => {
     await grpConnection.invoke("JoinUserGroup", myId);
     await grpConnection.invoke("JoinGroupChat", groupId.toString());
+
+    // marcar leídos al entrar
+    fetch("/Group/MarkRead", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: `groupId=${groupId}&__RequestVerificationToken=${encodeURIComponent(token())}`
+    }).then(r => r.json()).then(data => {
+        if (data.readIds) data.readIds.forEach(msgId =>
+            grpConnection.invoke("NotifyGroupRead", groupId.toString(), msgId.toString()).catch(() => {}));
+    }).catch(() => {});
+
 }).catch(err => console.error("SignalR grupo:", err));
 
+// ── ACTIVE USERS ──
+grpConnection.on("GroupActiveUsers", (gId, count) => {
+    if (String(gId) === String(groupId)) activeUsersInChat = count;
+});
+
+// ── RECIBIR MENSAJE ──
 grpConnection.on("ReceiveGroupMessage", (senderId, senderName, senderImage, content, time, msgId, fileUrl, fileType) => {
     if (String(senderId) === String(myId)) return;
     document.getElementById("emptyState")?.remove();
+    document.getElementById('unreadBanner')?.remove();
+
     if (fileType === "system" || senderId === "0") {
         const row = document.createElement("div");
         row.className = "grp-msg-system";
         row.innerHTML = `<div class="grp-msg-system-bubble">${escapeHtml(content)}</div>`;
         chatBox.insertBefore(row, document.getElementById("typingIndicator"));
-        scrollToBottom(); return;
+        chatBox.scrollTop = chatBox.scrollHeight; return;
     }
+
     const letter = senderName ? senderName.charAt(0).toUpperCase() : "?";
-    const avatarHTML = (senderImage && senderImage.trim() !== "") ? `<img src="${senderImage}" style="width:100%;height:100%;object-fit:cover;" />` : letter;
+    const avatarHTML = (senderImage && senderImage.trim() !== "")
+        ? `<img src="${senderImage}" style="width:100%;height:100%;object-fit:cover;" />` : letter;
     let contentHTML = "";
     if (fileType === "audio") contentHTML = `<audio controls class="grp-msg-audio"><source src="${content}" /></audio>`;
     else if (fileType === "image") contentHTML = `<img src="${fileUrl}" class="grp-msg-media" onclick="window.open('${fileUrl}', '_blank')" />`;
     else if (fileType === "video") contentHTML = `<video controls class="grp-msg-media"><source src="${fileUrl}" /></video>`;
     else contentHTML = escapeHtml(content);
+
     const row = document.createElement("div");
     row.className = "grp-msg-row theirs";
     if (msgId) row.id = "msg-" + msgId;
     row.innerHTML = `<a href="/User/Profile/${senderId}" class="grp-msg-avatar">${avatarHTML}</a><div class="grp-msg-wrap"><a href="/User/Profile/${senderId}" class="grp-msg-sender">${escapeHtml(senderName)}</a><div class="grp-msg-bubble">${contentHTML}</div><div class="grp-msg-footer"><span class="grp-msg-time">${time}</span></div></div>`;
     chatBox.insertBefore(row, document.getElementById("typingIndicator"));
-    scrollToBottom();
+    chatBox.scrollTop = chatBox.scrollHeight;
+
     fetch("/Group/MarkRead", {
         method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" },
         body: `groupId=${groupId}&__RequestVerificationToken=${encodeURIComponent(token())}`
     }).then(r => r.json()).then(data => {
-        if (data.readIds) data.readIds.forEach(id => grpConnection.invoke("NotifyGroupRead", groupId.toString(), id.toString()).catch(() => {}));
+        if (data.readIds) data.readIds.forEach(id =>
+            grpConnection.invoke("NotifyGroupRead", groupId.toString(), id.toString()).catch(() => {}));
     }).catch(() => {});
 });
 
-grpConnection.on("GroupMessageRead", (msgId, readCount) => {
+// ── CHULOS TIPO WHATSAPP ──
+grpConnection.on("GroupMessageRead", (msgId, readCount, activeInChat) => {
     const check = document.getElementById("check-" + msgId); if (!check) return;
+
+    const inChat = activeInChat !== undefined ? activeInChat : activeUsersInChat;
+    // ✔✔ azul = todos los miembros están activamente en el chat
+    const allInChat = inChat >= currentTotalMembers;
+    // ✔✔ gris = todos recibieron el mensaje (leyeron en BD)
     const allRead = parseInt(readCount) >= currentTotalMembers - 1 && currentTotalMembers > 1;
-    check.textContent = allRead ? "✔✔" : "✔";
-    allRead ? check.classList.add("seen") : check.classList.remove("seen");
+
+    if (allInChat) {
+        check.textContent = "✔✔";
+        check.classList.add("seen"); // azul
+    } else if (allRead) {
+        check.textContent = "✔✔";
+        check.classList.remove("seen"); // gris
+    } else {
+        check.textContent = "✔";
+        check.classList.remove("seen");
+    }
 });
 
 grpConnection.on("GroupUserTyping", (senderName) => {
     if (senderName === myName) return;
-    document.getElementById("typingIndicator").style.display = "block"; scrollToBottom();
+    document.getElementById("typingIndicator").style.display = "block";
+    chatBox.scrollTop = chatBox.scrollHeight;
 });
-grpConnection.on("GroupUserStoppedTyping", () => { document.getElementById("typingIndicator").style.display = "none"; });
+grpConnection.on("GroupUserStoppedTyping", () => {
+    document.getElementById("typingIndicator").style.display = "none";
+});
 
 grpConnection.on("MemberRemovedFromGroup", (removedUserId, systemMessage) => {
     document.getElementById("emptyState")?.remove();
     const sysRow = document.createElement("div"); sysRow.className = "grp-msg-system";
     sysRow.innerHTML = `<div class="grp-msg-system-bubble">${escapeHtml(systemMessage)}</div>`;
-    chatBox.insertBefore(sysRow, document.getElementById("typingIndicator")); scrollToBottom();
+    chatBox.insertBefore(sysRow, document.getElementById("typingIndicator"));
+    chatBox.scrollTop = chatBox.scrollHeight;
 });
 
 grpConnection.on("YouWereRemovedFromGroup", (removedGroupId, message) => {
@@ -550,7 +629,8 @@ grpConnection.on("YouWereRemovedFromGroup", (removedGroupId, message) => {
     document.getElementById("emptyState")?.remove();
     const sysRow = document.createElement("div"); sysRow.className = "grp-msg-system";
     sysRow.innerHTML = `<div class="grp-msg-system-bubble" style="background:rgba(239,68,68,0.1);color:#dc2626;border:1px solid rgba(239,68,68,0.2);">${escapeHtml(message)}</div>`;
-    chatBox.insertBefore(sysRow, document.getElementById("typingIndicator")); scrollToBottom();
+    chatBox.insertBefore(sysRow, document.getElementById("typingIndicator"));
+    chatBox.scrollTop = chatBox.scrollHeight;
     document.querySelector(".grp-input-bar")?.remove();
     document.getElementById("grpPreview")?.remove();
     document.getElementById("grpAudioPreview")?.remove();
@@ -563,6 +643,24 @@ grpConnection.on("YouWereRemovedFromGroup", (removedGroupId, message) => {
     showToast("🚫 " + message);
 });
 
+grpConnection.on("AddedToGroup", (gId, groupName, adderName) => {
+    if (String(gId) === String(groupId)) {
+        const sysRow = document.createElement("div");
+        sysRow.className = "grp-msg-system";
+        sysRow.innerHTML = `<div class="grp-msg-system-bubble">➕ ${escapeHtml(adderName)} te añadió a este grupo</div>`;
+        chatBox.insertBefore(sysRow, document.getElementById("typingIndicator"));
+        chatBox.scrollTop = chatBox.scrollHeight;
+    }
+});
+
+// ── SALIR DEL CHAT ──
+sessionStorage.setItem('activeGroupChat', groupId.toString());
+window.addEventListener('beforeunload', () => {
+    sessionStorage.removeItem('activeGroupChat');
+    grpConnection.invoke("LeaveGroupChat", groupId.toString()).catch(() => {});
+});
+
+// ── MUTE ──
 async function toggleMute() {
     const res = await fetch("/Group/ToggleMute", {
         method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -622,23 +720,6 @@ function cancelarArchivo() {
     if (sendBtn) sendBtn.disabled = msgInput?.value.trim() === "";
 }
 
-function ajustarAltura() {
-    const navbar = document.querySelector('.ht-navbar');
-    const chatPage = document.querySelector('.grp-chat-page');
-    if (!chatPage) return;
-    if (window.innerWidth >= 768) {
-        const navH = navbar ? navbar.getBoundingClientRect().bottom : 0;
-        chatPage.style.height = (window.innerHeight - navH) + 'px';
-    }
-}
-
-ajustarAltura();
-window.addEventListener('resize', ajustarAltura);
-window.addEventListener('load', ajustarAltura);
-// doble llamada para cuando el navbar termina de renderizar
-setTimeout(ajustarAltura, 100);
-setTimeout(ajustarAltura, 500);
-
 async function toggleGrabacion() {
     if (isRecording) {
         mediaRecorder.stop(); isRecording = false; clearInterval(recInterval);
@@ -692,12 +773,6 @@ function cancelarAudio() {
     document.getElementById("grpPreviewAudio").src = "";
 }
 
-// Marcar que estamos en este chat de grupo
-sessionStorage.setItem('activeGroupChat', groupId.toString());
-window.addEventListener('beforeunload', () => {
-    sessionStorage.removeItem('activeGroupChat');
-});
-
 function makeTime() { return new Date().toLocaleTimeString('es-CO', { hour:'2-digit', minute:'2-digit' }); }
 function escapeHtml(text) { return String(text).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
 
@@ -707,7 +782,8 @@ function agregarBurbujaMia(contentHTML, tempId) {
     row.className = "grp-msg-row mine"; row.id = tempId;
     row.innerHTML = `<div class="grp-msg-wrap"><div class="grp-msg-bubble">${contentHTML}</div><div class="grp-msg-footer"><span class="grp-msg-time">${makeTime()}</span><span class="grp-msg-check" id="check-${tempId}">✔</span></div></div>`;
     chatBox.insertBefore(row, document.getElementById("typingIndicator"));
-    scrollToBottom(); return row;
+    chatBox.scrollTop = chatBox.scrollHeight;
+    return row;
 }
 
 async function sendGroupMessage() {
@@ -750,17 +826,6 @@ async function sendGroupMessage() {
     }
     if (msgInput) msgInput.focus();
 }
-
-grpConnection.on("AddedToGroup", (gId, groupName, adderName) => {
-    // solo mostrar si estamos en ese grupo
-    if (String(gId) === String(groupId)) {
-        const sysRow = document.createElement("div");
-        sysRow.className = "grp-msg-system";
-        sysRow.innerHTML = `<div class="grp-msg-system-bubble">➕ ${escapeHtml(adderName)} te añadió a este grupo</div>`;
-        chatBox.insertBefore(sysRow, document.getElementById("typingIndicator"));
-        scrollToBottom();
-    }
-});
 
 function toggleGroupEmoji() {
     const panel = document.getElementById("emojiPanel"); const btn = document.getElementById("emojiBtn"); if (!panel) return;

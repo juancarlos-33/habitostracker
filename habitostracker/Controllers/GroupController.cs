@@ -397,6 +397,18 @@ namespace HabitTrackerApp.Controllers
             return Json(new { success = true, readIds = added });
         }
 
+
+        [HttpGet]
+        public IActionResult GetUnreadCount(int groupId)
+        {
+            var userId = int.Parse(User.FindFirst("UserId").Value);
+            var count = _context.GroupMessages
+                .Where(m => m.GroupId == groupId && !m.IsDeleted && m.SenderId != userId)
+                .Include(m => m.Reads)
+                .Count(m => !m.Reads.Any(r => r.UserId == userId));
+            return Json(new { count });
+        }
+
         [HttpGet]
         public IActionResult GetMessageReads(int messageId)
         {

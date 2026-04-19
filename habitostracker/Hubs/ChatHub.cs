@@ -8,7 +8,8 @@ namespace HabitTrackerApp.Hubs
 {
     public class ChatHub : Hub
     {
-        private static HashSet<string> ConnectedUsers = new HashSet<string>();
+        private static readonly HashSet<string> ConnectedUsers = new HashSet<string>();
+        private static readonly Dictionary<string, HashSet<string>> ActiveGroupChats = new();
         private readonly HabitDbContext _context;
         private readonly OnlineUsersService _onlineUsers;
 
@@ -79,7 +80,6 @@ namespace HabitTrackerApp.Hubs
                 await Groups.AddToGroupAsync(Context.ConnectionId, userId);
                 await Clients.All.SendAsync("UserOnline", userId);
 
-                // 🔥 notificar mensajes pendientes → ✔✔ grises
                 var pendingSenders = await _context.Messages
                     .Where(m => m.ReceiverId == int.Parse(userId) && !m.IsRead)
                     .Select(m => m.SenderId)
@@ -100,7 +100,6 @@ namespace HabitTrackerApp.Hubs
                             .SendAsync("MessageSentConfirm", msgId, "");
                 }
 
-                // 🔥 notificar chulos de grupos pendientes
                 try
                 {
                     var userIdInt = int.Parse(userId);
@@ -118,13 +117,14 @@ namespace HabitTrackerApp.Hubs
                             .Select(m => m.Id)
                             .ToListAsync();
 
-                        // notificar a los senders que este usuario está conectado
                         foreach (var msgId in unreadGroupMsgs)
                         {
                             var readCount = await _context.GroupMessageReads
                                 .CountAsync(r => r.GroupMessageId == msgId);
+                            var activeInChat = ActiveGroupChats.ContainsKey(gid.ToString())
+                                ? ActiveGroupChats[gid.ToString()].Count : 0;
                             await Clients.Group("group-" + gid)
-                                .SendAsync("GroupMessageRead", msgId.ToString(), readCount);
+                                .SendAsync("GroupMessageRead", msgId.ToString(), readCount, activeInChat);
                         }
                     }
                 }
@@ -150,6 +150,11 @@ namespace HabitTrackerApp.Hubs
             {
                 _onlineUsers.SetOffline(userId);
                 ConnectedUsers.Remove(userId);
+
+                // limpiar de todos los chats activos
+                foreach (var group in ActiveGroupChats)
+                    group.Value.Remove(userId);
+
                 var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == int.Parse(userId));
                 if (user != null)
                 {
@@ -161,7 +166,7 @@ namespace HabitTrackerApp.Hubs
             await base.OnDisconnectedAsync(exception);
         }
 
-        // ── LLAMADAS ─────────────────────────────────────────────
+        // ── LLAMADAS ──────────────────────────────────────────────
         public async Task CallUser(string receiverId)
         {
             await Clients.Group(receiverId).SendAsync("IncomingCall", Context.UserIdentifier);
@@ -221,16 +226,34 @@ namespace HabitTrackerApp.Hubs
         public async Task JoinGroupChat(string groupId)
         {
             await Groups.AddToGroupAsync(Context.ConnectionId, "group-" + groupId);
+
+            var userId = Context.UserIdentifier;
+            if (!string.IsNullOrEmpty(userId))
+            {
+                if (!ActiveGroupChats.ContainsKey(groupId))
+                    ActiveGroupChats[groupId] = new HashSet<string>();
+                ActiveGroupChats[groupId].Add(userId);
+
+                await Clients.Group("group-" + groupId)
+                    .SendAsync("GroupActiveUsers", groupId, ActiveGroupChats[groupId].Count);
+            }
         }
 
         public async Task LeaveGroupChat(string groupId)
         {
             await Groups.RemoveFromGroupAsync(Context.ConnectionId, "group-" + groupId);
+
+            var userId = Context.UserIdentifier;
+            if (!string.IsNullOrEmpty(userId) && ActiveGroupChats.ContainsKey(groupId))
+            {
+                ActiveGroupChats[groupId].Remove(userId);
+                await Clients.Group("group-" + groupId)
+                    .SendAsync("GroupActiveUsers", groupId, ActiveGroupChats[groupId].Count);
+            }
         }
 
-        // 🔥 enviar mensaje de grupo con soporte para texto, imagen, video y audio
         public async Task SendGroupMessage(string groupId, string senderId, string senderName,
-       string content, string msgId, string fileUrl, string fileType)
+            string content, string msgId, string fileUrl, string fileType)
         {
             try
             {
@@ -244,7 +267,6 @@ namespace HabitTrackerApp.Hubs
 
                 var group = await _context.Groups.FirstOrDefaultAsync(g => g.Id == int.Parse(groupId));
 
-                // ✅ filtrar directo en BD los que NO están muteados
                 var members = await _context.GroupMembers
                     .Where(m => m.GroupId == int.Parse(groupId)
                              && m.IsActive
@@ -275,7 +297,6 @@ namespace HabitTrackerApp.Hubs
             }
         }
 
-        // 🔥 notificar chulos — alguien leyó mensajes del grupo
         public async Task NotifyGroupRead(string groupId, string msgId)
         {
             try
@@ -283,8 +304,11 @@ namespace HabitTrackerApp.Hubs
                 var readCount = await _context.GroupMessageReads
                     .CountAsync(r => r.GroupMessageId == int.Parse(msgId));
 
+                var activeInChat = ActiveGroupChats.ContainsKey(groupId)
+                    ? ActiveGroupChats[groupId].Count : 0;
+
                 await Clients.Group("group-" + groupId)
-                    .SendAsync("GroupMessageRead", msgId, readCount);
+                    .SendAsync("GroupMessageRead", msgId, readCount, activeInChat);
             }
             catch (Exception ex)
             {
@@ -292,7 +316,6 @@ namespace HabitTrackerApp.Hubs
             }
         }
 
-        // 🔥 typing en grupos
         public async Task GroupUserTyping(string groupId, string senderName)
         {
             await Clients.OthersInGroup("group-" + groupId)
@@ -305,15 +328,12 @@ namespace HabitTrackerApp.Hubs
                 .SendAsync("GroupUserStoppedTyping");
         }
 
-        // 🔥 notificar en tiempo real que un miembro fue eliminado
         public async Task RemoveMemberFromGroup(string groupId, string removedUserId, string message)
         {
-            // notificar a todos en el chat del grupo
             await Clients.Group("group-" + groupId)
                 .SendAsync("MemberRemovedFromGroup", removedUserId, message);
         }
 
-        // 🔥 nueva sesión detectada
         public async Task NewSessionDetected(string userId)
         {
             await Clients.Group(userId).SendAsync("NewSessionDetected");
