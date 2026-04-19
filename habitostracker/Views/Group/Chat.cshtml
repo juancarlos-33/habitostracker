@@ -24,12 +24,13 @@
 }
 @@media (min-width: 768px) {
     .grp-chat-page {
-        position: relative;
-        padding-top: 0;
+        position: fixed;
+        top: 80px; left: 50%; right: auto;
+        transform: translateX(-50%);
+        width: 100%; max-width: 860px;
         height: calc(100vh - 80px);
-        max-width: 860px;
-        margin: 0 auto;
-        border-radius: 20px;
+        padding-top: 0;
+        border-radius: 20px 20px 0 0;
         box-shadow: 0 8px 40px rgba(0,0,0,0.1);
         overflow: hidden;
         border: 1px solid rgba(0,0,0,0.06);
