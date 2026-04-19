@@ -875,12 +875,12 @@ namespace HabitTrackerApp.Controllers
             return RedirectToAction("ConfirmEmail");
         }
 
-        private async Task SendWelcomeEmail(User user)
-        {
-            var subject = "🎉 Bienvenido a HabitTracker";
-            var saludo = user.Gender?.ToLower() == "femenino" ? "Bienvenida" : "Bienvenido";
+      private async Task SendWelcomeEmail(User user)
+{
+    var subject = "🎉 Bienvenido a HabitTracker";
+    var saludo = user.Gender?.ToLower() == "femenino" ? "Bienvenida" : "Bienvenido";
 
-            var message = $@"<!DOCTYPE html>
+    var message = $@"<!DOCTYPE html>
 <html>
 <body style='margin:0;padding:0;background-color:#0f172a;font-family:""Segoe UI"",Arial,sans-serif;'>
   <table width='100%' cellpadding='0' cellspacing='0' style='background-color:#0f172a;padding:40px 0;'>
@@ -898,7 +898,7 @@ namespace HabitTrackerApp.Controllers
               </div>
               <img src='https://res.cloudinary.com/dzrjag7ia/image/upload/v1776560628/NE_lmertz.jpg'
                    width='600'
-                   style='width:100%;max-width:600px;display:block;height:200px;object-fit:cover;'/>
+                   style='width:100%;max-width:600px;display:block;height:200px;object-fit:cover;opacity:0.45;'/>
             </td>
           </tr>
 
@@ -1027,8 +1027,8 @@ namespace HabitTrackerApp.Controllers
 </body>
 </html>";
 
-            await _emailService.SendEmailAsync(user.Email, subject, message);
-        }
+    await _emailService.SendEmailAsync(user.Email, subject, message);
+}
         // =====================================================
         // ✏️ EDITAR CORREO
         // =====================================================
