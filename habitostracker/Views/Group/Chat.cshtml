@@ -24,15 +24,11 @@
 }
 @@media (min-width: 768px) {
     .grp-chat-page {
-        position: relative;
-        padding-top: 0;
-        height: calc(100vh - 80px);
-        max-width: 860px;
-        margin: 0 auto;
-        border-radius: 20px;
+        position: relative; padding-top: 0;
+        height: auto; max-width: 860px;
+        margin: 0 auto; border-radius: 20px;
         box-shadow: 0 8px 40px rgba(0,0,0,0.1);
-        overflow: hidden;
-        border: 1px solid rgba(0,0,0,0.06);
+        overflow: hidden; border: 1px solid rgba(0,0,0,0.06);
     }
 }
 
@@ -625,6 +621,23 @@ function cancelarArchivo() {
     document.getElementById("grpPreviewVid").style.display = "none";
     if (sendBtn) sendBtn.disabled = msgInput?.value.trim() === "";
 }
+
+function ajustarAltura() {
+    const navbar = document.querySelector('.ht-navbar');
+    const chatPage = document.querySelector('.grp-chat-page');
+    if (!chatPage) return;
+    if (window.innerWidth >= 768) {
+        const navH = navbar ? navbar.getBoundingClientRect().bottom : 0;
+        chatPage.style.height = (window.innerHeight - navH) + 'px';
+    }
+}
+
+ajustarAltura();
+window.addEventListener('resize', ajustarAltura);
+window.addEventListener('load', ajustarAltura);
+// doble llamada para cuando el navbar termina de renderizar
+setTimeout(ajustarAltura, 100);
+setTimeout(ajustarAltura, 500);
 
 async function toggleGrabacion() {
     if (isRecording) {
