@@ -284,18 +284,6 @@ namespace HabitTrackerApp.Controllers
             });
             await _context.SaveChangesAsync();
 
-            // 🔥 enviar notificación push a miembros no silenciados
-            var otherMembers = _context.GroupMembers
-                .Where(m => m.GroupId == groupId && m.IsActive && m.UserId != userId && !m.IsMuted)
-                .ToList();
-
-            var group = _context.Groups.FirstOrDefault(g => g.Id == groupId);
-            foreach (var m in otherMembers)
-            {
-                await _hub.Clients.Group(m.UserId.ToString())
-                    .SendAsync("ReceiveNotification", $"💬 {sender?.Username} en {group?.Name}: {content.Substring(0, Math.Min(content.Length, 40))}");
-            }
-
             var totalMembers = _context.GroupMembers.Count(m => m.GroupId == groupId && m.IsActive);
             return Json(new
             {
@@ -310,7 +298,6 @@ namespace HabitTrackerApp.Controllers
                 totalMembers
             });
         }
-
         [HttpPost]
         public async Task<IActionResult> SendFile(int groupId, IFormFile file)
         {
