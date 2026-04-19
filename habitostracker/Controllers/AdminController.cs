@@ -1046,7 +1046,16 @@ namespace HabitTrackerApp.Controllers
             // 🔥 eliminar usuario
             _context.Users.Remove(user);
 
-            await _context.SaveChangesAsync();
+            try
+            {
+                await _context.SaveChangesAsync();
+                TempData["Success"] = "Usuario eliminado correctamente";
+            }
+            catch (Exception ex)
+            {
+                TempData["Error"] = ex.InnerException?.Message ?? ex.Message;
+                return RedirectToAction("Users");
+            }
 
             TempData["Success"] = "Usuario eliminado correctamente";
 
