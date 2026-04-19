@@ -675,6 +675,12 @@ function cancelarAudio() {
     document.getElementById("grpPreviewAudio").src = "";
 }
 
+// Marcar que estamos en este chat de grupo
+sessionStorage.setItem('activeGroupChat', groupId.toString());
+window.addEventListener('beforeunload', () => {
+    sessionStorage.removeItem('activeGroupChat');
+});
+
 function makeTime() { return new Date().toLocaleTimeString('es-CO', { hour:'2-digit', minute:'2-digit' }); }
 function escapeHtml(text) { return String(text).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
 
@@ -727,6 +733,17 @@ async function sendGroupMessage() {
     }
     if (msgInput) msgInput.focus();
 }
+
+grpConnection.on("AddedToGroup", (gId, groupName, adderName) => {
+    // solo mostrar si estamos en ese grupo
+    if (String(gId) === String(groupId)) {
+        const sysRow = document.createElement("div");
+        sysRow.className = "grp-msg-system";
+        sysRow.innerHTML = `<div class="grp-msg-system-bubble">➕ ${escapeHtml(adderName)} te añadió a este grupo</div>`;
+        chatBox.insertBefore(sysRow, document.getElementById("typingIndicator"));
+        scrollToBottom();
+    }
+});
 
 function toggleGroupEmoji() {
     const panel = document.getElementById("emojiPanel"); const btn = document.getElementById("emojiBtn"); if (!panel) return;

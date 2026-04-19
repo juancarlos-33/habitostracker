@@ -674,7 +674,12 @@ const connection = new signalR.HubConnectionBuilder().withUrl("/chatHub").build(
 connection.start().then(() => {
     const userId = '@(User.Identity.IsAuthenticated ? User.FindFirst("UserId")?.Value : "")';
     if (userId) connection.invoke("JoinUserGroup", userId);
-    connection.on("ReceiveNotification", (uid, msg, username, img, link) => showToastNotif(username, msg, img, link));
+  connection.on("ReceiveNotification", (uid, msg, username, img, link) => {
+    // No mostrar notificación de grupo si ya estamos en ese chat
+    const activeGroup = sessionStorage.getItem('activeGroupChat');
+    if (activeGroup && link && link.includes('/Group/Chat/' + activeGroup)) return;
+    showToastNotif(username, msg, img, link);
+});
     connection.on("UserOnline", () => {});
     connection.on("UserOffline", () => {});
 }).catch(e => console.error("SignalR notif:", e));

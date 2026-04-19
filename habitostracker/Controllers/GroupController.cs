@@ -17,6 +17,7 @@ namespace HabitTrackerApp.Controllers
         private readonly IConfiguration _config;
         private readonly IHubContext<ChatHub> _hub;
 
+
         public GroupController(HabitDbContext context, IConfiguration config, IHubContext<ChatHub> hub)
         {
             _context = context;
@@ -486,7 +487,6 @@ namespace HabitTrackerApp.Controllers
             var yaEsMiembro = _context.GroupMembers.Any(m => m.GroupId == groupId && m.UserId == newUserId && m.IsActive);
             if (yaEsMiembro) return Json(new { success = false, message = "Ya es miembro." });
 
-            // si salió antes, reactivar
             var exMember = _context.GroupMembers.FirstOrDefault(m => m.GroupId == groupId && m.UserId == newUserId);
             if (exMember != null)
             {
@@ -496,23 +496,44 @@ namespace HabitTrackerApp.Controllers
             }
             else
             {
-                _context.GroupMembers.Add(new GroupMember { GroupId = groupId, UserId = newUserId, Role = "Member", JoinedAt = DateTime.UtcNow, IsActive = true });
+                _context.GroupMembers.Add(new GroupMember
+                {
+                    GroupId = groupId,
+                    UserId = newUserId,
+                    Role = "Member",
+                    JoinedAt = DateTime.UtcNow,
+                    IsActive = true
+                });
             }
             await _context.SaveChangesAsync();
 
-            var adder = _context.Users.FirstOrDefault(u => u.Id == userId);
-            var newUser = _context.Users.FirstOrDefault(u => u.Id == newUserId);
-            var group = _context.Groups.FirstOrDefault(g => g.Id == groupId);
+            var adder = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
+            var newUser = await _context.Users.FirstOrDefaultAsync(u => u.Id == newUserId);
+            var group = await _context.Groups.FirstOrDefaultAsync(g => g.Id == groupId);
 
-            // 🔥 mensaje de sistema
-            await CreateSystemMessage(groupId, $"➕ {adder?.Username} añadió a {newUser?.Username}");
+            // ✅ verificar que no sean null antes de usarlos
+            var adderName = adder?.Username ?? "Alguien";
+            var newUserName = newUser?.Username ?? "Usuario";
+            var groupName = group?.Name ?? "el grupo";
 
-            // 🔥 notificación al nuevo miembro
-            await SendNotification(newUserId, $"{adder?.Username} te añadió al grupo \"{group?.Name}\"", $"/Group/Chat/{groupId}", userId);
+            // mensaje de sistema en el chat
+            await CreateSystemMessage(groupId, $"➕ {adderName} añadió a {newUserName}");
+
+            // ✅ notificación al nuevo miembro con datos correctos
+            await SendNotification(
+                newUserId,
+                $"➕ {adderName} te añadió al grupo \"{groupName}\"",
+                $"/Group/Chat/{groupId}",
+                userId
+            );
+
+            // ✅ notificar por SignalR al nuevo miembro para que vea
+            // el mensaje de sistema en tiempo real si está conectado
+            await _hub.Clients.Group(newUserId.ToString())
+                .SendAsync("AddedToGroup", groupId.ToString(), groupName, adderName);
 
             return Json(new { success = true });
         }
-
         // 🔥 eliminar miembro (solo admin) con aviso
         [HttpPost]
         public async Task<IActionResult> RemoveMember(int groupId, int memberId)
