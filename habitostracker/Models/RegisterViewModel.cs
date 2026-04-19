@@ -5,10 +5,7 @@ namespace HabitTrackerApp.Models
     public class RegisterViewModel
     {
         [Required(ErrorMessage = "El usuario es obligatorio.")]
-        
         public string Username { get; set; }
-
-   
 
         [Required(ErrorMessage = "El correo es obligatorio.")]
         [EmailAddress(ErrorMessage = "Debes ingresar un correo válido.")]
@@ -18,10 +15,7 @@ namespace HabitTrackerApp.Models
         [MinLength(6, ErrorMessage = "La contraseña debe tener al menos 6 caracteres.")]
         public string Password { get; set; }
 
-        [Required(ErrorMessage = "Selecciona un género.")]
-        public string Gender { get; set; }
-
-        [Required(ErrorMessage = "La descripción es obligatoria.")]
-        public string Bio { get; set; }
+        public string? Gender { get; set; }
+        public string? Bio { get; set; }
     }
 }
