@@ -302,20 +302,30 @@ body.bg-dark .comm-divider { background: #2d3748 !important; }
                     }
                 </div>
 
-                <div class="comm-comment-input-wrap">
-                    <input type="text" class="comm-comment-input"
-                           placeholder="Escribe algo motivador... 💪"
-                           id="commInput-@p.Id"
-                           onkeydown="if(event.key==='Enter') comentar(@p.Id, this)" />
-                    <button class="comm-comment-send"
-                            onclick="comentar(@p.Id, document.getElementById('commInput-@p.Id'))">➤</button>
-                </div>
+               @if (!User.IsInRole("Guest"))
+{
+    <div class="comm-comment-input-wrap">
+        <input type="text" class="comm-comment-input"
+               placeholder="Escribe algo motivador... 💪"
+               id="commInput-@p.Id"
+               onkeydown="if(event.key==='Enter') comentar(@p.Id, this)" />
+        <button class="comm-comment-send"
+                onclick="comentar(@p.Id, document.getElementById('commInput-@p.Id'))">➤</button>
+    </div>
+}
+else
+{
+    <div style="padding:10px 14px;background:rgba(99,102,241,0.06);border-radius:14px;font-size:13px;color:#6366f1;font-weight:600;text-align:center;">
+        <a href="/Account/UpgradeAccount" style="color:#6366f1;text-decoration:none;">🔐 Inicia sesión para comentar</a>
+    </div>
+}
             </div>
         }
     }
 </div>
-
 <script>
+const isGuest = @User.IsInRole("Guest").ToString().ToLower();
+
 function escapeHtml(text) {
     return String(text).replace(/&/g,"&amp;").replace(/</g,"&lt;")
                        .replace(/>/g,"&gt;").replace(/"/g,"&quot;");
@@ -330,6 +340,10 @@ function showToast(msg) {
 }
 
 async function reaccionar(progressId, emoji, btn) {
+    if (isGuest) {
+        window.location.href = "/Account/UpgradeAccount";
+        return;
+    }
     try {
         const res = await fetch("/Habit/ReactProgress", {
             method: "POST",
@@ -355,6 +369,10 @@ async function reaccionar(progressId, emoji, btn) {
 }
 
 async function comentar(progressId, input) {
+    if (isGuest) {
+        window.location.href = "/Account/UpgradeAccount";
+        return;
+    }
     const content = input.value.trim();
     if (!content) return;
     input.value = "";
