@@ -242,6 +242,135 @@ namespace HabitTrackerApp.Controllers
             return Json(new { valid = isValid });
         }
 
+        public async Task<IActionResult> DeleteUserPermanently(int id)
+        {
+
+
+            var user = await _context.Users.FindAsync(id);
+
+            if (user == null)
+                return RedirectToAction("Users");
+
+            // 🔎 obtener admin actual
+            var myId = int.Parse(User.FindFirst("UserId").Value);
+            var currentUser = _context.Users.FirstOrDefault(u => u.Id == myId);
+
+            // ❌ SOLO SUPERADMIN puede eliminar
+            if (currentUser.Role != "SuperAdmin")
+            {
+                TempData["Error"] = "Solo el SuperAdmin puede eliminar usuarios.";
+                return RedirectToAction("Users");
+            }
+
+            // ❌ no se puede eliminar a sí mismo
+            if (user.Id == myId)
+            {
+                TempData["Error"] = "No puedes eliminar tu propia cuenta.";
+                return RedirectToAction("Users");
+            }
+
+            // ❌ no se puede eliminar a otro admin
+            // ❌ no se puede eliminar al SuperAdmin (pero sí Admin normales)
+            if (user.Role == "SuperAdmin")
+            {
+                TempData["Error"] = "No puedes eliminar al SuperAdmin.";
+                return RedirectToAction("Users");
+            }
+
+            // 📝 registrar acción en historial admin
+            var log = new AdminLog
+            {
+                AdminId = currentUser.Id,
+                AdminName = currentUser.Username,
+                TargetUserId = user.Id,
+                TargetUsername = user.Username,
+                Action = "Eliminar usuario permanentemente",
+                CreatedAt = DateTime.Now
+            };
+
+            _context.AdminLogs.Add(log);
+
+
+            // 🔥 eliminar follows
+            var follows = _context.Follows
+                .Where(f => f.FollowerId == id || f.FollowingId == id);
+            _context.Follows.RemoveRange(follows);
+
+            // 🔥 eliminar solicitudes de amistad
+            var friendRequests = _context.FriendRequests
+                .Where(f => f.SenderId == id || f.ReceiverId == id);
+            _context.FriendRequests.RemoveRange(friendRequests);
+
+            // 🔥 eliminar notificaciones
+            var notifications = _context.Notifications
+                .Where(n => n.UserId == id || n.FromUserId == id);
+            _context.Notifications.RemoveRange(notifications);
+
+            // 🔥 eliminar hábitos del usuario
+            var habits = _context.Habits.Where(h => h.UserId == user.Id);
+            _context.Habits.RemoveRange(habits);
+
+            // 🔥 eliminar comentarios (si existen)
+            var comments = _context.Set<HabitComment>()
+                .Where(c => c.UserId == user.Id);
+            _context.RemoveRange(comments);
+
+            // 🔥 manejar mensajes (evitar error FK)
+            var messages = _context.Messages
+                .Where(m => m.SenderId == id || m.ReceiverId == id)
+                .ToList();
+
+            foreach (var msg in messages)
+            {
+                if (msg.SenderId == id) msg.SenderId = null;
+                if (msg.ReceiverId == id) msg.ReceiverId = null;
+            }
+
+            // 🚨 avisar al usuario en tiempo real
+            await _hubContext.Clients.User(id.ToString())
+                .SendAsync("ForceLogout", "Tu cuenta fue eliminada por el SuperAdmin");
+
+            // 🔥 eliminar reacciones de mensajes de grupo
+            var groupReactions = _context.GroupMessageReactions.Where(r => r.UserId == id);
+            _context.GroupMessageReactions.RemoveRange(groupReactions);
+
+            // 🔥 eliminar lecturas de mensajes de grupo
+            var groupReads = _context.GroupMessageReads.Where(r => r.UserId == id);
+            _context.GroupMessageReads.RemoveRange(groupReads);
+
+            // 🔥 eliminar membresías de grupos
+            var groupMembers = _context.GroupMembers.Where(m => m.UserId == id);
+            _context.GroupMembers.RemoveRange(groupMembers);
+
+            // 🔥 manejar mensajes de grupo (evitar error FK)
+            var groupMessages = _context.GroupMessages
+                .Where(m => m.SenderId == id)
+                .ToList();
+            foreach (var gm in groupMessages)
+                gm.SenderId = null;
+
+            await SendAdminDeleteEmail(user);
+
+            // 🔥 eliminar usuario
+            _context.Users.Remove(user);
+
+            try
+            {
+                await _context.SaveChangesAsync();
+                TempData["Success"] = "Usuario eliminado correctamente";
+            }
+            catch (Exception ex)
+            {
+                TempData["Error"] = ex.InnerException?.Message ?? ex.Message;
+                return RedirectToAction("Users");
+            }
+
+            TempData["Success"] = "Usuario eliminado correctamente";
+
+            return RedirectToAction("Users");
+        }
+
+
         [HttpPost]
         public async Task<IActionResult> DeleteAccount(string password, string confirmText, string securityAnswer)
         {
@@ -603,34 +732,7 @@ namespace HabitTrackerApp.Controllers
             return RedirectToAction("ConfirmEmail");
         }
 
-        private async Task SendGoodbyeEmail(User user)
-        {
-            var subject = "💔 Tu cuenta ha sido eliminada - HabitTracker";
-
-            var message = $@"
-    <div style='font-family:Arial;padding:20px'>
-        <h2>Gracias por haber sido parte de HabitTracker 💙</h2>
-
-        <p>Hola {user.Username},</p>
-
-        <p>Tu cuenta ha sido eliminada correctamente.</p>
-
-        <p>Queremos agradecerte por el tiempo que dedicaste a construir hábitos, mejorar tu disciplina y apostar por tu crecimiento personal.</p>
-
-        <p>Recuerda que cada pequeño hábito crea grandes resultados 🔥</p>
-
-        <hr/>
-
-        <p style='font-size:12px;color:gray'>
-            Si decides volver, aquí estaremos para ayudarte a seguir creciendo.
-        </p>
-
-        <p><b>— Equipo HabitTracker 🚀</b></p>
-    </div>";
-
-            await _emailService.SendEmailAsync(user.Email, subject, message);
-        }
-
+       
         private async Task SendEmail(string toEmail, string subject, string htmlMessage)
         {
             var smtp = new SmtpClient("smtp.gmail.com", 587)
@@ -747,7 +849,7 @@ namespace HabitTrackerApp.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult ConfirmEmail(ConfirmEmailViewModel model)
+        public async Task<IActionResult> ConfirmEmail(ConfirmEmailViewModel model)
         {
             var email = TempData.Peek("ResetEmail")?.ToString();
             var fromRegister = TempData.Peek("FromRegister") as bool? ?? false;
@@ -774,6 +876,9 @@ namespace HabitTrackerApp.Controllers
                 user.ResetCode = null;
                 _context.SaveChanges();
                 _ = SendWelcomeEmail(user);
+                // ✅ login automático y redirigir a CompleteProfile
+                await RefreshUserSession(user);
+                return RedirectToAction("CompleteProfile", "Account");
             }
             else if (fromReset)
             {
@@ -891,8 +996,71 @@ namespace HabitTrackerApp.Controllers
 
             return RedirectToAction("ConfirmEmail");
         }
+        private async Task SendGoodbyeEmail(User user)
+        {
+            var subject = "💔 Tu cuenta ha sido eliminada - HabitTracker";
 
-      private async Task SendWelcomeEmail(User user)
+            var message = $@"
+<div style='font-family:Arial,sans-serif;background:#0f172a;padding:40px 20px;margin:0;'>
+    <div style='max-width:560px;margin:0 auto;'>
+
+        <!-- HEADER -->
+        <div style='text-align:center;margin-bottom:30px;'>
+            <div style='background:linear-gradient(135deg,#6366f1,#2563eb);border-radius:16px;padding:14px 24px;display:inline-block;'>
+                <span style='font-size:22px;font-weight:800;color:white;'>🚀 HabitTracker</span>
+            </div>
+        </div>
+
+        <!-- CARD PRINCIPAL -->
+        <div style='background:#1e293b;border-radius:24px;padding:36px;border:1px solid rgba(255,255,255,0.06);text-align:center;margin-bottom:16px;'>
+
+            <!-- Mascota -->
+            <img src='https://res.cloudinary.com/dzrjag7ia/image/upload/v1776560628/NE_lmertz.jpg'
+                 style='width:100px;height:100px;border-radius:50%;object-fit:cover;border:3px solid #6366f1;box-shadow:0 0 0 6px rgba(99,102,241,0.15);margin-bottom:20px;display:block;margin-left:auto;margin-right:auto;' />
+
+            <h2 style='color:white;font-size:22px;margin:0 0 6px;'>Hasta pronto, {user.Username} 💔</h2>
+            <p style='color:rgba(255,255,255,0.4);font-size:13px;margin:0 0 24px;'>Tu cuenta ha sido eliminada correctamente</p>
+
+            <div style='height:1px;background:rgba(255,255,255,0.06);margin:0 0 24px;'></div>
+
+            <p style='color:rgba(255,255,255,0.7);font-size:14px;line-height:1.8;margin:0 0 20px;text-align:left;'>
+                Hola <strong style='color:white;'>{user.Username}</strong>, queremos agradecerte por el tiempo que dedicaste a 
+                construir hábitos, mejorar tu disciplina y apostar por tu crecimiento personal.
+            </p>
+
+            <!-- Quote -->
+            <div style='background:rgba(99,102,241,0.08);border-left:3px solid #6366f1;border-radius:0 12px 12px 0;padding:14px 18px;margin-bottom:24px;text-align:left;'>
+                <p style='color:#818cf8;font-size:13px;font-style:italic;margin:0;line-height:1.7;'>
+                    &ldquo;Cada pequeño hábito que construiste fue una victoria. Los cambios reales toman tiempo, y tú diste el primer paso. Eso nunca desaparece.&rdquo; 🔥
+                </p>
+            </div>
+
+            <!-- Botón volver -->
+            <a href='https://habitostracker-production-4cf5.up.railway.app/Account/Register'
+               style='display:inline-block;background:linear-gradient(135deg,#6366f1,#2563eb);color:white;text-decoration:none;padding:13px 28px;border-radius:12px;font-weight:700;font-size:14px;box-shadow:0 6px 20px rgba(99,102,241,0.35);'>
+                🚀 Volver a HabitTracker
+            </a>
+
+            <p style='color:rgba(255,255,255,0.25);font-size:12px;margin:20px 0 0;'>
+                Si decides volver, aquí estaremos para ayudarte a seguir creciendo.
+            </p>
+        </div>
+
+        <!-- FOOTER -->
+        <div style='text-align:center;padding:16px;'>
+            <p style='color:rgba(255,255,255,0.2);font-size:11px;margin:0;line-height:1.7;'>
+                Este correo fue enviado porque eliminaste tu cuenta en HabitTracker.<br/>
+                <strong style='color:rgba(255,255,255,0.3);'>— Equipo HabitTracker 🚀</strong>
+            </p>
+        </div>
+
+    </div>
+</div>";
+
+            await _emailService.SendEmailAsync(user.Email, subject, message);
+        }
+
+        private async Task SendWelcomeEmail(User user)
 {
     var subject = "🎉 Bienvenido a HabitTracker";
     var saludo = user.Gender?.ToLower() == "femenino" ? "Bienvenida" : "Bienvenido";
@@ -1046,6 +1214,82 @@ namespace HabitTrackerApp.Controllers
 
     await _emailService.SendEmailAsync(user.Email, subject, message);
 }
+
+        private async Task SendAdminDeleteEmail(User user)
+        {
+            var subject = "⚠️ Tu cuenta ha sido eliminada - HabitTracker";
+
+            var message = $@"
+<div style='font-family:Arial,sans-serif;background:#0f172a;padding:40px 20px;margin:0;'>
+    <div style='max-width:560px;margin:0 auto;'>
+
+        <!-- HEADER -->
+        <div style='text-align:center;margin-bottom:30px;'>
+            <div style='background:linear-gradient(135deg,#6366f1,#2563eb);border-radius:16px;padding:14px 24px;display:inline-block;'>
+                <span style='font-size:22px;font-weight:800;color:white;'>🚀 HabitTracker</span>
+            </div>
+        </div>
+
+        <!-- CARD PRINCIPAL -->
+        <div style='background:#1e293b;border-radius:24px;padding:36px;border:1px solid rgba(255,255,255,0.06);text-align:center;margin-bottom:16px;'>
+
+            <!-- Mascota -->
+            <img src='https://res.cloudinary.com/dzrjag7ia/image/upload/v1776560628/NE_lmertz.jpg'
+                 style='width:100px;height:100px;border-radius:50%;object-fit:cover;border:3px solid #f59e0b;box-shadow:0 0 0 6px rgba(245,158,11,0.15);margin-bottom:20px;display:block;margin-left:auto;margin-right:auto;' />
+
+            <h2 style='color:white;font-size:22px;margin:0 0 6px;'>Hola {user.Username} ⚠️</h2>
+            <p style='color:rgba(255,255,255,0.4);font-size:13px;margin:0 0 24px;'>Aviso importante sobre tu cuenta</p>
+
+            <div style='height:1px;background:rgba(255,255,255,0.06);margin:0 0 24px;'></div>
+
+            <p style='color:rgba(255,255,255,0.7);font-size:14px;line-height:1.8;margin:0 0 20px;text-align:left;'>
+                Hola <strong style='color:white;'>{user.Username}</strong>, el propietario de HabitTracker ha tomado la 
+                penosa decisión de eliminar tu cuenta como parte de un proceso de ajustes y mantenimiento 
+                de la plataforma. Esta acción fue necesaria para garantizar el buen funcionamiento y la 
+                calidad del servicio para todos los usuarios.
+            </p>
+
+            <!-- Quote -->
+            <div style='background:rgba(245,158,11,0.08);border-left:3px solid #f59e0b;border-radius:0 12px 12px 0;padding:14px 18px;margin-bottom:24px;text-align:left;'>
+                <p style='color:#fcd34d;font-size:13px;font-style:italic;margin:0;line-height:1.7;'>
+                    &ldquo;Agradecemos profundamente el tiempo que estuviste con nosotros y el esfuerzo que pusiste 
+                    en construir tus hábitos. Esperamos que tu camino hacia el crecimiento personal continúe 
+                    sin importar dónde estés.&rdquo; 💙
+                </p>
+            </div>
+
+            <p style='color:rgba(255,255,255,0.5);font-size:13px;line-height:1.7;margin:0 0 24px;text-align:left;'>
+                Si crees que esto fue un error o deseas más información, puedes contactarnos respondiendo 
+                este correo. Siempre estaremos dispuestos a escucharte.
+            </p>
+
+            <!-- Botón volver -->
+            <a href='https://habitostracker-production-4cf5.up.railway.app/Account/Register'
+               style='display:inline-block;background:linear-gradient(135deg,#6366f1,#2563eb);color:white;text-decoration:none;padding:13px 28px;border-radius:12px;font-weight:700;font-size:14px;box-shadow:0 6px 20px rgba(99,102,241,0.35);'>
+                🚀 Crear una nueva cuenta
+            </a>
+
+            <p style='color:rgba(255,255,255,0.25);font-size:12px;margin:20px 0 0;'>
+                Puedes volver cuando quieras. Aquí siempre habrá un lugar para ti.
+            </p>
+        </div>
+
+        <!-- FOOTER -->
+        <div style='text-align:center;padding:16px;'>
+            <p style='color:rgba(255,255,255,0.2);font-size:11px;margin:0;line-height:1.7;'>
+                Este correo fue enviado porque tu cuenta fue eliminada por el equipo de HabitTracker.<br/>
+                <strong style='color:rgba(255,255,255,0.3);'>— Equipo HabitTracker 🚀</strong>
+            </p>
+        </div>
+
+    </div>
+</div>";
+
+            await _emailService.SendEmailAsync(user.Email, subject, message);
+        }
+
+
+
         // =====================================================
         // ✏️ EDITAR CORREO
         // =====================================================
