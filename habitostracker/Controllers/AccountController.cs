@@ -878,53 +878,145 @@ namespace HabitTrackerApp.Controllers
         private async Task SendWelcomeEmail(User user)
         {
             var subject = "🎉 Bienvenido a HabitTracker";
-
             var saludo = user.Gender?.ToLower() == "femenino" ? "Bienvenida" : "Bienvenido";
-            var message = $@"
-<!DOCTYPE html>
+
+            var message = $@"<!DOCTYPE html>
 <html>
-<body style='margin:0;padding:0;background-color:#f4f6f9;font-family:Arial,sans-serif;'>
-  <table width='100%' cellpadding='0' cellspacing='0' style='background-color:#f4f6f9;padding:30px 0;'>
+<body style='margin:0;padding:0;background-color:#0f172a;font-family:""Segoe UI"",Arial,sans-serif;'>
+  <table width='100%' cellpadding='0' cellspacing='0' style='background-color:#0f172a;padding:40px 0;'>
     <tr>
       <td align='center'>
-        <table width='580' cellpadding='0' cellspacing='0' style='background-color:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.08);'>
-          
+        <table width='600' cellpadding='0' cellspacing='0' style='background-color:#ffffff;border-radius:24px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,0.4);'>
+
           <!-- HEADER -->
           <tr>
-            <td style='background:linear-gradient(135deg,#2563eb,#7c3aed);padding:35px;text-align:center;'>
-              <h1 style='color:white;margin:0;font-size:28px;'>🚀 HabitTracker</h1>
-              <p style='color:rgba(255,255,255,0.85);margin:8px 0 0;font-size:15px;'>Construye hábitos. Transforma tu vida.</p>
+            <td style='background:linear-gradient(135deg,#1e293b 0%,#1e1b4b 50%,#0f172a 100%);padding:0;text-align:center;'>
+              <div style='padding:40px 35px 28px;'>
+                <div style='display:inline-block;background:linear-gradient(135deg,#6366f1,#2563eb);border-radius:20px;width:64px;height:64px;line-height:64px;text-align:center;font-size:32px;box-shadow:0 8px 24px rgba(99,102,241,0.5);margin-bottom:16px;'>🎯</div>
+                <h1 style='color:white;margin:0 0 8px;font-size:30px;font-weight:800;letter-spacing:-0.5px;'>HabitTracker</h1>
+                <p style='color:rgba(255,255,255,0.5);margin:0;font-size:13px;font-weight:500;letter-spacing:1.5px;text-transform:uppercase;'>Construye hábitos · Transforma tu vida</p>
+              </div>
+              <img src='https://res.cloudinary.com/dzrjag7ia/image/upload/v1776560628/NE_lmertz.jpg'
+                   width='600'
+                   style='width:100%;max-width:600px;display:block;height:200px;object-fit:cover;opacity:0.45;'/>
             </td>
           </tr>
 
+          <!-- DIVIDER -->
+          <tr><td style='height:4px;background:linear-gradient(90deg,#6366f1,#2563eb,#22c55e);'></td></tr>
+
           <!-- BODY -->
           <tr>
-            <td style='padding:35px;'>
-              <h2 style='color:#111827;margin-top:0;'>¡{saludo}, {user.Username}! 🎉</h2>
-              <p style='color:#4b5563;font-size:15px;line-height:1.6;'>Tu cuenta ha sido creada correctamente. Ahora puedes empezar a construir hábitos increíbles y conectar con otras personas.</p>
+            <td style='padding:40px 36px 32px;background:#ffffff;'>
 
-              <table width='100%' cellpadding='0' cellspacing='0' style='margin:20px 0;'>
+              <h2 style='color:#111827;margin:0 0 10px;font-size:22px;font-weight:800;'>¡{saludo}, {user.Username}! 🎉</h2>
+              <p style='color:#6b7280;font-size:15px;line-height:1.7;margin:0 0 28px;'>Tu cuenta ha sido creada exitosamente. Bienvenido a la comunidad de personas que están transformando su vida un hábito a la vez.</p>
+
+              <!-- STATS CARDS -->
+              <table width='100%' cellpadding='0' cellspacing='0' style='margin-bottom:28px;'>
                 <tr>
-                  <td style='background:#f0f9ff;border-left:4px solid #2563eb;border-radius:8px;padding:15px;'>
-                    <p style='margin:6px 0;color:#1e40af;font-size:14px;'>📈 Mejora cada día</p>
-                    <p style='margin:6px 0;color:#1e40af;font-size:14px;'>💪 Sé constante</p>
-                    <p style='margin:6px 0;color:#1e40af;font-size:14px;'>🔥 Mantén tu racha</p>
-                    <p style='margin:6px 0;color:#1e40af;font-size:14px;'>🤝 Conecta con otros usuarios</p>
+                  <td width='33%' style='padding:0 5px 0 0;'>
+                    <div style='background:#f0fdf4;border-radius:16px;padding:18px 10px;text-align:center;border:1px solid #dcfce7;'>
+                      <div style='font-size:26px;margin-bottom:6px;'>🔥</div>
+                      <div style='font-size:11px;font-weight:700;color:#16a34a;text-transform:uppercase;letter-spacing:0.5px;'>Rachas</div>
+                      <div style='font-size:10px;color:#4ade80;margin-top:2px;'>Mantén el ritmo</div>
+                    </div>
+                  </td>
+                  <td width='33%' style='padding:0 2px;'>
+                    <div style='background:#eff6ff;border-radius:16px;padding:18px 10px;text-align:center;border:1px solid #dbeafe;'>
+                      <div style='font-size:26px;margin-bottom:6px;'>📈</div>
+                      <div style='font-size:11px;font-weight:700;color:#2563eb;text-transform:uppercase;letter-spacing:0.5px;'>Progreso</div>
+                      <div style='font-size:10px;color:#60a5fa;margin-top:2px;'>Mejora cada día</div>
+                    </div>
+                  </td>
+                  <td width='33%' style='padding:0 0 0 5px;'>
+                    <div style='background:#fdf4ff;border-radius:16px;padding:18px 10px;text-align:center;border:1px solid #f3e8ff;'>
+                      <div style='font-size:26px;margin-bottom:6px;'>🤝</div>
+                      <div style='font-size:11px;font-weight:700;color:#7c3aed;text-transform:uppercase;letter-spacing:0.5px;'>Comunidad</div>
+                      <div style='font-size:10px;color:#a78bfa;margin-top:2px;'>Conecta y crece</div>
+                    </div>
                   </td>
                 </tr>
               </table>
 
-              <p style='color:#111827;font-weight:bold;font-size:16px;text-align:center;'>Pequeños hábitos → grandes resultados</p>
+              <!-- QUOTE -->
+              <table width='100%' cellpadding='0' cellspacing='0' style='margin-bottom:28px;'>
+                <tr>
+                  <td style='background:linear-gradient(135deg,#1e293b,#1e1b4b);border-radius:16px;padding:22px 24px;text-align:center;'>
+                    <p style='color:rgba(255,255,255,0.45);font-size:11px;margin:0 0 8px;text-transform:uppercase;letter-spacing:1px;font-weight:600;'>💡 Recuerda siempre</p>
+                    <p style='color:white;font-size:18px;font-weight:800;margin:0;line-height:1.4;'>&quot;Pequeños hábitos,<br/>grandes resultados.&quot;</p>
+                  </td>
+                </tr>
+              </table>
 
-              <!-- IMAGEN CENTRADA -->
-              <div style='text-align:center;margin:20px 0;'>
-                <img src='https://res.cloudinary.com/dzrjag7ia/image/upload/v1776560628/NE_lmertz.jpg' style='width:180px;border-radius:12px;'/>
-              </div>
+              <!-- PASOS -->
+              <p style='color:#111827;font-size:13px;font-weight:700;margin:0 0 14px;text-transform:uppercase;letter-spacing:0.5px;'>🚀 Empieza ahora</p>
 
-              <p style='color:#9ca3af;font-size:12px;text-align:center;margin:0;'>
-                Recuerda que estamos en desarrollo 🚧, aún nos falta mucho por mejorar.<br/>
-                — Equipo HabitTracker 💙
+              <table width='100%' cellpadding='0' cellspacing='0' style='margin-bottom:10px;'>
+                <tr>
+                  <td style='background:#f8fafc;border-radius:12px;padding:14px 16px;border:1px solid #e5e7eb;'>
+                    <table width='100%' cellpadding='0' cellspacing='0'><tr>
+                      <td width='36' style='vertical-align:middle;'>
+                        <div style='width:32px;height:32px;background:linear-gradient(135deg,#6366f1,#4f46e5);border-radius:10px;text-align:center;line-height:32px;font-size:15px;'>1️⃣</div>
+                      </td>
+                      <td style='padding-left:12px;vertical-align:middle;'>
+                        <span style='color:#111827;font-size:14px;font-weight:600;'>Crea tu primer hábito</span>
+                        <p style='color:#9ca3af;font-size:12px;margin:2px 0 0;'>Elige algo pequeño y alcanzable</p>
+                      </td>
+                    </tr></table>
+                  </td>
+                </tr>
+              </table>
+
+              <table width='100%' cellpadding='0' cellspacing='0' style='margin-bottom:10px;'>
+                <tr>
+                  <td style='background:#f8fafc;border-radius:12px;padding:14px 16px;border:1px solid #e5e7eb;'>
+                    <table width='100%' cellpadding='0' cellspacing='0'><tr>
+                      <td width='36' style='vertical-align:middle;'>
+                        <div style='width:32px;height:32px;background:linear-gradient(135deg,#22c55e,#16a34a);border-radius:10px;text-align:center;line-height:32px;font-size:15px;'>2️⃣</div>
+                      </td>
+                      <td style='padding-left:12px;vertical-align:middle;'>
+                        <span style='color:#111827;font-size:14px;font-weight:600;'>Complétalo cada día</span>
+                        <p style='color:#9ca3af;font-size:12px;margin:2px 0 0;'>La constancia es la clave del éxito</p>
+                      </td>
+                    </tr></table>
+                  </td>
+                </tr>
+              </table>
+
+              <table width='100%' cellpadding='0' cellspacing='0' style='margin-bottom:0;'>
+                <tr>
+                  <td style='background:#f8fafc;border-radius:12px;padding:14px 16px;border:1px solid #e5e7eb;'>
+                    <table width='100%' cellpadding='0' cellspacing='0'><tr>
+                      <td width='36' style='vertical-align:middle;'>
+                        <div style='width:32px;height:32px;background:linear-gradient(135deg,#f59e0b,#d97706);border-radius:10px;text-align:center;line-height:32px;font-size:15px;'>3️⃣</div>
+                      </td>
+                      <td style='padding-left:12px;vertical-align:middle;'>
+                        <span style='color:#111827;font-size:14px;font-weight:600;'>Comparte tu progreso</span>
+                        <p style='color:#9ca3af;font-size:12px;margin:2px 0 0;'>Motiva a otros en la comunidad</p>
+                      </td>
+                    </tr></table>
+                  </td>
+                </tr>
+              </table>
+
+            </td>
+          </tr>
+
+          <!-- FOOTER -->
+          <tr>
+            <td style='background:#f8fafc;padding:24px 36px;border-top:1px solid #e5e7eb;text-align:center;'>
+              <p style='color:#6b7280;font-size:13px;margin:0 0 4px;'>
+                Estamos en desarrollo 🚧 — aún nos falta mucho por mejorar
               </p>
+              <p style='color:#9ca3af;font-size:12px;margin:0;'>
+                Con 💙 del <strong style='color:#6366f1;'>Equipo HabitTracker</strong>
+              </p>
+              <div style='margin-top:14px;'>
+                <span style='display:inline-block;width:8px;height:8px;border-radius:50%;background:#6366f1;margin:0 3px;'></span>
+                <span style='display:inline-block;width:8px;height:8px;border-radius:50%;background:#2563eb;margin:0 3px;'></span>
+                <span style='display:inline-block;width:8px;height:8px;border-radius:50%;background:#22c55e;margin:0 3px;'></span>
+              </div>
             </td>
           </tr>
 
@@ -937,7 +1029,6 @@ namespace HabitTrackerApp.Controllers
 
             await _emailService.SendEmailAsync(user.Email, subject, message);
         }
-
         // =====================================================
         // ✏️ EDITAR CORREO
         // =====================================================
