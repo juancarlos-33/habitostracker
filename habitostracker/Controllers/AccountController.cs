@@ -918,7 +918,7 @@ namespace HabitTrackerApp.Controllers
 
               <!-- IMAGEN CENTRADA -->
               <div style='text-align:center;margin:20px 0;'>
-                <img src='https://res.cloudinary.com/dzrjag7ia/image/upload/v1775499059/AA_v1wrtu.jpg' style='width:180px;border-radius:12px;'/>
+                <img src='https://res.cloudinary.com/dzrjag7ia/image/upload/v1776560628/NE_lmertz.jpg' style='width:180px;border-radius:12px;'/>
               </div>
 
               <p style='color:#9ca3af;font-size:12px;text-align:center;margin:0;'>
