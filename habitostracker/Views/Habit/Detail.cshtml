@@ -20,31 +20,24 @@
 .detail-hero {
     background: linear-gradient(135deg, #1e293b, #0f172a);
     border-radius: 24px; padding: 28px 32px; margin-bottom: 16px;
-    position: relative; overflow: hidden;
-    border: 1px solid rgba(255,255,255,0.06);
+    position: relative; overflow: hidden; border: 1px solid rgba(255,255,255,0.06);
 }
 .detail-hero::before {
-    content:""; position:absolute; top:-50px; right:-50px;
-    width:200px; height:200px;
-    background: radial-gradient(circle, rgba(99,102,241,0.2), transparent 70%);
-    border-radius:50%;
+    content:""; position:absolute; top:-50px; right:-50px; width:200px; height:200px;
+    background: radial-gradient(circle, rgba(99,102,241,0.2), transparent 70%); border-radius:50%;
 }
 .detail-hero::after {
-    content:""; position:absolute; bottom:-30px; left:60px;
-    width:140px; height:140px;
-    background: radial-gradient(circle, rgba(34,197,94,0.1), transparent 70%);
-    border-radius:50%;
+    content:""; position:absolute; bottom:-30px; left:60px; width:140px; height:140px;
+    background: radial-gradient(circle, rgba(34,197,94,0.1), transparent 70%); border-radius:50%;
 }
 .detail-hero-top {
     display: flex; align-items: center; justify-content: space-between;
     flex-wrap: wrap; gap: 12px; position: relative; z-index:1; margin-bottom: 18px;
 }
 .detail-back {
-    display: inline-flex; align-items: center; gap: 6px;
-    padding: 8px 16px; border-radius: 12px;
+    display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 12px;
     background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.1);
-    color: rgba(255,255,255,0.7); font-size: 13px; font-weight: 600;
-    text-decoration: none; transition: 0.2s;
+    color: rgba(255,255,255,0.7); font-size: 13px; font-weight: 600; text-decoration: none; transition: 0.2s;
 }
 .detail-back:hover { background: rgba(255,255,255,0.14); color: white; }
 .detail-habit-name { font-size: 26px; font-weight: 800; color: white; margin: 0 0 6px; position: relative; z-index:1; }
@@ -65,9 +58,8 @@
 .detail-stat-label { font-size: 11px; color: rgba(255,255,255,0.4); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
 
 .detail-card {
-    background: white; border-radius: 22px; padding: 24px;
-    margin-bottom: 14px; border: 1px solid rgba(0,0,0,0.05);
-    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    background: white; border-radius: 22px; padding: 24px; margin-bottom: 14px;
+    border: 1px solid rgba(0,0,0,0.05); box-shadow: 0 2px 12px rgba(0,0,0,0.06);
 }
 .detail-card-title {
     font-size: 14px; font-weight: 800; color: #111827;
@@ -78,35 +70,20 @@
     border-radius: 20px; background: #ede9fe; color: #6366f1; margin-left: auto;
 }
 
-/* ACCIONES */
 .detail-actions { display: flex; gap: 10px; flex-wrap: wrap; }
 .detail-action-btn {
-    flex: 1; min-width: 110px; padding: 13px;
-    border-radius: 14px; border: none; font-size: 13px; font-weight: 700;
-    cursor: pointer; font-family: inherit; transition: 0.2s;
-    display: flex; align-items: center; justify-content: center; gap: 7px;
-    text-decoration: none;
+    flex: 1; min-width: 110px; padding: 13px; border-radius: 14px; border: none;
+    font-size: 13px; font-weight: 700; cursor: pointer; font-family: inherit; transition: 0.2s;
+    display: flex; align-items: center; justify-content: center; gap: 7px; text-decoration: none;
 }
-.detail-action-btn.complete {
-    background: linear-gradient(135deg, #22c55e, #16a34a); color: white;
-    box-shadow: 0 4px 14px rgba(34,197,94,0.35);
-}
+.detail-action-btn.complete { background: linear-gradient(135deg, #22c55e, #16a34a); color: white; box-shadow: 0 4px 14px rgba(34,197,94,0.35); }
 .detail-action-btn.complete:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(34,197,94,0.45); }
 .detail-action-btn.fail { background: #fef2f2; color: #dc2626; border: 1.5px solid #fecaca; }
 .detail-action-btn.fail:hover { background: #fee2e2; }
-.detail-action-btn.share {
-    background: linear-gradient(135deg, #6366f1, #4f46e5); color: white;
-    box-shadow: 0 4px 14px rgba(99,102,241,0.35);
-}
+.detail-action-btn.share { background: linear-gradient(135deg, #6366f1, #4f46e5); color: white; box-shadow: 0 4px 14px rgba(99,102,241,0.35); }
 .detail-action-btn.share:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(99,102,241,0.45); }
 .detail-action-btn.edit { background: #fef9c3; color: #d97706; border: 1.5px solid #fde68a; flex: 0; padding: 13px 18px; }
-.detail-action-btn.community {
-    background: linear-gradient(135deg, #0f172a, #1e293b); color: white;
-    border: 1px solid rgba(255,255,255,0.1);
-}
-.detail-action-btn.community:hover { transform: translateY(-1px); }
 
-/* RING */
 .detail-ring-wrap { display: flex; align-items: center; gap: 24px; margin-bottom: 18px; }
 .detail-ring { position: relative; width: 100px; height: 100px; flex-shrink: 0; }
 .detail-ring svg { transform: rotate(-90deg); }
@@ -119,57 +96,57 @@
 .detail-ring-info-title { font-size: 16px; font-weight: 800; color: #111827; margin-bottom: 6px; }
 .detail-ring-info-sub { font-size: 13px; color: #6b7280; line-height: 1.6; }
 
-/* HISTORIAL 30 DÍAS */
 .detail-history-grid { display: flex; flex-wrap: wrap; gap: 5px; }
 .detail-history-dot {
     width: 32px; height: 32px; border-radius: 8px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 11px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700;
 }
 .detail-history-dot.ok { background: #dcfce7; color: #16a34a; }
 .detail-history-dot.fail { background: #fee2e2; color: #dc2626; }
 .detail-history-dot.none { background: #f3f4f6; color: #9ca3af; }
 .detail-history-dot.today { outline: 2.5px solid #6366f1; outline-offset: 2px; }
 
-/* CHART */
 .detail-chart-wrap { position: relative; height: 200px; }
 
-/* SHARE MODAL */
+/* ── SHARE MODAL ── */
 .share-modal {
     display: none; position: fixed; inset: 0;
-    background: rgba(0,0,0,0.65); z-index: 99999;
+    background: rgba(0,0,0,0.75); z-index: 99999;
     align-items: center; justify-content: center;
-    backdrop-filter: blur(8px);
+    backdrop-filter: blur(10px);
 }
+.share-modal.open { display: flex; }
 .share-card {
-    background: #0f172a; border-radius: 28px; padding: 32px 28px;
-    max-width: 420px; width: 90%;
+    background: #0f172a; border-radius: 28px; padding: 28px 24px;
+    max-width: 440px; width: 92%; max-height: 90vh; overflow-y: auto;
     border: 1px solid rgba(255,255,255,0.08);
-    box-shadow: 0 40px 80px rgba(0,0,0,0.6);
+    box-shadow: 0 40px 80px rgba(0,0,0,0.7);
     animation: cardIn 0.4s cubic-bezier(0.34,1.56,0.64,1);
 }
-@@keyframes cardIn { from{opacity:0;transform:scale(0.9) translateY(20px);} to{opacity:1;transform:scale(1) translateY(0);} }
+@@keyframes cardIn { from{opacity:0;transform:scale(0.88) translateY(24px);} to{opacity:1;transform:scale(1) translateY(0);} }
 
-.share-preview {
-    background: linear-gradient(135deg, #6366f1, #2563eb);
-    border-radius: 18px; padding: 22px; margin-bottom: 20px;
-    text-align: center; position: relative; overflow: hidden;
+/* Canvas generado — imagen de compartir */
+#shareCanvasWrap {
+    border-radius: 18px; overflow: hidden; margin-bottom: 18px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+    position: relative;
 }
-.share-preview::before {
-    content:""; position:absolute; top:-20px; right:-20px;
-    width:100px; height:100px;
-    background: radial-gradient(circle, rgba(255,255,255,0.15), transparent 70%);
-    border-radius:50%;
+#shareCanvas { width: 100%; display: block; border-radius: 18px; }
+.canvas-generating {
+    position: absolute; inset: 0; background: rgba(15,23,42,0.85);
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 18px; font-size: 14px; color: rgba(255,255,255,0.7);
+    font-weight: 600; gap: 8px;
 }
-.share-preview-habit { font-size: 13px; color: rgba(255,255,255,0.6); font-weight: 600; margin-bottom: 6px; }
-.share-preview-streak { font-size: 40px; font-weight: 800; color: white; line-height: 1; margin-bottom: 4px; }
-.share-preview-label { font-size: 12px; color: rgba(255,255,255,0.6); font-weight: 600; margin-bottom: 14px; }
-.share-preview-bar-wrap { height: 6px; background: rgba(255,255,255,0.2); border-radius: 10px; overflow: hidden; margin-bottom: 6px; }
-.share-preview-bar { height: 100%; background: white; border-radius: 10px; }
-.share-preview-rate { font-size: 12px; color: rgba(255,255,255,0.7); font-weight: 600; }
+.canvas-spinner {
+    width: 20px; height: 20px; border: 2px solid rgba(255,255,255,0.2);
+    border-top-color: #6366f1; border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+@@keyframes spin { to { transform: rotate(360deg); } }
 
 .share-title { font-size: 18px; font-weight: 800; color: white; margin: 0 0 4px; }
-.share-sub { font-size: 13px; color: rgba(255,255,255,0.4); margin: 0 0 16px; }
+.share-sub { font-size: 13px; color: rgba(255,255,255,0.4); margin: 0 0 14px; }
 .share-textarea {
     width: 100%; padding: 12px 16px; border-radius: 14px;
     border: 1.5px solid rgba(255,255,255,0.1);
@@ -181,25 +158,26 @@
 .share-textarea::placeholder { color: rgba(255,255,255,0.25); }
 .share-chars { font-size: 11px; color: rgba(255,255,255,0.3); text-align: right; margin-bottom: 16px; }
 
-/* SHARE OPTIONS */
-.share-options { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+.share-options { display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; }
 .share-option-btn {
-    flex: 1; padding: 10px; border-radius: 12px; border: 1.5px solid rgba(255,255,255,0.1);
-    background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.7);
+    flex: 1; padding: 11px 8px; border-radius: 13px; border: 1.5px solid rgba(255,255,255,0.1);
+    background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.75);
     font-size: 12px; font-weight: 700; cursor: pointer; font-family: inherit;
-    transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 6px;
+    transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 5px;
+    min-width: 80px;
 }
-.share-option-btn:hover { background: rgba(255,255,255,0.1); color: white; }
-.share-option-btn.community-btn { border-color: rgba(99,102,241,0.4); color: #818cf8; }
-.share-option-btn.community-btn:hover { background: rgba(99,102,241,0.15); }
+.share-option-btn:hover { background: rgba(255,255,255,0.12); color: white; transform: translateY(-1px); }
+.share-option-btn.community-btn { border-color: rgba(99,102,241,0.5); color: #818cf8; background: rgba(99,102,241,0.08); }
+.share-option-btn.community-btn:hover { background: rgba(99,102,241,0.18); }
+.share-option-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
 
 .share-btns { display: flex; gap: 10px; }
 .share-cancel {
-    flex: 1; padding: 12px; border-radius: 13px;
-    border: 1px solid rgba(255,255,255,0.1);
+    flex: 1; padding: 12px; border-radius: 13px; border: 1px solid rgba(255,255,255,0.1);
     background: rgba(255,255,255,0.04); color: rgba(255,255,255,0.5);
-    font-size: 13px; font-weight: 700; cursor: pointer; font-family: inherit;
+    font-size: 13px; font-weight: 700; cursor: pointer; font-family: inherit; transition: 0.2s;
 }
+.share-cancel:hover { background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.8); }
 .share-confirm {
     flex: 2; padding: 12px; border-radius: 13px; border: none;
     background: linear-gradient(135deg, #6366f1, #2563eb);
@@ -207,7 +185,7 @@
     cursor: pointer; font-family: inherit; transition: 0.2s;
     box-shadow: 0 4px 14px rgba(99,102,241,0.4);
 }
-.share-confirm:hover { transform: translateY(-1px); }
+.share-confirm:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(99,102,241,0.5); }
 .share-confirm:disabled { background: #334155; cursor: not-allowed; transform: none; box-shadow: none; }
 
 /* PROGRESS CARDS */
@@ -232,10 +210,8 @@
 .progress-stat-chip.rate { background: rgba(99,102,241,0.1); color: #6366f1; }
 .progress-card-msg {
     font-size: 14px; color: #374151; line-height: 1.6; margin-bottom: 12px;
-    background: white; border-radius: 12px; padding: 10px 14px;
-    border-left: 3px solid #6366f1;
+    background: white; border-radius: 12px; padding: 10px 14px; border-left: 3px solid #6366f1;
 }
-
 .progress-reactions { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
 .reaction-btn {
     padding: 6px 12px; border-radius: 20px; border: 1.5px solid #e5e7eb;
@@ -257,15 +233,13 @@
 .comment-avatar-small img { width: 100%; height: 100%; object-fit: cover; }
 .comment-bubble {
     background: white; border-radius: 14px 14px 14px 4px;
-    padding: 8px 12px; font-size: 13px; color: #374151; flex: 1;
-    border: 1px solid #f1f5f9;
+    padding: 8px 12px; font-size: 13px; color: #374151; flex: 1; border: 1px solid #f1f5f9;
 }
 .comment-bubble strong { color: #111827; font-size: 12px; display: block; margin-bottom: 2px; }
 .comment-input-wrap { display: flex; gap: 8px; margin-top: 10px; }
 .comment-input-new {
-    flex: 1; padding: 9px 14px; border-radius: 24px;
-    border: 1.5px solid #e5e7eb; font-size: 13px; font-family: inherit;
-    outline: none; transition: 0.2s; background: white; color: #111827;
+    flex: 1; padding: 9px 14px; border-radius: 24px; border: 1.5px solid #e5e7eb;
+    font-size: 13px; font-family: inherit; outline: none; transition: 0.2s; background: white; color: #111827;
 }
 .comment-input-new:focus { border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99,102,241,0.1); }
 .comment-send-btn {
@@ -281,14 +255,12 @@
 
 .detail-toast {
     position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%);
-    background: #1e293b; color: white; padding: 10px 20px;
-    border-radius: 20px; font-size: 13px; font-weight: 600;
-    z-index: 99999; box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-    font-family: 'Plus Jakarta Sans', sans-serif; animation: toastIn 0.3s ease;
+    background: #1e293b; color: white; padding: 10px 20px; border-radius: 20px;
+    font-size: 13px; font-weight: 600; z-index: 999999; box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    font-family: 'Plus Jakarta Sans', sans-serif; animation: toastIn 0.3s ease; white-space: nowrap;
 }
 @@keyframes toastIn { from{opacity:0;transform:translateX(-50%) translateY(10px);} to{opacity:1;transform:translateX(-50%) translateY(0);} }
 
-/* DARK */
 body.bg-dark .detail-card { background: #1e293b !important; border-color: #2d3748 !important; }
 body.bg-dark .detail-card-title { color: #f1f5f9 !important; }
 body.bg-dark .detail-ring-pct { color: #f1f5f9 !important; }
@@ -315,49 +287,35 @@ body.bg-dark .detail-ring-info-sub { color: #94a3b8 !important; }
 </style>
 
 <!-- MODAL COMPARTIR -->
-<div class="share-preview" id="sharePreviewCard" 
-     style="background:linear-gradient(135deg,#6366f1,#2563eb);border-radius:18px;padding:22px;text-align:center;position:relative;overflow:hidden;">
+<div class="share-modal" id="shareModal">
     <div class="share-card">
-        <!-- PREVIEW TARJETA -->
-       <div class="share-preview" id="sharePreviewCard">
-            <div class="share-preview-habit">🎯 @Model.Name</div>
-            <div class="share-preview-streak">@Model.StreakDays</div>
-            <div class="share-preview-label">días de racha consecutivos 🔥</div>
-            <div class="share-preview-bar-wrap">
-                <div class="share-preview-bar" style="width:@completionRate%"></div>
+        <!-- IMAGEN GENERADA CON CANVAS -->
+        <div id="shareCanvasWrap">
+            <canvas id="shareCanvas" width="800" height="420"></canvas>
+            <div class="canvas-generating" id="canvasGenerating">
+                <div class="canvas-spinner"></div> Generando imagen...
             </div>
-            <div class="share-preview-rate">@completionRate% completado esta semana</div>
         </div>
 
         <div class="share-title">🚀 Compartir progreso</div>
-        <div class="share-sub">Escribe algo y elige cómo compartirlo</div>
+        <div class="share-sub">Agrega un mensaje y elige cómo compartir</div>
 
         <textarea class="share-textarea" id="shareText" rows="3"
                   placeholder="¡Llevo @Model.StreakDays días! Este hábito está cambiando mi vida..."
-                  maxlength="300" oninput="updateShareChars()"></textarea>
+                  maxlength="300" oninput="updateShareChars(); regenerarCanvas();"></textarea>
         <div class="share-chars"><span id="shareCharsCount">0</span>/300</div>
 
-        <!-- OPCIONES DE COMPARTIR -->
         <div class="share-options">
-            <button class="share-option-btn community-btn" onclick="compartirEnComunidad()">
-                🌍 Comunidad
-            </button>
-            <button class="share-option-btn" onclick="compartirWhatsApp()">
-                💬 WhatsApp
-            </button>
-            <button class="share-option-btn" onclick="compartirTwitter()">
-                🐦 Twitter/X
-            </button>
-            <button class="share-option-btn" onclick="copiarTexto()">
-                📋 Copiar
-            </button>
+            <button class="share-option-btn community-btn" id="btnComunidad" onclick="compartirEnComunidad()">🌍 Comunidad</button>
+            <button class="share-option-btn" id="btnWhatsApp" onclick="compartirWhatsApp()">💬 WhatsApp</button>
+            <button class="share-option-btn" id="btnTwitter" onclick="compartirTwitter()">🐦 Twitter/X</button>
+            <button class="share-option-btn" id="btnCopiar" onclick="copiarTexto()">📋 Copiar</button>
+            <button class="share-option-btn" id="btnDescargar" onclick="descargarImagen()">⬇️ Imagen</button>
         </div>
 
         <div class="share-btns">
             <button class="share-cancel" onclick="closeShare()">Cancelar</button>
-            <button class="share-confirm" id="shareConfirm" onclick="compartirEnComunidad()" disabled>
-                🌍 Publicar en comunidad
-            </button>
+            <button class="share-confirm" id="shareConfirm" onclick="compartirEnComunidad()">🌍 Publicar en comunidad</button>
         </div>
     </div>
 </div>
@@ -378,12 +336,8 @@ body.bg-dark .detail-ring-info-sub { color: #94a3b8 !important; }
                 @statusLabel
             </span>
         </div>
-
         <div class="detail-habit-name">@Model.Name</div>
-        <div class="detail-habit-meta">
-            📅 Creado el @Model.CreatedDate.ToString("dd MMM yyyy", culture)
-        </div>
-
+        <div class="detail-habit-meta">📅 Creado el @Model.CreatedDate.ToString("dd MMM yyyy", culture)</div>
         <div class="detail-stats">
             <div class="detail-stat">
                 <span class="detail-stat-num">@Model.StreakDays 🔥</span>
@@ -421,10 +375,7 @@ body.bg-dark .detail-ring-info-sub { color: #94a3b8 !important; }
             <div class="detail-ring">
                 <svg width="100" height="100" viewBox="0 0 100 100">
                     <circle class="detail-ring-bg" cx="50" cy="50" r="40"/>
-                    <circle class="detail-ring-fill" cx="50" cy="50" r="40"
-                            id="ringFill"
-                            stroke-dasharray="251.2"
-                            stroke-dashoffset="251.2" />
+                    <circle class="detail-ring-fill" cx="50" cy="50" r="40" id="ringFill" stroke-dasharray="251.2" stroke-dashoffset="251.2" />
                 </svg>
                 <div class="detail-ring-text">
                     <span class="detail-ring-pct">@completionRate%</span>
@@ -444,7 +395,6 @@ body.bg-dark .detail-ring-info-sub { color: #94a3b8 !important; }
                 </div>
             </div>
         </div>
-
         <div class="detail-chart-wrap">
             <canvas id="detailChart"></canvas>
         </div>
@@ -466,22 +416,13 @@ body.bg-dark .detail-ring-info-sub { color: #94a3b8 !important; }
                 var isToday = day.Date == DateTime.Today;
                 string dotClass = h == null ? "none" : (h.Completed ? "ok" : "fail");
                 string emoji = h == null ? day.Day.ToString() : (h.Completed ? "✔" : "✖");
-                <div class="detail-history-dot @dotClass @(isToday ? "today" : "")"
-                     title="@day.ToString("dd MMM", culture)">
-                    @emoji
-                </div>
+                <div class="detail-history-dot @dotClass @(isToday ? "today" : "")" title="@day.ToString("dd MMM", culture)">@emoji</div>
             }
         </div>
         <div style="display:flex;gap:16px;margin-top:12px;flex-wrap:wrap;">
-            <span style="font-size:12px;font-weight:600;color:#16a34a;display:flex;align-items:center;gap:4px;">
-                <span style="width:12px;height:12px;border-radius:3px;background:#dcfce7;display:inline-block;"></span> Completado
-            </span>
-            <span style="font-size:12px;font-weight:600;color:#dc2626;display:flex;align-items:center;gap:4px;">
-                <span style="width:12px;height:12px;border-radius:3px;background:#fee2e2;display:inline-block;"></span> Fallado
-            </span>
-            <span style="font-size:12px;font-weight:600;color:#9ca3af;display:flex;align-items:center;gap:4px;">
-                <span style="width:12px;height:12px;border-radius:3px;background:#f3f4f6;display:inline-block;"></span> Sin registro
-            </span>
+            <span style="font-size:12px;font-weight:600;color:#16a34a;display:flex;align-items:center;gap:4px;"><span style="width:12px;height:12px;border-radius:3px;background:#dcfce7;display:inline-block;"></span> Completado</span>
+            <span style="font-size:12px;font-weight:600;color:#dc2626;display:flex;align-items:center;gap:4px;"><span style="width:12px;height:12px;border-radius:3px;background:#fee2e2;display:inline-block;"></span> Fallado</span>
+            <span style="font-size:12px;font-weight:600;color:#9ca3af;display:flex;align-items:center;gap:4px;"><span style="width:12px;height:12px;border-radius:3px;background:#f3f4f6;display:inline-block;"></span> Sin registro</span>
         </div>
     </div>
 
@@ -491,7 +432,6 @@ body.bg-dark .detail-ring-info-sub { color: #94a3b8 !important; }
             🌍 Progreso compartido
             <span class="detail-card-badge">@progresses.Count</span>
         </div>
-
         <div id="progressFeed">
             @if (!progresses.Any())
             {
@@ -501,26 +441,20 @@ body.bg-dark .detail-ring-info-sub { color: #94a3b8 !important; }
                     <div style="font-size:13px;">¡Toca "Compartir" y motiva a otros!</div>
                 </div>
             }
-
             @foreach (var p in progresses)
             {
                 var pImg = p.User?.ProfileImage ?? p.User?.ProfilePicture ?? "";
                 var pLetter = (p.User?.Username ?? "?").Substring(0, 1).ToUpper();
                 var diffMin = (int)(DateTime.UtcNow - p.SharedAt).TotalMinutes;
                 var diffH = (int)(DateTime.UtcNow - p.SharedAt).TotalHours;
-                string timeAgo = diffMin < 1 ? "ahora" :
-                                 diffMin < 60 ? $"hace {diffMin} min" :
-                                 diffH < 24 ? $"hace {diffH}h" :
-                                 p.SharedAt.ToLocalTime().ToString("dd MMM", culture);
-
+                string timeAgo = diffMin < 1 ? "ahora" : diffMin < 60 ? $"hace {diffMin} min" : diffH < 24 ? $"hace {diffH}h" : p.SharedAt.ToLocalTime().ToString("dd MMM", culture);
                 var reactionGroups = p.Reactions.GroupBy(r => r.Emoji).ToDictionary(g => g.Key, g => g.Count());
                 var myReaction = p.Reactions.FirstOrDefault(r => r.UserId == currentUserId)?.Emoji;
 
                 <div class="progress-card" id="progress-@p.Id">
                     <div class="progress-card-header">
                         <div class="progress-card-avatar">
-                            @if (!string.IsNullOrEmpty(pImg)) { <img src="@pImg" /> }
-                            else { @pLetter }
+                            @if (!string.IsNullOrEmpty(pImg)) { <img src="@pImg" /> } else { @pLetter }
                         </div>
                         <div>
                             <div class="progress-card-user">@p.User?.Username</div>
@@ -532,18 +466,15 @@ body.bg-dark .detail-ring-info-sub { color: #94a3b8 !important; }
                         <span class="progress-stat-chip rate">📊 @p.CompletionRate% esta semana</span>
                     </div>
                     <div class="progress-card-msg">@p.Message</div>
-
                     <div class="progress-reactions" id="reactions-@p.Id">
                         @foreach (var emoji in new[] { "🔥", "💪", "❤️", "👏", "🎯" })
                         {
                             var count = reactionGroups.ContainsKey(emoji) ? reactionGroups[emoji] : 0;
-                            <button class="reaction-btn @(myReaction == emoji ? "mine" : "")"
-                                    onclick="reaccionar(@p.Id, '@emoji', this)">
+                            <button class="reaction-btn @(myReaction == emoji ? "mine" : "")" onclick="reaccionar(@p.Id, '@emoji', this)">
                                 @emoji @if (count > 0) { <span class="reaction-count">@count</span> }
                             </button>
                         }
                     </div>
-
                     <div class="progress-comments" id="comments-@p.Id">
                         @foreach (var c in p.Comments.OrderBy(c => c.CreatedAt))
                         {
@@ -551,23 +482,18 @@ body.bg-dark .detail-ring-info-sub { color: #94a3b8 !important; }
                             var cLetter = (c.User?.Username ?? "?").Substring(0, 1).ToUpper();
                             <div class="comment-item-new">
                                 <div class="comment-avatar-small">
-                                    @if (!string.IsNullOrEmpty(cImg)) { <img src="@cImg" /> }
-                                    else { @cLetter }
+                                    @if (!string.IsNullOrEmpty(cImg)) { <img src="@cImg" /> } else { @cLetter }
                                 </div>
                                 <div class="comment-bubble">
-                                    <strong>@c.User?.Username</strong>
-                                    @c.Content
+                                    <strong>@c.User?.Username</strong>@c.Content
                                 </div>
                             </div>
                         }
                     </div>
                     <div class="comment-input-wrap">
-                        <input type="text" class="comment-input-new"
-                               placeholder="Escribe un comentario..."
-                               id="commentInput-@p.Id"
-                               onkeydown="if(event.key==='Enter') comentar(@p.Id, this)" />
-                        <button class="comment-send-btn"
-                                onclick="comentar(@p.Id, document.getElementById('commentInput-@p.Id'))">➤</button>
+                        <input type="text" class="comment-input-new" placeholder="Escribe un comentario..."
+                               id="commentInput-@p.Id" onkeydown="if(event.key==='Enter') comentar(@p.Id, this)" />
+                        <button class="comment-send-btn" onclick="comentar(@p.Id, document.getElementById('commentInput-@p.Id'))">➤</button>
                     </div>
                 </div>
             }
@@ -577,18 +503,17 @@ body.bg-dark .detail-ring-info-sub { color: #94a3b8 !important; }
 
 @section Scripts {
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script>
 const habitId = @Model.Id;
 const habitName = "@Model.Name";
 const habitStreak = @Model.StreakDays;
 const habitRate = @completionRate;
+const habitMaxStreak = @Model.MaxStreak;
 
-// ── GRÁFICA ──────────────────────────────
-const labels = @Html.Raw(labels);
+// ── GRÁFICA ──
+const chartLabels = @Html.Raw(labels);
 const completedData = @Html.Raw(completed);
 const failedData = @Html.Raw(failed);
-
 const isDark = document.body.classList.contains('bg-dark');
 const gridColor = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)';
 const textColor = isDark ? '#94a3b8' : '#6b7280';
@@ -596,20 +521,10 @@ const textColor = isDark ? '#94a3b8' : '#6b7280';
 new Chart(document.getElementById('detailChart'), {
     type: 'bar',
     data: {
-        labels: labels,
+        labels: chartLabels,
         datasets: [
-            {
-                label: 'Completado',
-                data: completedData,
-                backgroundColor: 'rgba(34,197,94,0.8)',
-                borderRadius: 8, borderSkipped: false,
-            },
-            {
-                label: 'Fallado',
-                data: failedData,
-                backgroundColor: 'rgba(239,68,68,0.6)',
-                borderRadius: 8, borderSkipped: false,
-            }
+            { label: 'Completado', data: completedData, backgroundColor: 'rgba(34,197,94,0.8)', borderRadius: 8, borderSkipped: false },
+            { label: 'Fallado', data: failedData, backgroundColor: 'rgba(239,68,68,0.6)', borderRadius: 8, borderSkipped: false }
         ]
     },
     options: {
@@ -625,69 +540,313 @@ new Chart(document.getElementById('detailChart'), {
     }
 });
 
-// ── RING ANIMATION ───────────────────────
+// ── RING ──
 window.addEventListener("load", () => {
     const ring = document.getElementById("ringFill");
-    if (ring) {
-        setTimeout(() => {
-            ring.style.strokeDashoffset = 251.2 - (251.2 * habitRate / 100);
-        }, 300);
-    }
+    if (ring) setTimeout(() => { ring.style.strokeDashoffset = 251.2 - (251.2 * habitRate / 100); }, 300);
 });
 
-// ── MODAL COMPARTIR ──────────────────────
+// ── CANVAS GENERADOR DE IMAGEN ──
+let canvasReady = false;
+let canvasBlob = null;
+
+function dibujarCanvas(mensaje) {
+    const canvas = document.getElementById('shareCanvas');
+    const ctx = canvas.getContext('2d');
+    const W = 800, H = 420;
+    canvas.width = W; canvas.height = H;
+
+    // Fondo degradado oscuro
+    const bgGrad = ctx.createLinearGradient(0, 0, W, H);
+    bgGrad.addColorStop(0, '#0f172a');
+    bgGrad.addColorStop(0.5, '#1e1b4b');
+    bgGrad.addColorStop(1, '#0f172a');
+    ctx.fillStyle = bgGrad;
+    ctx.fillRect(0, 0, W, H);
+
+    // Círculo decorativo superior derecho
+    const circGrad1 = ctx.createRadialGradient(W - 80, 80, 0, W - 80, 80, 160);
+    circGrad1.addColorStop(0, 'rgba(99,102,241,0.35)');
+    circGrad1.addColorStop(1, 'rgba(99,102,241,0)');
+    ctx.fillStyle = circGrad1;
+    ctx.beginPath(); ctx.arc(W - 80, 80, 160, 0, Math.PI * 2); ctx.fill();
+
+    // Círculo decorativo inferior izquierdo
+    const circGrad2 = ctx.createRadialGradient(80, H - 60, 0, 80, H - 60, 120);
+    circGrad2.addColorStop(0, 'rgba(34,197,94,0.2)');
+    circGrad2.addColorStop(1, 'rgba(34,197,94,0)');
+    ctx.fillStyle = circGrad2;
+    ctx.beginPath(); ctx.arc(80, H - 60, 120, 0, Math.PI * 2); ctx.fill();
+
+    // Borde con brillo
+    ctx.strokeStyle = 'rgba(99,102,241,0.3)';
+    ctx.lineWidth = 2;
+    roundRect(ctx, 4, 4, W - 8, H - 8, 24);
+    ctx.stroke();
+
+    // ── LOGO / MARCA ──
+    // Icono app (cuadrado redondeado con gradiente)
+    const logoGrad = ctx.createLinearGradient(40, 30, 90, 80);
+    logoGrad.addColorStop(0, '#6366f1');
+    logoGrad.addColorStop(1, '#2563eb');
+    ctx.fillStyle = logoGrad;
+    roundRect(ctx, 40, 30, 50, 50, 14);
+    ctx.fill();
+
+    // Letra H en el logo
+    ctx.fillStyle = 'white';
+    ctx.font = 'bold 28px Plus Jakarta Sans, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('H', 65, 55);
+
+    // Nombre de la app
+    ctx.fillStyle = 'white';
+    ctx.font = 'bold 20px Plus Jakarta Sans, sans-serif';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('HabitTracker', 102, 48);
+
+    ctx.fillStyle = 'rgba(255,255,255,0.4)';
+    ctx.font = '13px Plus Jakarta Sans, sans-serif';
+    ctx.fillText('Tu progreso, tu historia', 102, 68);
+
+    // Línea separadora
+    ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(40, 100); ctx.lineTo(W - 40, 100); ctx.stroke();
+
+    // ── NOMBRE DEL HÁBITO ──
+    ctx.fillStyle = 'rgba(255,255,255,0.5)';
+    ctx.font = '14px Plus Jakarta Sans, sans-serif';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'top';
+    ctx.fillText('🎯 HÁBITO', 40, 118);
+
+    ctx.fillStyle = 'white';
+    ctx.font = 'bold 28px Plus Jakarta Sans, sans-serif';
+    ctx.textBaseline = 'top';
+    // truncar nombre si es muy largo
+    let name = habitName;
+    if (ctx.measureText(name).width > 460) {
+        while (ctx.measureText(name + '...').width > 460 && name.length > 0) name = name.slice(0, -1);
+        name += '...';
+    }
+    ctx.fillText(name, 40, 138);
+
+    // ── STATS GRANDES ──
+    const stats = [
+        { emoji: '🔥', value: habitStreak + '', label: 'días de racha', color: '#f97316' },
+        { emoji: '📊', value: habitRate + '%', label: 'esta semana', color: '#6366f1' },
+        { emoji: '🏆', value: habitMaxStreak + '', label: 'récord', color: '#eab308' },
+    ];
+    const statX = [40, 280, 520];
+    stats.forEach((s, i) => {
+        const x = statX[i];
+        const y = 195;
+
+        // Fondo de la stat
+        ctx.fillStyle = 'rgba(255,255,255,0.06)';
+        roundRect(ctx, x, y, 220, 100, 16);
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+        ctx.lineWidth = 1;
+        roundRect(ctx, x, y, 220, 100, 16);
+        ctx.stroke();
+
+        // Emoji
+        ctx.font = '28px serif';
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'top';
+        ctx.fillText(s.emoji, x + 16, y + 14);
+
+        // Valor
+        ctx.fillStyle = s.color;
+        ctx.font = 'bold 32px Plus Jakarta Sans, sans-serif';
+        ctx.textAlign = 'left';
+        ctx.fillText(s.value, x + 56, y + 10);
+
+        // Label
+        ctx.fillStyle = 'rgba(255,255,255,0.45)';
+        ctx.font = '13px Plus Jakarta Sans, sans-serif';
+        ctx.fillText(s.label, x + 16, y + 68);
+    });
+
+    // ── BARRA DE PROGRESO ──
+    const barY = 315;
+    ctx.fillStyle = 'rgba(255,255,255,0.08)';
+    roundRect(ctx, 40, barY, W - 80, 12, 6);
+    ctx.fill();
+
+    const barGrad = ctx.createLinearGradient(40, 0, 40 + (W - 80) * habitRate / 100, 0);
+    barGrad.addColorStop(0, '#6366f1');
+    barGrad.addColorStop(1, '#22c55e');
+    ctx.fillStyle = barGrad;
+    roundRect(ctx, 40, barY, (W - 80) * habitRate / 100, 12, 6);
+    ctx.fill();
+
+    // ── MENSAJE DEL USUARIO ──
+    if (mensaje && mensaje.trim()) {
+        ctx.fillStyle = 'rgba(255,255,255,0.08)';
+        roundRect(ctx, 40, 340, W - 80, 50, 12);
+        ctx.fill();
+
+        ctx.fillStyle = 'rgba(255,255,255,0.75)';
+        ctx.font = 'italic 14px Plus Jakarta Sans, sans-serif';
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'middle';
+        let msg = mensaje.length > 80 ? mensaje.slice(0, 77) + '...' : mensaje;
+        ctx.fillText('"' + msg + '"', 56, 365);
+    } else {
+        // Footer motivacional
+        ctx.fillStyle = 'rgba(255,255,255,0.3)';
+        ctx.font = '13px Plus Jakarta Sans, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('Construyendo mejores hábitos, un día a la vez ✨', W / 2, 365);
+    }
+
+    // ── FOOTER ──
+    ctx.fillStyle = 'rgba(255,255,255,0.2)';
+    ctx.font = '12px Plus Jakarta Sans, sans-serif';
+    ctx.textAlign = 'right';
+    ctx.textBaseline = 'bottom';
+    ctx.fillText('habitostracker-production-4cf5.up.railway.app', W - 40, H - 16);
+
+    canvasReady = true;
+    document.getElementById('canvasGenerating').style.display = 'none';
+
+    // Guardar blob para compartir
+    canvas.toBlob(blob => { canvasBlob = blob; }, 'image/png');
+}
+
+function roundRect(ctx, x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.lineTo(x + w - r, y);
+    ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+    ctx.lineTo(x + w, y + h - r);
+    ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    ctx.lineTo(x + r, y + h);
+    ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+    ctx.lineTo(x, y + r);
+    ctx.quadraticCurveTo(x, y, x + r, y);
+    ctx.closePath();
+}
+
+let regenTimer = null;
+function regenerarCanvas() {
+    clearTimeout(regenTimer);
+    regenTimer = setTimeout(() => {
+        const msg = document.getElementById('shareText').value.trim();
+        dibujarCanvas(msg);
+    }, 600);
+}
+
+// ── MODAL ──
 function openShare() {
-    document.getElementById("shareModal").style.display = "flex";
-    document.getElementById("shareText").focus();
+    document.getElementById('shareModal').classList.add('open');
+    document.getElementById('canvasGenerating').style.display = 'flex';
+    canvasReady = false;
+    setTimeout(() => { dibujarCanvas(document.getElementById('shareText').value.trim()); }, 200);
 }
 function closeShare() {
-    document.getElementById("shareModal").style.display = "none";
+    document.getElementById('shareModal').classList.remove('open');
 }
+document.getElementById('shareModal').addEventListener('click', function(e) {
+    if (e.target === this) closeShare();
+});
+
 function updateShareChars() {
-    const len = document.getElementById("shareText").value.length;
-    document.getElementById("shareCharsCount").textContent = len;
-    document.getElementById("shareConfirm").disabled = len === 0;
+    const len = document.getElementById('shareText').value.length;
+    document.getElementById('shareCharsCount').textContent = len;
 }
 
-// ── COMPARTIR EN COMUNIDAD ───────────────
-async function compartirEnComunidad() {
-    const msg = document.getElementById("shareText").value.trim();
-    if (!msg) { showToast("✍️ Escribe algo primero"); return; }
+// ── DESCARGAR IMAGEN ──
+function descargarImagen() {
+    const canvas = document.getElementById('shareCanvas');
+    const link = document.createElement('a');
+    link.download = 'progreso-' + habitName.replace(/\s+/g, '-') + '-' + habitStreak + 'dias.png';
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+    showToast('📸 Imagen descargada');
+}
 
-    const btn = document.getElementById("shareConfirm");
-    const origText = btn.textContent;
-    btn.disabled = true; btn.textContent = "⏳ Publicando...";
+// ── WHATSAPP ──
+async function compartirWhatsApp() {
+    const btn = document.getElementById('btnWhatsApp');
+    const orig = btn.innerHTML; btn.disabled = true; btn.innerHTML = '⏳';
+
+    descargarImagen();
+    await new Promise(r => setTimeout(r, 700));
+
+    const msg = document.getElementById('shareText').value.trim();
+    const text = encodeURIComponent(
+        (msg ? msg + '\n\n' : '') +
+        '🎯 Hábito: ' + habitName + '\n' +
+        '🔥 Racha: ' + habitStreak + ' días\n' +
+        '📊 Esta semana: ' + habitRate + '% completado\n\n' +
+        '💪 Compartido desde HabitTracker'
+    );
+    window.open('https://api.whatsapp.com/send?text=' + text, '_blank');
+    showToast('📸 Imagen descargada — pégala en WhatsApp');
+
+    btn.disabled = false; btn.innerHTML = orig;
+}
+
+// ── TWITTER ──
+function compartirTwitter() {
+    const msg = document.getElementById('shareText').value.trim();
+    const text = encodeURIComponent(
+        (msg ? msg + ' ' : '') +
+        '🎯 ' + habitName + ' — ' + habitStreak + ' días 🔥 | ' + habitRate + '% esta semana #HabitTracker #Habitos'
+    );
+    window.open('https://twitter.com/intent/tweet?text=' + text, '_blank');
+}
+
+// ── COPIAR ──
+async function copiarTexto() {
+    const msg = document.getElementById('shareText').value.trim();
+    const text = (msg ? msg + '\n\n' : '') + '🎯 ' + habitName + ' — ' + habitStreak + ' días de racha 🔥 | ' + habitRate + '% esta semana';
+    try {
+        await navigator.clipboard.writeText(text);
+        showToast('📋 ¡Copiado al portapapeles!');
+    } catch { showToast('❌ No se pudo copiar'); }
+}
+
+// ── COMPARTIR EN COMUNIDAD ──
+async function compartirEnComunidad() {
+    const msg = document.getElementById('shareText').value.trim();
+    if (!msg) { showToast('✍️ Escribe algo primero'); return; }
+
+    const btn = document.getElementById('shareConfirm');
+    const orig = btn.textContent;
+    btn.disabled = true; btn.textContent = '⏳ Publicando...';
 
     try {
-        const res = await fetch("/Habit/ShareProgress", {
-            method: "POST",
-            headers: { "Content-Type": "application/x-www-form-urlencoded" },
-            body: `habitId=${habitId}&message=${encodeURIComponent(msg)}`
+        const res = await fetch('/Habit/ShareProgress', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: 'habitId=' + habitId + '&message=' + encodeURIComponent(msg)
         });
         const data = await res.json();
 
         if (data.success) {
             closeShare();
-            document.getElementById("shareText").value = "";
-            document.getElementById("shareCharsCount").textContent = "0";
-
-            const empty = document.getElementById("emptyProgress");
-            if (empty) empty.remove();
+            document.getElementById('shareText').value = '';
+            document.getElementById('shareCharsCount').textContent = '0';
+            document.getElementById('emptyProgress')?.remove();
 
             const avatarHTML = data.avatar
-                ? `<img src="${data.avatar}" style="width:100%;height:100%;object-fit:cover;" />`
+                ? '<img src="' + data.avatar + '" style="width:100%;height:100%;object-fit:cover;" />'
                 : data.username.charAt(0).toUpperCase();
 
-            const card = document.createElement("div");
-            card.className = "progress-card";
-            card.id = "progress-" + data.id;
+            const card = document.createElement('div');
+            card.className = 'progress-card'; card.id = 'progress-' + data.id;
             card.innerHTML = `
                 <div class="progress-card-header">
                     <div class="progress-card-avatar">${avatarHTML}</div>
-                    <div>
-                        <div class="progress-card-user">${data.username}</div>
-                        <div class="progress-card-time">ahora</div>
-                    </div>
+                    <div><div class="progress-card-user">${data.username}</div><div class="progress-card-time">ahora</div></div>
                 </div>
                 <div class="progress-card-stats">
                     <span class="progress-stat-chip streak">🔥 ${data.streak} días de racha</span>
@@ -700,164 +859,75 @@ async function compartirEnComunidad() {
                 <div class="progress-comments" id="comments-${data.id}"></div>
                 <div class="comment-input-wrap">
                     <input type="text" class="comment-input-new" placeholder="Escribe un comentario..."
-                           id="commentInput-${data.id}"
-                           onkeydown="if(event.key==='Enter') comentar(${data.id}, this)" />
+                           id="commentInput-${data.id}" onkeydown="if(event.key==='Enter') comentar(${data.id}, this)" />
                     <button class="comment-send-btn" onclick="comentar(${data.id}, document.getElementById('commentInput-${data.id}'))">➤</button>
                 </div>`;
 
-            const feed = document.getElementById("progressFeed");
+            const feed = document.getElementById('progressFeed');
             feed.insertBefore(card, feed.firstChild);
-            showToast("🌍 ¡Publicado en la comunidad!");
+            showToast('🌍 ¡Publicado en la comunidad!');
         } else {
-            showToast("⚠️ " + (data.error ?? "Error al publicar"));
+            showToast('⚠️ ' + (data.error ?? 'Error al publicar'));
         }
-    } catch (err) {
-        showToast("❌ Error de conexión");
-    }
+    } catch { showToast('❌ Error de conexión'); }
 
-    btn.disabled = false; btn.textContent = origText;
+    btn.disabled = false; btn.textContent = orig;
 }
 
-// ── COMPARTIR EXTERNO ────────────────────
-function getShareText() {
-    const msg = document.getElementById("shareText").value.trim();
-    const base = `🎯 "${habitName}" — ${habitStreak} días de racha 🔥 | ${habitRate}% esta semana`;
-    return msg ? `${msg}\n\n${base}` : base;
-}
-async function compartirWhatsApp() {
-    const btn = event.currentTarget;
-    const origText = btn.innerHTML;
-    btn.innerHTML = "⏳ Generando...";
-    btn.disabled = true;
-
-    try {
-        // generar imagen de la preview card
-        const preview = document.getElementById("sharePreviewCard");
-        const canvas = await html2canvas(preview, {
-            scale: 3,
-            backgroundColor: null,
-            useCORS: true,
-            allowTaint: true,
-            logging: false
-        });
-
-        // descargar imagen
-        const link = document.createElement("a");
-        link.download = `progreso-${habitName.replace(/\s+g/, "-")}-${habitStreak}dias.png`;
-        link.href = canvas.toDataURL("image/png");
-        link.click();
-
-        // pequeño delay para que descargue, luego abrir WhatsApp
-        await new Promise(r => setTimeout(r, 800));
-
-        const msg = document.getElementById("shareText").value.trim();
-        const text = encodeURIComponent(
-            (msg ? msg + "\n\n" : "") +
-            `🎯 Hábito: ${habitName}\n` +
-            `🔥 Racha: ${habitStreak} días consecutivos\n` +
-            `📊 Esta semana: ${habitRate}% completado\n\n` +
-            `💪 Compartido desde HabitTracker Pro`
-        );
-        window.open(`https://api.whatsapp.com/send?text=${text}`, "_blank");
-
-        showToast("📸 Imagen descargada — pégala en WhatsApp");
-
-    } catch (err) {
-        console.error(err);
-        showToast("❌ Error generando imagen");
-    }
-
-    btn.innerHTML = origText;
-    btn.disabled = false;
-}
-
-function compartirTwitter() {
-    const text = encodeURIComponent(getShareText() + " #HabitTracker #Hábitos");
-    window.open(`https://twitter.com/intent/tweet?text=${text}`, "_blank");
-}
-
-async function copiarTexto() {
-    try {
-        await navigator.clipboard.writeText(getShareText());
-        showToast("📋 ¡Copiado al portapapeles!");
-    } catch {
-        showToast("❌ No se pudo copiar");
-    }
-}
-
-document.getElementById("shareModal").addEventListener("click", function(e) {
-    if (e.target === this) closeShare();
-});
-
-// ── REACCIONES ───────────────────────────
+// ── REACCIONES ──
 async function reaccionar(progressId, emoji, btn) {
     try {
-        const res = await fetch("/Habit/ReactProgress", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
+        const res = await fetch('/Habit/ReactProgress', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ progressId, emoji })
         });
         const data = await res.json();
         if (!data.success) return;
-
-        const container = document.getElementById("reactions-" + progressId);
+        const container = document.getElementById('reactions-' + progressId);
         if (!container) return;
-        const wasMine = btn.classList.contains("mine");
-        container.querySelectorAll(".reaction-btn").forEach(b => {
+        const wasMine = btn.classList.contains('mine');
+        container.querySelectorAll('.reaction-btn').forEach(b => {
             const btnEmoji = b.textContent.trim().charAt(0);
             const found = data.counts.find(c => c.emoji === btnEmoji);
             const count = found ? found.count : 0;
-            b.innerHTML = btnEmoji + (count > 0 ? ` <span class="reaction-count">${count}</span>` : "");
-            b.classList.remove("mine");
+            b.innerHTML = btnEmoji + (count > 0 ? ` <span class="reaction-count">${count}</span>` : '');
+            b.classList.remove('mine');
         });
-        if (!wasMine) btn.classList.add("mine");
+        if (!wasMine) btn.classList.add('mine');
     } catch (err) { console.error(err); }
 }
 
-// ── COMENTARIOS ──────────────────────────
+// ── COMENTARIOS ──
 async function comentar(progressId, input) {
-    const content = input.value.trim();
-    if (!content) return;
-    input.value = ""; input.disabled = true;
-
+    const content = input.value.trim(); if (!content) return;
+    input.value = ''; input.disabled = true;
     try {
-        const res = await fetch("/Habit/CommentProgress", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
+        const res = await fetch('/Habit/CommentProgress', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ progressId, content })
         });
         const data = await res.json();
         if (!data.success) { input.disabled = false; return; }
-
-        const avatarHTML = data.avatar
-            ? `<img src="${data.avatar}" style="width:100%;height:100%;object-fit:cover;" />`
-            : data.username.charAt(0).toUpperCase();
-
-        const el = document.createElement("div");
-        el.className = "comment-item-new";
-        el.innerHTML = `
-            <div class="comment-avatar-small">${avatarHTML}</div>
-            <div class="comment-bubble">
-                <strong>${escapeHtml(data.username)}</strong>
-                ${escapeHtml(data.content)}
-            </div>`;
-
-        document.getElementById("comments-" + progressId).appendChild(el);
+        const avatarHTML = data.avatar ? `<img src="${data.avatar}" style="width:100%;height:100%;object-fit:cover;" />` : data.username.charAt(0).toUpperCase();
+        const el = document.createElement('div');
+        el.className = 'comment-item-new';
+        el.innerHTML = `<div class="comment-avatar-small">${avatarHTML}</div><div class="comment-bubble"><strong>${escapeHtml(data.username)}</strong>${escapeHtml(data.content)}</div>`;
+        document.getElementById('comments-' + progressId).appendChild(el);
     } catch (err) { console.error(err); }
     input.disabled = false; input.focus();
 }
 
 function escapeHtml(text) {
-    return String(text).replace(/&/g,"&amp;").replace(/</g,"&lt;")
-                       .replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+    return String(text).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
 function showToast(msg) {
-    const t = document.createElement("div");
-    t.className = "detail-toast";
-    t.textContent = msg;
+    const t = document.createElement('div');
+    t.className = 'detail-toast'; t.textContent = msg;
     document.body.appendChild(t);
-    setTimeout(() => t.remove(), 3000);
+    setTimeout(() => { t.style.transition = 'opacity 0.3s'; t.style.opacity = '0'; setTimeout(() => t.remove(), 300); }, 3000);
 }
 </script>
 }
