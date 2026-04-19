@@ -202,11 +202,12 @@ namespace HabitTrackerApp.Controllers
             if (member == null) return RedirectToAction("Index");
 
             var messages = _context.GroupMessages
-                .Where(m => m.GroupId == id && !m.IsDeleted)
-                .Include(m => m.Sender)
-                .Include(m => m.Reads)
-                .OrderBy(m => m.SentAt)
-                .ToList();
+       .Where(m => m.GroupId == id && !m.IsDeleted)
+       .Include(m => m.Sender)
+       .Include(m => m.Reads)
+       .Include(m => m.ReplyToMessage).ThenInclude(m => m.Sender)
+       .OrderBy(m => m.SentAt)
+       .ToList();
 
             // ✅ calcular no leídos ANTES de marcarlos
             int firstUnreadId = 0;
@@ -263,7 +264,56 @@ namespace HabitTrackerApp.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> SendMessage(int groupId, string content)
+        public async Task<IActionResult> ReactToMessage(int messageId, string emoji)
+        {
+            var userId = int.Parse(User.FindFirst("UserId").Value);
+
+            // si ya reaccionó con ese mismo emoji, quitarlo (toggle)
+            var existing = await _context.GroupMessageReactions
+                .FirstOrDefaultAsync(r => r.GroupMessageId == messageId && r.UserId == userId && r.Emoji == emoji);
+
+            if (existing != null)
+            {
+                _context.GroupMessageReactions.Remove(existing);
+            }
+            else
+            {
+                // quitar reacción anterior del mismo usuario en ese mensaje
+                var prev = await _context.GroupMessageReactions
+                    .FirstOrDefaultAsync(r => r.GroupMessageId == messageId && r.UserId == userId);
+                if (prev != null) _context.GroupMessageReactions.Remove(prev);
+
+                _context.GroupMessageReactions.Add(new GroupMessageReaction
+                {
+                    GroupMessageId = messageId,
+                    UserId = userId,
+                    Emoji = emoji,
+                    CreatedAt = DateTime.UtcNow
+                });
+            }
+
+            await _context.SaveChangesAsync();
+
+            // devolver todas las reacciones del mensaje agrupadas
+            var reactions = await _context.GroupMessageReactions
+                .Where(r => r.GroupMessageId == messageId)
+                .GroupBy(r => r.Emoji)
+                .Select(g => new { emoji = g.Key, count = g.Count() })
+                .ToListAsync();
+
+            // notificar en tiempo real a todos en el grupo
+            var msg = await _context.GroupMessages.FindAsync(messageId);
+            if (msg != null)
+            {
+                await _hub.Clients.Group("group-" + msg.GroupId)
+                    .SendAsync("GroupMessageReaction", messageId.ToString(), reactions);
+            }
+
+            return Json(new { success = true, reactions });
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> SendMessage(int groupId, string content, int? replyToMessageId = null)
         {
             var userId = int.Parse(User.FindFirst("UserId").Value);
             var member = _context.GroupMembers
@@ -278,7 +328,8 @@ namespace HabitTrackerApp.Controllers
                 SenderId = userId,
                 Content = content.Trim(),
                 SentAt = DateTime.UtcNow,
-                IsDeleted = false
+                IsDeleted = false,
+                ReplyToMessageId = replyToMessageId
             };
             _context.GroupMessages.Add(msg);
             await _context.SaveChangesAsync();
@@ -291,6 +342,18 @@ namespace HabitTrackerApp.Controllers
             });
             await _context.SaveChangesAsync();
 
+            // obtener info del mensaje al que responde
+            string replyContent = "";
+            string replySender = "";
+            if (replyToMessageId.HasValue)
+            {
+                var replyMsg = _context.GroupMessages
+                    .Include(m => m.Sender)
+                    .FirstOrDefault(m => m.Id == replyToMessageId.Value);
+                replyContent = replyMsg?.Content ?? "";
+                replySender = replyMsg?.Sender?.Username ?? "";
+            }
+
             var totalMembers = _context.GroupMembers.Count(m => m.GroupId == groupId && m.IsActive);
             return Json(new
             {
@@ -302,7 +365,10 @@ namespace HabitTrackerApp.Controllers
                 senderImage = sender?.ProfileImage ?? sender?.ProfilePicture ?? "",
                 fileUrl = "",
                 fileType = "text",
-                totalMembers
+                totalMembers,
+                replyToMessageId,
+                replyContent,
+                replySender
             });
         }
         [HttpPost]

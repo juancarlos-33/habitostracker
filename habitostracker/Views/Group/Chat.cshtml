@@ -159,6 +159,39 @@ body.bg-dark .grp-unread-sep span { background: rgba(99,102,241,0.15) !important
     font-size: 14px; line-height: 1.55; word-break: break-word;
     max-width: min(300px, 72vw); position: relative; transition: transform 0.15s;
 }
+
+/* REACCIONES */
+.grp-reactions {
+    display: flex; flex-wrap: wrap; gap: 4px;
+    margin-top: 4px; padding: 0 4px;
+}
+.grp-reaction-btn {
+    display: flex; align-items: center; gap: 3px;
+    padding: 2px 8px; border-radius: 20px;
+    background: rgba(99,102,241,0.08);
+    border: 1px solid rgba(99,102,241,0.15);
+    cursor: pointer; font-size: 13px; font-weight: 700;
+    color: #6366f1; transition: 0.15s; font-family: inherit;
+}
+.grp-reaction-btn:hover { background: rgba(99,102,241,0.15); transform: scale(1.08); }
+.grp-reaction-btn.mine { background: rgba(99,102,241,0.18); border-color: #6366f1; }
+.grp-reaction-btn span { font-size: 11px; }
+
+.grp-reaction-picker {
+    position: absolute; bottom: 100%; left: 0;
+    background: white; border-radius: 16px; padding: 8px 10px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+    border: 1px solid rgba(0,0,0,0.06);
+    display: flex; gap: 4px; z-index: 100;
+    animation: msgPop 0.2s cubic-bezier(0.34,1.56,0.64,1);
+}
+.grp-reaction-picker span {
+    font-size: 22px; cursor: pointer; padding: 4px;
+    border-radius: 8px; transition: 0.15s;
+}
+.grp-reaction-picker span:hover { background: #f1f5f9; transform: scale(1.2); }
+body.bg-dark .grp-reaction-picker { background: #1e293b !important; border-color: #2d3748 !important; }
+body.bg-dark .grp-reaction-btn { background: rgba(99,102,241,0.12) !important; color: #818cf8 !important; }
 .grp-msg-bubble:active { transform: scale(0.97); }
 .grp-msg-row.mine .grp-msg-bubble {
     background: linear-gradient(135deg, #6366f1, #4f46e5);
@@ -286,6 +319,43 @@ body.bg-dark .grp-unread-sep span { background: rgba(99,102,241,0.15) !important
     transition: 0.2s; color: #1e293b; font-family: inherit;
     resize: none; max-height: 100px; line-height: 1.5;
 }
+/* REPLY */
+.grp-reply-preview {
+    flex-shrink: 0; padding: 8px 12px; background: white;
+    border-top: 1px solid #e2e8f0; display: none;
+    align-items: center; gap: 10px;
+    border-left: 3px solid #6366f1;
+}
+.grp-reply-preview-content {
+    flex: 1; min-width: 0;
+}
+.grp-reply-preview-name {
+    font-size: 11px; font-weight: 700; color: #6366f1; margin-bottom: 2px;
+}
+.grp-reply-preview-text {
+    font-size: 12px; color: #64748b;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.grp-reply-close {
+    width: 22px; height: 22px; border-radius: 50%;
+    background: #f1f5f9; border: none; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; color: #64748b; flex-shrink: 0;
+}
+
+.grp-msg-reply {
+    padding: 6px 10px; border-radius: 10px;
+    background: rgba(0,0,0,0.06); margin-bottom: 4px;
+    border-left: 3px solid #6366f1; cursor: pointer;
+    transition: 0.15s;
+}
+.grp-msg-reply:hover { background: rgba(0,0,0,0.1); }
+.grp-msg-reply-name { font-size: 11px; font-weight: 700; color: #6366f1; margin-bottom: 2px; }
+.grp-msg-reply-text { font-size: 12px; color: #64748b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.grp-msg-row.mine .grp-msg-reply { background: rgba(255,255,255,0.15); }
+.grp-msg-row.mine .grp-msg-reply-name { color: rgba(255,255,255,0.9); }
+.grp-msg-row.mine .grp-msg-reply-text { color: rgba(255,255,255,0.7); }
+body.bg-dark .grp-msg-reply { background: rgba(255,255,255,0.06) !important; }
 .grp-msg-input::placeholder { color: #94a3b8; }
 .grp-msg-input:focus { border-color: #6366f1; background: white; box-shadow: 0 0 0 3px rgba(99,102,241,0.12); }
 .grp-send-btn {
@@ -397,16 +467,26 @@ body.bg-dark #emptyState .empty-title { color: #f1f5f9 !important; }
                         }
                         <div class="grp-msg-wrap">
                             @if (!isMine) { <a href="/User/Profile/@msg.SenderId" class="grp-msg-sender">@msg.Sender?.Username</a> }
-                            <div class="grp-msg-bubble">
+                     <div class="grp-msg-bubble" oncontextmenu="abrirReactionPicker(event, @msg.Id)" ondblclick="responderMensaje(@msg.Id, '@(msg.Sender?.Username ?? "")', '@(msg.Content?.Replace("'", "\\'").Replace("\n", " ") ?? "")')" ontouchstart="iniciarLongPress(@msg.Id)" ontouchend="cancelarLongPress()" style="position:relative;">
+                           @if (msg.ReplyToMessageId.HasValue && msg.ReplyToMessage != null)
+{
+    var replyText = msg.ReplyToMessage.Content?.Length > 50
+        ? msg.ReplyToMessage.Content.Substring(0, 50) + "..." : msg.ReplyToMessage.Content ?? "";
+    <div class="grp-msg-reply" onclick="scrollToMessage(@msg.ReplyToMessageId)">
+        <div class="grp-msg-reply-name">@msg.ReplyToMessage.Sender?.Username</div>
+        <div class="grp-msg-reply-text">@replyText</div>
+    </div>
+}
                                 @if (isAudio) { <audio controls class="grp-msg-audio"><source src="@msg.Content" /></audio> }
                                 else if (isImage) { <img src="@msg.FileUrl" class="grp-msg-media" onclick="window.open('@msg.FileUrl', '_blank')" /> }
                                 else if (isVideo) { <video controls class="grp-msg-media"><source src="@msg.FileUrl" /></video> }
                                 else if (!string.IsNullOrEmpty(msg.Content)) { @msg.Content }
                             </div>
-                            <div class="grp-msg-footer">
-                                <span class="grp-msg-time">@msg.SentAt.ToLocalTime().ToString("hh:mm tt")</span>
-                                @if (isMine) { <span class="grp-msg-check @(allRead ? "seen" : "")" id="check-@msg.Id">@(allRead ? "✔✔" : "✔")</span> }
-                            </div>
+                           <div class="grp-msg-footer">
+    <span class="grp-msg-time">@msg.SentAt.ToLocalTime().ToString("hh:mm tt")</span>
+    @if (isMine) { <span class="grp-msg-check @(allRead ? "seen" : "")" id="check-@msg.Id">@(allRead ? "✔✔" : "✔")</span> }
+</div>
+<div class="grp-reactions" id="reactions-@msg.Id"></div>
                         </div>
                     </div>
                 }
@@ -448,6 +528,14 @@ body.bg-dark #emptyState .empty-title { color: #f1f5f9 !important; }
                 { <span onclick="addGroupEmoji('@e')">@e</span> }
             </div>
         </div>
+
+        <div class="grp-reply-preview" id="grpReplyPreview">
+    <div class="grp-reply-preview-content">
+        <div class="grp-reply-preview-name" id="grpReplyName"></div>
+        <div class="grp-reply-preview-text" id="grpReplyText"></div>
+    </div>
+    <button class="grp-reply-close" onclick="cancelarReply()">✕</button>
+</div>
         <div class="grp-input-bar">
             <button type="button" class="grp-bar-btn" id="emojiBtn" onclick="toggleGroupEmoji()" data-no-loader>😊</button>
             <button type="button" class="grp-bar-btn" onclick="document.getElementById('grpFileInput').click()" data-no-loader title="Adjuntar">
@@ -481,6 +569,9 @@ let selectedFile = null;
 let mediaRecorder = null, audioChunks = [], isRecording = false, recInterval = null;
 let recordedBlob = null;
 let activeUsersInChat = 1;
+let replyToMessageId = null;
+let replyToContent = "";
+let replyToSender = "";
 
 // ── SCROLL ──
 function scrollToBottom(smooth) {
@@ -604,7 +695,9 @@ grpConnection.on("ReceiveGroupMessage", (senderId, senderName, senderImage, cont
     const row = document.createElement("div");
     row.className = "grp-msg-row theirs";
     if (msgId) row.id = "msg-" + msgId;
-    row.innerHTML = `<a href="/User/Profile/${senderId}" class="grp-msg-avatar">${avatarHTML}</a><div class="grp-msg-wrap"><a href="/User/Profile/${senderId}" class="grp-msg-sender">${escapeHtml(senderName)}</a><div class="grp-msg-bubble">${contentHTML}</div><div class="grp-msg-footer"><span class="grp-msg-time">${time}</span></div></div>`;
+    row.innerHTML = `<a href="/User/Profile/${senderId}" class="grp-msg-avatar">${avatarHTML}</a><div class="grp-msg-wrap"><a href="/User/Profile/${senderId}" class="grp-msg-sender">${escapeHtml(senderName)}</a>
+    
+    ${contentHTML}</div><div class="grp-msg-footer"><span class="grp-msg-time">${time}</span></div></div>`;
     chatBox.insertBefore(row, document.getElementById("typingIndicator"));
     chatBox.scrollTop = chatBox.scrollHeight;
 
@@ -845,18 +938,50 @@ async function sendGroupMessage() {
         try {
             const res = await fetch("/Group/SendMessage", {
                 method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" },
-                body: `groupId=${groupId}&content=${encodeURIComponent(content)}&__RequestVerificationToken=${encodeURIComponent(token())}`
+                body: `groupId=${groupId}&content=${encodeURIComponent(content)}&replyToMessageId=${replyToMessageId ?? ""}&__RequestVerificationToken=${encodeURIComponent(token())}`
             });
             const data = await res.json();
             if (data.success) {
                 const row = document.getElementById(tempId); if (row) row.id = "msg-" + data.id;
                 const check = document.getElementById("check-" + tempId); if (check) check.id = "check-" + data.id;
                 currentTotalMembers = data.totalMembers;
+                if (data.success) {
+    const row = document.getElementById(tempId); if (row) row.id = "msg-" + data.id;
+    const check = document.getElementById("check-" + tempId); if (check) check.id = "check-" + data.id;
+    currentTotalMembers = data.totalMembers;
+    cancelarReply();
+    await grpConnection.invoke("SendGroupMessage", groupId.toString(), myId, myName, content, data.id.toString(), "", "text");
                 await grpConnection.invoke("SendGroupMessage", groupId.toString(), myId, myName, content, data.id.toString(), "", "text");
             } else { document.getElementById(tempId)?.remove(); }
         } catch (err) { console.error(err); document.getElementById(tempId)?.remove(); }
     }
     if (msgInput) msgInput.focus();
+}
+
+function responderMensaje(msgId, senderName, content) {
+    replyToMessageId = msgId;
+    replyToSender = senderName;
+    replyToContent = content;
+    document.getElementById("grpReplyName").textContent = senderName;
+    document.getElementById("grpReplyText").textContent = content.length > 60 ? content.substring(0, 60) + "..." : content;
+    document.getElementById("grpReplyPreview").style.display = "flex";
+    if (msgInput) msgInput.focus();
+}
+
+function cancelarReply() {
+    replyToMessageId = null;
+    replyToContent = "";
+    replyToSender = "";
+    document.getElementById("grpReplyPreview").style.display = "none";
+}
+
+function scrollToMessage(msgId) {
+    const el = document.getElementById("msg-" + msgId);
+    if (!el) return;
+    el.scrollIntoView({ behavior: "smooth", block: "center" });
+    el.style.transition = "background 0.3s";
+    el.style.background = "rgba(99,102,241,0.15)";
+    setTimeout(() => el.style.background = "", 1500);
 }
 
 function toggleGroupEmoji() {
@@ -872,5 +997,65 @@ document.addEventListener("click", (e) => {
         const panel = document.getElementById("emojiPanel"); if (panel) panel.style.display = "none";
         document.getElementById("emojiBtn")?.classList.remove("active");
     }
+});
+// ── REACCIONES ──
+const EMOJIS_REACCION = ["❤️", "👍", "😂", "😮", "😢", "🔥"];
+let longPressTimer = null;
+
+function iniciarLongPress(msgId) {
+    longPressTimer = setTimeout(() => abrirReactionPicker(null, msgId), 600);
+}
+function cancelarLongPress() {
+    clearTimeout(longPressTimer);
+}
+
+function abrirReactionPicker(e, msgId) {
+    if (e) e.preventDefault();
+    document.querySelectorAll('.grp-reaction-picker').forEach(p => p.remove());
+
+    const bubble = document.querySelector(`#msg-${msgId} .grp-msg-bubble`);
+    if (!bubble) return;
+
+    const picker = document.createElement("div");
+    picker.className = "grp-reaction-picker";
+    picker.innerHTML = EMOJIS_REACCION.map(em =>
+        `<span onclick="reaccionar(${msgId}, '${em}')">${em}</span>`
+    ).join("");
+    bubble.appendChild(picker);
+
+    setTimeout(() => {
+        document.addEventListener("click", function cerrar(ev) {
+            if (!picker.contains(ev.target)) { picker.remove(); document.removeEventListener("click", cerrar); }
+        });
+    }, 100);
+}
+
+async function reaccionar(msgId, emoji) {
+    document.querySelectorAll('.grp-reaction-picker').forEach(p => p.remove());
+    try {
+        const res = await fetch("/Group/ReactToMessage", {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: `messageId=${msgId}&emoji=${encodeURIComponent(emoji)}&__RequestVerificationToken=${encodeURIComponent(token())}`
+        });
+        const data = await res.json();
+        if (data.success) actualizarReacciones(msgId.toString(), data.reactions);
+    } catch (err) { console.error(err); }
+}
+
+function actualizarReacciones(msgId, reactions) {
+    const container = document.getElementById("reactions-" + msgId);
+    if (!container) return;
+    if (!reactions || reactions.length === 0) { container.innerHTML = ""; return; }
+    container.innerHTML = reactions.map(r =>
+        `<button class="grp-reaction-btn" onclick="reaccionar(${msgId}, '${r.emoji}')">
+            ${r.emoji}<span>${r.count}</span>
+        </button>`
+    ).join("");
+}
+
+// recibir reacciones en tiempo real
+grpConnection.on("GroupMessageReaction", (msgId, reactions) => {
+    actualizarReacciones(msgId, reactions);
 });
 </script>

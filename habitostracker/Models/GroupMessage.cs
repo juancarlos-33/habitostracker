@@ -8,6 +8,8 @@ namespace HabitTrackerApp.Models
         public int Id { get; set; }
         public int GroupId { get; set; }
         public Group Group { get; set; }
+        public int? ReplyToMessageId { get; set; }
+        public GroupMessage ReplyToMessage { get; set; }
         public ICollection<GroupMessageReaction> Reactions { get; set; } = new List<GroupMessageReaction>();
         public ICollection<GroupMessageRead> Reads { get; set; } = new List<GroupMessageRead>();
         public int? SenderId { get; set; }
