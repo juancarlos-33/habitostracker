@@ -76,7 +76,12 @@ namespace HabitTrackerApp.Controllers
             await _context.SaveChangesAsync();
 
             await _hub.Clients.Group(toUserId.ToString())
-                .SendAsync("ReceiveNotification", message);
+     .SendAsync("ReceiveNotification",
+         toUserId.ToString(),
+         message,
+         fromUser?.Username ?? "",
+         fromUser?.ProfileImage ?? fromUser?.ProfilePicture ?? "",
+         link);
         }
 
         [HttpGet]

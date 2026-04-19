@@ -674,12 +674,14 @@ const connection = new signalR.HubConnectionBuilder().withUrl("/chatHub").build(
 connection.start().then(() => {
     const userId = '@(User.Identity.IsAuthenticated ? User.FindFirst("UserId")?.Value : "")';
     if (userId) connection.invoke("JoinUserGroup", userId);
-  connection.on("ReceiveNotification", (uid, msg, username, img, link) => {
-    // No mostrar notificación de grupo si ya estamos en ese chat
-    const activeGroup = sessionStorage.getItem('activeGroupChat');
-    if (activeGroup && link && link.includes('/Group/Chat/' + activeGroup)) return;
-    showToastNotif(username, msg, img, link);
-});
+
+    connection.on("ReceiveNotification", (uid, msg, username, img, link) => {
+        // No mostrar notificación si ya estamos en ese chat de grupo
+        const activeGroup = sessionStorage.getItem('activeGroupChat');
+        if (activeGroup && link && link.includes('/Group/Chat/' + activeGroup)) return;
+        showToastNotif(username, msg, img, link);
+    });
+
     connection.on("UserOnline", () => {});
     connection.on("UserOffline", () => {});
 }).catch(e => console.error("SignalR notif:", e));
@@ -692,7 +694,7 @@ function showToastNotif(username, message, userImage, link) {
 
     const card = document.createElement("div");
     card.className = "ht-notif-card";
-    card.innerHTML = `${avatarHTML}<div style="flex:1;min-width:0;"><div style="font-weight:700;font-size:13px;color:#f1f5f9;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${username}</div><div style="font-size:12px;color:#94a3b8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${message}</div></div><button onclick="event.stopPropagation();this.closest('.ht-notif-card').remove();" style="background:none;border:none;color:#64748b;font-size:15px;cursor:pointer;padding:0;flex-shrink:0;">✕</button>`;
+    card.innerHTML = `${avatarHTML}<div style="flex:1;min-width:0;"><div style="font-weight:700;font-size:13px;color:#f1f5f9;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${username ?? ''}</div><div style="font-size:12px;color:#94a3b8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${message ?? ''}</div></div><button onclick="event.stopPropagation();this.closest('.ht-notif-card').remove();" style="background:none;border:none;color:#64748b;font-size:15px;cursor:pointer;padding:0;flex-shrink:0;">✕</button>`;
 
     const bar = document.createElement("div");
     bar.className = "ht-notif-progress";
@@ -704,7 +706,6 @@ function showToastNotif(username, message, userImage, link) {
     setTimeout(() => { card.classList.remove("show"); card.classList.add("hide"); setTimeout(() => card.remove(), 400); }, 4000);
 }
 </script>
-
 <script>
 // ══ LOADER ══════════════════════════════
 const htLoader = document.getElementById("ht-loader");

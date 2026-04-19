@@ -230,7 +230,7 @@ namespace HabitTrackerApp.Hubs
 
         // 🔥 enviar mensaje de grupo con soporte para texto, imagen, video y audio
         public async Task SendGroupMessage(string groupId, string senderId, string senderName,
-            string content, string msgId, string fileUrl, string fileType)
+       string content, string msgId, string fileUrl, string fileType)
         {
             try
             {
@@ -241,6 +241,30 @@ namespace HabitTrackerApp.Hubs
                 await Clients.OthersInGroup("group-" + groupId)
                     .SendAsync("ReceiveGroupMessage", senderId, senderName, senderImage,
                         content, time, msgId, fileUrl, fileType);
+
+                var group = await _context.Groups.FirstOrDefaultAsync(g => g.Id == int.Parse(groupId));
+                var groupName = group?.Name ?? "un grupo";
+
+                var members = await _context.GroupMembers
+                    .Where(m => m.GroupId == int.Parse(groupId) && m.IsActive && m.UserId != int.Parse(senderId))
+                    .ToListAsync();
+
+                foreach (var member in members)
+                {
+                    string preview;
+                    if (fileType == "audio") preview = "🎵 Mensaje de voz";
+                    else if (fileType == "image") preview = "📷 Imagen";
+                    else if (fileType == "video") preview = "🎥 Video";
+                    else preview = content.Length > 50 ? content.Substring(0, 47) + "..." : content;
+
+                    await Clients.Group(member.UserId.ToString())
+                        .SendAsync("ReceiveNotification",
+                            member.UserId.ToString(),
+                            $"{senderName}: {preview}",
+                            senderName,
+                            senderImage,
+                            $"/Group/Chat/{groupId}");
+                }
             }
             catch (Exception ex)
             {
