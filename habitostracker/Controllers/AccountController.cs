@@ -971,8 +971,8 @@ namespace HabitTrackerApp.Controllers
             {
                 Username = model.Username,
                 Email = model.Email,
-                Gender = model.Gender,
-                Bio = model.Bio,
+                Gender = model.Gender ?? "",
+                Bio = model.Bio ?? "",
                 FullName = null,
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword(model.Password),
                 CreatedAt = DateTime.Now,
