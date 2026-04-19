@@ -1,0 +1,368 @@
+﻿@{
+    ViewData["Title"] = "Creando tu cuenta";
+    Layout = "_LayoutLogin";
+}
+
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+.creating-wrapper {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #020617;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    overflow: hidden;
+    position: relative;
+}
+
+/* Fondo animado */
+.bg-orb {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(80px);
+    animation: orbFloat ease-in-out infinite;
+}
+.bg-orb-1 {
+    width: 600px; height: 600px;
+    background: radial-gradient(circle, rgba(99,102,241,0.2), transparent 70%);
+    top: -200px; left: -200px;
+    animation-duration: 8s;
+}
+.bg-orb-2 {
+    width: 500px; height: 500px;
+    background: radial-gradient(circle, rgba(34,197,94,0.15), transparent 70%);
+    bottom: -150px; right: -150px;
+    animation-duration: 10s; animation-delay: -4s;
+}
+.bg-orb-3 {
+    width: 300px; height: 300px;
+    background: radial-gradient(circle, rgba(37,99,235,0.15), transparent 70%);
+    top: 50%; left: 50%;
+    transform: translate(-50%,-50%);
+    animation-duration: 6s; animation-delay: -2s;
+}
+@@keyframes orbFloat {
+    0%,100% { transform: scale(1) translate(0,0); }
+    50% { transform: scale(1.15) translate(20px,20px); }
+}
+
+/* Partículas que suben */
+.spark {
+    position: absolute;
+    width: 4px; height: 4px;
+    border-radius: 50%;
+    background: #6366f1;
+    animation: sparkUp linear infinite;
+}
+@@keyframes sparkUp {
+    0% { transform: translateY(100vh) scale(0); opacity: 0; }
+    10% { opacity: 1; transform: translateY(80vh) scale(1); }
+    90% { opacity: 1; }
+    100% { transform: translateY(-50px) scale(0.5); opacity: 0; }
+}
+
+.creating-card {
+    position: relative;
+    z-index: 10;
+    text-align: center;
+    padding: 20px;
+    animation: fadeIn 0.5s ease both;
+}
+@@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Imagen con efecto */
+.creating-img-wrap {
+    position: relative;
+    width: 180px;
+    height: 180px;
+    margin: 0 auto 36px;
+}
+.creating-img {
+    width: 180px;
+    height: 180px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid rgba(99,102,241,0.4);
+    box-shadow: 0 0 60px rgba(99,102,241,0.4), 0 0 120px rgba(99,102,241,0.15);
+    animation: imgGlow 2s ease-in-out infinite;
+}
+@@keyframes imgGlow {
+    0%,100% { box-shadow: 0 0 40px rgba(99,102,241,0.4), 0 0 80px rgba(99,102,241,0.15); }
+    50% { box-shadow: 0 0 80px rgba(99,102,241,0.6), 0 0 120px rgba(99,102,241,0.25); }
+}
+
+/* Anillo giratorio alrededor de la imagen */
+.creating-ring {
+    position: absolute;
+    inset: -10px;
+    border-radius: 50%;
+    border: 2px solid transparent;
+    border-top-color: #6366f1;
+    border-right-color: rgba(99,102,241,0.3);
+    animation: spin 1.5s linear infinite;
+}
+.creating-ring-2 {
+    position: absolute;
+    inset: -20px;
+    border-radius: 50%;
+    border: 1.5px solid transparent;
+    border-bottom-color: #22c55e;
+    border-left-color: rgba(34,197,94,0.2);
+    animation: spin 2.5s linear infinite reverse;
+}
+@@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Logo sobre la imagen */
+.creating-logo-badge {
+    position: absolute;
+    bottom: 4px; right: 4px;
+    width: 44px; height: 44px;
+    background: linear-gradient(135deg, #6366f1, #2563eb);
+    border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px;
+    box-shadow: 0 4px 16px rgba(99,102,241,0.5);
+    border: 2px solid #020617;
+    animation: badgePop 0.5s cubic-bezier(0.34,1.56,0.64,1) 0.3s both;
+}
+@@keyframes badgePop {
+    from { transform: scale(0) rotate(-20deg); }
+    to { transform: scale(1) rotate(0deg); }
+}
+
+.creating-title {
+    font-size: 32px;
+    font-weight: 800;
+    color: white;
+    letter-spacing: -0.5px;
+    margin-bottom: 10px;
+    background: linear-gradient(135deg, white, rgba(255,255,255,0.7));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.creating-subtitle {
+    font-size: 16px;
+    color: rgba(255,255,255,0.5);
+    margin-bottom: 40px;
+    line-height: 1.6;
+}
+.creating-subtitle span {
+    color: #818cf8;
+    font-weight: 600;
+}
+
+/* Steps animados */
+.creating-steps {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    max-width: 320px;
+    margin: 0 auto 40px;
+    text-align: left;
+}
+.creating-step {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 14px;
+    animation: stepIn 0.4s ease both;
+    opacity: 0;
+}
+.creating-step:nth-child(1) { animation-delay: 0.3s; }
+.creating-step:nth-child(2) { animation-delay: 0.7s; }
+.creating-step:nth-child(3) { animation-delay: 1.1s; }
+@@keyframes stepIn {
+    from { opacity: 0; transform: translateX(-16px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+.step-icon {
+    width: 32px; height: 32px;
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; flex-shrink: 0;
+}
+.step-icon.purple { background: rgba(99,102,241,0.2); }
+.step-icon.green { background: rgba(34,197,94,0.2); }
+.step-icon.blue { background: rgba(37,99,235,0.2); }
+.step-text { font-size: 13px; color: rgba(255,255,255,0.7); font-weight: 600; }
+.step-check {
+    margin-left: auto;
+    width: 20px; height: 20px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 700;
+}
+.step-check.done { background: #22c55e; color: white; animation: checkPop 0.3s cubic-bezier(0.34,1.56,0.64,1) both; }
+.step-check.loading { background: rgba(255,255,255,0.1); color: transparent; }
+@@keyframes checkPop {
+    from { transform: scale(0); }
+    to { transform: scale(1); }
+}
+
+/* Barra de progreso */
+.creating-progress-wrap {
+    max-width: 320px;
+    margin: 0 auto 20px;
+}
+.creating-progress-bar {
+    height: 6px;
+    background: rgba(255,255,255,0.08);
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 8px;
+}
+.creating-progress-fill {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, #6366f1, #22c55e);
+    border-radius: 10px;
+    transition: width 0.4s ease;
+}
+.creating-progress-label {
+    font-size: 12px;
+    color: rgba(255,255,255,0.35);
+    text-align: center;
+}
+
+/* Dots de carga */
+.creating-dots {
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+    margin-top: 8px;
+}
+.creating-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: rgba(99,102,241,0.5);
+    animation: dotBounce 1.2s ease-in-out infinite;
+}
+.creating-dot:nth-child(2) { animation-delay: 0.2s; }
+.creating-dot:nth-child(3) { animation-delay: 0.4s; }
+@@keyframes dotBounce {
+    0%,60%,100% { transform: translateY(0); opacity: 0.5; }
+    30% { transform: translateY(-8px); opacity: 1; background: #6366f1; }
+}
+</style>
+
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+<!-- Orbes de fondo -->
+<div class="bg-orb bg-orb-1"></div>
+<div class="bg-orb bg-orb-2"></div>
+<div class="bg-orb bg-orb-3"></div>
+
+<!-- Partículas -->
+<div id="sparks"></div>
+
+<div class="creating-wrapper">
+    <div class="creating-card">
+
+        <!-- Imagen con anillos -->
+        <div class="creating-img-wrap">
+            <div class="creating-ring"></div>
+            <div class="creating-ring-2"></div>
+            <img class="creating-img"
+                 src="https://res.cloudinary.com/dzrjag7ia/image/upload/v1776560628/NE_lmertz.jpg"
+                 alt="HabitTracker" />
+            <div class="creating-logo-badge">🎯</div>
+        </div>
+
+        <h1 class="creating-title">Creando tu cuenta</h1>
+        <p class="creating-subtitle">Espera un momento, <span>estamos preparando todo</span><br/>para que empieces tu journey 🚀</p>
+
+        <!-- Pasos -->
+        <div class="creating-steps">
+            <div class="creating-step" id="step1">
+                <div class="step-icon purple">🔐</div>
+                <span class="step-text">Verificando tu identidad</span>
+                <div class="step-check loading" id="check1"></div>
+            </div>
+            <div class="creating-step" id="step2">
+                <div class="step-icon green">🎯</div>
+                <span class="step-text">Configurando tu perfil</span>
+                <div class="step-check loading" id="check2"></div>
+            </div>
+            <div class="creating-step" id="step3">
+                <div class="step-icon blue">✨</div>
+                <span class="step-text">Personalizando tu experiencia</span>
+                <div class="step-check loading" id="check3"></div>
+            </div>
+        </div>
+
+        <!-- Progreso -->
+        <div class="creating-progress-wrap">
+            <div class="creating-progress-bar">
+                <div class="creating-progress-fill" id="progressFill"></div>
+            </div>
+            <div class="creating-progress-label" id="progressLabel">Iniciando...</div>
+        </div>
+
+        <div class="creating-dots">
+            <div class="creating-dot"></div>
+            <div class="creating-dot"></div>
+            <div class="creating-dot"></div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+// Partículas
+const sparksEl = document.getElementById('sparks');
+for (let i = 0; i < 20; i++) {
+    const s = document.createElement('div');
+    s.className = 'spark';
+    const colors = ['#6366f1','#22c55e','#2563eb','#a78bfa','#34d399'];
+    s.style.cssText = `
+        left:${Math.random()*100}%;
+        background:${colors[Math.floor(Math.random()*colors.length)]};
+        width:${Math.random()*4+2}px;
+        height:${Math.random()*4+2}px;
+        animation-duration:${Math.random()*8+6}s;
+        animation-delay:${Math.random()*8}s;
+    `;
+    sparksEl.appendChild(s);
+}
+
+// Animación de pasos y progreso
+const steps = [
+    { check: 'check1', progress: 33, label: 'Verificando identidad...' },
+    { check: 'check2', progress: 66, label: 'Configurando perfil...' },
+    { check: 'check3', progress: 100, label: '¡Todo listo!' },
+];
+
+const fill = document.getElementById('progressFill');
+const label = document.getElementById('progressLabel');
+
+let i = 0;
+function runStep() {
+    if (i >= steps.length) return;
+    const s = steps[i];
+    fill.style.width = s.progress + '%';
+    label.textContent = s.label;
+    const check = document.getElementById(s.check);
+    check.classList.remove('loading');
+    check.classList.add('done');
+    check.textContent = '✓';
+    i++;
+    if (i < steps.length) setTimeout(runStep, 800);
+}
+
+setTimeout(runStep, 500);
+
+// Redirigir después de 3 segundos
+setTimeout(() => {
+    window.location.href = '/Habit/Index';
+}, 3000);
+</script>

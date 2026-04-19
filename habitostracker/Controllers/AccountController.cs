@@ -2008,9 +2008,14 @@ namespace HabitTrackerApp.Controllers
 
             await RefreshUserSession(user);
 
-            return RedirectToAction("Index", "Habit");
+            return RedirectToAction("CreandoCuenta", "Account");
         }
 
+
+        public IActionResult CreandoCuenta()
+        {
+            return View();
+        }
         private string GetOS(string userAgent)
         {
             if (userAgent.Contains("Android")) return "Android";
