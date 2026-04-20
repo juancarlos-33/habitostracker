@@ -66,17 +66,25 @@ body {
     text-decoration:none; color:rgba(255,255,255,0.55); transition:0.2s;
 }
 .ht-nav-link:hover { color:white; background:rgba(255,255,255,0.06); }
-.ht-nav-link.primary {
-    background:linear-gradient(135deg,#6366f1,#2563eb);
-    color:white; box-shadow:0 4px 14px rgba(99,102,241,0.35);
+@@media (max-width:960px) {
+    .ht-login-nav { padding:10px 16px; }
+    .ht-nav-link { padding:6px 10px; font-size:12px; }
+    .ht-nav-link.primary { padding:7px 12px; font-size:12px; }
+    .ht-nav-links { gap:4px; }
+    .ht-login-brand-badge { display:none; }
+    .ht-login-brand-name { font-size:15px; }
+    .ht-login-brand-icon { width:32px; height:32px; font-size:15px; }
 }
 .ht-nav-link.primary:hover { transform:translateY(-1px); box-shadow:0 8px 20px rgba(99,102,241,0.5); }
 
 /* ── MAIN LAYOUT ── */
-.ht-login-layout {
-    min-height:100vh; display:flex;
-    position:relative; z-index:1;
-    padding-top:72px;
+body {
+    min-height:100vh;
+    font-family:'Plus Jakarta Sans',Inter,system-ui;
+    background:#050a14;
+    overflow-x:hidden;
+    overflow-y:auto;
+    color:white;
 }
 
 /* ══════════════════════
@@ -400,7 +408,7 @@ body {
 @@media (max-width:960px) {
     .ht-login-layout { flex-direction:column; }
     .ht-login-nav { padding:12px 20px; }
-    .ht-nav-links .ht-nav-link:not(.primary) { display:none; }
+   .ht-nav-links .ht-nav-link:not(.primary):not([href="/Home/Privacy"]) { display:none; }
 
     .ht-login-left {
         max-width:100%; padding:28px 20px 20px;
