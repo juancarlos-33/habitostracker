@@ -276,12 +276,12 @@ namespace HabitTrackerApp.Hubs
                     else preview = content.Length > 50 ? content.Substring(0, 47) + "..." : content;
 
                     await Clients.Group(member.UserId.ToString())
-                        .SendAsync("ReceiveNotification",
-                            member.UserId.ToString(),
-                            $"{senderName}: {preview}",
-                            senderName,
-                            senderImage,
-                            $"/Group/Chat/{groupId}");
+      .SendAsync("ReceiveNotification",
+          member.UserId.ToString(),
+          $"{senderName}: {preview}",
+          senderName,
+          senderImage,
+          $"/Group/Chat/{groupId}?scrollToUnread=true");
                 }
             }
             catch (Exception ex)

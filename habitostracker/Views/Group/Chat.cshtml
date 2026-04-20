@@ -951,8 +951,11 @@ const reactions = document.getElementById("reactions-" + tempId); if (reactions)
 const check = document.getElementById("check-" + tempId); if (check) check.id = "check-" + data.id;
 const reactions = document.getElementById("reactions-" + tempId); if (reactions) reactions.id = "reactions-" + data.id;
                 currentTotalMembers = data.totalMembers;
-                cancelarReply();
-      await grpConnection.invoke("SendGroupMessage", groupId.toString(), myId, myName, content, data.id.toString(), "", "text", replyToMessageId ? replyToMessageId.toString() : "", replyToSender ?? "", replyToContent ?? "");
+               const savedReplyId = replyToMessageId ? replyToMessageId.toString() : "";
+const savedReplySender = replyToSender ?? "";
+const savedReplyContent = replyToContent ?? "";
+cancelarReply();
+await grpConnection.invoke("SendGroupMessage", groupId.toString(), myId, myName, content, data.id.toString(), "", "text", savedReplyId, savedReplySender, savedReplyContent);
             } else { document.getElementById(tempId)?.remove(); }
         } catch (err) { console.error(err); document.getElementById(tempId)?.remove(); }
     }
