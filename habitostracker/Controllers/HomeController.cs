@@ -1,4 +1,5 @@
 using habitostracker.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Diagnostics;
 
@@ -30,6 +31,8 @@ namespace habitostracker.Controllers
             return View();
         }
 
+
+        [AllowAnonymous]
         public IActionResult Privacy()
         {
             return View();
@@ -58,6 +61,8 @@ namespace habitostracker.Controllers
                 return Json(new { blocked = blocked });
             }
         }
+
+      
         public IActionResult GetMyIP()
         {
             var ip = HttpContext.Request.Headers["X-Forwarded-For"].FirstOrDefault();

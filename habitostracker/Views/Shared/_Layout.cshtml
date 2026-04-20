@@ -876,6 +876,15 @@ if ("Notification" in window) Notification.requestPermission();
 </script>
 
 @RenderSection("Scripts", required: false)
+@if (User.Identity.IsAuthenticated)
+
+
+{
+    <div style="text-align:center;padding:12px 0 20px;font-size:12px;color:#9ca3af;">
+        <a href="/Home/Privacy" style="color:#9ca3af;text-decoration:none;font-weight:600;">🔐 Política de Privacidad</a>
+        · HabitTracker Pro © @DateTime.Now.Year
+    </div>
+}
 
 </body>
 </html>

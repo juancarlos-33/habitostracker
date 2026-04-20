@@ -1,6 +1,185 @@
 ﻿@{
-    ViewData["Title"] = "Privacy Policy";
+    ViewData["Title"] = "Política de Privacidad";
 }
-<h1>@ViewData["Title"]</h1>
 
-<p>Use this page to detail your site's privacy policy.</p>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+<style>
+.privacy-page {
+    max-width: 780px; margin: 0 auto;
+    font-family: 'Plus Jakarta Sans', sans-serif; padding-bottom: 60px;
+}
+.privacy-hero {
+    background: linear-gradient(135deg, #1e293b, #0f172a);
+    border-radius: 24px; padding: 36px 32px; margin-bottom: 24px;
+    border: 1px solid rgba(255,255,255,0.06); text-align: center;
+    position: relative; overflow: hidden;
+}
+.privacy-hero::before {
+    content:''; position:absolute; top:-40px; right:-40px;
+    width:180px; height:180px;
+    background: radial-gradient(circle, rgba(99,102,241,0.2), transparent 70%);
+    border-radius:50%;
+}
+.privacy-hero-title { font-size: 26px; font-weight: 800; color: white; margin: 0 0 8px; position:relative; z-index:1; }
+.privacy-hero-sub { font-size: 13px; color: rgba(255,255,255,0.4); margin: 0; position:relative; z-index:1; }
+.privacy-hero-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: rgba(99,102,241,0.15); border: 1px solid rgba(99,102,241,0.3);
+    border-radius: 20px; padding: 5px 14px;
+    font-size: 12px; font-weight: 700; color: #818cf8;
+    margin-bottom: 14px; position:relative; z-index:1;
+}
+
+.privacy-card {
+    background: white; border-radius: 20px; padding: 28px 32px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06); border: 1px solid rgba(0,0,0,0.04);
+    margin-bottom: 16px;
+}
+.privacy-section-title {
+    font-size: 16px; font-weight: 800; color: #111827;
+    margin: 0 0 12px; display: flex; align-items: center; gap: 8px;
+}
+.privacy-text {
+    font-size: 14px; color: #4b5563; line-height: 1.8; margin: 0 0 12px;
+}
+.privacy-text:last-child { margin: 0; }
+.privacy-list {
+    list-style: none; padding: 0; margin: 0 0 12px;
+}
+.privacy-list li {
+    font-size: 14px; color: #4b5563; padding: 6px 0;
+    display: flex; align-items: flex-start; gap: 8px; line-height: 1.6;
+}
+.privacy-list li::before {
+    content: '✓'; color: #6366f1; font-weight: 800;
+    flex-shrink: 0; margin-top: 1px;
+}
+.privacy-divider { height: 1px; background: #f3f4f6; margin: 16px 0; }
+
+.privacy-highlight {
+    background: rgba(99,102,241,0.06); border: 1px solid rgba(99,102,241,0.15);
+    border-radius: 14px; padding: 14px 18px; margin-bottom: 12px;
+    font-size: 13px; color: #374151; line-height: 1.7;
+}
+.privacy-contact {
+    background: linear-gradient(135deg, #0f172a, #1e293b);
+    border-radius: 20px; padding: 28px 32px;
+    text-align: center; margin-bottom: 16px;
+    border: 1px solid rgba(255,255,255,0.06);
+}
+.privacy-contact-title { font-size: 18px; font-weight: 800; color: white; margin: 0 0 8px; }
+.privacy-contact-sub { font-size: 13px; color: rgba(255,255,255,0.4); margin: 0 0 16px; }
+.privacy-contact-email {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: rgba(99,102,241,0.15); border: 1px solid rgba(99,102,241,0.3);
+    border-radius: 12px; padding: 10px 20px;
+    font-size: 14px; font-weight: 700; color: #818cf8; text-decoration: none;
+}
+
+body.bg-dark .privacy-card { background: #1e293b !important; border-color: #2d3748 !important; }
+body.bg-dark .privacy-section-title { color: #f1f5f9 !important; }
+body.bg-dark .privacy-text, body.bg-dark .privacy-list li { color: #94a3b8 !important; }
+body.bg-dark .privacy-divider { background: #2d3748 !important; }
+body.bg-dark .privacy-highlight { background: rgba(99,102,241,0.08) !important; border-color: rgba(99,102,241,0.2) !important; color: #94a3b8 !important; }
+
+@@media (max-width: 640px) {
+    .privacy-hero { padding: 24px 20px; }
+    .privacy-card { padding: 20px; }
+    .privacy-hero-title { font-size: 20px; }
+}
+</style>
+
+<div class="privacy-page">
+
+    <div class="privacy-hero">
+        <div class="privacy-hero-badge">📄 Documento legal</div>
+        <div class="privacy-hero-title">🔐 Política de Privacidad</div>
+        <div class="privacy-hero-sub">Última actualización: Abril 2026 · HabitTracker Pro</div>
+    </div>
+
+    <div class="privacy-highlight">
+        En HabitTracker Pro nos tomamos muy en serio tu privacidad. Esta política explica de forma clara y transparente qué datos recopilamos, cómo los usamos y cómo los protegemos. Al usar nuestra plataforma, aceptas los términos descritos aquí.
+    </div>
+
+    <div class="privacy-card">
+        <div class="privacy-section-title">1️⃣ ¿Qué información recopilamos?</div>
+        <p class="privacy-text">Recopilamos únicamente la información necesaria para brindarte el mejor servicio posible:</p>
+        <ul class="privacy-list">
+            <li>Nombre de usuario, correo electrónico y contraseña (cifrada) al registrarte.</li>
+            <li>Foto de perfil e imagen de portada, si decides subirlas voluntariamente.</li>
+            <li>Datos de hábitos, historial de completitud y rachas que registras en la app.</li>
+            <li>Ubicación aproximada (ciudad y país) para personalizar tu experiencia y el clima.</li>
+            <li>Información del dispositivo, sistema operativo y navegador para fines de seguridad.</li>
+            <li>Comprobantes de pago subidos al solicitar el plan Premium (solo imagen, no datos bancarios).</li>
+        </ul>
+    </div>
+
+    <div class="privacy-card">
+        <div class="privacy-section-title">2️⃣ ¿Cómo usamos tu información?</div>
+        <p class="privacy-text">Usamos tu información exclusivamente para:</p>
+        <ul class="privacy-list">
+            <li>Crear y gestionar tu cuenta de usuario de forma segura.</li>
+            <li>Mostrarte tu progreso, estadísticas y logros personalizados.</li>
+            <li>Enviarte notificaciones relevantes dentro de la plataforma.</li>
+            <li>Detectar actividad sospechosa y proteger tu cuenta.</li>
+            <li>Mejorar continuamente las funciones de la aplicación.</li>
+            <li>Verificar y procesar pagos del plan Premium.</li>
+        </ul>
+        <div class="privacy-divider"></div>
+        <p class="privacy-text">Nunca vendemos, alquilamos ni compartimos tu información personal con terceros con fines comerciales.</p>
+    </div>
+
+    <div class="privacy-card">
+        <div class="privacy-section-title">3️⃣ Almacenamiento y seguridad</div>
+        <p class="privacy-text">Tu información se almacena en servidores seguros con las siguientes medidas de protección:</p>
+        <ul class="privacy-list">
+            <li>Contraseñas cifradas con algoritmos de hashing seguros (BCrypt).</li>
+            <li>Conexiones protegidas mediante HTTPS y certificados SSL.</li>
+            <li>Base de datos alojada en Neon.tech con backups automáticos.</li>
+            <li>Imágenes almacenadas en Cloudinary con acceso controlado.</li>
+            <li>Monitoreo de sesiones activas y detección de accesos no autorizados.</li>
+        </ul>
+    </div>
+
+    <div class="privacy-card">
+        <div class="privacy-section-title">4️⃣ Cookies y tecnologías similares</div>
+        <p class="privacy-text">HabitTracker Pro utiliza cookies de sesión estrictamente necesarias para mantener tu sesión activa y segura. No utilizamos cookies de seguimiento ni publicidad de terceros.</p>
+        <ul class="privacy-list">
+            <li>Cookies de autenticación JWT para mantener tu sesión.</li>
+            <li>Preferencias locales como modo oscuro (almacenadas en tu dispositivo).</li>
+            <li>No utilizamos Google Analytics ni ningún rastreador externo.</li>
+        </ul>
+    </div>
+
+    <div class="privacy-card">
+        <div class="privacy-section-title">5️⃣ Tus derechos</div>
+        <p class="privacy-text">Como usuario de HabitTracker Pro tienes derecho a:</p>
+        <ul class="privacy-list">
+            <li>Acceder a todos los datos que tenemos sobre ti en cualquier momento.</li>
+            <li>Modificar o actualizar tu información personal desde tu perfil.</li>
+            <li>Solicitar la eliminación completa de tu cuenta y todos tus datos.</li>
+            <li>Exportar tu historial de hábitos (función disponible para usuarios Premium).</li>
+            <li>Revocar permisos de ubicación desde la configuración de tu navegador.</li>
+        </ul>
+    </div>
+
+    <div class="privacy-card">
+        <div class="privacy-section-title">6️⃣ Datos de menores</div>
+        <p class="privacy-text">HabitTracker Pro no está dirigido a menores de 13 años. Si eres padre o tutor y crees que tu hijo ha creado una cuenta, contáctanos para eliminarla de inmediato. No recopilamos intencionalmente datos de menores de edad.</p>
+    </div>
+
+    <div class="privacy-card">
+        <div class="privacy-section-title">7️⃣ Cambios en esta política</div>
+        <p class="privacy-text">Nos reservamos el derecho de actualizar esta política de privacidad cuando sea necesario. Te notificaremos de cambios importantes a través de la plataforma. El uso continuado de HabitTracker Pro tras los cambios implica tu aceptación de la nueva política.</p>
+    </div>
+
+    <div class="privacy-contact">
+        <div class="privacy-contact-title">¿Tienes preguntas?</div>
+        <div class="privacy-contact-sub">Estamos disponibles para resolver cualquier duda sobre tu privacidad.</div>
+        <a href="mailto:soporte@habitostracker.app" class="privacy-contact-email">
+            📧 soporte@habitostracker.app
+        </a>
+    </div>
+
+</div>
