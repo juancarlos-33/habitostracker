@@ -52,8 +52,10 @@ namespace HabitTrackerApp.Controllers
 
         public IActionResult Profile(int id)
         {
+            if (id == 0) return View("UserDeleted");
+
             var user = _context.Users.FirstOrDefault(u => u.Id == id);
-            if (user == null) return NotFound();
+            if (user == null) return View("UserDeleted");
             if (user.Role == "SuperAdmin") return RedirectToAction("Index");
 
             ViewBag.Followers = _context.Follows.Count(f => f.FollowingId == id);
