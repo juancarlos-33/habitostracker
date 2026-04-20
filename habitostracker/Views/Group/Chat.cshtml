@@ -486,7 +486,18 @@ body.bg-dark #emptyState .empty-title { color: #f1f5f9 !important; }
     <span class="grp-msg-time">@msg.SentAt.ToLocalTime().ToString("hh:mm tt")</span>
     @if (isMine) { <span class="grp-msg-check @(allRead ? "seen" : "")" id="check-@msg.Id">@(allRead ? "✔✔" : "✔")</span> }
 </div>
-<div class="grp-reactions" id="reactions-@msg.Id"></div>
+<div class="grp-reactions" id="reactions-@msg.Id">
+    @if (msg.Reactions != null && msg.Reactions.Any())
+    {
+        var reactionGroups = msg.Reactions.GroupBy(r => r.Emoji);
+        foreach (var rg in reactionGroups)
+        {
+            <button class="grp-reaction-btn" onclick="reaccionar(@msg.Id, '@rg.Key')">
+                @rg.Key<span>@rg.Count()</span>
+            </button>
+        }
+    }
+</div>
                         </div>
                     </div>
                 }
@@ -892,7 +903,13 @@ function agregarBurbujaMia(contentHTML, tempId) {
     document.getElementById("emptyState")?.remove();
     const row = document.createElement("div");
     row.className = "grp-msg-row mine"; row.id = tempId;
-    row.innerHTML = `<div class="grp-msg-wrap"><div class="grp-msg-bubble" oncontextmenu="abrirReactionPicker(event,${tempId})" ondblclick="responderMensaje(${tempId},'${myName}','${contentHTML}')" ontouchstart="iniciarLongPress(${tempId})" ontouchend="cancelarLongPress()" style="position:relative;">${contentHTML}</div><div class="grp-msg-footer"><span class="grp-msg-time">${makeTime()}</span><span class="grp-msg-check" id="check-${tempId}">✔</span></div><div class="grp-reactions" id="reactions-${tempId}"></div></div>`;
+  const myReplyHTML = (replyToMessageId && replyToContent)
+    ? `<div class="grp-msg-reply" onclick="scrollToMessage(${replyToMessageId})">
+        <div class="grp-msg-reply-name">${escapeHtml(replyToSender ?? "")}</div>
+        <div class="grp-msg-reply-text">${escapeHtml((replyToContent ?? "").length > 50 ? (replyToContent ?? "").substring(0, 50) + '...' : (replyToContent ?? ""))}</div>
+       </div>` : '';
+
+row.innerHTML = `<div class="grp-msg-wrap"><div class="grp-msg-bubble" oncontextmenu="abrirReactionPicker(event,${tempId})" ondblclick="responderMensaje(${tempId},'${myName}','${contentHTML}')" ontouchstart="iniciarLongPress(${tempId})" ontouchend="cancelarLongPress()" style="position:relative;">${myReplyHTML}${contentHTML}</div><div class="grp-msg-footer"><span class="grp-msg-time">${makeTime()}</span><span class="grp-msg-check" id="check-${tempId}">✔</span></div><div class="grp-reactions" id="reactions-${tempId}"></div></div>`;
     chatBox.insertBefore(row, document.getElementById("typingIndicator"));
     chatBox.scrollTop = chatBox.scrollHeight;
     return row;
@@ -935,7 +952,8 @@ const check = document.getElementById("check-" + tempId); if (check) check.id = 
 const reactions = document.getElementById("reactions-" + tempId); if (reactions) reactions.id = "reactions-" + data.id;
                 currentTotalMembers = data.totalMembers;
                 cancelarReply();
-          await grpConnection.invoke("SendGroupMessage", groupId.toString(), myId, myName, content, data.id.toString(), "", "text", replyToMessageId ? replyToMessageId.toString() : "", replyToSender ?? "", replyToContent ?? "");
+         const replyData = replyToMessageId ? `${replyToMessageId}|${replyToSender ?? ""}|${replyToContent ?? ""}` : "||";
+await grpConnection.invoke("SendGroupMessage", groupId.toString(), myId, myName, content, data.id.toString(), "", "text", replyData);
             } else { document.getElementById(tempId)?.remove(); }
         } catch (err) { console.error(err); document.getElementById(tempId)?.remove(); }
     }

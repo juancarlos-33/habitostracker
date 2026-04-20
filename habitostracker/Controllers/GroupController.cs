@@ -202,12 +202,13 @@ namespace HabitTrackerApp.Controllers
             if (member == null) return RedirectToAction("Index");
 
             var messages = _context.GroupMessages
-       .Where(m => m.GroupId == id && !m.IsDeleted)
-       .Include(m => m.Sender)
-       .Include(m => m.Reads)
-       .Include(m => m.ReplyToMessage).ThenInclude(m => m.Sender)
-       .OrderBy(m => m.SentAt)
-       .ToList();
+        .Where(m => m.GroupId == id && !m.IsDeleted)
+        .Include(m => m.Sender)
+        .Include(m => m.Reads)
+        .Include(m => m.ReplyToMessage).ThenInclude(m => m.Sender)
+        .Include(m => m.Reactions)
+        .OrderBy(m => m.SentAt)
+        .ToList();
 
             // ✅ calcular no leídos ANTES de marcarlos
             int firstUnreadId = 0;
