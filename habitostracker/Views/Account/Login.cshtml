@@ -400,7 +400,7 @@ body {
 @@media (max-width:960px) {
     .ht-login-layout { flex-direction:column; }
     .ht-login-nav { padding:12px 20px; }
-    .ht-nav-links .ht-nav-link:not(.primary) { display:none; }
+   .ht-nav-links .ht-nav-link:not(.primary):not([href="/Home/Privacy"]) { display:none; }
 
     .ht-login-left {
         max-width:100%; padding:28px 20px 20px;
@@ -459,14 +459,15 @@ body {
         <span class="ht-login-brand-name">HabitTracker</span>
         <span class="ht-login-brand-badge">Pro</span>
     </a>
-    <div class="ht-nav-links">
-        <a href="/Help/Index" class="ht-nav-link">Ayuda</a>
-        <a href="/Account/Register" class="ht-nav-link">Registro</a>
-        <a href="#form" class="ht-nav-link primary"
-           onclick="document.querySelector('.ht-input').focus();return false;">
-            Iniciar sesión →
-        </a>
-    </div>
+   <div class="ht-nav-links">
+    <a href="/Help/Index" class="ht-nav-link">Ayuda</a>
+    <a href="/Home/Privacy" target="_blank" class="ht-nav-link">🔐 Privacidad</a>
+    <a href="/Account/Register" class="ht-nav-link">Registro</a>
+    <a href="#form" class="ht-nav-link primary"
+       onclick="document.querySelector('.ht-input').focus();return false;">
+        Iniciar sesión →
+    </a>
+</div>
 </nav>
 
 <div class="ht-login-layout">
