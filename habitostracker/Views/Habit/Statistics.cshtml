@@ -1,0 +1,307 @@
+﻿@model List<HabitTrackerApp.Models.Habit>
+@{
+    ViewData["Title"] = "Estadísticas Avanzadas";
+    var byDayOfWeek = ViewBag.ByDayOfWeek as string ?? "[]";
+    var byMonth = ViewBag.ByMonth as string ?? "[]";
+    var weeklyTrend = ViewBag.WeeklyTrend as string ?? "[]";
+    var bestHabit = ViewBag.BestHabit as HabitTrackerApp.Models.Habit;
+    int totalStreak = ViewBag.TotalStreak ?? 0;
+    int totalCompleted = ViewBag.TotalCompleted ?? 0;
+    int totalFailed = ViewBag.TotalFailed ?? 0;
+    int overallRate = ViewBag.OverallRate ?? 0;
+    int totalDays = ViewBag.TotalDays ?? 0;
+}
+
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+<style>
+.stats-page { max-width: 860px; margin: 0 auto; font-family: 'Plus Jakarta Sans', sans-serif; padding-bottom: 60px; }
+
+.stats-hero {
+    background: linear-gradient(135deg, #1e293b, #0f172a);
+    border-radius: 24px; padding: 28px 32px; margin-bottom: 20px;
+    position: relative; overflow: hidden; border: 1px solid rgba(255,255,255,0.06);
+}
+.stats-hero::before {
+    content:""; position:absolute; top:-50px; right:-50px; width:200px; height:200px;
+    background: radial-gradient(circle, rgba(99,102,241,0.2), transparent 70%); border-radius:50%;
+}
+.stats-hero::after {
+    content:""; position:absolute; bottom:-30px; left:60px; width:140px; height:140px;
+    background: radial-gradient(circle, rgba(234,179,8,0.15), transparent 70%); border-radius:50%;
+}
+.stats-hero-top { display:flex; align-items:center; gap:12px; margin-bottom:20px; position:relative; z-index:1; }
+.stats-hero-badge {
+    display:inline-flex; align-items:center; gap:6px;
+    background: linear-gradient(135deg, rgba(234,179,8,0.15), rgba(234,179,8,0.08));
+    border: 1px solid rgba(234,179,8,0.3); border-radius:20px;
+    padding:4px 12px; font-size:12px; font-weight:700; color:#fbbf24;
+}
+.stats-hero-title { font-size:24px; font-weight:800; color:white; margin:0 0 4px; position:relative; z-index:1; }
+.stats-hero-sub { font-size:13px; color:rgba(255,255,255,0.4); margin:0; position:relative; z-index:1; }
+
+.stats-kpis { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:20px; }
+.stats-kpi {
+    background:white; border-radius:18px; padding:20px 16px; text-align:center;
+    box-shadow:0 2px 12px rgba(0,0,0,0.06); border:1px solid rgba(0,0,0,0.04); transition:0.2s;
+}
+.stats-kpi:hover { transform:translateY(-2px); box-shadow:0 8px 24px rgba(0,0,0,0.1); }
+.stats-kpi-icon { font-size:24px; margin-bottom:8px; }
+.stats-kpi-val { font-size:28px; font-weight:800; color:#111827; margin-bottom:4px; }
+.stats-kpi-val.green { color:#16a34a; }
+.stats-kpi-val.red { color:#dc2626; }
+.stats-kpi-val.blue { color:#2563eb; }
+.stats-kpi-val.yellow { color:#d97706; }
+.stats-kpi-label { font-size:11px; color:#9ca3af; font-weight:700; text-transform:uppercase; letter-spacing:0.6px; }
+
+.stats-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px; }
+.stats-card {
+    background:white; border-radius:22px; padding:24px;
+    box-shadow:0 2px 12px rgba(0,0,0,0.06); border:1px solid rgba(0,0,0,0.04);
+}
+.stats-card-full { grid-column:1/-1; }
+.stats-card-title {
+    font-size:14px; font-weight:800; color:#111827;
+    margin-bottom:18px; display:flex; align-items:center; gap:8px;
+}
+.stats-card-badge {
+    font-size:11px; font-weight:700; padding:3px 10px;
+    border-radius:20px; background:#ede9fe; color:#6366f1; margin-left:auto;
+}
+.stats-chart-wrap { position:relative; height:200px; }
+
+.stats-best-habit {
+    display:flex; align-items:center; gap:16px;
+    background:linear-gradient(135deg,rgba(99,102,241,0.06),rgba(99,102,241,0.02));
+    border-radius:16px; padding:16px 20px; border:1px solid rgba(99,102,241,0.1);
+}
+.stats-best-icon { font-size:36px; flex-shrink:0; }
+.stats-best-name { font-size:16px; font-weight:800; color:#111827; margin-bottom:4px; }
+.stats-best-meta { font-size:13px; color:#6b7280; }
+.stats-best-streak {
+    margin-left:auto; text-align:center; flex-shrink:0;
+    background:linear-gradient(135deg,#6366f1,#4f46e5);
+    border-radius:14px; padding:10px 18px;
+}
+.stats-best-streak-num { font-size:24px; font-weight:800; color:white; display:block; }
+.stats-best-streak-label { font-size:10px; color:rgba(255,255,255,0.7); font-weight:700; text-transform:uppercase; }
+
+.stats-progress-bar-wrap { margin-bottom:12px; }
+.stats-progress-label { display:flex; justify-content:space-between; font-size:12px; font-weight:700; color:#374151; margin-bottom:6px; }
+.stats-progress-track { height:8px; background:#f1f5f9; border-radius:10px; overflow:hidden; }
+.stats-progress-fill { height:100%; border-radius:10px; transition:width 1s ease; }
+
+body.bg-dark .stats-kpi { background:#1e293b !important; border-color:#2d3748 !important; }
+body.bg-dark .stats-kpi-val { color:#f1f5f9 !important; }
+body.bg-dark .stats-card { background:#1e293b !important; border-color:#2d3748 !important; }
+body.bg-dark .stats-card-title { color:#f1f5f9 !important; }
+body.bg-dark .stats-best-name { color:#f1f5f9 !important; }
+body.bg-dark .stats-best-habit { background:rgba(99,102,241,0.08) !important; }
+body.bg-dark .stats-progress-label { color:#f1f5f9 !important; }
+body.bg-dark .stats-progress-track { background:#2d3748 !important; }
+
+@@media (max-width:640px) {
+    .stats-kpis { grid-template-columns:repeat(2,1fr); }
+    .stats-grid { grid-template-columns:1fr; }
+    .stats-hero { padding:20px; }
+    .stats-best-habit { flex-wrap:wrap; }
+}
+</style>
+
+<div class="stats-page">
+
+    <!-- HERO -->
+    <div class="stats-hero">
+        <div class="stats-hero-top">
+            <div class="stats-hero-badge">👑 Premium</div>
+        </div>
+        <div class="stats-hero-title">📊 Estadísticas Avanzadas</div>
+        <div class="stats-hero-sub">Análisis profundo de tus últimos 90 días de hábitos</div>
+    </div>
+
+    <!-- KPIs -->
+    <div class="stats-kpis">
+        <div class="stats-kpi">
+            <div class="stats-kpi-icon">✅</div>
+            <div class="stats-kpi-val green">@totalCompleted</div>
+            <div class="stats-kpi-label">Completados</div>
+        </div>
+        <div class="stats-kpi">
+            <div class="stats-kpi-icon">❌</div>
+            <div class="stats-kpi-val red">@totalFailed</div>
+            <div class="stats-kpi-label">Fallados</div>
+        </div>
+        <div class="stats-kpi">
+            <div class="stats-kpi-icon">📈</div>
+            <div class="stats-kpi-val blue">@overallRate%</div>
+            <div class="stats-kpi-label">Tasa de éxito</div>
+        </div>
+        <div class="stats-kpi">
+            <div class="stats-kpi-icon">🔥</div>
+            <div class="stats-kpi-val yellow">@totalStreak</div>
+            <div class="stats-kpi-label">Racha total</div>
+        </div>
+    </div>
+
+    <!-- MEJOR HÁBITO -->
+    @if (bestHabit != null)
+    {
+        <div class="stats-card" style="margin-bottom:16px;">
+            <div class="stats-card-title">🏆 Tu mejor hábito</div>
+            <div class="stats-best-habit">
+                <span class="stats-best-icon">🎯</span>
+                <div>
+                    <div class="stats-best-name">@bestHabit.Name</div>
+                    <div class="stats-best-meta">Mejor racha de todos los hábitos</div>
+                </div>
+                <div class="stats-best-streak">
+                    <span class="stats-best-streak-num">@bestHabit.MaxStreak</span>
+                    <span class="stats-best-streak-label">días récord</span>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- GRÁFICAS -->
+    <div class="stats-grid">
+
+        <!-- Tendencia semanal -->
+        <div class="stats-card">
+            <div class="stats-card-title">
+                📉 Tendencia semanal
+                <span class="stats-card-badge">4 semanas</span>
+            </div>
+            <div class="stats-chart-wrap">
+                <canvas id="trendChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Por día de semana -->
+        <div class="stats-card">
+            <div class="stats-card-title">
+                📅 Mejor día de la semana
+                <span class="stats-card-badge">90 días</span>
+            </div>
+            <div class="stats-chart-wrap">
+                <canvas id="dayChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Por mes -->
+        <div class="stats-card stats-card-full">
+            <div class="stats-card-title">
+                🗓️ Comparativa mensual
+                <span class="stats-card-badge">Últimos 3 meses</span>
+            </div>
+            <div class="stats-chart-wrap">
+                <canvas id="monthChart"></canvas>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- PROGRESO POR HÁBITO -->
+    <div class="stats-card">
+        <div class="stats-card-title">💪 Racha por hábito</div>
+        @foreach (var h in Model.OrderByDescending(h => h.MaxStreak))
+        {
+            var pct = Model.Any() ? (int)((h.MaxStreak * 100.0) / (Model.Max(x => x.MaxStreak) > 0 ? Model.Max(x => x.MaxStreak) : 1)) : 0;
+            <div class="stats-progress-bar-wrap">
+                <div class="stats-progress-label">
+                    <span>@h.Name</span>
+                    <span>@h.MaxStreak días máx · @h.StreakDays actual 🔥</span>
+                </div>
+                <div class="stats-progress-track">
+                    <div class="stats-progress-fill"
+                         style="width:@pct%;background:linear-gradient(90deg,#6366f1,#2563eb);"
+                         data-width="@pct">
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+
+</div>
+
+@section Scripts {
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+const isDark = document.body.classList.contains('bg-dark');
+const gridColor = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)';
+const textColor = isDark ? '#64748b' : '#9ca3af';
+
+const trendData = @Html.Raw(weeklyTrend);
+const dayData = @Html.Raw(byDayOfWeek);
+const monthData = @Html.Raw(byMonth);
+
+// Tendencia semanal
+new Chart(document.getElementById('trendChart'), {
+    type: 'line',
+    data: {
+        labels: trendData.map(d => d.week),
+        datasets: [{
+            data: trendData.map(d => d.rate),
+            borderColor: '#6366f1', backgroundColor: 'rgba(99,102,241,0.1)',
+            borderWidth: 3, tension: 0.4, fill: true,
+            pointBackgroundColor: '#6366f1', pointRadius: 5
+        }]
+    },
+    options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+            y: { beginAtZero: true, max: 100, ticks: { color: textColor, callback: v => v + '%' }, grid: { color: gridColor } },
+            x: { ticks: { color: textColor }, grid: { color: gridColor } }
+        }
+    }
+});
+
+// Por día de semana
+new Chart(document.getElementById('dayChart'), {
+    type: 'bar',
+    data: {
+        labels: dayData.map(d => d.day.substring(0,3)),
+        datasets: [{
+            data: dayData.map(d => d.rate),
+            backgroundColor: dayData.map(d => d.rate >= 70 ? 'rgba(99,102,241,0.8)' : d.rate >= 40 ? 'rgba(99,102,241,0.4)' : 'rgba(99,102,241,0.2)'),
+            borderRadius: 8, borderSkipped: false
+        }]
+    },
+    options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+            y: { beginAtZero: true, max: 100, ticks: { color: textColor, callback: v => v + '%' }, grid: { color: gridColor } },
+            x: { ticks: { color: textColor }, grid: { display: false } }
+        }
+    }
+});
+
+// Por mes
+new Chart(document.getElementById('monthChart'), {
+    type: 'bar',
+    data: {
+        labels: monthData.map(d => d.month),
+        datasets: [
+            { label: 'Completados', data: monthData.map(d => d.completed), backgroundColor: 'rgba(34,197,94,0.8)', borderRadius: 8, borderSkipped: false },
+            { label: 'Fallados', data: monthData.map(d => d.failed), backgroundColor: 'rgba(239,68,68,0.6)', borderRadius: 8, borderSkipped: false }
+        ]
+    },
+    options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { labels: { color: textColor, font: { family: 'Plus Jakarta Sans' } } } },
+        scales: {
+            y: { beginAtZero: true, ticks: { color: textColor, stepSize: 1 }, grid: { color: gridColor } },
+            x: { ticks: { color: textColor }, grid: { display: false } }
+        }
+    }
+});
+
+// Animar barras de progreso
+document.querySelectorAll('.stats-progress-fill').forEach(bar => {
+    const w = bar.getAttribute('data-width');
+    bar.style.width = '0%';
+    setTimeout(() => { bar.style.width = w + '%'; }, 300);
+});
+</script>
+}

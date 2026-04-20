@@ -242,8 +242,26 @@ namespace HabitTrackerApp.Controllers
             return Json(new { valid = isValid });
         }
 
-    
 
+        [HttpPost]
+        public async Task<IActionResult> UpdateCover(IFormFile coverPhoto)
+        {
+            var userId = int.Parse(User.FindFirst("UserId").Value);
+            var user = _context.Users.FirstOrDefault(u => u.Id == userId);
+            if (user == null) return Json(new { success = false });
+
+            if (!user.IsPremium)
+                return Json(new { success = false, error = "Solo usuarios Premium pueden cambiar la foto de portada." });
+
+            if (coverPhoto == null || coverPhoto.Length == 0)
+                return Json(new { success = false });
+
+            var coverUrl = await _cloudinaryService.UploadImageAsync(coverPhoto, "covers");
+            user.CoverImage = coverUrl;
+            await _context.SaveChangesAsync();
+
+            return Json(new { success = true, coverUrl = user.CoverImage });
+        }
 
         [HttpPost]
         public async Task<IActionResult> DeleteAccount(string password, string confirmText, string securityAnswer)

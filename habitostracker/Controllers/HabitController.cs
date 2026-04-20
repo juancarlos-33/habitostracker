@@ -464,6 +464,178 @@ namespace HabitTrackerApp.Controllers
             return Json(new { success = true, counts });
         }
 
+        // 📤 EXPORTAR HISTORIAL PDF (solo Premium)
+        public IActionResult ExportHistory()
+        {
+            var userId = GetUserId();
+            var user = _context.Users.FirstOrDefault(u => u.Id == userId);
+            if (user == null) return RedirectToAction("Index");
+            if (!user.IsPremium) return RedirectToAction("Pay", "User");
+
+            var habitIds = _context.Habits
+                .Where(h => h.UserId == userId)
+                .Select(h => h.Id)
+                .ToList();
+
+            var history = _context.HabitHistories
+                .Where(h => habitIds.Contains(h.HabitId))
+                .OrderByDescending(h => h.Date)
+                .Take(90)
+                .ToList();
+
+            var habits = _context.Habits
+                .Where(h => h.UserId == userId)
+                .ToList();
+
+            int totalCompleted = history.Count(h => h.Completed);
+            int totalFailed = history.Count(h => !h.Completed);
+            int overallRate = (totalCompleted + totalFailed) > 0
+                ? (int)((totalCompleted * 100.0) / (totalCompleted + totalFailed)) : 0;
+
+            var html = $@"
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset='UTF-8'>
+<style>
+    body {{ font-family: Arial, sans-serif; color: #1e293b; padding: 40px; }}
+    .header {{ text-align: center; margin-bottom: 32px; border-bottom: 2px solid #6366f1; padding-bottom: 20px; }}
+    .header h1 {{ font-size: 28px; color: #6366f1; margin: 0 0 4px; }}
+    .header p {{ color: #64748b; font-size: 13px; margin: 0; }}
+    .stats {{ display: flex; gap: 20px; margin-bottom: 28px; }}
+    .stat {{ flex: 1; background: #f8fafc; border-radius: 12px; padding: 16px; text-align: center; border: 1px solid #e2e8f0; }}
+    .stat-val {{ font-size: 28px; font-weight: 800; color: #111827; }}
+    .stat-val.green {{ color: #16a34a; }}
+    .stat-val.red {{ color: #dc2626; }}
+    .stat-val.blue {{ color: #2563eb; }}
+    .stat-label {{ font-size: 11px; color: #9ca3af; text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px; margin-top: 4px; }}
+    table {{ width: 100%; border-collapse: collapse; margin-top: 10px; }}
+    th {{ background: #f1f5f9; padding: 10px 14px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: #64748b; text-align: left; border-bottom: 2px solid #e2e8f0; }}
+    td {{ padding: 10px 14px; border-bottom: 1px solid #f3f4f6; font-size: 13px; }}
+    .ok {{ color: #16a34a; font-weight: 700; }}
+    .fail {{ color: #dc2626; font-weight: 700; }}
+    .section-title {{ font-size: 16px; font-weight: 800; color: #111827; margin: 24px 0 12px; }}
+    .footer {{ text-align: center; margin-top: 32px; font-size: 11px; color: #9ca3af; border-top: 1px solid #e2e8f0; padding-top: 16px; }}
+</style>
+</head>
+<body>
+<div class='header'>
+    <h1>🚀 HabitTracker</h1>
+    <p>Reporte de historial de {user.Username} · Generado el {DateTime.Now:dd MMM yyyy}</p>
+</div>
+
+<div class='stats'>
+    <div class='stat'><div class='stat-val green'>{totalCompleted}</div><div class='stat-label'>Completados</div></div>
+    <div class='stat'><div class='stat-val red'>{totalFailed}</div><div class='stat-label'>Fallados</div></div>
+    <div class='stat'><div class='stat-val blue'>{overallRate}%</div><div class='stat-label'>Tasa de éxito</div></div>
+    <div class='stat'><div class='stat-val'>{habits.Count}</div><div class='stat-label'>Hábitos</div></div>
+</div>
+
+<div class='section-title'>📊 Resumen de hábitos</div>
+<table>
+    <tr><th>Hábito</th><th>Racha actual</th><th>Mejor racha</th></tr>
+    {string.Join("", habits.Select(h => $"<tr><td>{h.Name}</td><td>{h.StreakDays} 🔥</td><td>{h.MaxStreak} 🏆</td></tr>"))}
+</table>
+
+<div class='section-title'>📅 Historial de los últimos 90 días</div>
+<table>
+    <tr><th>Fecha</th><th>Hábito</th><th>Resultado</th></tr>
+    {string.Join("", history.Select(h => $"<tr><td>{h.Date:dd MMM yyyy}</td><td>{h.HabitName}</td><td class='{(h.Completed ? "ok" : "fail")}'>{(h.Completed ? "✔ Completado" : "✖ Fallado")}</td></tr>"))}
+</table>
+
+<div class='footer'>HabitTracker Pro · habitostracker-production-4cf5.up.railway.app</div>
+</body>
+</html>";
+
+            var bytes = System.Text.Encoding.UTF8.GetBytes(html);
+            return File(bytes, "text/html", $"historial-{user.Username}-{DateTime.Now:yyyyMMdd}.html");
+        }
+
+        // 📊 ESTADÍSTICAS AVANZADAS (solo Premium)
+        public IActionResult Statistics()
+        {
+            var userId = GetUserId();
+            var user = _context.Users.FirstOrDefault(u => u.Id == userId);
+            if (user == null) return RedirectToAction("Index");
+            if (!user.IsPremium) return RedirectToAction("Pay", "User");
+
+            var habitIds = _context.Habits
+                .Where(h => h.UserId == userId)
+                .Select(h => h.Id)
+                .ToList();
+
+            var habits = _context.Habits
+                .Where(h => h.UserId == userId)
+                .ToList();
+
+            var last90 = DateTime.Today.AddDays(-89);
+            var history = _context.HabitHistories
+                .Where(h => habitIds.Contains(h.HabitId) && h.Date >= last90)
+                .ToList();
+
+            // % completado por día de semana
+            var byDayOfWeek = Enumerable.Range(0, 7).Select(d => {
+                var day = (DayOfWeek)d;
+                var total = history.Count(h => h.Date.DayOfWeek == day);
+                var completed = history.Count(h => h.Date.DayOfWeek == day && h.Completed);
+                return new { day = day.ToString(), rate = total > 0 ? (int)((completed * 100.0) / total) : 0 };
+            }).ToList();
+
+            // completados por mes (últimos 3 meses)
+            var byMonth = Enumerable.Range(0, 3).Select(i => {
+                var date = DateTime.Today.AddMonths(-i);
+                var start = new DateTime(date.Year, date.Month, 1);
+                var end = start.AddMonths(1).AddDays(-1);
+                var total = history.Count(h => h.Date >= start && h.Date <= end);
+                var completed = history.Count(h => h.Date >= start && h.Date <= end && h.Completed);
+                return new
+                {
+                    month = start.ToString("MMM yyyy"),
+                    completed,
+                    failed = total - completed,
+                    rate = total > 0 ? (int)((completed * 100.0) / total) : 0
+                };
+            }).OrderBy(m => m.month).ToList();
+
+            // mejor hábito (más racha)
+            var bestHabit = habits.OrderByDescending(h => h.MaxStreak).FirstOrDefault();
+
+            // racha actual total
+            int totalStreak = habits.Sum(h => h.StreakDays);
+
+            // días completados vs fallados últimos 90 días
+            int totalCompleted = history.Count(h => h.Completed);
+            int totalFailed = history.Count(h => !h.Completed);
+            int totalDays = history.Select(h => h.Date.Date).Distinct().Count();
+            int overallRate = (totalCompleted + totalFailed) > 0
+                ? (int)((totalCompleted * 100.0) / (totalCompleted + totalFailed)) : 0;
+
+            // tendencia últimas 4 semanas
+            var weeklyTrend = Enumerable.Range(0, 4).Select(w => {
+                var start = DateTime.Today.AddDays(-(w + 1) * 7);
+                var end = DateTime.Today.AddDays(-w * 7);
+                var total = history.Count(h => h.Date >= start && h.Date < end);
+                var completed = history.Count(h => h.Date >= start && h.Date < end && h.Completed);
+                return new
+                {
+                    week = $"Sem {4 - w}",
+                    rate = total > 0 ? (int)((completed * 100.0) / total) : 0
+                };
+            }).OrderBy(w => w.week).ToList();
+
+            ViewBag.ByDayOfWeek = System.Text.Json.JsonSerializer.Serialize(byDayOfWeek);
+            ViewBag.ByMonth = System.Text.Json.JsonSerializer.Serialize(byMonth);
+            ViewBag.WeeklyTrend = System.Text.Json.JsonSerializer.Serialize(weeklyTrend);
+            ViewBag.BestHabit = bestHabit;
+            ViewBag.TotalStreak = totalStreak;
+            ViewBag.TotalCompleted = totalCompleted;
+            ViewBag.TotalFailed = totalFailed;
+            ViewBag.OverallRate = overallRate;
+            ViewBag.TotalDays = totalDays;
+
+            return View(habits);
+        }
+
         // 💬 COMENTAR PROGRESO
         [HttpPost]
         public async Task<IActionResult> CommentProgress([FromBody] CommentProgressDto dto)

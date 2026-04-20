@@ -145,8 +145,9 @@ body {
     z-index: 9999; overflow-y: auto;
 }
 .ht-sidebar.show { left: 0; }
-.ht-sidebar::-webkit-scrollbar { width: 3px; }
-.ht-sidebar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
+.ht-sidebar::-webkit-scrollbar { width: 4px; }
+.ht-sidebar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.25); border-radius: 10px; }
+.ht-sidebar::-webkit-scrollbar-track { background: transparent; }
 .ht-sidebar-logo {
     font-size: 16px; font-weight: 800; color: white;
     padding: 12px 14px; border-radius: 14px;
@@ -338,19 +339,28 @@ body.bg-dark .modal-content { background: #1e293b !important; color: #f1f5f9 !im
 <div class="ht-sidebar" id="ht-sidebar">
     <div class="ht-sidebar-logo">🚀 HabitTracker Pro</div>
 
-    <div class="ht-sidebar-section">Principal</div>
-    <a class="ht-sidebar-link" asp-controller="Habit" asp-action="Index">
-        <span class="sl-icon">🏠</span> Inicio
-    </a>
-    <a class="ht-sidebar-link" asp-controller="Habit" asp-action="History">
-        <span class="sl-icon">📊</span> Historial
-    </a>
-    <a class="ht-sidebar-link" asp-controller="Habit" asp-action="Calendar">
-        <span class="sl-icon">📅</span> Calendario
-    </a>
-    <a class="ht-sidebar-link guest-block" asp-controller="Habit" asp-action="Community">
-        <span class="sl-icon">🌍</span> Comunidad
-    </a>
+<div class="ht-sidebar-section">Principal</div>
+<a class="ht-sidebar-link" asp-controller="Habit" asp-action="Index">
+    <span class="sl-icon">🏠</span> Inicio
+</a>
+<a class="ht-sidebar-link" asp-controller="Habit" asp-action="History">
+    <span class="sl-icon">📅</span> Historial
+</a>
+<a class="ht-sidebar-link" asp-controller="Habit" asp-action="Calendar">
+    <span class="sl-icon">📅</span> Calendario
+</a>
+<a class="ht-sidebar-link guest-block" asp-controller="Habit" asp-action="Community">
+    <span class="sl-icon">🌍</span> Comunidad
+</a>
+<a class="ht-sidebar-link guest-block" asp-controller="Habit" asp-action="Statistics">
+    <span class="sl-icon">📈</span> Estadísticas
+</a>
+<a class="ht-sidebar-link guest-block" asp-controller="Habit" asp-action="ExportHistory">
+    <span class="sl-icon">📤</span> Exportar historial
+</a>
+<a class="ht-sidebar-link guest-block" asp-controller="Habit" asp-action="Achievements">
+    <span class="sl-icon">🏆</span> Logros
+</a>
 
     <div class="ht-sidebar-section">Social</div>
     <a class="ht-sidebar-link guest-block" asp-controller="Post" asp-action="Index">
@@ -394,6 +404,9 @@ body.bg-dark .modal-content { background: #1e293b !important; color: #f1f5f9 !im
             <span class="sl-icon">💰</span> Pagos Premium
         </a>
     }
+    <div style="text-align:center;padding:8px 0;color:rgba(255,255,255,0.2);font-size:11px;font-weight:600;letter-spacing:0.5px;flex-shrink:0;">
+    ↕ desliza para ver más
+</div>
 </div>
 
 <!-- NOTIFICACIONES -->

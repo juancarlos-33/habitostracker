@@ -125,6 +125,18 @@ namespace HabitTrackerApp.Controllers
                 return RedirectToAction("Create");
             }
 
+            // 🔥 límite de grupos para usuarios no premium
+            var currentUser = _context.Users.FirstOrDefault(u => u.Id == userId);
+            if (currentUser != null && !currentUser.IsPremium)
+            {
+                var groupCount = _context.GroupMembers.Count(m => m.UserId == userId && m.IsActive);
+                if (groupCount >= 10)
+                {
+                    TempData["Error"] = "🚫 Límite alcanzado. Los usuarios gratuitos pueden estar en máximo 10 grupos. ¡Hazte Premium para grupos ilimitados!";
+                    return RedirectToAction("Create");
+                }
+            }
+
             // 🔥 mínimo un miembro además del creador
             var validMembers = memberIds.Distinct().Where(id => id != userId).ToList();
             if (!validMembers.Any())
@@ -184,7 +196,6 @@ namespace HabitTrackerApp.Controllers
 
             return RedirectToAction("Chat", new { id = group.Id });
         }
-
         [HttpGet]
         public IActionResult Chat(int id)
         {
@@ -564,6 +575,14 @@ namespace HabitTrackerApp.Controllers
 
             var yaEsMiembro = _context.GroupMembers.Any(m => m.GroupId == groupId && m.UserId == newUserId && m.IsActive);
             if (yaEsMiembro) return Json(new { success = false, message = "Ya es miembro." });
+            // 🔥 límite de grupos para el nuevo usuario si no es premium
+            var newUserObj = await _context.Users.FirstOrDefaultAsync(u => u.Id == newUserId);
+            if (newUserObj != null && !newUserObj.IsPremium)
+            {
+                var groupCount = _context.GroupMembers.Count(m => m.UserId == newUserId && m.IsActive);
+                if (groupCount >= 10)
+                    return Json(new { success = false, message = $"{newUserObj.Username} ya está en el máximo de grupos permitidos (10). Necesita Premium para más." });
+            }
 
             var exMember = _context.GroupMembers.FirstOrDefault(m => m.GroupId == groupId && m.UserId == newUserId);
             if (exMember != null)

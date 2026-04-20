@@ -87,6 +87,7 @@ namespace HabitTrackerApp.Models
         // 🔐 Preguntas de seguridad
         public string? SecurityQuestion1 { get; set; }
         public string? SecurityAnswer1 { get; set; }
+        public string? CoverImage { get; set; }
         public string? SecurityQuestion2 { get; set; }
         public string? SecurityAnswer2 { get; set; }
         public string? SecurityQuestion3 { get; set; }

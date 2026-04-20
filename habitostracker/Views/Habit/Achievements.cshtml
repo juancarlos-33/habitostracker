@@ -1,42 +1,224 @@
 ﻿@model List<HabitTrackerApp.Models.Achievement>
-
 @{
     ViewData["Title"] = "Logros";
+    var userId = int.Parse(User.FindFirst("UserId").Value);
+    var db = Context.RequestServices.GetService<HabitTrackerApp.Data.HabitDbContext>();
+    var user = db.Users.FirstOrDefault(u => u.Id == userId);
+    var isPremium = user?.IsPremium ?? false;
 }
 
-<div class="achievements-page">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
 
-    <div class="achievements-header">
-        <h2 class="achievements-title">🏆 Logros Desbloqueados</h2>
-        <p class="achievements-subtitle">Tu disciplina está dando resultados. ¡Sigue así!</p>
+<style>
+.ach-page { max-width: 900px; margin: 0 auto; font-family: 'Plus Jakarta Sans', sans-serif; padding-bottom: 60px; }
+
+.ach-hero {
+    background: linear-gradient(135deg, #1e293b, #0f172a);
+    border-radius: 24px; padding: 28px 32px; margin-bottom: 20px;
+    position: relative; overflow: hidden; border: 1px solid rgba(255,255,255,0.06);
+    text-align: center;
+}
+.ach-hero::before {
+    content:""; position:absolute; top:-50px; right:-50px; width:200px; height:200px;
+    background: radial-gradient(circle, rgba(234,179,8,0.2), transparent 70%); border-radius:50%;
+}
+.ach-hero::after {
+    content:""; position:absolute; bottom:-30px; left:60px; width:140px; height:140px;
+    background: radial-gradient(circle, rgba(99,102,241,0.15), transparent 70%); border-radius:50%;
+}
+.ach-hero-title { font-size: 24px; font-weight: 800; color: white; margin: 0 0 6px; position:relative; z-index:1; }
+.ach-hero-sub { font-size: 13px; color: rgba(255,255,255,0.4); margin: 0; position:relative; z-index:1; }
+
+.ach-stats {
+    display: flex; align-items: center; justify-content: center; gap: 0;
+    background: white; border-radius: 18px; margin-bottom: 20px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.06); border: 1px solid rgba(0,0,0,0.04);
+    overflow: hidden; width: fit-content; margin-left: auto; margin-right: auto;
+}
+.ach-stat { padding: 16px 28px; text-align: center; position: relative; }
+.ach-stat:not(:last-child)::after {
+    content:''; position:absolute; right:0; top:20%; height:60%;
+    width:1px; background: #e5e7eb;
+}
+.ach-stat-val { display:block; font-size:24px; font-weight:800; color:#111827; }
+.ach-stat-label { display:block; font-size:10px; color:#9ca3af; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; margin-top:2px; }
+
+.ach-section-title {
+    font-size: 14px; font-weight: 800; color: #111827;
+    margin: 0 0 14px; display: flex; align-items: center; gap: 8px;
+}
+.ach-section-badge {
+    font-size: 11px; font-weight: 700; padding: 3px 10px;
+    border-radius: 20px; background: #ede9fe; color: #6366f1; margin-left: auto;
+}
+.ach-section-badge.gold { background: rgba(234,179,8,0.1); color: #d97706; }
+
+.ach-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; margin-bottom: 24px; }
+
+.ach-card {
+    background: white; border-radius: 20px; padding: 24px 20px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06); border: 1px solid rgba(0,0,0,0.05);
+    display: flex; flex-direction: column; align-items: center; text-align: center;
+    gap: 10px; transition: 0.2s; position: relative; overflow: hidden;
+}
+.ach-card:hover { transform: translateY(-3px); box-shadow: 0 10px 28px rgba(0,0,0,0.1); }
+
+.ach-card.silver { border-color: #c7d2fe; }
+.ach-card.gold { border-color: #fcd34d; background: linear-gradient(135deg, #fffbeb, white); }
+.ach-card.diamond { border-color: #a5f3fc; background: linear-gradient(135deg, #ecfeff, white); }
+.ach-card.premium-locked {
+    border-color: rgba(234,179,8,0.2);
+    background: linear-gradient(135deg, rgba(234,179,8,0.03), white);
+    opacity: 0.8;
+}
+.ach-card.premium-unlocked {
+    border-color: #fbbf24;
+    background: linear-gradient(135deg, #fffbeb, #fefce8);
+    box-shadow: 0 4px 20px rgba(234,179,8,0.2);
+}
+
+.ach-glow {
+    position: absolute; top: -30px; right: -30px;
+    width: 100px; height: 100px; border-radius: 50%; opacity: 0.08;
+}
+.ach-card.silver .ach-glow { background: #6366f1; }
+.ach-card.gold .ach-glow { background: #f59e0b; }
+.ach-card.diamond .ach-glow { background: #06b6d4; }
+.ach-card.premium-unlocked .ach-glow { background: #f59e0b; opacity: 0.15; }
+
+.ach-icon { font-size: 48px; line-height: 1; animation: iconPop 0.4s ease; }
+@@keyframes iconPop { 0%{transform:scale(0.6);opacity:0;} 70%{transform:scale(1.1);} 100%{transform:scale(1);opacity:1;} }
+
+.ach-name { font-size: 15px; font-weight: 800; color: #111827; margin: 0; }
+.ach-habit { font-size: 12px; color: #6b7280; display: flex; align-items: center; gap: 5px; }
+.ach-habit-dot { width: 5px; height: 5px; border-radius: 50%; background: #6366f1; flex-shrink: 0; }
+.ach-date { font-size: 11px; color: #9ca3af; }
+
+.ach-ribbon {
+    position: absolute; top: 12px; right: -8px;
+    color: white; font-size: 9px; font-weight: 800;
+    padding: 3px 14px 3px 10px; letter-spacing: 1px;
+    clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%, 8% 50%);
+}
+.ach-card.silver .ach-ribbon { background: #6366f1; }
+.ach-card.gold .ach-ribbon { background: #d97706; }
+.ach-card.diamond .ach-ribbon { background: #0891b2; }
+.ach-card.premium-unlocked .ach-ribbon { background: #d97706; }
+
+.ach-lock {
+    position: absolute; inset: 0; background: rgba(255,255,255,0.6);
+    backdrop-filter: blur(2px); display: flex; flex-direction: column;
+    align-items: center; justify-content: center; border-radius: 20px; gap: 6px;
+}
+.ach-lock-icon { font-size: 28px; }
+.ach-lock-text { font-size: 12px; font-weight: 700; color: #374151; text-align: center; line-height: 1.4; }
+.ach-lock-btn {
+    display: inline-flex; align-items: center; gap: 5px;
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    color: white; text-decoration: none; padding: 6px 14px;
+    border-radius: 20px; font-size: 11px; font-weight: 700;
+    margin-top: 4px; transition: 0.2s;
+}
+.ach-lock-btn:hover { transform: scale(1.05); color: white; }
+
+.ach-empty {
+    text-align: center; padding: 50px 20px; background: white;
+    border-radius: 22px; box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    border: 1px solid rgba(0,0,0,0.04); margin-bottom: 20px;
+}
+.ach-empty-icon { font-size: 56px; margin-bottom: 14px; opacity: 0.5; }
+.ach-empty-title { font-size: 18px; font-weight: 800; color: #111827; margin: 0 0 8px; }
+.ach-empty-sub { font-size: 13px; color: #9ca3af; margin: 0 0 24px; }
+
+.ach-hints { display: flex; flex-direction: column; gap: 10px; max-width: 360px; margin: 0 auto; text-align: left; }
+.ach-hint { display: flex; align-items: center; gap: 12px; background: #f9fafb; border-radius: 12px; padding: 12px 14px; border: 1px solid #f3f4f6; }
+.ach-hint-icon { font-size: 22px; flex-shrink: 0; }
+.ach-hint-title { font-size: 13px; font-weight: 700; color: #111827; }
+.ach-hint-desc { font-size: 11px; color: #9ca3af; margin-top: 2px; }
+
+body.bg-dark .ach-section-title { color: #f1f5f9 !important; }
+body.bg-dark .ach-card { background: #1e293b !important; border-color: #2d3748 !important; }
+body.bg-dark .ach-card.gold { background: linear-gradient(135deg, #2d2410, #1e293b) !important; }
+body.bg-dark .ach-card.diamond { background: linear-gradient(135deg, #0c2030, #1e293b) !important; }
+body.bg-dark .ach-card.premium-unlocked { background: linear-gradient(135deg, #2d2410, #1e293b) !important; }
+body.bg-dark .ach-name { color: #f1f5f9 !important; }
+body.bg-dark .ach-stats { background: #1e293b !important; border-color: #2d3748 !important; }
+body.bg-dark .ach-stat-val { color: #f1f5f9 !important; }
+body.bg-dark .ach-stat::after { background: #2d3748 !important; }
+body.bg-dark .ach-empty { background: #1e293b !important; border-color: #2d3748 !important; }
+body.bg-dark .ach-empty-title { color: #f1f5f9 !important; }
+body.bg-dark .ach-hint { background: #2d3748 !important; border-color: #334155 !important; }
+body.bg-dark .ach-hint-title { color: #f1f5f9 !important; }
+body.bg-dark .ach-lock { background: rgba(15,23,42,0.7) !important; }
+body.bg-dark .ach-lock-text { color: #f1f5f9 !important; }
+
+@@media (max-width: 640px) {
+    .ach-hero { padding: 20px; }
+    .ach-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+    .ach-stats { width: 100%; }
+    .ach-stat { flex: 1; padding: 14px 10px; }
+}
+</style>
+
+<div class="ach-page">
+
+    <!-- HERO -->
+    <div class="ach-hero">
+        <div class="ach-hero-title">🏆 Logros y Badges</div>
+        <div class="ach-hero-sub">Cada logro es prueba de tu disciplina y constancia</div>
     </div>
 
-    @if (Model == null || Model.Count == 0)
+    @if (Model != null && Model.Any())
     {
-        <div class="empty-achievements">
-            <div class="empty-trophy">🏆</div>
-            <h4>Aún no tienes logros</h4>
-            <p>Completa hábitos consecutivamente para desbloquear insignias 🔥</p>
-            <div class="achievement-hints">
-                <div class="hint-item">
-                    <span class="hint-icon">🔥</span>
+        <!-- STATS -->
+        <div class="ach-stats">
+            <div class="ach-stat">
+                <span class="ach-stat-val">@Model.Count</span>
+                <span class="ach-stat-label">Logros</span>
+            </div>
+            <div class="ach-stat">
+                <span class="ach-stat-val">@Model.Select(a => a.HabitName).Distinct().Count()</span>
+                <span class="ach-stat-label">Hábitos</span>
+            </div>
+            <div class="ach-stat">
+                <span class="ach-stat-val">@Model.OrderByDescending(a => a.DateUnlocked).First().DateUnlocked.ToString("dd/MM")</span>
+                <span class="ach-stat-label">Último</span>
+            </div>
+        </div>
+    }
+
+    <!-- LOGROS NORMALES -->
+    <div class="ach-section-title">
+        🎖️ Logros desbloqueados
+        <span class="ach-section-badge">@(Model?.Count ?? 0)</span>
+    </div>
+
+    @if (Model == null || !Model.Any())
+    {
+        <div class="ach-empty">
+            <div class="ach-empty-icon">🏆</div>
+            <div class="ach-empty-title">Aún no tienes logros</div>
+            <div class="ach-empty-sub">Completa hábitos consecutivamente para desbloquear badges</div>
+            <div class="ach-hints">
+                <div class="ach-hint">
+                    <span class="ach-hint-icon">🔥</span>
                     <div>
-                        <div class="hint-title">7 días seguidos</div>
-                        <div class="hint-desc">Completa un hábito 7 días consecutivos</div>
+                        <div class="ach-hint-title">7 días seguidos</div>
+                        <div class="ach-hint-desc">Completa un hábito 7 días consecutivos</div>
                     </div>
                 </div>
-                <div class="hint-item">
-                    <span class="hint-icon">💪</span>
+                <div class="ach-hint">
+                    <span class="ach-hint-icon">💪</span>
                     <div>
-                        <div class="hint-title">30 días seguidos</div>
-                        <div class="hint-desc">Mantén la racha durante un mes</div>
+                        <div class="ach-hint-title">30 días seguidos</div>
+                        <div class="ach-hint-desc">Mantén la racha durante un mes completo</div>
                     </div>
                 </div>
-                <div class="hint-item">
-                    <span class="hint-icon">🧠</span>
+                <div class="ach-hint">
+                    <span class="ach-hint-icon">🧠</span>
                     <div>
-                        <div class="hint-title">100 días seguidos</div>
-                        <div class="hint-desc">El logro definitivo de disciplina</div>
+                        <div class="ach-hint-title">100 días seguidos</div>
+                        <div class="ach-hint-desc">El logro definitivo de disciplina</div>
                     </div>
                 </div>
             </div>
@@ -44,235 +226,77 @@
     }
     else
     {
-        <div class="achievements-stats">
-            <div class="ach-stat">
-                <span class="ach-stat-val">@Model.Count</span>
-                <span class="ach-stat-label">Logros</span>
-            </div>
-            <div class="ach-stat-divider"></div>
-            <div class="ach-stat">
-                <span class="ach-stat-val">@Model.Select(a => a.HabitName).Distinct().Count()</span>
-                <span class="ach-stat-label">Hábitos</span>
-            </div>
-            <div class="ach-stat-divider"></div>
-            <div class="ach-stat">
-                <span class="ach-stat-val">@Model.OrderByDescending(a => a.DateUnlocked).First().DateUnlocked.ToString("dd/MM")</span>
-                <span class="ach-stat-label">Último logro</span>
-            </div>
-        </div>
-
-        <div class="achievements-grid">
-            @foreach (var achievement in Model.OrderByDescending(a => a.DateUnlocked))
+        <div class="ach-grid">
+            @foreach (var a in Model.OrderByDescending(a => a.DateUnlocked))
             {
-                {
-                    string badgeIcon = "🏅";
-                    string badgeClass = "bronze";
+                string icon = "🏅";
+                string cardClass = "bronze";
+                string ribbon = "LOGRO";
 
-                    if (achievement.Title.Contains("100"))
-                    { badgeIcon = "🧠"; badgeClass = "diamond"; }
-                    else if (achievement.Title.Contains("30"))
-                    { badgeIcon = "💪"; badgeClass = "gold"; }
-                    else if (achievement.Title.Contains("7"))
-                    { badgeIcon = "🔥"; badgeClass = "silver"; }
-                }
+                if (a.Title.Contains("100")) { icon = "🧠"; cardClass = "diamond"; ribbon = "ÉLITE"; }
+                else if (a.Title.Contains("30")) { icon = "💪"; cardClass = "gold"; ribbon = "ORO"; }
+                else if (a.Title.Contains("7")) { icon = "🔥"; cardClass = "silver"; ribbon = "PLATA"; }
 
-                <div class="achievement-card badgeClass">
-                    <div class="achievement-glow"></div>
-                    <div class="achievement-icon">badgeIcon</div>
-                    <div class="achievement-body">
-                        <h5 class="achievement-title">@achievement.Title</h5>
-                        <div class="achievement-habit">
-                            <span class="habit-dot"></span>
-                            @achievement.HabitName
-                        </div>
-                        <div class="achievement-date">
-                            🗓 Desbloqueado el @achievement.DateUnlocked.ToString("dd MMM yyyy")
-                        </div>
-                    </div>
-                    <div class="achievement-badge-ribbon">LOGRO</div>
+                <div class="ach-card @cardClass">
+                    <div class="ach-glow"></div>
+                    <div class="ach-ribbon">@ribbon</div>
+                    <div class="ach-icon">@icon</div>
+                    <div class="ach-name">@a.Title</div>
+                    <div class="ach-habit"><span class="ach-habit-dot"></span>@a.HabitName</div>
+                    <div class="ach-date">🗓 @a.DateUnlocked.ToString("dd MMM yyyy")</div>
                 </div>
             }
         </div>
     }
+
+    <!-- LOGROS PREMIUM -->
+    <div class="ach-section-title" style="margin-top:8px;">
+        👑 Logros Premium exclusivos
+        <span class="ach-section-badge gold">Premium</span>
+    </div>
+
+    <div class="ach-grid">
+        @{
+            var premiumAchs = new[]
+            {
+                new { icon = "⚡", title = "Velocista", desc = "Completa todos tus hábitos en un día", unlocked = false },
+                new { icon = "🌙", title = "Noctámbulo", desc = "Completa hábitos 7 noches seguidas", unlocked = false },
+                new { icon = "🎯", title = "Francotirador", desc = "100% de completitud en una semana", unlocked = false },
+                new { icon = "🦁", title = "Rey de la selva", desc = "Racha de 50 días en cualquier hábito", unlocked = false },
+                new { icon = "🌟", title = "Estrella Rising", desc = "10 logros desbloqueados", unlocked = Model?.Count >= 10 },
+                new { icon = "💎", title = "Diamante", desc = "Mantén 3 hábitos por 30 días simultáneamente", unlocked = false },
+            };
+        }
+
+        @foreach (var pa in premiumAchs)
+        {
+            <div class="ach-card @(pa.unlocked ? "premium-unlocked" : "premium-locked")">
+                @if (pa.unlocked)
+                {
+                    <div class="ach-glow"></div>
+                    <div class="ach-ribbon">PREMIUM</div>
+                }
+                <div class="ach-icon">@pa.icon</div>
+                <div class="ach-name">@pa.title</div>
+                <div class="ach-habit">@pa.desc</div>
+
+                @if (!isPremium)
+                {
+                    <div class="ach-lock">
+                        <span class="ach-lock-icon">🔒</span>
+                        <span class="ach-lock-text">Solo para usuarios<br/>Premium</span>
+                        <a href="/User/Pay" class="ach-lock-btn">👑 Desbloquear</a>
+                    </div>
+                }
+                else if (!pa.unlocked)
+                {
+                    <div class="ach-lock" style="background:rgba(255,255,255,0.5);">
+                        <span class="ach-lock-icon">⏳</span>
+                        <span class="ach-lock-text">Aún no desbloqueado</span>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+
 </div>
-
-<style>
-.achievements-page { max-width: 1000px; margin: 0 auto; }
-
-.achievements-header { text-align: center; margin-bottom: 28px; }
-.achievements-title { font-size: 28px; font-weight: 800; color: #111827; margin: 0 0 8px; }
-.achievements-subtitle { font-size: 15px; color: #9ca3af; margin: 0; }
-
-/* EMPTY */
-.empty-achievements {
-    text-align: center;
-    padding: 50px 24px;
-    background: white;
-    border-radius: 24px;
-    box-shadow: 0 2px 14px rgba(0,0,0,0.06);
-    border: 1px solid rgba(0,0,0,0.04);
-}
-
-.empty-trophy { font-size: 64px; margin-bottom: 16px; opacity: 0.4; }
-.empty-achievements h4 { font-size: 20px; font-weight: 700; color: #111827; margin-bottom: 8px; }
-.empty-achievements p { font-size: 14px; color: #9ca3af; margin-bottom: 28px; }
-
-.achievement-hints {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    max-width: 380px;
-    margin: 0 auto;
-    text-align: left;
-}
-
-.hint-item {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    background: #f9fafb;
-    border: 1px solid #f3f4f6;
-    border-radius: 12px;
-    padding: 12px 16px;
-}
-
-.hint-icon { font-size: 24px; flex-shrink: 0; }
-.hint-title { font-size: 14px; font-weight: 700; color: #111827; }
-.hint-desc { font-size: 12px; color: #9ca3af; margin-top: 2px; }
-
-/* STATS */
-.achievements-stats {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 24px;
-    background: white;
-    border-radius: 16px;
-    padding: 18px 28px;
-    margin-bottom: 24px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.06);
-    border: 1px solid rgba(0,0,0,0.04);
-    width: fit-content;
-    margin-left: auto;
-    margin-right: auto;
-}
-
-.ach-stat { text-align: center; }
-.ach-stat-val { display: block; font-size: 24px; font-weight: 900; color: #111827; }
-.ach-stat-label { display: block; font-size: 11px; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; margin-top: 2px; }
-.ach-stat-divider { width: 1px; height: 36px; background: #e5e7eb; }
-
-/* GRID */
-.achievements-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 16px;
-}
-
-/* CARD */
-.achievement-card {
-    position: relative;
-    background: white;
-    border-radius: 22px;
-    padding: 28px 24px;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.08);
-    border: 1px solid rgba(0,0,0,0.06);
-    overflow: hidden;
-    transition: 0.25s;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-    gap: 14px;
-}
-
-.achievement-card:hover { transform: translateY(-4px); box-shadow: 0 12px 30px rgba(0,0,0,0.12); }
-
-.achievement-glow {
-    position: absolute;
-    top: -30px; right: -30px;
-    width: 100px; height: 100px;
-    border-radius: 50%;
-    opacity: 0.08;
-}
-
-.achievement-card.bronze .achievement-glow { background: #d97706; }
-.achievement-card.silver .achievement-glow { background: #6366f1; }
-.achievement-card.gold .achievement-glow { background: #f59e0b; }
-.achievement-card.diamond .achievement-glow { background: #06b6d4; }
-
-.achievement-card.bronze { border-color: #fde68a; }
-.achievement-card.silver { border-color: #c7d2fe; }
-.achievement-card.gold { border-color: #fcd34d; background: linear-gradient(135deg, #fffbeb, white); }
-.achievement-card.diamond { border-color: #a5f3fc; background: linear-gradient(135deg, #ecfeff, white); }
-
-.achievement-icon {
-    font-size: 52px;
-    line-height: 1;
-    animation: iconPop 0.5s ease;
-}
-
-@@keyframes iconPop {
-    0% { transform: scale(0.5); opacity: 0; }
-    70% { transform: scale(1.1); }
-    100% { transform: scale(1); opacity: 1; }
-}
-
-.achievement-title {
-    font-size: 16px;
-    font-weight: 800;
-    color: #111827;
-    margin: 0;
-}
-
-.achievement-habit {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 13px;
-    color: #6b7280;
-    font-weight: 500;
-}
-
-.habit-dot {
-    width: 6px; height: 6px;
-    border-radius: 50%;
-    background: #2563eb;
-    flex-shrink: 0;
-}
-
-.achievement-date {
-    font-size: 12px;
-    color: #9ca3af;
-}
-
-.achievement-badge-ribbon {
-    position: absolute;
-    top: 14px; right: -8px;
-    background: #2563eb;
-    color: white;
-    font-size: 10px;
-    font-weight: 800;
-    padding: 3px 14px 3px 10px;
-    letter-spacing: 1px;
-    clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%, 8% 50%);
-}
-
-.achievement-card.gold .achievement-badge-ribbon { background: #d97706; }
-.achievement-card.diamond .achievement-badge-ribbon { background: #0891b2; }
-.achievement-card.silver .achievement-badge-ribbon { background: #6366f1; }
-
-/* DARK MODE */
-body.bg-dark .achievements-title { color: #f1f5f9 !important; }
-body.bg-dark .achievement-card,
-body.bg-dark .empty-achievements,
-body.bg-dark .achievements-stats { background: #1e1e2e !important; border-color: #2d2d3d !important; }
-body.bg-dark .achievement-card.gold { background: linear-gradient(135deg, #2d2410, #1e1e2e) !important; }
-body.bg-dark .achievement-card.diamond { background: linear-gradient(135deg, #0c2030, #1e1e2e) !important; }
-body.bg-dark .achievement-title { color: #f1f5f9 !important; }
-body.bg-dark .ach-stat-val { color: #f1f5f9 !important; }
-body.bg-dark .ach-stat-divider { background: #2d2d3d !important; }
-body.bg-dark .hint-item { background: #2d2d3d !important; border-color: #3d3d4d !important; }
-body.bg-dark .hint-title { color: #f1f5f9 !important; }
-body.bg-dark .empty-achievements h4 { color: #f1f5f9 !important; }
-</style>
