@@ -2,65 +2,251 @@
     ViewData["Title"] = "Hazte Premium";
 }
 
-<div class="container mt-5" style="max-width:500px;">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
 
-    @if (TempData["Error"] != null)
-    {
-        <div class="alert alert-danger text-center">
-            @TempData["Error"]
+<style>
+.premium-page {
+    max-width: 480px; margin: 40px auto; padding: 0 20px 60px;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+}
+
+.premium-hero {
+    background: linear-gradient(135deg, #1e293b, #0f172a);
+    border-radius: 28px; padding: 36px 32px;
+    border: 1px solid rgba(255,255,255,0.06);
+    box-shadow: 0 24px 60px rgba(0,0,0,0.4);
+    text-align: center; margin-bottom: 16px;
+    position: relative; overflow: hidden;
+}
+
+.premium-hero::before {
+    content:''; position:absolute; top:-60px; right:-60px;
+    width:220px; height:220px;
+    background: radial-gradient(circle, rgba(99,102,241,0.2), transparent 70%);
+    border-radius:50%; pointer-events:none;
+}
+.premium-hero::after {
+    content:''; position:absolute; bottom:-40px; left:-40px;
+    width:180px; height:180px;
+    background: radial-gradient(circle, rgba(234,179,8,0.15), transparent 70%);
+    border-radius:50%; pointer-events:none;
+}
+
+.premium-mascot {
+    width: 90px; height: 90px; border-radius: 50%; object-fit: cover;
+    border: 3px solid rgba(99,102,241,0.5);
+    box-shadow: 0 0 0 6px rgba(99,102,241,0.1), 0 8px 24px rgba(0,0,0,0.3);
+    margin-bottom: 16px; position: relative; z-index:1;
+    animation: floatMascot 3s ease-in-out infinite;
+}
+@@keyframes floatMascot {
+    0%,100% { transform: translateY(0); }
+    50% { transform: translateY(-8px); }
+}
+
+.premium-title {
+    font-size: 22px; font-weight: 800; color: white;
+    margin: 0 0 6px; position: relative; z-index:1;
+}
+.premium-sub {
+    font-size: 13px; color: rgba(255,255,255,0.45);
+    margin: 0 0 24px; position: relative; z-index:1; line-height: 1.6;
+}
+
+.premium-features {
+    display: flex; flex-direction: column; gap: 10px;
+    margin-bottom: 24px; position: relative; z-index:1;
+}
+.premium-feature {
+    display: flex; align-items: center; gap: 10px;
+    background: rgba(255,255,255,0.05); border-radius: 12px;
+    padding: 10px 14px; border: 1px solid rgba(255,255,255,0.06);
+    text-align: left;
+}
+.premium-feature-icon { font-size: 18px; flex-shrink: 0; }
+.premium-feature-text { font-size: 13px; color: rgba(255,255,255,0.75); font-weight: 600; }
+
+.nequi-card {
+    background: rgba(99,102,241,0.08);
+    border: 1px solid rgba(99,102,241,0.2);
+    border-radius: 16px; padding: 16px 20px;
+    margin-bottom: 24px; position: relative; z-index:1;
+    display: flex; align-items: center; gap: 14px;
+}
+.nequi-icon { font-size: 28px; flex-shrink: 0; }
+.nequi-info { text-align: left; }
+.nequi-label { font-size: 11px; color: rgba(255,255,255,0.4); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+.nequi-number { font-size: 20px; font-weight: 800; color: white; letter-spacing: 1px; }
+.nequi-copy {
+    margin-left: auto; background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.1); border-radius: 10px;
+    padding: 6px 12px; color: rgba(255,255,255,0.6);
+    font-size: 12px; font-weight: 700; cursor: pointer;
+    font-family: inherit; transition: 0.2s; flex-shrink: 0;
+}
+.nequi-copy:hover { background: rgba(255,255,255,0.14); color: white; }
+
+.upload-card {
+    background: rgba(255,255,255,0.04);
+    border: 2px dashed rgba(255,255,255,0.1);
+    border-radius: 16px; padding: 20px;
+    margin-bottom: 16px; position: relative; z-index:1;
+    transition: 0.2s; cursor: pointer;
+}
+.upload-card:hover { border-color: rgba(99,102,241,0.4); background: rgba(99,102,241,0.06); }
+.upload-card.has-file { border-color: rgba(34,197,94,0.4); background: rgba(34,197,94,0.06); border-style: solid; }
+.upload-icon { font-size: 32px; margin-bottom: 8px; }
+.upload-title { font-size: 14px; font-weight: 700; color: white; margin-bottom: 4px; }
+.upload-sub { font-size: 12px; color: rgba(255,255,255,0.35); }
+.upload-filename { font-size: 12px; color: #22c55e; font-weight: 700; margin-top: 6px; }
+
+.premium-submit {
+    width: 100%; padding: 14px; border-radius: 14px; border: none;
+    background: linear-gradient(135deg, #6366f1, #2563eb);
+    color: white; font-size: 15px; font-weight: 800;
+    cursor: pointer; font-family: inherit; transition: 0.2s;
+    box-shadow: 0 6px 20px rgba(99,102,241,0.4);
+    position: relative; z-index:1;
+}
+.premium-submit:hover { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(99,102,241,0.5); }
+.premium-submit:disabled { background: #334155; cursor: not-allowed; transform: none; box-shadow: none; }
+
+.premium-note {
+    font-size: 11px; color: rgba(255,255,255,0.25);
+    text-align: center; margin-top: 12px; line-height: 1.6;
+    position: relative; z-index:1;
+}
+
+.toast-premium {
+    position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%);
+    background: #1e293b; color: white; padding: 10px 20px;
+    border-radius: 20px; font-size: 13px; font-weight: 600;
+    z-index: 99999; box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    font-family: 'Plus Jakarta Sans', sans-serif; white-space: nowrap;
+    animation: toastIn 0.3s ease; pointer-events: none;
+}
+@@keyframes toastIn { from{opacity:0;transform:translateX(-50%) translateY(10px);} to{opacity:1;transform:translateX(-50%) translateY(0);} }
+
+@@media (max-width: 500px) {
+    .premium-hero { padding: 28px 20px; }
+    .premium-title { font-size: 18px; }
+}
+</style>
+
+@if (TempData["Error"] != null)
+{
+    <div style="max-width:480px;margin:20px auto 0;padding:0 20px;">
+        <div style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.2);border-radius:12px;padding:12px 16px;font-size:13px;color:#ef4444;font-weight:600;">
+            ⚠️ @TempData["Error"]
         </div>
-    }
+    </div>
+}
 
-    <div class="card shadow-lg border-0 rounded-4 p-4 text-center">
+<div class="premium-page">
+    <div class="premium-hero">
 
-        <h3 class="fw-bold mb-3">💳 Hazte Premium</h3>
+        <!-- Mascota -->
+        <img src="https://res.cloudinary.com/dzrjag7ia/image/upload/v1776560628/NE_lmertz.jpg"
+             class="premium-mascot" alt="HabitTracker" />
 
-        <p class="text-muted">
-            Para desbloquear todas las funciones, realiza el pago por Nequi bro :)
-        </p>
-
-        <div class="alert alert-dark fw-bold">
-            📱 Nequi: 3148846006
+        <div class="premium-title">👑 Desbloquea Premium</div>
+        <div class="premium-sub">
+            Lleva tus hábitos al siguiente nivel.<br>Sin límites, sin restricciones.
         </div>
 
-        <p class="small text-muted">
-            Envía el pago y sube el comprobante abajo 👇
-        </p>
+        <!-- Features -->
+        <div class="premium-features">
+            <div class="premium-feature">
+                <span class="premium-feature-icon">♾️</span>
+                <span class="premium-feature-text">Hábitos ilimitados</span>
+            </div>
+            <div class="premium-feature">
+                <span class="premium-feature-icon">🌍</span>
+                <span class="premium-feature-text">Acceso completo a la comunidad</span>
+            </div>
+            <div class="premium-feature">
+                <span class="premium-feature-icon">📊</span>
+                <span class="premium-feature-text">Estadísticas avanzadas</span>
+            </div>
+            <div class="premium-feature">
+                <span class="premium-feature-icon">🚀</span>
+                <span class="premium-feature-text">Soporte prioritario</span>
+            </div>
+        </div>
 
-        <!-- ✅ FORM CORREGIDO -->
-        <form asp-controller="User"
-              asp-action="UploadPayment"
-              method="post"
-              enctype="multipart/form-data">
+        <!-- Nequi -->
+        <div class="nequi-card">
+            <span class="nequi-icon">📱</span>
+            <div class="nequi-info">
+                <div class="nequi-label">Pagar por Nequi</div>
+                <div class="nequi-number">314 884 6006</div>
+            </div>
+            <button class="nequi-copy" onclick="copiarNequi()" data-no-loader>📋 Copiar</button>
+        </div>
 
-            <input type="file"
-                   id="fileInput"
-                   name="file"
-                   class="form-control mb-3" />
+        <!-- Upload -->
+        <form asp-controller="User" asp-action="UploadPayment" method="post" enctype="multipart/form-data" id="payForm">
+            <div class="upload-card" id="uploadCard" onclick="document.getElementById('fileInput').click()">
+                <div class="upload-icon" id="uploadIcon">📎</div>
+                <div class="upload-title" id="uploadTitle">Subir comprobante de pago</div>
+                <div class="upload-sub" id="uploadSub">Toca aquí para seleccionar la imagen</div>
+                <div class="upload-filename" id="uploadFilename" style="display:none;"></div>
+            </div>
+            <input type="file" id="fileInput" name="file" accept="image/*" style="display:none;"
+                   onchange="archivoSeleccionado(this)" />
 
-            <button type="button"
-                    class="btn btn-success w-100 rounded-pill"
-                    data-no-loader="true"
-                    onclick="enviarFormulario()">
+            <button type="button" class="premium-submit" id="submitBtn" disabled onclick="enviarFormulario()">
                 🚀 Enviar comprobante
             </button>
-
         </form>
+
+        <div class="premium-note">
+            Una vez revisado tu pago, activaremos tu cuenta Premium.<br>
+            Tiempo de revisión: menos de 24 horas.
+        </div>
 
     </div>
 </div>
 
-<!-- ✅ SCRIPT CORRECTO -->
 <script>
+function archivoSeleccionado(input) {
+    const file = input.files[0];
+    if (!file) return;
+    const card = document.getElementById('uploadCard');
+    card.classList.add('has-file');
+    document.getElementById('uploadIcon').textContent = '✅';
+    document.getElementById('uploadTitle').textContent = 'Comprobante listo';
+    document.getElementById('uploadSub').textContent = 'Toca para cambiar el archivo';
+    const fn = document.getElementById('uploadFilename');
+    fn.textContent = file.name;
+    fn.style.display = 'block';
+    document.getElementById('submitBtn').disabled = false;
+}
+
 function enviarFormulario() {
     const fileInput = document.getElementById("fileInput");
-
     if (!fileInput || fileInput.files.length === 0) {
-        alert("⚠️ Debes subir un comprobante antes de enviar.");
+        showToastP("⚠️ Debes subir un comprobante primero");
         return;
     }
+    document.getElementById('submitBtn').disabled = true;
+    document.getElementById('submitBtn').textContent = '⏳ Enviando...';
+    document.getElementById('payForm').submit();
+}
 
-    // 🔥 SOLO aquí se envía → evita loader infinito
-    fileInput.closest("form").submit();
+function copiarNequi() {
+    navigator.clipboard.writeText('3148846006').then(() => {
+        showToastP('📋 Número copiado al portapapeles');
+    }).catch(() => {
+        showToastP('3148846006');
+    });
+}
+
+function showToastP(msg) {
+    const t = document.createElement('div');
+    t.className = 'toast-premium';
+    t.textContent = msg;
+    document.body.appendChild(t);
+    setTimeout(() => { t.style.transition = 'opacity 0.3s'; t.style.opacity = '0'; setTimeout(() => t.remove(), 300); }, 3000);
 }
 </script>
