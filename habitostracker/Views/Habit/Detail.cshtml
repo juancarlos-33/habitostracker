@@ -360,7 +360,10 @@ body.bg-dark .detail-ring-info-sub { color: #94a3b8 !important; }
         <div class="detail-actions">
             <a href="/Habit/Complete/@Model.Id" class="detail-action-btn complete">✔ Completar hoy</a>
             <a href="/Habit/Fail/@Model.Id" class="detail-action-btn fail">✖ Marcar fallido</a>
-            <button class="detail-action-btn share" onclick="openShare()">🚀 Compartir</button>
+          @if (!User.IsInRole("Guest"))
+{
+    <button class="detail-action-btn share" onclick="openShare()">🚀 Compartir</button>
+}
             <a href="/Habit/Edit/@Model.Id" class="detail-action-btn edit">✏️</a>
         </div>
     </div>
@@ -426,7 +429,9 @@ body.bg-dark .detail-ring-info-sub { color: #94a3b8 !important; }
         </div>
     </div>
 
-    <!-- PROGRESOS COMPARTIDOS -->
+  <!-- PROGRESOS COMPARTIDOS -->
+@if (!User.IsInRole("Guest"))
+{
     <div class="detail-card">
         <div class="detail-card-title">
             🌍 Progreso compartido
@@ -499,7 +504,7 @@ body.bg-dark .detail-ring-info-sub { color: #94a3b8 !important; }
             }
         </div>
     </div>
-</div>
+}
 
 @section Scripts {
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
