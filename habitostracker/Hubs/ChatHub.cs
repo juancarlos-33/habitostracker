@@ -252,9 +252,11 @@ namespace HabitTrackerApp.Hubs
                 var senderImage = sender?.ProfileImage ?? sender?.ProfilePicture ?? "";
                 var time = DateTime.Now.ToString("hh:mm tt");
 
+                var replyData = $"{replyToMessageId}|{replySender}|{replyContent}";
+
                 await Clients.OthersInGroup("group-" + groupId)
-       .SendAsync("ReceiveGroupMessage", new object[] { senderId, senderName, senderImage,
-        content, time, msgId, fileUrl, fileType, replyToMessageId, replySender, replyContent });
+                    .SendAsync("ReceiveGroupMessage", senderId, senderName, senderImage,
+                        content, time, msgId, fileUrl, fileType, replyData);
 
                 var group = await _context.Groups.FirstOrDefaultAsync(g => g.Id == int.Parse(groupId));
 

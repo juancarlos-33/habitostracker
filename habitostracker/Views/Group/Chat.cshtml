@@ -659,7 +659,14 @@ grpConnection.on("GroupActiveUsers", (gId, count) => {
     if (String(gId) === String(groupId)) activeUsersInChat = count;
 });
 
-grpConnection.on("ReceiveGroupMessage", (senderId, senderName, senderImage, content, time, msgId, fileUrl, fileType, replyToMessageId, replySender, replyContent) => {
+grpConnection.on("ReceiveGroupMessage", (senderId, senderName, senderImage, content, time, msgId, fileUrl, fileType, replyData) => {
+    let replyToMessageId = "", replySender = "", replyContent = "";
+    if (replyData && replyData !== "||") {
+        const parts = replyData.split("|");
+        replyToMessageId = parts[0] ?? "";
+        replySender = parts[1] ?? "";
+        replyContent = parts[2] ?? "";
+    }
     if (String(senderId) === String(myId)) return;
     document.getElementById("emptyState")?.remove();
     document.getElementById('unreadBanner')?.remove();
