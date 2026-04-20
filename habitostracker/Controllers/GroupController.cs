@@ -317,7 +317,7 @@ namespace HabitTrackerApp.Controllers
         {
             var userId = int.Parse(User.FindFirst("UserId").Value);
             var member = _context.GroupMembers
-                .FirstOrDefault(m => m.GroupId == groupId && m.UserId == userId && m.IsActive)
+                .FirstOrDefault(m => m.GroupId == groupId && m.UserId == userId && m.IsActive);
             if (member == null) return Json(new { success = false });
             if (string.IsNullOrWhiteSpace(content)) return Json(new { success = false });
 
