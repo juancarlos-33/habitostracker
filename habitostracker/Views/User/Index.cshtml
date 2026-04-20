@@ -296,24 +296,26 @@ body.bg-dark .disc-divider-line { background: #2d3748 !important; }
         {
             <div class="disc-friends-grid">
                 @{ int fi = 0; }
-                @foreach (var friend in friends)
-                {
-                    var fBanner = friendBanners[fi % friendBanners.Length];
-                    var fImg = friend.ProfileImage ?? friend.ProfilePicture ?? "";
-                    var fLetter = friend.Username.Substring(0, 1).ToUpper();
-                    fi++;
-                    <a href="/User/Profile/@friend.Id" class="disc-friend-card">
-                        <div class="disc-friend-banner" style="background:@fBanner;"></div>
-                        <div class="disc-friend-body">
-                            <div class="disc-friend-avatar-wrap">
-                                @if (!string.IsNullOrEmpty(fImg))
-                                { <img src="@fImg" class="disc-friend-avatar" /> }
-                                else
-                                { <div class="disc-friend-avatar-letter" style="background:@fBanner;">@fLetter</div> }
-                            </div>
-                          
-                    </a>
-                }
+           @foreach (var friend in friends)
+{
+    var fBanner = friendBanners[fi % friendBanners.Length];
+    var fImg = friend.ProfileImage ?? friend.ProfilePicture ?? "";
+    var fLetter = friend.Username.Substring(0, 1).ToUpper();
+    fi++;
+    <a href="/User/Profile/@friend.Id" class="disc-friend-card">
+        <div class="disc-friend-banner" style="background:@fBanner;"></div>
+        <div class="disc-friend-body">
+            <div class="disc-friend-avatar-wrap">
+                @if (!string.IsNullOrEmpty(fImg))
+                { <img src="@fImg" class="disc-friend-avatar" /> }
+                else
+                { <div class="disc-friend-avatar-letter" style="background:@fBanner;">@fLetter</div> }
+            </div>
+            <div class="disc-friend-name">@friend.Username</div>
+            <div class="disc-friend-btn">👁 Ver perfil</div>
+        </div>
+    </a>
+}
             </div>
         }
     </div>
@@ -418,19 +420,7 @@ body.bg-dark .disc-divider-line { background: #2d3748 !important; }
                                 + Agregar
                             </button>
                         }
-                        @if (msgStatus == "None")
-                        {
-                            <button class="disc-card-btn msg guest-block"
-                                    data-user="@user.Id"
-                                    data-name="@user.Username"
-                                    data-img="@img"
-                                    data-letter="@letter"
-                                    data-color="@avatarColor"
-                                    data-no-loader="true"
-                                    onclick="openMsgModal(this)">
-                                💬
-                            </button>
-                        }
+                      
                         else if (msgStatus == "Pending")
                         {
                             <button class="disc-card-btn msg-sent" disabled title="Solicitud enviada">⏳</button>
