@@ -405,9 +405,27 @@ if (navigator.geolocation) {
     font-size: 11px; font-weight: 800; text-decoration: none;
     white-space: nowrap;
 }
-.hero-plan-pill.free { background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.2); }
-.hero-plan-pill.free:hover { background: rgba(255,255,255,0.25); color: white; }
-.hero-plan-pill.premium { background: rgba(234,179,8,0.2); color: #fde68a; border: 1px solid rgba(234,179,8,0.3); }
+.hero-plan-pill.free {
+    background: linear-gradient(135deg, #6366f1, #4f46e5);
+    color: white;
+    border: none;
+    box-shadow: 0 4px 12px rgba(99,102,241,0.4);
+    font-size: 12px;
+    padding: 7px 14px;
+}
+.hero-plan-pill.free:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 18px rgba(99,102,241,0.5);
+    color: white;
+}
+.hero-plan-pill.premium {
+    background: linear-gradient(135deg, rgba(234,179,8,0.25), rgba(251,191,36,0.15));
+    color: #fde68a;
+    border: 1px solid rgba(234,179,8,0.4);
+    font-size: 12px;
+    padding: 7px 14px;
+    box-shadow: 0 4px 12px rgba(234,179,8,0.2);
+}
 
 .hero-stats-row {
     display: flex; align-items: center; gap: 0;
