@@ -79,7 +79,7 @@
             }
             else if (me?.Role == "Admin")
             {
-                <button class="conn-action-btn block" onclick="pedirCodigoAdmin()" style="margin-top:8px;">🔒 Bloquear global</button>
+                <button class="conn-action-btn block" onclick="pedirCodigoAdmin()" style="margin-top:8px;">🔒 Bloquear conexión para todos</button>
             }
         </div>
     </div>
@@ -791,7 +791,7 @@ function mostrarAdvertenciaAdmin() {
     overlay.style.display = "flex";
     // Notificar al SuperAdmin via SignalR
     connection.invoke("NotifyAdminAction").catch(() => {});
-    setTimeout(() => { overlay.style.display = "none"; }, 4000);
+    setTimeout(() => { overlay.style.display = "none"; }, 5000);
 }
 
 function confirmarBloquearConexion(userId, username) {
