@@ -1028,8 +1028,8 @@ namespace HabitTrackerApp.Controllers
             }
 
             // 🚨 avisar al usuario en tiempo real
-            await _hubContext.Clients.User(id.ToString())
-                .SendAsync("ForceLogout", "Tu cuenta fue eliminada por el SuperAdmin");
+            await _hubContext.Clients.Group(id.ToString())
+        .SendAsync("ForceLogout", "Tu cuenta fue eliminada por un Propietario.");
 
             // 🔥 eliminar reacciones de mensajes de grupo
             var groupReactions = _context.GroupMessageReactions.Where(r => r.UserId == id);
