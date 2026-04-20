@@ -349,7 +349,14 @@ namespace HabitTrackerApp.Controllers
             foreach (var gm in groupMessages)
                 gm.SenderId = null;
 
-            await SendAdminDeleteEmail(user);
+            try
+            {
+                await SendAdminDeleteEmail(user);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ Error enviando correo: {ex.Message}");
+            }
 
             // 🔥 eliminar usuario
             _context.Users.Remove(user);
