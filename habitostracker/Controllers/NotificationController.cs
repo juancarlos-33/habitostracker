@@ -15,6 +15,19 @@ namespace HabitTrackerApp.Controllers
             _context = context;
         }
 
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult MarkAllRead()
+        {
+            var userId = int.Parse(User.FindFirst("UserId").Value);
+            var notifs = _context.Notifications
+                .Where(n => n.UserId == userId && !n.IsRead)
+                .ToList();
+            foreach (var n in notifs)
+                n.IsRead = true;
+            _context.SaveChanges();
+            return RedirectToAction("Index");
+        }
         public IActionResult Index()
         {
             var userId = int.Parse(User.FindFirst("UserId").Value);
