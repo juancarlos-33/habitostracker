@@ -45,14 +45,9 @@ body {
 .ht-navbar {
     position: sticky; top: 0; z-index: 1000;
     display: flex; align-items: center; justify-content: space-between;
-    padding: 10px 20px; margin: 10px 12px; border-radius: 18px;
-    background: var(--nav-bg); backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border: 1px solid var(--border); box-shadow: var(--shadow);
-    transition: all 0.3s;
-}
+    padding: 10px 14px; margin: 8px 10px; border-radius: 18px;
 .ht-nav-left { display: flex; align-items: center; gap: 10px; }
-.ht-nav-right { display: flex; align-items: center; gap: 6px; }
+.ht-nav-right { display: flex; align-items: center; gap: 4px; }
 .ht-brand {
     font-size: 17px; font-weight: 800; letter-spacing: -0.3px;
     background: linear-gradient(135deg, var(--primary), var(--accent));
@@ -442,8 +437,7 @@ body.bg-dark .modal-content { background: #1e293b !important; color: #f1f5f9 !im
             <button onclick="toggleDarkMode()" data-no-loader class="ht-icon-btn" title="Tema">🌙</button>
 
             <!-- Comunidad -->
-            <a href="/Habit/Community" class="ht-icon-btn guest-block" title="Comunidad"
-               style="display:none;" id="communityNavBtn">🌍</a>
+         
 
             <!-- Solicitudes de mensaje -->
             <a href="/Message/Inbox" class="ht-icon-btn guest-block" title="Mensajes"
