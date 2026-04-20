@@ -129,16 +129,6 @@ namespace HabitTrackerApp.Hubs
                     }
                 }
                 catch { }
-
-                if (!ConnectedUsers.Contains(userId))
-                {
-                    ConnectedUsers.Add(userId);
-                    var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == int.Parse(userId));
-                    var superAdmin = await _context.Users.FirstOrDefaultAsync(u => u.Role == "SuperAdmin");
-                    if (superAdmin != null && user != null && user.Role != "SuperAdmin")
-                        await Clients.User(superAdmin.Id.ToString())
-                            .SendAsync("UserConnectedNotification", user.Username);
-                }
             }
             await base.OnConnectedAsync();
         }
@@ -253,7 +243,8 @@ namespace HabitTrackerApp.Hubs
         }
 
         public async Task SendGroupMessage(string groupId, string senderId, string senderName,
-            string content, string msgId, string fileUrl, string fileType)
+     string content, string msgId, string fileUrl, string fileType,
+     string replyToMessageId = "", string replySender = "", string replyContent = "")
         {
             try
             {
@@ -262,8 +253,8 @@ namespace HabitTrackerApp.Hubs
                 var time = DateTime.Now.ToString("hh:mm tt");
 
                 await Clients.OthersInGroup("group-" + groupId)
-                    .SendAsync("ReceiveGroupMessage", senderId, senderName, senderImage,
-                        content, time, msgId, fileUrl, fileType);
+       .SendAsync("ReceiveGroupMessage", new object[] { senderId, senderName, senderImage,
+        content, time, msgId, fileUrl, fileType, replyToMessageId, replySender, replyContent });
 
                 var group = await _context.Groups.FirstOrDefaultAsync(g => g.Id == int.Parse(groupId));
 
@@ -296,7 +287,6 @@ namespace HabitTrackerApp.Hubs
                 Console.WriteLine($"❌ SendGroupMessage error: {ex.Message}");
             }
         }
-
         public async Task NotifyGroupRead(string groupId, string msgId)
         {
             try

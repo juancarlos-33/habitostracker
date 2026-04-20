@@ -659,7 +659,7 @@ grpConnection.on("GroupActiveUsers", (gId, count) => {
     if (String(gId) === String(groupId)) activeUsersInChat = count;
 });
 
-grpConnection.on("ReceiveGroupMessage", (senderId, senderName, senderImage, content, time, msgId, fileUrl, fileType) => {
+grpConnection.on("ReceiveGroupMessage", (senderId, senderName, senderImage, content, time, msgId, fileUrl, fileType, replyToMessageId, replySender, replyContent) => {
     if (String(senderId) === String(myId)) return;
     document.getElementById("emptyState")?.remove();
     document.getElementById('unreadBanner')?.remove();
@@ -678,10 +678,17 @@ grpConnection.on("ReceiveGroupMessage", (senderId, senderName, senderImage, cont
     else if (fileType === "image") contentHTML = `<img src="${fileUrl}" class="grp-msg-media" onclick="window.open('${fileUrl}', '_blank')" />`;
     else if (fileType === "video") contentHTML = `<video controls class="grp-msg-media"><source src="${fileUrl}" /></video>`;
     else contentHTML = escapeHtml(content);
+
+    const replyHTML = (replyToMessageId && replyContent)
+        ? `<div class="grp-msg-reply" onclick="scrollToMessage(${replyToMessageId})">
+            <div class="grp-msg-reply-name">${escapeHtml(replySender)}</div>
+            <div class="grp-msg-reply-text">${escapeHtml(replyContent.length > 50 ? replyContent.substring(0, 50) + '...' : replyContent)}</div>
+           </div>` : '';
+
     const row = document.createElement("div");
     row.className = "grp-msg-row theirs";
     if (msgId) row.id = "msg-" + msgId;
-    row.innerHTML = `<a href="/User/Profile/${senderId}" class="grp-msg-avatar">${avatarHTML}</a><div class="grp-msg-wrap"><a href="/User/Profile/${senderId}" class="grp-msg-sender">${escapeHtml(senderName)}</a><div class="grp-msg-bubble" oncontextmenu="abrirReactionPicker(event,${msgId})" ondblclick="responderMensaje(${msgId},'${escapeHtml(senderName)}','${escapeHtml(content)}')" ontouchstart="iniciarLongPress(${msgId})" ontouchend="cancelarLongPress()" style="position:relative;">${contentHTML}</div><div class="grp-msg-footer"><span class="grp-msg-time">${time}</span></div></div><div class="grp-reactions" id="reactions-${msgId}"></div></div>`;
+    row.innerHTML = `<a href="/User/Profile/${senderId}" class="grp-msg-avatar">${avatarHTML}</a><div class="grp-msg-wrap"><a href="/User/Profile/${senderId}" class="grp-msg-sender">${escapeHtml(senderName)}</a><div class="grp-msg-bubble" oncontextmenu="abrirReactionPicker(event,${msgId})" ondblclick="responderMensaje(${msgId},'${escapeHtml(senderName)}','${escapeHtml(content)}')" ontouchstart="iniciarLongPress(${msgId})" ontouchend="cancelarLongPress()" style="position:relative;">${replyHTML}${contentHTML}</div><div class="grp-msg-footer"><span class="grp-msg-time">${time}</span></div></div><div class="grp-reactions" id="reactions-${msgId}"></div></div>`;
     chatBox.insertBefore(row, document.getElementById("typingIndicator"));
     chatBox.scrollTop = chatBox.scrollHeight;
     fetch("/Group/MarkRead", {
@@ -878,7 +885,7 @@ function agregarBurbujaMia(contentHTML, tempId) {
     document.getElementById("emptyState")?.remove();
     const row = document.createElement("div");
     row.className = "grp-msg-row mine"; row.id = tempId;
-    row.innerHTML = `<div class="grp-msg-wrap"><div class="grp-msg-bubble">${contentHTML}</div><div class="grp-msg-footer"><span class="grp-msg-time">${makeTime()}</span><span class="grp-msg-check" id="check-${tempId}">✔</span></div></div>`;
+    row.innerHTML = `<div class="grp-msg-wrap"><div class="grp-msg-bubble" oncontextmenu="abrirReactionPicker(event,${tempId})" ondblclick="responderMensaje(${tempId},'${myName}','${contentHTML}')" ontouchstart="iniciarLongPress(${tempId})" ontouchend="cancelarLongPress()" style="position:relative;">${contentHTML}</div><div class="grp-msg-footer"><span class="grp-msg-time">${makeTime()}</span><span class="grp-msg-check" id="check-${tempId}">✔</span></div><div class="grp-reactions" id="reactions-${tempId}"></div></div>`;
     chatBox.insertBefore(row, document.getElementById("typingIndicator"));
     chatBox.scrollTop = chatBox.scrollHeight;
     return row;
@@ -901,7 +908,8 @@ async function sendGroupMessage() {
             const data = await res.json();
             if (data.success) {
                 const row = document.getElementById(tempId); if (row) row.id = "msg-" + data.id;
-                const check = document.getElementById("check-" + tempId); if (check) check.id = "check-" + data.id;
+const check = document.getElementById("check-" + tempId); if (check) check.id = "check-" + data.id;
+const reactions = document.getElementById("reactions-" + tempId); if (reactions) reactions.id = "reactions-" + data.id;
                 currentTotalMembers = data.totalMembers;
                 await grpConnection.invoke("SendGroupMessage", groupId.toString(), myId, myName, "", data.id.toString(), data.fileUrl, data.fileType);
             }
@@ -915,11 +923,12 @@ async function sendGroupMessage() {
             });
             const data = await res.json();
             if (data.success) {
-                const row = document.getElementById(tempId); if (row) row.id = "msg-" + data.id;
-                const check = document.getElementById("check-" + tempId); if (check) check.id = "check-" + data.id;
+            const row = document.getElementById(tempId); if (row) row.id = "msg-" + data.id;
+const check = document.getElementById("check-" + tempId); if (check) check.id = "check-" + data.id;
+const reactions = document.getElementById("reactions-" + tempId); if (reactions) reactions.id = "reactions-" + data.id;
                 currentTotalMembers = data.totalMembers;
                 cancelarReply();
-                await grpConnection.invoke("SendGroupMessage", groupId.toString(), myId, myName, content, data.id.toString(), "", "text");
+             await grpConnection.invoke("SendGroupMessage", groupId.toString(), myId, myName, content, data.id.toString(), "", "text", replyToMessageId ? replyToMessageId.toString() : "", replyToSender, replyToContent);
             } else { document.getElementById(tempId)?.remove(); }
         } catch (err) { console.error(err); document.getElementById(tempId)?.remove(); }
     }
