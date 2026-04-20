@@ -7,22 +7,243 @@
         .FirstOrDefault();
     bool isBlocked = block != null && block.IsBlocked;
     var recentUsers = ViewBag.RecentUsers as List<HabitTrackerApp.Models.User> ?? new List<HabitTrackerApp.Models.User>();
+    var adminName = User.Identity?.Name ?? "Admin";
 }
 
-<div class="admin-index">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
 
-    <!-- HEADER -->
-    <div class="ai-header">
-        <div>
-            <h2 class="ai-title">⚙️ Panel de Administración</h2>
-            <p class="ai-subtitle">Bienvenido al centro de control de HabitTracker</p>
+<style>
+.admin-page { max-width: 1060px; margin: 0 auto; font-family: 'Plus Jakarta Sans', sans-serif; padding-bottom: 60px; }
+
+/* ══ HERO ══ */
+.admin-hero {
+    background: linear-gradient(135deg, #0f172a, #1e293b);
+    border-radius: 28px; padding: 28px 32px;
+    margin-bottom: 20px; position: relative; overflow: hidden;
+    border: 1px solid rgba(255,255,255,0.06);
+    display: flex; align-items: center; gap: 20px;
+}
+.admin-hero::before {
+    content:''; position:absolute; top:-60px; right:-60px;
+    width:240px; height:240px;
+    background: radial-gradient(circle, rgba(99,102,241,0.18), transparent 70%);
+    border-radius:50%; pointer-events:none;
+}
+.admin-hero::after {
+    content:''; position:absolute; bottom:-40px; left:80px;
+    width:160px; height:160px;
+    background: radial-gradient(circle, rgba(234,179,8,0.12), transparent 70%);
+    border-radius:50%; pointer-events:none;
+}
+.admin-hero-mascot {
+    width: 80px; height: 80px; border-radius: 20px; object-fit: cover;
+    border: 2px solid rgba(99,102,241,0.4);
+    box-shadow: 0 0 0 6px rgba(99,102,241,0.08), 0 8px 24px rgba(0,0,0,0.4);
+    flex-shrink: 0; position: relative; z-index: 1;
+    animation: floatMascot 3s ease-in-out infinite;
+}
+@@keyframes floatMascot { 0%,100%{transform:translateY(0);} 50%{transform:translateY(-6px);} }
+.admin-hero-info { flex: 1; position: relative; z-index: 1; }
+.admin-hero-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: rgba(234,179,8,0.12); border: 1px solid rgba(234,179,8,0.25);
+    border-radius: 20px; padding: 4px 12px;
+    font-size: 11px; font-weight: 700; color: #fbbf24;
+    margin-bottom: 8px;
+}
+.admin-hero-title { font-size: 22px; font-weight: 800; color: white; margin: 0 0 4px; }
+.admin-hero-sub { font-size: 13px; color: rgba(255,255,255,0.4); margin: 0; }
+.admin-hero-clock {
+    position: relative; z-index: 1; flex-shrink: 0;
+    background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 16px; padding: 12px 20px; text-align: center;
+}
+.admin-clock-time { font-size: 22px; font-weight: 800; color: white; font-variant-numeric: tabular-nums; }
+.admin-clock-date { font-size: 10px; color: rgba(255,255,255,0.3); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px; }
+
+/* ══ KPI ROW ══ */
+.admin-kpis {
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    gap: 12px; margin-bottom: 20px;
+}
+.admin-kpi {
+    background: white; border-radius: 18px; padding: 18px 16px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05); border: 1px solid rgba(0,0,0,0.04);
+    display: flex; align-items: center; gap: 12px; transition: 0.2s;
+}
+.admin-kpi:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.1); }
+.admin-kpi-icon {
+    width: 42px; height: 42px; border-radius: 13px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center; font-size: 20px;
+}
+.admin-kpi-icon.blue { background: rgba(37,99,235,0.1); }
+.admin-kpi-icon.green { background: rgba(22,163,74,0.1); }
+.admin-kpi-icon.purple { background: rgba(99,102,241,0.1); }
+.admin-kpi-icon.gold { background: rgba(217,119,6,0.1); }
+.admin-kpi-val { font-size: 24px; font-weight: 800; color: #111827; line-height: 1; }
+.admin-kpi-lbl { font-size: 11px; color: #9ca3af; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px; }
+
+/* ══ MODULES ══ */
+.admin-section-title {
+    font-size: 14px; font-weight: 800; color: #111827;
+    margin-bottom: 12px; display: flex; align-items: center; gap: 8px;
+}
+.modules-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 10px; margin-bottom: 20px;
+}
+.module-card {
+    display: flex; align-items: center; gap: 14px;
+    padding: 16px 18px; border-radius: 16px; text-decoration: none;
+    transition: 0.2s; border: 1px solid rgba(0,0,0,0.04);
+    background: white; box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    position: relative; overflow: hidden;
+}
+.module-card::before {
+    content: ''; position: absolute; left: 0; top: 0; bottom: 0;
+    width: 4px; border-radius: 4px 0 0 4px;
+}
+.module-card.users::before { background: #2563eb; }
+.module-card.habits::before { background: #f97316; }
+.module-card.messages::before { background: #8b5cf6; }
+.module-card.stats::before { background: #16a34a; }
+.module-card.feedback::before { background: #dc2626; }
+.module-card.logs::before { background: #d97706; }
+.module-card.reports::before { background: #ef4444; }
+.module-card.payments::before { background: #22c55e; }
+.module-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.1); }
+.module-icon { font-size: 26px; flex-shrink: 0; }
+.module-info { flex: 1; }
+.module-name { font-size: 14px; font-weight: 700; color: #111827; display: flex; align-items: center; gap: 8px; }
+.module-desc { font-size: 11px; color: #9ca3af; margin-top: 2px; }
+.module-badge { background: #dc2626; color: white; font-size: 10px; font-weight: 800; padding: 2px 7px; border-radius: 20px; }
+.module-arrow { font-size: 16px; color: #d1d5db; transition: 0.2s; }
+.module-card:hover .module-arrow { color: #6b7280; transform: translateX(3px); }
+
+/* ══ RECENT USERS ══ */
+.recent-section {
+    background: white; border-radius: 22px; padding: 24px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06); border: 1px solid rgba(0,0,0,0.04);
+}
+.recent-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; }
+.recent-title { font-size: 16px; font-weight: 800; color: #111827; margin: 0 0 3px; }
+.recent-subtitle { font-size: 12px; color: #9ca3af; margin: 0; }
+.recent-count-badge {
+    background: rgba(99,102,241,0.08); border: 1px solid rgba(99,102,241,0.15);
+    color: #6366f1; font-size: 12px; font-weight: 700;
+    padding: 4px 12px; border-radius: 20px;
+}
+.recent-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px; }
+.recent-card {
+    display: flex; align-items: center; gap: 10px;
+    padding: 12px; border-radius: 14px;
+    border: 1px solid #f3f4f6; text-decoration: none;
+    transition: 0.2s; background: #f9fafb; position: relative;
+}
+.recent-card:hover { background: #eff6ff; border-color: #bfdbfe; transform: translateY(-1px); }
+.recent-avatar-wrap { position: relative; flex-shrink: 0; }
+.recent-avatar { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid #e5e7eb; }
+.recent-avatar-letter {
+    width: 40px; height: 40px; border-radius: 50%;
+    background: linear-gradient(135deg, #2563eb, #7c3aed);
+    color: white; display: flex; align-items: center; justify-content: center;
+    font-weight: 800; font-size: 15px;
+}
+.google-dot {
+    position: absolute; bottom: -2px; right: -2px;
+    background: #4285f4; color: white; font-size: 8px; font-weight: 800;
+    width: 16px; height: 16px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center; border: 2px solid white;
+}
+.recent-info { flex: 1; min-width: 0; }
+.recent-name { display: block; font-size: 13px; font-weight: 700; color: #111827; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.recent-date { display: block; font-size: 10px; color: #9ca3af; margin-top: 2px; }
+.recent-role { font-size: 9px; font-weight: 700; padding: 2px 6px; border-radius: 20px; position: absolute; top: 8px; right: 8px; }
+.recent-role.admin { background: #dbeafe; color: #1d4ed8; }
+
+/* ══ ONLINE INDICATOR ══ */
+.online-dot { width: 8px; height: 8px; border-radius: 50%; background: #22c55e; display: inline-block; box-shadow: 0 0 0 3px rgba(34,197,94,0.2); animation: pulseDot 2s infinite; }
+@@keyframes pulseDot { 0%,100%{box-shadow:0 0 0 3px rgba(34,197,94,0.2);} 50%{box-shadow:0 0 0 6px rgba(34,197,94,0.05);} }
+
+/* ══ DARK MODE ══ */
+body.bg-dark .admin-kpi,
+body.bg-dark .module-card,
+body.bg-dark .recent-section,
+body.bg-dark .recent-card { background: #1e293b !important; border-color: #2d3748 !important; }
+body.bg-dark .admin-kpi-val,
+body.bg-dark .module-name,
+body.bg-dark .recent-title,
+body.bg-dark .admin-section-title,
+body.bg-dark .recent-name { color: #f1f5f9 !important; }
+body.bg-dark .admin-kpi-lbl,
+body.bg-dark .module-desc,
+body.bg-dark .recent-subtitle,
+body.bg-dark .recent-date { color: #64748b !important; }
+body.bg-dark .recent-card { background: #2d3748 !important; }
+body.bg-dark .recent-card:hover { background: #1e3a5f !important; border-color: #2563eb !important; }
+body.bg-dark .google-dot { border-color: #1e293b !important; }
+body.bg-dark .module-card:hover { box-shadow: 0 8px 24px rgba(0,0,0,0.3) !important; }
+
+@@media (max-width: 768px) {
+    .admin-hero { flex-direction: column; align-items: flex-start; padding: 20px; }
+    .admin-hero-clock { width: 100%; }
+    .admin-kpis { grid-template-columns: repeat(2, 1fr); }
+    .admin-hero-mascot { width: 60px; height: 60px; }
+}
+</style>
+
+<div class="admin-page">
+
+    <!-- HERO -->
+    <div class="admin-hero">
+        <img src="https://res.cloudinary.com/dzrjag7ia/image/upload/v1776560628/NE_lmertz.jpg"
+             class="admin-hero-mascot" alt="mascota" />
+        <div class="admin-hero-info">
+            <div class="admin-hero-badge">👑 SuperAdmin · Centro de Control</div>
+            <div class="admin-hero-title">⚙️ Panel de Administración</div>
+            <div class="admin-hero-sub">Bienvenido, <strong style="color:white;">@adminName</strong> · Todo bajo control 🚀</div>
         </div>
-        <div class="ai-time" id="aiClock"></div>
+        <div class="admin-hero-clock">
+            <div class="admin-clock-time" id="aiClock">--:--:--</div>
+            <div class="admin-clock-date" id="aiDate">--</div>
+        </div>
+    </div>
+
+    <!-- KPIs -->
+    <div class="admin-kpis">
+        <div class="admin-kpi">
+            <div class="admin-kpi-icon blue">👥</div>
+            <div>
+                <div class="admin-kpi-val">@recentUsers.Count</div>
+                <div class="admin-kpi-lbl">Usuarios</div>
+            </div>
+        </div>
+        <div class="admin-kpi">
+            <div class="admin-kpi-icon green">✅</div>
+            <div>
+                <div class="admin-kpi-val">@(_context.HabitHistories.Count(h => h.Date == DateTime.Today && h.Completed))</div>
+                <div class="admin-kpi-lbl">Completados hoy</div>
+            </div>
+        </div>
+        <div class="admin-kpi">
+            <div class="admin-kpi-icon purple">💬</div>
+            <div>
+                <div class="admin-kpi-val">@(_context.Messages.Count())</div>
+                <div class="admin-kpi-lbl">Mensajes</div>
+            </div>
+        </div>
+        <div class="admin-kpi">
+            <div class="admin-kpi-icon gold">👑</div>
+            <div>
+                <div class="admin-kpi-val">@(_context.Users.Count(u => u.IsPremium))</div>
+                <div class="admin-kpi-lbl">Premium</div>
+            </div>
+        </div>
     </div>
 
     <!-- MÓDULOS -->
+    <div class="admin-section-title">🧩 Módulos del sistema</div>
     <div class="modules-grid">
-
         <a asp-controller="Admin" asp-action="Users" class="module-card users">
             <div class="module-icon">👥</div>
             <div class="module-info">
@@ -31,7 +252,6 @@
             </div>
             <div class="module-arrow">→</div>
         </a>
-
         <a asp-controller="Admin" asp-action="Habits" class="module-card habits">
             <div class="module-icon">🔥</div>
             <div class="module-info">
@@ -40,7 +260,6 @@
             </div>
             <div class="module-arrow">→</div>
         </a>
-
         <a asp-controller="Admin" asp-action="Messages" class="module-card messages">
             <div class="module-icon">💬</div>
             <div class="module-info">
@@ -49,31 +268,26 @@
             </div>
             <div class="module-arrow">→</div>
         </a>
-
         <a asp-controller="Admin" asp-action="Statistics" class="module-card stats">
             <div class="module-icon">📊</div>
             <div class="module-info">
                 <div class="module-name">Estadísticas</div>
-                <div class="module-desc">Información general</div>
+                <div class="module-desc">Información general de la plataforma</div>
             </div>
             <div class="module-arrow">→</div>
         </a>
-
         <a asp-controller="Admin" asp-action="Feedbacks" class="module-card feedback">
             <div class="module-icon">📩</div>
             <div class="module-info">
                 <div class="module-name">
                     Comentarios
                     @if (ViewBag.TotalFeedbacks != null && (int)ViewBag.TotalFeedbacks > 0)
-                    {
-                        <span class="module-badge">@ViewBag.TotalFeedbacks</span>
-                    }
+                    { <span class="module-badge">@ViewBag.TotalFeedbacks</span> }
                 </div>
                 <div class="module-desc">Opiniones de los usuarios</div>
             </div>
             <div class="module-arrow">→</div>
         </a>
-
         <a asp-controller="Admin" asp-action="AdminLogs" class="module-card logs">
             <div class="module-icon">📜</div>
             <div class="module-info">
@@ -82,7 +296,6 @@
             </div>
             <div class="module-arrow">→</div>
         </a>
-
         <a asp-controller="Admin" asp-action="Reports" class="module-card reports">
             <div class="module-icon">🚩</div>
             <div class="module-info">
@@ -91,22 +304,30 @@
             </div>
             <div class="module-arrow">→</div>
         </a>
-
+        <a asp-controller="Admin" asp-action="Payments" class="module-card payments">
+            <div class="module-icon">💰</div>
+            <div class="module-info">
+                <div class="module-name">Pagos Premium</div>
+                <div class="module-desc">Verificar comprobantes</div>
+            </div>
+            <div class="module-arrow">→</div>
+        </a>
     </div>
 
     <!-- USUARIOS RECIENTES -->
     <div class="recent-section">
         <div class="recent-header">
             <div>
-                <h4 class="recent-title">🆕 Usuarios registrados</h4>
-             <p class="recent-subtitle">Del más reciente al más antiguo · @recentUsers.Count usuarios · <span style="font-size:11px;color:#d1d5db;">Los invitados no se muestran aquí</span></p>
+                <div class="recent-title">🆕 Usuarios registrados</div>
+                <div class="recent-subtitle">Del más reciente al más antiguo · Los invitados no se muestran</div>
             </div>
+            <div class="recent-count-badge">@recentUsers.Count usuarios</div>
         </div>
 
         @if (!recentUsers.Any())
         {
-            <div class="recent-empty">
-                <div style="font-size:40px;">👤</div>
+            <div style="text-align:center;padding:40px;color:#9ca3af;">
+                <div style="font-size:40px;margin-bottom:12px;">👤</div>
                 <p>No hay usuarios registrados aún.</p>
             </div>
         }
@@ -118,26 +339,20 @@
                     <a href="/User/Profile/@user.Id" class="recent-card">
                         <div class="recent-avatar-wrap">
                             @if (!string.IsNullOrEmpty(user.ProfileImage))
-                            {
-                                <img src="@user.ProfileImage" class="recent-avatar" />
-                            }
+                            { <img src="@user.ProfileImage" class="recent-avatar" /> }
                             else
-                            {
-                                <div class="recent-avatar-letter">@user.Username.Substring(0, 1).ToUpper()</div>
-                            }
+                            { <div class="recent-avatar-letter">@user.Username.Substring(0, 1).ToUpper()</div> }
                             @if (user.IsGoogleAccount)
-                            {
-                                <span class="google-dot">G</span>
-                            }
+                            { <span class="google-dot">G</span> }
                         </div>
                         <div class="recent-info">
                             <span class="recent-name">@user.Username</span>
                             <span class="recent-date">@user.CreatedAt?.ToString("dd MMM yyyy")</span>
                         </div>
-                        @if (user.Role == "Admin")
-                        {
-                            <span class="recent-role admin">Admin</span>
-                        }
+                        @if (user.IsPremium)
+                        { <span class="recent-role" style="background:#fef3c7;color:#d97706;">👑</span> }
+                        else if (user.Role == "Admin")
+                        { <span class="recent-role admin">Admin</span> }
                     </a>
                 }
             </div>
@@ -146,308 +361,35 @@
 
 </div>
 
-<style>
-.admin-index { max-width: 1000px; margin: 0 auto; }
-
-/* HEADER */
-.ai-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: 28px;
-    flex-wrap: wrap;
-    gap: 12px;
-}
-
-.ai-title {
-    font-size: 26px;
-    font-weight: 800;
-    color: #111827;
-    margin: 0 0 4px;
-}
-
-.ai-subtitle {
-    font-size: 14px;
-    color: #9ca3af;
-    margin: 0;
-}
-
-.ai-time {
-    font-size: 13px;
-    font-weight: 600;
-    color: #6b7280;
-    background: white;
-    padding: 8px 16px;
-    border-radius: 50px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-    border: 1px solid rgba(0,0,0,0.04);
-}
-
-/* MODULES */
-.modules-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 12px;
-    margin-bottom: 28px;
-}
-
-.module-card {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    padding: 18px 20px;
-    border-radius: 16px;
-    text-decoration: none;
-    transition: 0.2s;
-    border: 1px solid rgba(0,0,0,0.04);
-    background: white;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-    position: relative;
-    overflow: hidden;
-}
-
-.module-card::before {
-    content: '';
-    position: absolute;
-    left: 0; top: 0; bottom: 0;
-    width: 4px;
-    border-radius: 4px 0 0 4px;
-}
-
-.module-card.users::before { background: #2563eb; }
-.module-card.habits::before { background: #f97316; }
-.module-card.messages::before { background: #8b5cf6; }
-.module-card.stats::before { background: #16a34a; }
-.module-card.feedback::before { background: #dc2626; }
-.module-card.logs::before { background: #d97706; }
-.module-card.reports::before { background: #ef4444; }
-
-.module-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 24px rgba(0,0,0,0.1);
-}
-
-.module-icon { font-size: 28px; flex-shrink: 0; }
-
-.module-info { flex: 1; }
-
-.module-name {
-    font-size: 15px;
-    font-weight: 700;
-    color: #111827;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.module-desc {
-    font-size: 12px;
-    color: #9ca3af;
-    margin-top: 2px;
-}
-
-.module-badge {
-    background: #dc2626;
-    color: white;
-    font-size: 10px;
-    font-weight: 800;
-    padding: 2px 7px;
-    border-radius: 20px;
-}
-
-.module-arrow {
-    font-size: 18px;
-    color: #d1d5db;
-    transition: 0.2s;
-}
-
-.module-card:hover .module-arrow { color: #6b7280; transform: translateX(3px); }
-
-/* RECENT USERS */
-.recent-section {
-    background: white;
-    border-radius: 20px;
-    padding: 24px;
-    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
-    border: 1px solid rgba(0,0,0,0.04);
-}
-
-.recent-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: 20px;
-}
-
-.recent-title {
-    font-size: 18px;
-    font-weight: 800;
-    color: #111827;
-    margin: 0 0 4px;
-}
-
-.recent-subtitle {
-    font-size: 13px;
-    color: #9ca3af;
-    margin: 0;
-}
-
-.recent-empty {
-    text-align: center;
-    padding: 40px;
-    color: #9ca3af;
-}
-
-.recent-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-    gap: 10px;
-}
-
-.recent-card {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 12px;
-    border-radius: 14px;
-    border: 1px solid #f3f4f6;
-    text-decoration: none;
-    transition: 0.2s;
-    background: #f9fafb;
-    position: relative;
-}
-
-.recent-card:hover {
-    background: #eff6ff;
-    border-color: #bfdbfe;
-    transform: translateY(-1px);
-}
-
-.recent-avatar-wrap { position: relative; flex-shrink: 0; }
-
-.recent-avatar {
-    width: 40px; height: 40px;
-    border-radius: 50%; object-fit: cover;
-    border: 2px solid #e5e7eb;
-}
-
-.recent-avatar-letter {
-    width: 40px; height: 40px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, #2563eb, #7c3aed);
-    color: white;
-    display: flex; align-items: center; justify-content: center;
-    font-weight: 800; font-size: 15px;
-}
-
-.google-dot {
-    position: absolute;
-    bottom: -2px; right: -2px;
-    background: #4285f4;
-    color: white;
-    font-size: 8px;
-    font-weight: 800;
-    width: 16px; height: 16px;
-    border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    border: 2px solid white;
-}
-
-.recent-info { flex: 1; min-width: 0; }
-
-.recent-name {
-    display: block;
-    font-size: 13px;
-    font-weight: 700;
-    color: #111827;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.recent-date {
-    display: block;
-    font-size: 10px;
-    color: #9ca3af;
-    margin-top: 2px;
-}
-
-.recent-role {
-    font-size: 9px;
-    font-weight: 700;
-    padding: 2px 6px;
-    border-radius: 20px;
-    position: absolute;
-    top: 8px; right: 8px;
-}
-
-.recent-role.admin { background: #dbeafe; color: #1d4ed8; }
-
-/* DARK MODE */
-body.bg-dark .ai-title { color: #f1f5f9 !important; }
-body.bg-dark .ai-time {
-    background: #1e1e2e !important;
-    border-color: #2d2d3d !important;
-    color: #94a3b8 !important;
-}
-
-body.bg-dark .module-card {
-    background: #1e1e2e !important;
-    border-color: #2d2d3d !important;
-}
-
-body.bg-dark .module-name { color: #f1f5f9 !important; }
-body.bg-dark .module-card:hover { box-shadow: 0 8px 24px rgba(0,0,0,0.3) !important; }
-
-body.bg-dark .recent-section {
-    background: #1e1e2e !important;
-    border-color: #2d2d3d !important;
-}
-
-body.bg-dark .recent-title { color: #f1f5f9 !important; }
-body.bg-dark .recent-card {
-    background: #2d2d3d !important;
-    border-color: #3d3d4d !important;
-}
-
-body.bg-dark .recent-card:hover {
-    background: #1e3a5f !important;
-    border-color: #2563eb !important;
-}
-
-body.bg-dark .recent-name { color: #f1f5f9 !important; }
-body.bg-dark .google-dot { border-color: #2d2d3d !important; }
-</style>
-
 @section Scripts {
 <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
 <script>
-// RELOJ
 function updateClock() {
     const now = new Date();
     const h = String(now.getHours()).padStart(2, '0');
     const m = String(now.getMinutes()).padStart(2, '0');
     const s = String(now.getSeconds()).padStart(2, '0');
     const clock = document.getElementById('aiClock');
-    if (clock) clock.innerText = `🕐 ${h}:${m}:${s}`;
+    if (clock) clock.textContent = `${h}:${m}:${s}`;
+    const days = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+    const months = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+    const dateEl = document.getElementById('aiDate');
+    if (dateEl) dateEl.textContent = `${days[now.getDay()]} ${now.getDate()} ${months[now.getMonth()]}`;
 }
 setInterval(updateClock, 1000);
 updateClock();
 
-const connection = new signalR.HubConnectionBuilder()
-    .withUrl("/chatHub").build();
-
+const connection = new signalR.HubConnectionBuilder().withUrl("/chatHub").build();
 connection.start().catch(err => console.error(err));
 
 connection.on("NewFeedback", function () {
     const badge = document.querySelector(".module-badge");
-    if (badge) badge.innerText = parseInt(badge.innerText) + 1;
-
+    if (badge) badge.textContent = parseInt(badge.textContent) + 1;
     const toast = document.createElement("div");
-    toast.innerHTML = "💬 Nuevo comentario recibido";
-    toast.style.cssText = "position:fixed;bottom:20px;right:20px;background:#111827;color:white;padding:12px 18px;border-radius:10px;box-shadow:0 10px 25px rgba(0,0,0,0.2);z-index:9999;font-size:14px;";
+    toast.textContent = "💬 Nuevo comentario recibido";
+    toast.style.cssText = "position:fixed;bottom:20px;right:20px;background:#1e293b;color:white;padding:12px 20px;border-radius:14px;box-shadow:0 10px 30px rgba(0,0,0,0.3);z-index:9999;font-size:14px;font-weight:600;font-family:'Plus Jakarta Sans',sans-serif;border:1px solid rgba(255,255,255,0.08);";
     document.body.appendChild(toast);
-    setTimeout(() => toast.remove(), 4000);
+    setTimeout(() => { toast.style.transition = 'opacity 0.3s'; toast.style.opacity = '0'; setTimeout(() => toast.remove(), 300); }, 4000);
 });
 </script>
 }
