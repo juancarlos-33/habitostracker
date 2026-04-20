@@ -361,6 +361,8 @@ namespace HabitTrackerApp.Controllers
         [HttpPost]
         public async Task<IActionResult> ShareProgress(int habitId, string message)
         {
+            if (User.IsInRole("Guest")) return Json(new { success = false, error = "Invitados no pueden compartir en la comunidad." });
+
             var userId = GetUserId();
             var habit = _context.Habits.FirstOrDefault(h => h.Id == habitId && h.UserId == userId);
             if (habit == null) return Json(new { success = false });
@@ -406,6 +408,7 @@ namespace HabitTrackerApp.Controllers
         [HttpPost]
         public async Task<IActionResult> ReactProgress([FromBody] ReactProgressDto dto)
         {
+            if (User.IsInRole("Guest")) return Json(new { success = false, message = "Invitados no pueden reaccionar." });
             var userId = GetUserId();
             var progress = _context.HabitProgresses.FirstOrDefault(p => p.Id == dto.ProgressId);
             if (progress == null) return Json(new { success = false });
@@ -465,6 +468,7 @@ namespace HabitTrackerApp.Controllers
         [HttpPost]
         public async Task<IActionResult> CommentProgress([FromBody] CommentProgressDto dto)
         {
+            if (User.IsInRole("Guest")) return Json(new { success = false, message = "Invitados no pueden comentar." });
             var userId = GetUserId();
             if (string.IsNullOrWhiteSpace(dto.Content) || dto.Content.Length > 200)
                 return Json(new { success = false });
