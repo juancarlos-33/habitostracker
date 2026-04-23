@@ -455,7 +455,6 @@ namespace HabitTrackerApp.Controllers
 
             return Json(new { deleted = false });
         }
-
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Login(LoginViewModel login, double? Latitude, double? Longitude)
@@ -464,12 +463,9 @@ namespace HabitTrackerApp.Controllers
 
             var user = _context.Users.FirstOrDefault(u => u.Username == login.Username);
 
-            // 🚫 VALIDAR SI LA IP ESTÁ BLOQUEADA
             var ip = HttpContext.Request.Headers["X-Forwarded-For"].FirstOrDefault();
             if (string.IsNullOrEmpty(ip))
-            {
                 ip = HttpContext.Connection.RemoteIpAddress?.ToString();
-            }
 
             var blockedIp = _context.BlockedIPs.FirstOrDefault(b => b.IpAddress == ip);
             if (blockedIp != null)
@@ -484,7 +480,13 @@ namespace HabitTrackerApp.Controllers
                 return View(login);
             }
 
-            // 🔥 BLOQUEAR LOGIN SI ES GOOGLE
+            // 🔌 CONEXIÓN BLOQUEADA POR SUPERADMIN
+            if (user.IsIpBlocked)
+            {
+                ModelState.AddModelError("", "🔌 Tu acceso ha sido bloqueado. Contacta al administrador.");
+                return View(login);
+            }
+
             if (user.IsGoogleAccount)
             {
                 ModelState.AddModelError("", "Esta cuenta fue creada con Google. Usa 'Continuar con Google' 🔴");
@@ -506,66 +508,53 @@ namespace HabitTrackerApp.Controllers
             if (user.LockoutEnd != null && user.LockoutEnd > DateTime.Now)
             {
                 var minutes = (int)Math.Ceiling((user.LockoutEnd.Value - DateTime.Now).TotalMinutes);
-                ModelState.AddModelError("", $"Cuenta bloqueada. Intenta nuevamente en {minutes} minuto(s).");
+                ModelState.AddModelError("", $"Cuenta bloqueada. Intenta en {minutes} minuto(s).");
                 return View(login);
             }
 
             if (!BCrypt.Net.BCrypt.Verify(login.Password, user.PasswordHash))
             {
                 user.FailedLoginAttempts++;
-
                 if (user.FailedLoginAttempts >= 5)
                 {
                     user.LockoutEnd = DateTime.Now.AddMinutes(10);
                     user.FailedLoginAttempts = 0;
                     _context.SaveChanges();
-
-                    ModelState.AddModelError("", "Demasiados intentos fallidos. Cuenta bloqueada por 10 minutos.");
+                    ModelState.AddModelError("", "Demasiados intentos. Cuenta bloqueada 10 minutos.");
                     return View(login);
                 }
-
                 _context.SaveChanges();
-
-                ModelState.AddModelError("", $"La contraseña es incorrecta. Intento {user.FailedLoginAttempts}/5");
+                ModelState.AddModelError("", $"Contraseña incorrecta. Intento {user.FailedLoginAttempts}/5");
                 return View(login);
             }
 
             user.FailedLoginAttempts = 0;
             user.LockoutEnd = null;
-
-            // 🟢 ACTUALIZAR ÚLTIMA VEZ ONLINE
             user.LastOnline = DateTime.Now;
 
-            // 🟢 INFO DISPOSITIVO
             var userAgent = HttpContext.Request.Headers["User-Agent"].ToString();
             user.Device = GetDevice(userAgent);
             user.OperatingSystem = GetOS(userAgent);
             user.Browser = GetBrowser(userAgent);
-
             user.LastIp = ip;
 
-            // 🔥 GPS
             if (Latitude != null && Longitude != null)
             {
                 user.Latitude = Latitude;
                 user.Longitude = Longitude;
             }
 
-            // 🔥 GEO IP
             try
             {
                 using var httpClient = new HttpClient();
                 httpClient.Timeout = TimeSpan.FromSeconds(5);
-
                 var geoJson = await httpClient.GetStringAsync($"https://ipwho.is/{ip}");
                 var geoDoc = System.Text.Json.JsonDocument.Parse(geoJson);
                 var geoRoot = geoDoc.RootElement;
-
                 if (geoRoot.GetProperty("success").GetBoolean())
                 {
                     user.Country = geoRoot.GetProperty("country").GetString();
                     user.City = geoRoot.GetProperty("city").GetString();
-
                     if (Latitude == null || Longitude == null)
                     {
                         user.Latitude = geoRoot.GetProperty("latitude").GetDouble();
@@ -586,22 +575,16 @@ namespace HabitTrackerApp.Controllers
 
             await SignInUser(user);
 
-            var admins = _context.Users
-                .Where(u => u.Role == "SuperAdmin" || u.Role == "Admin")
-                .ToList();
-
+            var admins = _context.Users.Where(u => u.Role == "SuperAdmin" || u.Role == "Admin").ToList();
             foreach (var admin in admins)
             {
                 if (user.Role != "SuperAdmin")
-                {
                     await _hubContext.Clients.User(admin.Id.ToString())
                         .SendAsync("UserConnectedNotification", user.Username);
-                }
             }
 
             return RedirectToAction("Index", "Habit", null, "https");
         }
-        
 
         // =====================================================
         // 🔁 REENVIAR CONFIRMACIÓN

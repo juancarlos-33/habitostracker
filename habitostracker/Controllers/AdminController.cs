@@ -942,6 +942,24 @@ namespace HabitTrackerApp.Controllers
             }
         }
 
+        [HttpPost]
+        [Authorize(Roles = "SuperAdmin")]
+        public async Task<IActionResult> BlockUserConnection([FromBody] BlockUserDto dto)
+        {
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == dto.UserId);
+            if (user == null) return Json(new { success = false });
+
+            user.IsIpBlocked = true;
+            await _context.SaveChangesAsync();
+
+            // Notificar al usuario via SignalR para sacarlo
+            await _hubContext.Clients.Group(dto.UserId.ToString())
+                .SendAsync("ConnectionBlocked", "🔌 Tu conexión ha sido bloqueada por el administrador.");
+
+            return Json(new { success = true });
+        }
+
+        public class BlockUserDto { public int UserId { get; set; } }
 
         public async Task<IActionResult> DeleteUserPermanently(int id)
         {
