@@ -5,274 +5,276 @@
     Layout = "_LayoutLogin";
 }
 
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet">
 
 <style>
 *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
 
-/* ── MAIN LAYOUT ── */
-.ht-login-layout {
-    min-height:100vh; display:flex; flex-direction:row;
-    position:relative; z-index:1;
-    padding-top:72px;
+body {
+    font-family:'Plus Jakarta Sans',sans-serif;
+    background:#030712; color:white;
+    overflow-x:hidden;
 }
 
 /* ── CANVAS ── */
 #plexus-bg {
     position:fixed; top:0; left:0;
-    width:100%; height:100%;
-    z-index:0; pointer-events:none;
+    width:100%; height:100%; z-index:0; pointer-events:none;
 }
 
-/* ── FLOATING ORBS ── */
+/* ── ORBS ── */
 .orb {
-    position:fixed; border-radius:50%; filter:blur(80px);
-    pointer-events:none; z-index:0; opacity:0.15;
-    animation:orbFloat 8s ease-in-out infinite;
+    position:fixed; border-radius:50%; filter:blur(100px);
+    pointer-events:none; z-index:0; opacity:0.12;
+    animation:orbFloat 10s ease-in-out infinite;
 }
-.orb-1 { width:500px; height:500px; background:#6366f1; top:-100px; left:-100px; animation-delay:0s; }
-.orb-2 { width:400px; height:400px; background:#2563eb; bottom:-100px; right:100px; animation-delay:3s; }
-.orb-3 { width:300px; height:300px; background:#7c3aed; top:40%; left:30%; animation-delay:1.5s; }
-@@keyframes orbFloat {
-    0%,100%{ transform:translateY(0) scale(1); }
-    50%{ transform:translateY(-30px) scale(1.05); }
-}
+.orb-1 { width:600px; height:600px; background:#6366f1; top:-200px; left:-200px; }
+.orb-2 { width:500px; height:500px; background:#2563eb; bottom:-100px; right:-100px; animation-delay:4s; }
+.orb-3 { width:350px; height:350px; background:#7c3aed; top:50%; left:40%; animation-delay:2s; }
+@@keyframes orbFloat { 0%,100%{transform:translateY(0) scale(1);} 50%{transform:translateY(-40px) scale(1.06);} }
 
 /* ── NAVBAR ── */
 .ht-login-nav {
-    position:fixed; top:0; left:0; right:0; z-index:100;
+    position:fixed; top:0; left:0; right:0; z-index:1000;
     display:flex; align-items:center; justify-content:space-between;
-    padding:14px 40px;
-    background:rgba(5,10,20,0.6);
-    backdrop-filter:blur(24px);
-    border-bottom:1px solid rgba(255,255,255,0.05);
+    padding:16px 48px;
+    background:rgba(3,7,18,0.5);
+    backdrop-filter:blur(28px);
+    border-bottom:1px solid rgba(255,255,255,0.04);
 }
 .ht-login-brand { display:flex; align-items:center; gap:12px; text-decoration:none; }
 .ht-login-brand-icon {
-    width:38px; height:38px; border-radius:12px;
+    width:40px; height:40px; border-radius:13px;
     background:linear-gradient(135deg,#6366f1,#2563eb);
     display:flex; align-items:center; justify-content:center;
-    font-size:18px; box-shadow:0 4px 16px rgba(99,102,241,0.45);
+    font-size:19px; box-shadow:0 4px 20px rgba(99,102,241,0.5);
 }
 .ht-login-brand-name { font-size:18px; font-weight:800; color:white; letter-spacing:-0.3px; }
 .ht-login-brand-badge {
-    font-size:10px; font-weight:700; padding:2px 8px; border-radius:20px;
-    background:rgba(99,102,241,0.2); color:#818cf8; border:1px solid rgba(99,102,241,0.3);
+    font-size:10px; font-weight:700; padding:2px 9px; border-radius:20px;
+    background:rgba(99,102,241,0.18); color:#818cf8; border:1px solid rgba(99,102,241,0.3);
 }
 .ht-nav-links { display:flex; align-items:center; gap:6px; }
 .ht-nav-link {
     padding:8px 16px; border-radius:10px; font-size:13px; font-weight:600;
-    text-decoration:none; color:rgba(255,255,255,0.55); transition:0.2s;
+    text-decoration:none; color:rgba(255,255,255,0.45); transition:0.2s;
 }
 .ht-nav-link:hover { color:white; background:rgba(255,255,255,0.06); }
-@@media (max-width:960px) {
-    .ht-login-nav { padding:10px 16px; }
-    .ht-nav-link { padding:6px 10px; font-size:12px; }
-    .ht-nav-link.primary { padding:7px 12px; font-size:12px; }
-    .ht-nav-links { gap:4px; }
-    .ht-login-brand-badge { display:none; }
-    .ht-login-brand-name { font-size:15px; }
-    .ht-login-brand-icon { width:32px; height:32px; font-size:15px; }
+.ht-nav-link.primary {
+    background:linear-gradient(135deg,#6366f1,#2563eb);
+    color:white; box-shadow:0 4px 14px rgba(99,102,241,0.35);
 }
-.ht-nav-link.primary:hover { transform:translateY(-1px); box-shadow:0 8px 20px rgba(99,102,241,0.5); }
+.ht-nav-link.primary:hover { transform:translateY(-1px); box-shadow:0 8px 22px rgba(99,102,241,0.5); }
 
-/* ── MAIN LAYOUT ── */
-body {
-    min-height:100vh;
-    font-family:'Plus Jakarta Sans',Inter,system-ui;
-    background:#050a14;
-    overflow-x:hidden;
-    overflow-y:auto;
-    color:white;
+/* ══════════════════════════════════════
+   LAYOUT PRINCIPAL
+══════════════════════════════════════ */
+.login-shell {
+    display:flex; min-height:100vh; position:relative; z-index:1;
 }
 
-/* ══════════════════════
-   LEFT PANEL
-══════════════════════ */
-.ht-login-left {
-    flex:1; display:flex; flex-direction:column; justify-content:center;
-    padding:60px 80px; max-width:640px;
+/* ── LEFT: SCROLL SECTIONS ── */
+.login-left {
+    flex:1; padding-top:80px;
+    overflow-y:auto; overflow-x:hidden;
 }
 
-/* BADGE */
-.ht-hero-badge {
+/* ── RIGHT: STICKY FORM ── */
+.login-right {
+    width:460px; flex-shrink:0;
+    position:sticky; top:0; height:100vh;
+    display:flex; align-items:center; justify-content:center;
+    padding:24px 40px 24px 0;
+}
+
+/* ══════════════════════════════════════
+   SECCIONES LEFT
+══════════════════════════════════════ */
+.ls-section {
+    min-height:100vh; display:flex; flex-direction:column;
+    justify-content:center; padding:60px 80px;
+    position:relative;
+}
+
+/* SECCIÓN 1 — HERO */
+.ls-badge {
     display:inline-flex; align-items:center; gap:8px;
-    padding:7px 16px; border-radius:30px;
-    background:rgba(99,102,241,0.1); border:1px solid rgba(99,102,241,0.25);
+    padding:8px 18px; border-radius:30px; margin-bottom:32px; width:fit-content;
+    background:rgba(99,102,241,0.08); border:1px solid rgba(99,102,241,0.2);
     color:#a5b4fc; font-size:12px; font-weight:700;
-    margin-bottom:28px; width:fit-content;
-    animation:badgeIn 0.6s cubic-bezier(0.34,1.56,0.64,1);
+    opacity:0; transform:translateY(20px);
 }
-@@keyframes badgeIn { from{opacity:0;transform:translateY(10px) scale(0.9);} to{opacity:1;transform:translateY(0) scale(1);} }
-.ht-hero-badge-dot {
-    width:7px; height:7px; border-radius:50%; background:#6366f1;
-    box-shadow:0 0 8px rgba(99,102,241,0.8);
+.ls-badge-dot {
+    width:8px; height:8px; border-radius:50%; background:#6366f1;
+    box-shadow:0 0 10px rgba(99,102,241,0.9);
     animation:dotPulse 2s infinite;
 }
-@@keyframes dotPulse { 0%,100%{opacity:1;box-shadow:0 0 8px rgba(99,102,241,0.8);} 50%{opacity:0.5;box-shadow:0 0 0 rgba(99,102,241,0);} }
+@@keyframes dotPulse { 0%,100%{opacity:1;} 50%{opacity:0.3;} }
 
-/* TITLE */
-.ht-hero-title {
-    font-size:54px; font-weight:800; color:white; line-height:1.12;
-    letter-spacing:-1.5px; margin-bottom:20px;
+.ls-title {
+    font-size:62px; font-weight:900; line-height:1.08;
+    letter-spacing:-2px; margin-bottom:24px; color:white;
+    overflow:hidden;
 }
-.ht-hero-title .gradient-word {
+.ls-title .line { display:block; overflow:hidden; }
+.ls-title .word { display:inline-block; transform:translateY(100%); opacity:0; }
+.ls-title .gradient-word {
     background:linear-gradient(135deg,#818cf8,#60a5fa,#34d399);
     -webkit-background-clip:text; -webkit-text-fill-color:transparent;
-    background-clip:text;
-    background-size:200% auto;
-    animation:gradientShift 4s linear infinite;
+    background-clip:text; background-size:200% auto;
+    animation:gradientShift 5s linear infinite;
 }
 @@keyframes gradientShift { 0%{background-position:0% center;} 100%{background-position:200% center;} }
 
-.ht-hero-desc {
-    font-size:16px; color:rgba(255,255,255,0.45); line-height:1.75;
-    margin-bottom:44px; max-width:440px;
+.ls-desc {
+    font-size:17px; color:rgba(255,255,255,0.4); line-height:1.8;
+    max-width:480px; margin-bottom:48px;
+    opacity:0; transform:translateY(24px);
 }
 
-/* STATS */
-.ht-stats {
-    display:flex; gap:0; margin-bottom:48px;
-    background:rgba(255,255,255,0.03);
-    border:1px solid rgba(255,255,255,0.07);
-    border-radius:20px; overflow:hidden; width:fit-content;
-}
-.ht-stat {
-    padding:18px 32px; text-align:center; position:relative;
-}
-.ht-stat:not(:last-child)::after {
-    content:""; position:absolute; right:0; top:20%; height:60%;
-    width:1px; background:rgba(255,255,255,0.07);
-}
-.ht-stat-num {
-    font-size:26px; font-weight:800; color:white; display:block;
-    line-height:1; margin-bottom:4px;
-}
-.ht-stat-label { font-size:11px; color:rgba(255,255,255,0.3); font-weight:700; text-transform:uppercase; letter-spacing:0.8px; }
-
-/* FEATURES */
-.ht-features { display:flex; flex-direction:column; gap:12px; }
-.ht-feature {
-    display:flex; align-items:center; gap:16px;
-    padding:16px 20px; border-radius:18px;
+/* STATS ROW */
+.ls-stats {
+    display:flex; gap:0; width:fit-content;
     background:rgba(255,255,255,0.025);
     border:1px solid rgba(255,255,255,0.06);
-    transition:0.25s; cursor:default;
-    animation:featureIn 0.5s ease both;
+    border-radius:22px; overflow:hidden;
+    opacity:0; transform:translateY(24px);
 }
-.ht-feature:nth-child(1){animation-delay:0.5s;}
-.ht-feature:nth-child(2){animation-delay:0.65s;}
-.ht-feature:nth-child(3){animation-delay:0.8s;}
-@@keyframes featureIn { from{opacity:0;transform:translateX(-20px);} to{opacity:1;transform:translateX(0);} }
-.ht-feature:hover {
-    background:rgba(99,102,241,0.08);
-    border-color:rgba(99,102,241,0.22);
-    transform:translateX(6px);
+.ls-stat { padding:20px 36px; text-align:center; position:relative; }
+.ls-stat:not(:last-child)::after {
+    content:""; position:absolute; right:0; top:20%; height:60%;
+    width:1px; background:rgba(255,255,255,0.06);
 }
-.ht-feature-icon {
-    width:44px; height:44px; border-radius:13px; flex-shrink:0;
-    display:flex; align-items:center; justify-content:center; font-size:21px;
+.ls-stat-num { font-size:28px; font-weight:900; color:white; display:block; line-height:1; margin-bottom:4px; }
+.ls-stat-label { font-size:11px; color:rgba(255,255,255,0.25); font-weight:700; text-transform:uppercase; letter-spacing:1px; }
+
+/* SCROLL HINT */
+.ls-scroll-hint {
+    display:flex; align-items:center; gap:10px;
+    margin-top:48px; color:rgba(255,255,255,0.2);
+    font-size:12px; font-weight:600;
+    opacity:0; animation:hintFade 2s ease 2s forwards;
+}
+@@keyframes hintFade { to{opacity:1;} }
+.ls-scroll-arrow {
+    width:32px; height:32px; border-radius:50%;
+    border:1px solid rgba(255,255,255,0.1);
+    display:flex; align-items:center; justify-content:center;
+    font-size:14px; animation:bounceDown 2s ease-in-out infinite;
+}
+@@keyframes bounceDown { 0%,100%{transform:translateY(0);} 50%{transform:translateY(5px);} }
+
+/* SECCIÓN 2 — FEATURES */
+.ls-section-label {
+    font-size:11px; font-weight:800; color:#6366f1;
+    text-transform:uppercase; letter-spacing:2px;
+    margin-bottom:16px; opacity:0; transform:translateX(-20px);
+}
+.ls-section-title {
+    font-size:42px; font-weight:900; color:white;
+    letter-spacing:-1.5px; line-height:1.1; margin-bottom:16px;
+    opacity:0; transform:translateY(30px);
+}
+.ls-section-sub {
+    font-size:15px; color:rgba(255,255,255,0.35); line-height:1.7;
+    max-width:420px; margin-bottom:48px;
+    opacity:0; transform:translateY(20px);
+}
+
+.ls-features { display:flex; flex-direction:column; gap:16px; }
+.ls-feature {
+    display:flex; align-items:flex-start; gap:18px;
+    padding:22px 24px; border-radius:20px;
+    background:rgba(255,255,255,0.02);
+    border:1px solid rgba(255,255,255,0.05);
+    transition:0.3s; cursor:default;
+    opacity:0; transform:translateX(-40px);
+}
+.ls-feature:hover {
+    background:rgba(99,102,241,0.06);
+    border-color:rgba(99,102,241,0.18);
+    transform:translateX(6px) !important;
+}
+.ls-feature-icon {
+    width:50px; height:50px; border-radius:15px; flex-shrink:0;
+    display:flex; align-items:center; justify-content:center; font-size:24px;
     transition:0.2s;
 }
-.ht-feature:hover .ht-feature-icon { transform:scale(1.1) rotate(-5deg); }
-.ht-feature-title { font-size:14px; font-weight:700; color:white; margin-bottom:3px; }
-.ht-feature-desc { font-size:12px; color:rgba(255,255,255,0.38); line-height:1.5; }
+.ls-feature:hover .ls-feature-icon { transform:scale(1.1) rotate(-5deg); }
+.ls-feature-title { font-size:15px; font-weight:800; color:white; margin-bottom:4px; }
+.ls-feature-desc { font-size:13px; color:rgba(255,255,255,0.35); line-height:1.6; }
 
-/* SOCIAL PROOF */
-.ht-social-proof {
-    display:flex; align-items:center; gap:12px;
-    margin-top:36px; padding:16px 20px;
-    border-radius:16px;
-    background:rgba(255,255,255,0.03);
-    border:1px solid rgba(255,255,255,0.06);
+/* SECCIÓN 3 — SOCIAL PROOF */
+.ls-proof-grid {
+    display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:16px;
 }
-.ht-avatars { display:flex; }
-.ht-avatars img {
-    width:32px; height:32px; border-radius:50%; object-fit:cover;
-    border:2px solid #050a14; margin-left:-8px;
+.ls-proof-card {
+    background:rgba(255,255,255,0.025); border:1px solid rgba(255,255,255,0.05);
+    border-radius:18px; padding:20px 22px;
+    opacity:0; transform:translateY(30px) scale(0.95);
 }
-.ht-avatars img:first-child { margin-left:0; }
-.ht-avatars-more {
-    width:32px; height:32px; border-radius:50%; border:2px solid #050a14;
-    background:linear-gradient(135deg,#6366f1,#2563eb); margin-left:-8px;
+.ls-proof-stars { color:#fbbf24; font-size:13px; margin-bottom:10px; }
+.ls-proof-text { font-size:13px; color:rgba(255,255,255,0.45); line-height:1.6; margin-bottom:14px; }
+.ls-proof-user { display:flex; align-items:center; gap:10px; }
+.ls-proof-avatar {
+    width:34px; height:34px; border-radius:50%;
+    background:linear-gradient(135deg,#6366f1,#2563eb);
     display:flex; align-items:center; justify-content:center;
-    font-size:10px; font-weight:800; color:white;
+    font-size:13px; font-weight:800; color:white;
 }
-.ht-social-text { font-size:13px; color:rgba(255,255,255,0.5); }
-.ht-social-text strong { color:white; }
-.ht-stars { color:#fbbf24; font-size:13px; letter-spacing:1px; }
+.ls-proof-name { font-size:12px; font-weight:700; color:rgba(255,255,255,0.6); }
 
-/* ══════════════════════
-   RIGHT PANEL — CARD
-══════════════════════ */
-.ht-login-right {
-    width:440px; flex-shrink:0;
-    display:flex; align-items:center; justify-content:center;
-    padding:40px 40px 40px 0;
+/* SECCIÓN 4 — CTA FINAL */
+.ls-cta-big {
+    font-size:56px; font-weight:900; color:white;
+    letter-spacing:-2px; line-height:1.08; margin-bottom:20px;
+    opacity:0; transform:translateY(40px);
 }
+.ls-cta-sub {
+    font-size:16px; color:rgba(255,255,255,0.35); line-height:1.7;
+    max-width:420px; margin-bottom:36px;
+    opacity:0; transform:translateY(20px);
+}
+.ls-cta-btn {
+    display:inline-flex; align-items:center; gap:10px;
+    padding:16px 32px; border-radius:16px;
+    background:linear-gradient(135deg,#6366f1,#2563eb);
+    color:white; font-size:15px; font-weight:800;
+    text-decoration:none; cursor:pointer; border:none; font-family:inherit;
+    box-shadow:0 8px 28px rgba(99,102,241,0.45);
+    transition:0.2s; opacity:0; transform:translateY(20px);
+}
+.ls-cta-btn:hover { transform:translateY(-2px); box-shadow:0 14px 36px rgba(99,102,241,0.6); color:white; }
+
+/* ══════════════════════════════════════
+   FORM CARD
+══════════════════════════════════════ */
 .ht-login-card {
     width:100%; padding:36px 32px;
     border-radius:28px;
-    background:rgba(13,19,33,0.95);
-    backdrop-filter:blur(30px);
-    border:1px solid rgba(255,255,255,0.08);
-    box-shadow:
-        0 40px 80px rgba(0,0,0,0.7),
-        0 0 0 1px rgba(99,102,241,0.06),
-        inset 0 1px 0 rgba(255,255,255,0.06);
-    animation:cardIn 0.7s cubic-bezier(0.34,1.56,0.64,1);
+    background:rgba(10,16,30,0.96);
+    backdrop-filter:blur(40px);
+    border:1px solid rgba(255,255,255,0.07);
+    box-shadow:0 40px 80px rgba(0,0,0,0.8),
+               inset 0 1px 0 rgba(255,255,255,0.05);
 }
-@@keyframes cardIn {
-    from { opacity:0; transform:translateY(30px) scale(0.95); }
-    to { opacity:1; transform:translateY(0) scale(1); }
-}
-
-/* CARD HEADER */
-.ht-card-header { text-align:center; margin-bottom:26px; }
-.ht-card-avatar-wrap {
-    position:relative; display:inline-block; margin-bottom:16px;
-}
+.ht-card-header { text-align:center; margin-bottom:24px; }
+.ht-card-avatar-wrap { position:relative; display:inline-block; margin-bottom:16px; }
 .ht-card-avatar {
     width:72px; height:72px; border-radius:22px; object-fit:cover;
     border:2px solid rgba(99,102,241,0.4);
-    box-shadow:0 0 0 6px rgba(99,102,241,0.08), 0 8px 24px rgba(0,0,0,0.4);
-    transition:transform 0.15s, filter 0.3s;
-    display:block;
-    animation:avatarIn 0.6s cubic-bezier(0.34,1.56,0.64,1) 0.2s both;
-}
-@@keyframes avatarIn {
-    from { transform:translateY(-24px) scale(0.7) rotate(-10deg); opacity:0; }
-    to { transform:translateY(0) scale(1) rotate(0deg); opacity:1; }
+    box-shadow:0 0 0 6px rgba(99,102,241,0.08), 0 8px 28px rgba(0,0,0,0.5);
+    transition:transform 0.15s, filter 0.3s; display:block;
 }
 .ht-card-avatar-ring {
     position:absolute; inset:-6px; border-radius:28px;
     border:1.5px solid rgba(99,102,241,0.2);
     animation:ringPulse 3s ease-in-out infinite;
 }
-@@keyframes ringPulse {
-    0%,100%{ transform:scale(1); opacity:0.4; }
-    50%{ transform:scale(1.05); opacity:0.8; }
-}
+@@keyframes ringPulse { 0%,100%{transform:scale(1);opacity:0.4;} 50%{transform:scale(1.05);opacity:0.9;} }
 .ht-card-title { font-size:20px; font-weight:800; color:white; margin:0 0 5px; }
-.ht-card-sub { font-size:13px; color:rgba(255,255,255,0.3); margin:0; }
+.ht-card-sub { font-size:13px; color:rgba(255,255,255,0.28); margin:0; }
 
-/* TABS */
-.ht-tabs {
-    display:flex; gap:4px; background:rgba(255,255,255,0.04);
-    border-radius:14px; padding:4px; margin-bottom:22px;
-    border:1px solid rgba(255,255,255,0.06);
-}
-.ht-tab {
-    flex:1; padding:9px; border-radius:10px; border:none;
-    font-size:13px; font-weight:700; cursor:pointer; transition:0.2s;
-    font-family:inherit; background:transparent; color:rgba(255,255,255,0.4);
-}
-.ht-tab.active {
-    background:rgba(99,102,241,0.2); color:#a5b4fc;
-    box-shadow:0 2px 8px rgba(99,102,241,0.2);
-}
-
-/* GOOGLE BTN */
 .ht-google-btn {
     display:flex; align-items:center; justify-content:center; gap:10px;
     width:100%; padding:13px; background:white; border-radius:14px;
@@ -286,171 +288,99 @@ body {
     transform:translateX(-100%); transition:0.5s;
 }
 .ht-google-btn:hover::before { transform:translateX(100%); }
-.ht-google-btn:hover { background:#f1f3f4; transform:translateY(-2px); box-shadow:0 8px 20px rgba(0,0,0,0.25); }
+.ht-google-btn:hover { background:#f1f3f4; transform:translateY(-2px); box-shadow:0 8px 22px rgba(0,0,0,0.3); }
 .ht-google-btn img { width:18px; height:18px; }
 
 .ht-guest-btn {
     display:flex; align-items:center; justify-content:center; gap:8px;
     width:100%; padding:12px;
-    background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1);
-    border-radius:14px; color:rgba(255,255,255,0.55); font-size:13px; font-weight:600;
-    text-decoration:none; transition:0.2s; margin-bottom:22px; font-family:inherit;
+    background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08);
+    border-radius:14px; color:rgba(255,255,255,0.45); font-size:13px; font-weight:600;
+    text-decoration:none; transition:0.2s; margin-bottom:20px; font-family:inherit;
 }
-.ht-guest-btn:hover { background:rgba(255,255,255,0.07); color:white; border-color:rgba(255,255,255,0.18); transform:translateY(-1px); }
+.ht-guest-btn:hover { background:rgba(255,255,255,0.06); color:white; border-color:rgba(255,255,255,0.15); transform:translateY(-1px); }
 
-/* DIVIDER */
 .ht-divider {
     display:flex; align-items:center; gap:10px;
-    font-size:11px; color:rgba(255,255,255,0.2);
-    font-weight:700; text-transform:uppercase; letter-spacing:0.8px;
-    margin-bottom:22px;
+    font-size:11px; color:rgba(255,255,255,0.15);
+    font-weight:700; text-transform:uppercase; letter-spacing:1px;
+    margin-bottom:20px;
 }
-.ht-divider::before, .ht-divider::after {
-    content:""; flex:1; height:1px; background:rgba(255,255,255,0.07);
-}
+.ht-divider::before, .ht-divider::after { content:""; flex:1; height:1px; background:rgba(255,255,255,0.05); }
 
-/* FIELDS */
-.ht-field { margin-bottom:16px; }
-.ht-label {
-    display:block; font-size:11px; font-weight:700;
-    color:rgba(255,255,255,0.4); text-transform:uppercase;
-    letter-spacing:0.7px; margin-bottom:7px;
-}
+.ht-field { margin-bottom:14px; }
+.ht-label { display:block; font-size:11px; font-weight:700; color:rgba(255,255,255,0.3); text-transform:uppercase; letter-spacing:0.7px; margin-bottom:7px; }
 .ht-input-wrap { position:relative; }
-.ht-input-icon {
-    position:absolute; left:14px; top:50%; transform:translateY(-50%);
-    font-size:15px; pointer-events:none; opacity:0.4;
-}
+.ht-input-icon { position:absolute; left:14px; top:50%; transform:translateY(-50%); font-size:15px; pointer-events:none; opacity:0.35; }
 .ht-input {
     width:100%; padding:12px 14px 12px 40px; border-radius:13px;
-    border:1.5px solid rgba(255,255,255,0.08);
-    background:rgba(255,255,255,0.04); color:white;
-    font-size:14px; outline:none; transition:0.2s; font-family:inherit;
-    box-sizing:border-box;
+    border:1.5px solid rgba(255,255,255,0.07);
+    background:rgba(255,255,255,0.03); color:white;
+    font-size:14px; outline:none; transition:0.2s; font-family:inherit; box-sizing:border-box;
 }
-.ht-input:focus {
-    border-color:#6366f1; background:rgba(99,102,241,0.06);
-    box-shadow:0 0 0 3px rgba(99,102,241,0.14);
-}
-.ht-input:focus + .ht-input-icon,
-.ht-input-wrap:focus-within .ht-input-icon { opacity:0.8; }
-.ht-input::placeholder { color:rgba(255,255,255,0.18); }
-.ht-input.no-icon { padding-left:14px; }
-
+.ht-input:focus { border-color:#6366f1; background:rgba(99,102,241,0.05); box-shadow:0 0 0 3px rgba(99,102,241,0.12); }
+.ht-input::placeholder { color:rgba(255,255,255,0.15); }
 .ht-pwd-toggle {
     position:absolute; right:14px; top:50%; transform:translateY(-50%);
-    cursor:pointer; opacity:0.35; font-size:16px; transition:0.15s; user-select:none;
-    background:none; border:none; color:white;
+    cursor:pointer; opacity:0.3; font-size:16px; background:none; border:none; color:white; transition:0.15s;
 }
-.ht-pwd-toggle:hover { opacity:0.9; }
-
+.ht-pwd-toggle:hover { opacity:0.8; }
 .ht-forgot { text-align:right; margin-top:6px; }
-.ht-forgot a { font-size:12px; font-weight:600; color:#ef4444; text-decoration:none; transition:0.2s; }
+.ht-forgot a { font-size:12px; font-weight:600; color:#ef4444; text-decoration:none; }
 .ht-forgot a:hover { color:#fca5a5; }
 
-/* STRENGTH INDICATOR */
 .ht-strength { display:flex; gap:4px; margin-top:6px; }
-.ht-strength-bar {
-    flex:1; height:3px; border-radius:10px;
-    background:rgba(255,255,255,0.08); transition:0.3s;
-}
+.ht-strength-bar { flex:1; height:3px; border-radius:10px; background:rgba(255,255,255,0.06); transition:0.3s; }
 
-/* SUBMIT */
 .ht-submit-btn {
     width:100%; padding:14px; border-radius:14px; border:none;
     background:linear-gradient(135deg,#6366f1,#2563eb);
     color:white; font-weight:800; font-size:15px; cursor:pointer;
     transition:0.25s; position:relative; overflow:hidden; font-family:inherit;
-    margin-top:8px; letter-spacing:0.2px;
-    box-shadow:0 6px 20px rgba(99,102,241,0.4);
+    margin-top:8px; box-shadow:0 6px 22px rgba(99,102,241,0.45);
 }
 .ht-submit-btn::before {
-    content:""; position:absolute; top:0; left:-100%;
-    width:100%; height:100%;
-    background:linear-gradient(120deg,transparent,rgba(255,255,255,0.2),transparent);
-    transition:0.6s;
+    content:""; position:absolute; top:0; left:-100%; width:100%; height:100%;
+    background:linear-gradient(120deg,transparent,rgba(255,255,255,0.2),transparent); transition:0.6s;
 }
 .ht-submit-btn:hover::before { left:100%; }
-.ht-submit-btn:hover { transform:translateY(-2px); box-shadow:0 12px 28px rgba(99,102,241,0.55); }
-.ht-submit-btn:active { transform:translateY(0); }
+.ht-submit-btn:hover { transform:translateY(-2px); box-shadow:0 12px 30px rgba(99,102,241,0.6); }
 
-/* REGISTER ROW */
-.ht-register-row { text-align:center; margin-top:18px; font-size:13px; color:rgba(255,255,255,0.3); }
-.ht-register-link { color:#818cf8; font-weight:700; text-decoration:none; transition:0.2s; }
+.ht-register-row { text-align:center; margin-top:16px; font-size:13px; color:rgba(255,255,255,0.25); }
+.ht-register-link { color:#818cf8; font-weight:700; text-decoration:none; }
 .ht-register-link:hover { color:#a5b4fc; }
 
-/* TRUST BADGES */
 .ht-trust {
     display:flex; align-items:center; justify-content:center; gap:16px;
-    margin-top:20px; padding-top:18px;
-    border-top:1px solid rgba(255,255,255,0.05);
+    margin-top:18px; padding-top:16px; border-top:1px solid rgba(255,255,255,0.04);
 }
-.ht-trust-item {
-    display:flex; align-items:center; gap:5px;
-    font-size:11px; font-weight:600; color:rgba(255,255,255,0.25);
-}
+.ht-trust-item { font-size:11px; font-weight:600; color:rgba(255,255,255,0.2); }
 
-/* ALERTS */
 .ht-alert {
     padding:11px 14px; border-radius:12px; font-size:13px; font-weight:600;
-    margin-bottom:16px; display:flex; align-items:center; gap:8px;
-    animation:alertIn 0.3s ease;
+    margin-bottom:14px; display:flex; align-items:center; gap:8px;
 }
-@@keyframes alertIn { from{opacity:0;transform:translateY(-6px);} to{opacity:1;transform:translateY(0);} }
-.ht-alert.danger { background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.2); color:#fca5a5; }
-.ht-alert.success { background:rgba(34,197,94,0.1); border:1px solid rgba(34,197,94,0.2); color:#86efac; }
-.ht-alert.warning { background:rgba(251,191,36,0.1); border:1px solid rgba(251,191,36,0.2); color:#fde68a; }
+.ht-alert.danger { background:rgba(239,68,68,0.08); border:1px solid rgba(239,68,68,0.18); color:#fca5a5; }
+.ht-alert.success { background:rgba(34,197,94,0.08); border:1px solid rgba(34,197,94,0.18); color:#86efac; }
+.ht-alert.warning { background:rgba(251,191,36,0.08); border:1px solid rgba(251,191,36,0.18); color:#fde68a; }
 
-/* ══════════════════════
+/* ══════════════════════════════════════
    RESPONSIVE MÓVIL
-══════════════════════ */
+══════════════════════════════════════ */
 @@media (max-width:960px) {
-    .ht-login-layout { flex-direction:column; }
+    .login-shell { flex-direction:column; }
+    .login-left { padding-top:72px; overflow-y:visible; }
+    .login-right { width:100%; position:relative; height:auto; padding:0 16px 48px; }
+    .ls-section { min-height:auto; padding:60px 20px; }
+    .ls-title { font-size:36px; }
+    .ls-cta-big { font-size:34px; }
+    .ls-section-title { font-size:28px; }
+    .ls-proof-grid { grid-template-columns:1fr; }
+    .ls-stats { width:100%; }
+    .ls-stat { flex:1; padding:16px; }
     .ht-login-nav { padding:12px 20px; }
-   .ht-nav-links .ht-nav-link:not(.primary):not([href="/Home/Privacy"]) { display:none; }
-
-    .ht-login-left {
-        max-width:100%; padding:28px 20px 20px;
-        align-items:center; text-align:center;
-    }
-    .ht-hero-title { font-size:32px; letter-spacing:-0.8px; margin-bottom:12px; }
-    .ht-hero-desc { font-size:14px; margin-bottom:24px; max-width:100%; }
-
-    .ht-stats { width:100%; justify-content:space-around; border-radius:16px; }
-    .ht-stat { padding:14px 20px; flex:1; }
-    .ht-stat-num { font-size:22px; }
-    .ht-stat-label { font-size:10px; }
-
-    .ht-features {
-        flex-direction:row; width:100%;
-        overflow-x:auto; gap:10px; padding-bottom:4px;
-    }
-    .ht-features::-webkit-scrollbar { display:none; }
-    .ht-feature {
-        flex-direction:column; min-width:130px; flex-shrink:0;
-        padding:14px 12px; text-align:center; gap:8px;
-    }
-    .ht-feature-desc { display:none; }
-    .ht-feature:hover { transform:translateY(-4px) translateX(0); }
-
-    .ht-social-proof { display:none; }
-
-    .ht-login-right {
-        width:100%; padding:0 16px 40px; align-items:stretch;
-    }
-    .ht-login-card {
-        padding:28px 22px; border-radius:24px;
-        box-shadow:0 20px 50px rgba(0,0,0,0.5);
-    }
-    .ht-card-avatar { width:60px; height:60px; border-radius:18px; }
-    .ht-card-title { font-size:18px; }
-}
-
-@@media (max-width:400px) {
-    .ht-hero-title { font-size:26px; }
-    .ht-login-card { padding:22px 16px; }
-    .ht-stats { flex-wrap:wrap; }
-    .ht-stat { min-width:33%; }
+    .ht-nav-links .ht-nav-link:not(.primary):not([href="/Home/Privacy"]) { display:none; }
+    .ht-login-brand-badge { display:none; }
 }
 </style>
 
@@ -466,111 +396,167 @@ body {
         <span class="ht-login-brand-name">HabitTracker</span>
         <span class="ht-login-brand-badge">Pro</span>
     </a>
-   <div class="ht-nav-links">
-    <a href="/Help/Index" class="ht-nav-link">Ayuda</a>
-    <a href="/Home/Privacy" target="_blank" class="ht-nav-link">🔐 Privacidad</a>
-    <a href="/Account/Register" class="ht-nav-link">Registro</a>
-    <a href="#form" class="ht-nav-link primary"
-       onclick="document.querySelector('.ht-input').focus();return false;">
-        Iniciar sesión →
-    </a>
-</div>
+    <div class="ht-nav-links">
+        <a href="/Help/Index" class="ht-nav-link">Ayuda</a>
+        <a href="/Home/Privacy" target="_blank" class="ht-nav-link">🔐 Privacidad</a>
+        <a href="/Account/Register" class="ht-nav-link">Registro</a>
+        <a href="#" class="ht-nav-link primary" onclick="document.getElementById('usernameInput').focus();return false;">
+            Iniciar sesión →
+        </a>
+    </div>
 </nav>
 
-<div class="ht-login-layout">
+<div class="login-shell">
 
-    <!-- ═══ LEFT PANEL ═══ -->
-    <div class="ht-login-left">
+    <!-- ══ LEFT: SCROLL STORY ══ -->
+    <div class="login-left" id="loginLeft">
 
-        <div class="ht-hero-badge">
-            <div class="ht-hero-badge-dot"></div>
-            Disponible gratis — Sin límites
-        </div>
-
-        <h1 class="ht-hero-title">
-            Construye hábitos<br>
-            que <span class="gradient-word">transforman</span><br>
-            tu vida
-        </h1>
-
-        <p class="ht-hero-desc">
-            La app de seguimiento de hábitos más completa. Conecta con amigos, comparte tu progreso y vence la procrastinación día a día.
-        </p>
-
-        <div class="ht-stats">
-            <div class="ht-stat">
-                <span class="ht-stat-num">∞</span>
-                <span class="ht-stat-label">Hábitos</span>
+        <!-- SECCIÓN 1: HERO -->
+        <section class="ls-section" id="sec1">
+            <div class="ls-badge" id="heroBadge">
+                <div class="ls-badge-dot"></div>
+                Disponible gratis · Sin tarjeta de crédito
             </div>
-            <div class="ht-stat">
-                <span class="ht-stat-num">100%</span>
-                <span class="ht-stat-label">Gratis</span>
-            </div>
-            <div class="ht-stat">
-                <span class="ht-stat-num">24/7</span>
-                <span class="ht-stat-label">Disponible</span>
-            </div>
-        </div>
-
-        <div class="ht-features">
-            <div class="ht-feature">
-                <div class="ht-feature-icon" style="background:rgba(99,102,241,0.12);">📊</div>
-                <div>
-                    <div class="ht-feature-title">Seguimiento inteligente</div>
-                    <div class="ht-feature-desc">Visualiza tu progreso con gráficas y rachas en tiempo real.</div>
+            <h1 class="ls-title" id="heroTitle">
+                <span class="line"><span class="word">Construye</span> <span class="word">hábitos</span></span>
+                <span class="line"><span class="word gradient-word">que transforman</span></span>
+                <span class="line"><span class="word">tu</span> <span class="word">vida.</span></span>
+            </h1>
+            <p class="ls-desc" id="heroDesc">
+                La plataforma de hábitos más completa. Conecta con personas, comparte tu progreso y construye la mejor versión de ti mismo, día a día.
+            </p>
+            <div class="ls-stats" id="heroStats">
+                <div class="ls-stat">
+                    <span class="ls-stat-num" data-count="9000">0</span>
+                    <span class="ls-stat-label">Usuarios</span>
+                </div>
+                <div class="ls-stat">
+                    <span class="ls-stat-num">∞</span>
+                    <span class="ls-stat-label">Hábitos</span>
+                </div>
+                <div class="ls-stat">
+                    <span class="ls-stat-num">24/7</span>
+                    <span class="ls-stat-label">Disponible</span>
                 </div>
             </div>
-            <div class="ht-feature">
-                <div class="ht-feature-icon" style="background:rgba(34,197,94,0.1);">👥</div>
-                <div>
-                    <div class="ht-feature-title">Red social de hábitos</div>
-                    <div class="ht-feature-desc">Comparte logros, sigue amigos y motívate en comunidad.</div>
-                </div>
+            <div class="ls-scroll-hint">
+                <div class="ls-scroll-arrow">↓</div>
+                Desliza para descubrir más
             </div>
-            <div class="ht-feature">
-                <div class="ht-feature-icon" style="background:rgba(251,191,36,0.1);">🏆</div>
-                <div>
-                    <div class="ht-feature-title">Logros y recompensas</div>
-                    <div class="ht-feature-desc">Desbloquea insignias y compite en el ranking global.</div>
-                </div>
-            </div>
-        </div>
+        </section>
 
-        <div class="ht-social-proof">
-            <div class="ht-avatars">
-                <div class="ht-avatars-more">+9k</div>
+        <!-- SECCIÓN 2: FEATURES -->
+        <section class="ls-section" id="sec2">
+            <div class="ls-section-label" id="feat-label">Lo que obtienes</div>
+            <div class="ls-section-title" id="feat-title">Todo lo que necesitas<br>en un solo lugar</div>
+            <div class="ls-section-sub" id="feat-sub">Herramientas diseñadas para construir hábitos reales con resultados reales.</div>
+            <div class="ls-features">
+                <div class="ls-feature" id="feat1">
+                    <div class="ls-feature-icon" style="background:rgba(99,102,241,0.1);">📊</div>
+                    <div>
+                        <div class="ls-feature-title">Seguimiento inteligente</div>
+                        <div class="ls-feature-desc">Gráficas, rachas y estadísticas avanzadas de tus últimos 90 días. Visualiza tu progreso real.</div>
+                    </div>
+                </div>
+                <div class="ls-feature" id="feat2">
+                    <div class="ls-feature-icon" style="background:rgba(34,197,94,0.1);">👥</div>
+                    <div>
+                        <div class="ls-feature-title">Red social de hábitos</div>
+                        <div class="ls-feature-desc">Comparte logros, sigue amigos, reacciona a su progreso. La motivación colectiva funciona.</div>
+                    </div>
+                </div>
+                <div class="ls-feature" id="feat3">
+                    <div class="ls-feature-icon" style="background:rgba(251,191,36,0.1);">🏆</div>
+                    <div>
+                        <div class="ls-feature-title">Logros y badges</div>
+                        <div class="ls-feature-desc">Desbloquea insignias por cada hito. 7 días, 30 días, 100 días. Tu disciplina tiene recompensa.</div>
+                    </div>
+                </div>
+                <div class="ls-feature" id="feat4">
+                    <div class="ls-feature-icon" style="background:rgba(239,68,68,0.1);">💬</div>
+                    <div>
+                        <div class="ls-feature-title">Chat grupal en tiempo real</div>
+                        <div class="ls-feature-desc">Grupos de hábitos con chat, reacciones, respuestas y notificaciones. Accountability real.</div>
+                    </div>
+                </div>
             </div>
-            <div>
-                <div class="ht-stars">★★★★★</div>
-                <div class="ht-social-text"><strong>Miles de usuarios</strong> ya cambiaron sus hábitos</div>
+        </section>
+
+        <!-- SECCIÓN 3: SOCIAL PROOF -->
+        <section class="ls-section" id="sec3">
+            <div class="ls-section-label" id="proof-label">Testimonios</div>
+            <div class="ls-section-title" id="proof-title">Miles ya<br>cambiaron sus hábitos</div>
+            <div class="ls-proof-grid">
+                <div class="ls-proof-card" id="proof1">
+                    <div class="ls-proof-stars">★★★★★</div>
+                    <div class="ls-proof-text">"Llevo 47 días consecutivos con mi rutina de ejercicio. Nunca había logrado tanto."</div>
+                    <div class="ls-proof-user">
+                        <div class="ls-proof-avatar">A</div>
+                        <div class="ls-proof-name">Andrés M. · Colombia</div>
+                    </div>
+                </div>
+                <div class="ls-proof-card" id="proof2">
+                    <div class="ls-proof-stars">★★★★★</div>
+                    <div class="ls-proof-text">"El chat de grupos me hace sentir que no estoy solo en esto. Es increíble."</div>
+                    <div class="ls-proof-user">
+                        <div class="ls-proof-avatar">S</div>
+                        <div class="ls-proof-name">Sara L. · México</div>
+                    </div>
+                </div>
+                <div class="ls-proof-card" id="proof3">
+                    <div class="ls-proof-stars">★★★★★</div>
+                    <div class="ls-proof-text">"Las estadísticas premium me ayudan a entender cuándo soy más productivo."</div>
+                    <div class="ls-proof-user">
+                        <div class="ls-proof-avatar">C</div>
+                        <div class="ls-proof-name">Carlos R. · España</div>
+                    </div>
+                </div>
+                <div class="ls-proof-card" id="proof4">
+                    <div class="ls-proof-stars">★★★★★</div>
+                    <div class="ls-proof-text">"Logré mi récord de 100 días. El badge fue la mejor motivación que tuve."</div>
+                    <div class="ls-proof-user">
+                        <div class="ls-proof-avatar">V</div>
+                        <div class="ls-proof-name">Valentina G. · Argentina</div>
+                    </div>
+                </div>
             </div>
-        </div>
+        </section>
+
+        <!-- SECCIÓN 4: CTA FINAL -->
+        <section class="ls-section" id="sec4">
+            <div class="ls-cta-big" id="cta-title">¿Listo para<br><span class="gradient-word">empezar hoy?</span></div>
+            <div class="ls-cta-sub" id="cta-sub">Únete gratis en menos de un minuto. Sin tarjeta, sin compromisos. Solo tus hábitos y tú.</div>
+            <button class="ls-cta-btn" id="cta-btn" onclick="document.getElementById('usernameInput').focus()">
+                🚀 Crear cuenta gratis →
+            </button>
+            <div style="margin-top:60px;padding-top:32px;border-top:1px solid rgba(255,255,255,0.04);font-size:12px;color:rgba(255,255,255,0.15);text-align:center;">
+                <a href="/Home/Privacy" style="color:rgba(255,255,255,0.2);text-decoration:none;">🔐 Política de Privacidad</a>
+                · HabitTracker Pro © @DateTime.Now.Year
+            </div>
+        </section>
 
     </div>
 
-    <!-- ═══ RIGHT PANEL ═══ -->
-    <div class="ht-login-right">
+    <!-- ══ RIGHT: FORM ══ -->
+    <div class="login-right">
         <div class="ht-login-card" id="form">
-
             <div class="ht-card-header">
                 <div class="ht-card-avatar-wrap">
                     <div class="ht-card-avatar-ring"></div>
-                     <img src='https://res.cloudinary.com/dzrjag7ia/image/upload/v1776560628/NE_lmertz.jpg' class="ht-card-avatar" id="mascota" />
+                    <img src="https://res.cloudinary.com/dzrjag7ia/image/upload/v1776560628/NE_lmertz.jpg"
+                         class="ht-card-avatar" id="mascota" />
                 </div>
                 <div class="ht-card-title">Bienvenido :)</div>
                 <div class="ht-card-sub">Inicia sesión para continuar</div>
             </div>
 
-            @* ALERTS *@
             @if (Context.Request.Query["deleted"] == "true")
             {
                 <div class="ht-alert danger">⚠️ Tu cuenta fue eliminada</div>
                 <script>
-                    if (window.history.replaceState) {
-                        const url = new URL(window.location);
-                        url.searchParams.delete("deleted");
-                        window.history.replaceState({}, document.title, url.pathname);
-                    }
+                    const url = new URL(window.location);
+                    url.searchParams.delete("deleted");
+                    window.history.replaceState({}, document.title, url.pathname);
                 </script>
             }
             @if (Context.Request.Query["banned"] == "true")
@@ -578,7 +564,7 @@ body {
             @if (Context.Request.Query["deactivated"] == "true")
             { <div class="ht-alert warning">⚠️ Tu cuenta fue desactivada</div> }
             @if (Context.Request.Query["blocked"] == "true")
-            { <div class="ht-alert danger">⚠️ El propietario bloqueó esta conexión</div> }
+            { <div class="ht-alert danger">🔌 El propietario bloqueó esta conexión</div> }
             @if (Context.Request.Query["ipblocked"] == "true")
             { <div class="ht-alert danger">🚫 Acceso denegado. IP bloqueada.</div> }
             @if (TempData["Success"] != null)
@@ -588,62 +574,51 @@ body {
             @if (!ViewData.ModelState.IsValid)
             {
                 var errorText = ViewData.ModelState.Values
-                    .SelectMany(v => v.Errors)
-                    .Select(e => e.ErrorMessage)
-                    .FirstOrDefault();
+                    .SelectMany(v => v.Errors).Select(e => e.ErrorMessage).FirstOrDefault();
                 if (errorText != null)
                 { <div class="ht-alert danger">❌ @errorText</div> }
             }
             @if (TempData["UnconfirmedEmail"] != null)
             {
-                <form asp-controller="Account" asp-action="ResendConfirmation" method="post" style="margin-bottom:16px;">
+                <form asp-controller="Account" asp-action="ResendConfirmation" method="post" style="margin-bottom:14px;">
                     @Html.AntiForgeryToken()
                     <input type="hidden" name="email" value="@TempData["UnconfirmedEmail"]" />
-                    <button type="submit" style="width:100%;padding:10px;border-radius:12px;border:1px solid rgba(99,102,241,0.3);background:rgba(99,102,241,0.08);color:#818cf8;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;">
+                    <button type="submit" style="width:100%;padding:10px;border-radius:12px;border:1px solid rgba(99,102,241,0.3);background:rgba(99,102,241,0.07);color:#818cf8;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;">
                         📧 Reenviar código de confirmación
                     </button>
                 </form>
             }
 
-            @* OAUTH *@
             <a href="/Account/ExternalLogin?provider=Google" class="ht-google-btn">
-                <img src="https://developers.google.com/identity/images/g-logo.png" alt="Google" />
+                <img src="https://developers.google.com/identity/images/g-logo.png" alt="G" />
                 <span>Continuar con Google</span>
             </a>
-
-            <a href="/Account/GuestRegister" class="ht-guest-btn">
-                👤 Continuar como invitado
-            </a>
+            <a href="/Account/GuestRegister" class="ht-guest-btn">👤 Continuar como invitado</a>
 
             <div class="ht-divider"><span>o con tu cuenta</span></div>
 
             <form asp-action="Login" method="post" id="loginForm">
                 @Html.AntiForgeryToken()
-
                 <div class="ht-field">
                     <label class="ht-label">Usuario</label>
                     <div class="ht-input-wrap">
                         <input asp-for="Username" class="ht-input" id="usernameInput"
-                               placeholder="Tu nombre de usuario"
-                               autocomplete="username"
+                               placeholder="Tu nombre de usuario" autocomplete="username"
                                oninput="onUsernameInput(this)" />
                         <span class="ht-input-icon">👤</span>
                     </div>
                 </div>
-
                 <div class="ht-field">
                     <label class="ht-label">Contraseña</label>
                     <div class="ht-input-wrap">
                         <input asp-for="Password" type="password" class="ht-input"
-                               id="passwordInput"
-                               placeholder="••••••••"
-                               autocomplete="current-password"
-                               style="padding-right:44px;"
+                               id="passwordInput" placeholder="••••••••"
+                               autocomplete="current-password" style="padding-right:44px;"
                                oninput="onPasswordInput(this)" />
                         <span class="ht-input-icon">🔒</span>
-                        <button type="button" class="ht-pwd-toggle" id="pwdToggle" onclick="togglePassword()">👁️</button>
+                        <button type="button" class="ht-pwd-toggle" onclick="togglePassword()">👁️</button>
                     </div>
-                    <div class="ht-strength" id="strengthBars">
+                    <div class="ht-strength">
                         <div class="ht-strength-bar" id="sb1"></div>
                         <div class="ht-strength-bar" id="sb2"></div>
                         <div class="ht-strength-bar" id="sb3"></div>
@@ -653,21 +628,9 @@ body {
                         <a asp-controller="Account" asp-action="ForgotPassword">¿Olvidaste tu contraseña?</a>
                     </div>
                 </div>
-
                 <input type="hidden" id="latInput" name="Latitude" />
                 <input type="hidden" id="lonInput" name="Longitude" />
-
-                <button type="button" class="ht-submit-btn" id="submitBtn" onclick="tryGetLocation()">
-                    Entrar →
-                </button>
-
-                <div style="text-align:center;margin-top:14px;">
-    <a href="/Home/Privacy" target="_blank"
-       style="font-size:12px;color:#6b7280;text-decoration:none;font-weight:600;">
-        🔐 Política de Privacidad · Al ingresar aceptas nuestros términos
-    </a>
-</div>
-
+                <button type="button" class="ht-submit-btn" onclick="tryGetLocation()">Entrar →</button>
                 <div class="ht-register-row">
                     ¿No tienes cuenta?
                     <a asp-controller="Account" asp-action="Register" class="ht-register-link">Crear cuenta gratis</a>
@@ -675,59 +638,144 @@ body {
             </form>
 
             <div class="ht-trust">
-                <div class="ht-trust-item">🔒 SSL seguro</div>
+                <div class="ht-trust-item">🔒 SSL</div>
                 <div class="ht-trust-item">🛡️ Sin spam</div>
-                <div class="ht-trust-item">✨ 100% gratis</div>
+                <div class="ht-trust-item">✨ Gratis</div>
             </div>
         </div>
     </div>
 
 </div>
 
+<!-- GSAP CDN -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+
 <script>
-// ── MASCOTA INTERACTIVA ───────────────────
+gsap.registerPlugin(ScrollTrigger);
+
+const isMobile = window.innerWidth <= 960;
+const scrollContainer = isMobile ? window : document.getElementById("loginLeft");
+
+// Configurar ScrollTrigger para el contenedor del left panel
+ScrollTrigger.defaults({
+    scroller: isMobile ? window : "#loginLeft"
+});
+
+// ── ANIMACIÓN HERO ──────────────────────────────
+gsap.to("#heroBadge", {
+    opacity:1, y:0, duration:0.8, delay:0.3, ease:"back.out(1.7)"
+});
+
+gsap.to(".ls-title .word", {
+    y:0, opacity:1, duration:0.7, stagger:0.08, delay:0.6, ease:"power3.out"
+});
+
+gsap.to("#heroDesc", {
+    opacity:1, y:0, duration:0.7, delay:1.1, ease:"power2.out"
+});
+
+gsap.to("#heroStats", {
+    opacity:1, y:0, duration:0.7, delay:1.4, ease:"back.out(1.4)"
+});
+
+// Contador animado
+setTimeout(() => {
+    const el = document.querySelector("[data-count]");
+    if (!el) return;
+    const target = parseInt(el.dataset.count);
+    let current = 0;
+    const step = target / 60;
+    const timer = setInterval(() => {
+        current += step;
+        if (current >= target) { el.textContent = "+9k"; clearInterval(timer); return; }
+        el.textContent = "+" + Math.floor(current).toLocaleString();
+    }, 16);
+}, 1600);
+
+// ── SECCIÓN 2: FEATURES ────────────────────────
+gsap.to("#feat-label", {
+    opacity:1, x:0, duration:0.6, ease:"power2.out",
+    scrollTrigger:{ trigger:"#sec2", start:"top 80%" }
+});
+gsap.to("#feat-title", {
+    opacity:1, y:0, duration:0.7, delay:0.15, ease:"power3.out",
+    scrollTrigger:{ trigger:"#sec2", start:"top 75%" }
+});
+gsap.to("#feat-sub", {
+    opacity:1, y:0, duration:0.6, delay:0.25, ease:"power2.out",
+    scrollTrigger:{ trigger:"#sec2", start:"top 75%" }
+});
+["#feat1","#feat2","#feat3","#feat4"].forEach((id, i) => {
+    gsap.to(id, {
+        opacity:1, x:0, duration:0.6, delay:i * 0.12,
+        ease:"power2.out",
+        scrollTrigger:{ trigger:"#sec2", start:"top 65%" }
+    });
+});
+
+// ── SECCIÓN 3: PROOF ───────────────────────────
+gsap.to("#proof-label", {
+    opacity:1, x:0, duration:0.6, ease:"power2.out",
+    scrollTrigger:{ trigger:"#sec3", start:"top 80%" }
+});
+gsap.to("#proof-title", {
+    opacity:1, y:0, duration:0.7, delay:0.15, ease:"power3.out",
+    scrollTrigger:{ trigger:"#sec3", start:"top 75%" }
+});
+["#proof1","#proof2","#proof3","#proof4"].forEach((id, i) => {
+    gsap.to(id, {
+        opacity:1, y:0, scale:1, duration:0.5, delay:i * 0.1,
+        ease:"back.out(1.4)",
+        scrollTrigger:{ trigger:"#sec3", start:"top 65%" }
+    });
+});
+
+// ── SECCIÓN 4: CTA ─────────────────────────────
+gsap.to("#cta-title", {
+    opacity:1, y:0, duration:0.8, ease:"power3.out",
+    scrollTrigger:{ trigger:"#sec4", start:"top 80%" }
+});
+gsap.to("#cta-sub", {
+    opacity:1, y:0, duration:0.7, delay:0.2, ease:"power2.out",
+    scrollTrigger:{ trigger:"#sec4", start:"top 75%" }
+});
+gsap.to("#cta-btn", {
+    opacity:1, y:0, duration:0.7, delay:0.35, ease:"back.out(1.7)",
+    scrollTrigger:{ trigger:"#sec4", start:"top 70%" }
+});
+
+// ── MASCOTA ────────────────────────────────────
 const mascota = document.getElementById("mascota");
 const pwdInput = document.getElementById("passwordInput");
 
-document.addEventListener("mousemove", (e) => {
-    const rect = mascota.getBoundingClientRect();
-    const cx = rect.left + rect.width / 2;
-    const cy = rect.top + rect.height / 2;
-    const angle = Math.atan2(e.clientY - cy, e.clientX - cx) * 180 / Math.PI;
-    if (!mascota.dataset.hiding) {
-        mascota.style.transform = `rotate(${angle * 0.08}deg)`;
-    }
+document.addEventListener("mousemove", e => {
+    if (mascota.dataset.hiding) return;
+    const r = mascota.getBoundingClientRect();
+    const angle = Math.atan2(e.clientY - (r.top + r.height/2), e.clientX - (r.left + r.width/2)) * 180 / Math.PI;
+    mascota.style.transform = `rotate(${angle * 0.07}deg)`;
 });
 
 pwdInput.addEventListener("focus", () => {
     mascota.dataset.hiding = "1";
-    mascota.style.transform = "rotate(-12deg) scale(1.06)";
-    mascota.style.filter = "brightness(0.45) blur(1px)";
+    gsap.to(mascota, { rotation:-12, scale:1.06, filter:"brightness(0.4) blur(1px)", duration:0.3 });
 });
 pwdInput.addEventListener("blur", () => {
     delete mascota.dataset.hiding;
-    mascota.style.filter = "brightness(1) blur(0)";
-    mascota.style.transform = "scale(1)";
+    gsap.to(mascota, { rotation:0, scale:1, filter:"brightness(1) blur(0px)", duration:0.3 });
 });
 
-// ── PASSWORD TOGGLE ───────────────────────
 function togglePassword() {
-    const toggle = document.getElementById("pwdToggle");
     pwdInput.type = pwdInput.type === "password" ? "text" : "password";
-    toggle.textContent = pwdInput.type === "password" ? "👁️" : "🙈";
+    document.querySelector(".ht-pwd-toggle").textContent = pwdInput.type === "password" ? "👁️" : "🙈";
 }
 
-// ── USERNAME FEEDBACK ─────────────────────
 function onUsernameInput(input) {
-    const len = input.value.trim().length;
-    if (len > 0) {
-        mascota.style.filter = "brightness(1.1) drop-shadow(0 0 8px rgba(99,102,241,0.5))";
-    } else {
-        mascota.style.filter = "brightness(1)";
-    }
+    gsap.to(mascota, { filter: input.value.trim().length > 0
+        ? "brightness(1.1) drop-shadow(0 0 10px rgba(99,102,241,0.6))"
+        : "brightness(1)", duration:0.3 });
 }
 
-// ── PASSWORD STRENGTH ─────────────────────
 function onPasswordInput(input) {
     const v = input.value;
     let score = 0;
@@ -735,155 +783,107 @@ function onPasswordInput(input) {
     if (v.length >= 10) score++;
     if (/[A-Z]/.test(v) && /[0-9]/.test(v)) score++;
     if (/[^A-Za-z0-9]/.test(v)) score++;
-
-    const colors = ["#ef4444", "#f59e0b", "#22c55e", "#6366f1"];
+    const colors = ["#ef4444","#f59e0b","#22c55e","#6366f1"];
     for (let i = 1; i <= 4; i++) {
-        const bar = document.getElementById("sb" + i);
-        bar.style.background = i <= score
-            ? (colors[score - 1] || "#6366f1")
-            : "rgba(255,255,255,0.08)";
+        document.getElementById("sb"+i).style.background =
+            i <= score ? colors[score-1] : "rgba(255,255,255,0.06)";
     }
 }
 
-// ── ENTER KEY ─────────────────────────────
-document.addEventListener("keydown", (e) => {
+document.addEventListener("keydown", e => {
     if (e.key === "Enter") { e.preventDefault(); tryGetLocation(); }
 });
 
-// ── SUBMIT CON GEOLOCATION ────────────────
 function tryGetLocation() {
     const u = document.querySelector("input[name='Username']").value.trim();
     const p = document.querySelector("input[name='Password']").value.trim();
     if (!u || !p) {
-        // shake card
-        const card = document.getElementById("form");
-        card.style.animation = "none";
-        card.style.transform = "translateX(-6px)";
-        setTimeout(() => { card.style.transform = "translateX(6px)"; }, 80);
-        setTimeout(() => { card.style.transform = "translateX(-4px)"; }, 160);
-        setTimeout(() => { card.style.transform = "translateX(0)"; }, 240);
+        gsap.to("#form", { x:-8, duration:0.06, yoyo:true, repeat:5, ease:"power1.inOut" });
         return;
     }
-
-    // loader overlay
     const overlay = document.createElement("div");
-    overlay.style.cssText = "position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(5,10,20,0.9);z-index:99999;display:flex;align-items:center;justify-content:center;flex-direction:column;backdrop-filter:blur(12px);";
+    overlay.style.cssText = "position:fixed;inset:0;background:rgba(3,7,18,0.92);z-index:99999;display:flex;align-items:center;justify-content:center;flex-direction:column;backdrop-filter:blur(16px);";
     overlay.innerHTML = `
-        <div style="position:relative;margin-bottom:20px;">
-            <img src='https://res.cloudinary.com/dzrjag7ia/image/upload/v1776560628/NE_lmertz.jpg'class="ht-card-avatar" id="mascota" />
-            <div style="position:absolute;inset:-6px;border-radius:30px;border:2px solid rgba(99,102,241,0.3);animation:ringPulse 1.5s ease-in-out infinite;"></div>
+        <div style="position:relative;margin-bottom:22px;">
+            <img src="https://res.cloudinary.com/dzrjag7ia/image/upload/v1776560628/NE_lmertz.jpg"
+                 style="width:80px;height:80px;border-radius:20px;border:2px solid rgba(99,102,241,0.4);box-shadow:0 0 0 8px rgba(99,102,241,0.08);" />
         </div>
-        <p style="color:white;font-weight:800;font-size:18px;font-family:'Plus Jakarta Sans',sans-serif;margin-bottom:6px;">Entrando...</p>
-        <p style="color:rgba(255,255,255,0.35);font-size:13px;font-family:'Plus Jakarta Sans',sans-serif;margin-bottom:20px;">Verificando credenciales</p>
-        <div style="width:160px;height:4px;background:rgba(255,255,255,0.08);border-radius:10px;overflow:hidden;">
-            <div id="loginBar" style="height:100%;background:linear-gradient(90deg,#6366f1,#2563eb);border-radius:10px;width:0%;transition:width 0.3s;"></div>
+        <p style="color:white;font-weight:800;font-size:20px;font-family:'Plus Jakarta Sans',sans-serif;margin-bottom:6px;">Entrando...</p>
+        <p style="color:rgba(255,255,255,0.3);font-size:13px;font-family:'Plus Jakarta Sans',sans-serif;margin-bottom:24px;">Verificando credenciales</p>
+        <div style="width:180px;height:4px;background:rgba(255,255,255,0.06);border-radius:10px;overflow:hidden;">
+            <div id="loginBar" style="height:100%;background:linear-gradient(90deg,#6366f1,#2563eb);border-radius:10px;width:0%;transition:width 0.25s;"></div>
         </div>`;
     document.body.appendChild(overlay);
+    gsap.from(overlay, { opacity:0, duration:0.3 });
 
-    // progress bar animation
     let prog = 0;
     const interval = setInterval(() => {
-        prog += Math.random() * 15;
+        prog += Math.random() * 14;
         if (prog > 85) prog = 85;
-        const bar = document.getElementById("loginBar");
-        if (bar) bar.style.width = prog + "%";
+        const b = document.getElementById("loginBar");
+        if (b) b.style.width = prog + "%";
     }, 200);
 
-    if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-            (pos) => {
-                document.getElementById("latInput").value = pos.coords.latitude;
-                document.getElementById("lonInput").value = pos.coords.longitude;
-                clearInterval(interval);
-                const bar = document.getElementById("loginBar");
-                if (bar) bar.style.width = "100%";
-                setTimeout(() => document.getElementById("loginForm").submit(), 300);
-            },
-            () => {
-                clearInterval(interval);
-                document.getElementById("loginForm").submit();
-            },
-            { timeout: 1500 }
-        );
-    } else {
+    const submit = () => {
         clearInterval(interval);
-        document.getElementById("loginForm").submit();
-    }
+        const b = document.getElementById("loginBar");
+        if (b) b.style.width = "100%";
+        setTimeout(() => document.getElementById("loginForm").submit(), 300);
+    };
+
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(pos => {
+            document.getElementById("latInput").value = pos.coords.latitude;
+            document.getElementById("lonInput").value = pos.coords.longitude;
+            submit();
+        }, submit, { timeout:1500 });
+    } else { submit(); }
 }
 
-// ── PLEXUS CANVAS ─────────────────────────
+// ── PLEXUS ─────────────────────────────────────
 const canvas = document.getElementById("plexus-bg");
 const ctx = canvas.getContext("2d");
-let mouse = { x: canvas.width / 2, y: canvas.height / 2 };
-
+let mouse = { x:window.innerWidth/2, y:window.innerHeight/2 };
 function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
 resize();
 window.addEventListener("resize", resize);
 document.addEventListener("mousemove", e => { mouse.x = e.clientX; mouse.y = e.clientY; });
 
-const pts = Array.from({ length: 90 }, () => ({
+const pts = Array.from({ length:80 }, () => ({
     x: Math.random() * window.innerWidth,
     y: Math.random() * window.innerHeight,
-    vx: (Math.random() - 0.5) * 0.3,
-    vy: (Math.random() - 0.5) * 0.3,
-    r: Math.random() * 1.5 + 0.5,
-    opacity: Math.random() * 0.5 + 0.2
+    vx: (Math.random()-.5) * 0.25,
+    vy: (Math.random()-.5) * 0.25,
+    r: Math.random() * 1.4 + 0.4,
+    op: Math.random() * 0.4 + 0.15
 }));
 
 function drawPlexus() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-
     for (let i = 0; i < pts.length; i++) {
-        for (let j = i + 1; j < pts.length; j++) {
-            const dx = pts[i].x - pts[j].x;
-            const dy = pts[i].y - pts[j].y;
-            const d = Math.sqrt(dx * dx + dy * dy);
-            if (d < 140) {
-                ctx.beginPath();
-                ctx.moveTo(pts[i].x, pts[i].y);
-                ctx.lineTo(pts[j].x, pts[j].y);
-                ctx.strokeStyle = `rgba(99,102,241,${0.18 * (1 - d / 140)})`;
-                ctx.lineWidth = 0.6;
-                ctx.stroke();
+        for (let j = i+1; j < pts.length; j++) {
+            const dx = pts[i].x - pts[j].x, dy = pts[i].y - pts[j].y;
+            const d = Math.sqrt(dx*dx + dy*dy);
+            if (d < 130) {
+                ctx.beginPath(); ctx.moveTo(pts[i].x, pts[i].y); ctx.lineTo(pts[j].x, pts[j].y);
+                ctx.strokeStyle = `rgba(99,102,241,${0.15*(1-d/130)})`; ctx.lineWidth=0.5; ctx.stroke();
             }
         }
-        // mouse connection
-        const mdx = pts[i].x - mouse.x;
-        const mdy = pts[i].y - mouse.y;
-        const md = Math.sqrt(mdx * mdx + mdy * mdy);
-        if (md < 180) {
-            ctx.beginPath();
-            ctx.moveTo(pts[i].x, pts[i].y);
-            ctx.lineTo(mouse.x, mouse.y);
-            ctx.strokeStyle = `rgba(139,92,246,${0.25 * (1 - md / 180)})`;
-            ctx.lineWidth = 0.8;
-            ctx.stroke();
+        const mdx = pts[i].x-mouse.x, mdy = pts[i].y-mouse.y;
+        const md = Math.sqrt(mdx*mdx+mdy*mdy);
+        if (md < 160) {
+            ctx.beginPath(); ctx.moveTo(pts[i].x, pts[i].y); ctx.lineTo(mouse.x, mouse.y);
+            ctx.strokeStyle = `rgba(139,92,246,${0.22*(1-md/160)})`; ctx.lineWidth=0.7; ctx.stroke();
         }
     }
-
     pts.forEach(p => {
         p.x += p.vx; p.y += p.vy;
         if (p.x < 0 || p.x > canvas.width) p.vx *= -1;
         if (p.y < 0 || p.y > canvas.height) p.vy *= -1;
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(99,102,241,${p.opacity})`;
-        ctx.fill();
+        ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI*2);
+        ctx.fillStyle = `rgba(99,102,241,${p.op})`; ctx.fill();
     });
-
     requestAnimationFrame(drawPlexus);
 }
 drawPlexus();
 </script>
-
-<style>
-@@keyframes loadBar {
-    0%{width:0%;margin-left:0;}
-    50%{width:70%;}
-    100%{width:0%;margin-left:100%;}
-}
-@@keyframes loginSpin {
-    from{transform:rotate(0deg);}
-    to{transform:rotate(360deg);}
-}
-</style>

@@ -787,16 +787,13 @@ namespace HabitTrackerApp.Controllers
             return RedirectToAction("Index", "Home");
         }
 
-
         [HttpPost]
         public async Task<IActionResult> Register(RegisterViewModel model, IFormFile profilePhoto)
         {
             // 🚫 VALIDAR IP BLOQUEADA
             var ip = HttpContext.Request.Headers["X-Forwarded-For"].FirstOrDefault();
             if (string.IsNullOrEmpty(ip))
-            {
                 ip = HttpContext.Connection.RemoteIpAddress?.ToString();
-            }
 
             var blockedIp = _context.BlockedIPs.FirstOrDefault(b => b.IpAddress == ip);
             if (blockedIp != null)
@@ -804,6 +801,11 @@ namespace HabitTrackerApp.Controllers
                 ModelState.AddModelError("", "Tu IP ha sido bloqueada por el propietario.");
                 return View(model);
             }
+
+            // 🔌 VERIFICAR BLOQUEO DE CONEXIÓN
+            var blockedUser = _context.Users.FirstOrDefault(u => u.LastIp == ip && u.IsIpBlocked);
+            if (blockedUser != null)
+                return RedirectToAction("Login", new { blocked = true });
 
             ModelState.Remove("profilePhoto");
 
@@ -823,22 +825,14 @@ namespace HabitTrackerApp.Controllers
 
             string imagePath = null;
 
-            // 🔥 GUARDAR FOTO (OPCIONAL)
             if (profilePhoto != null && profilePhoto.Length > 0)
             {
                 var folder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/images/profiles");
-
-                if (!Directory.Exists(folder))
-                    Directory.CreateDirectory(folder);
-
+                if (!Directory.Exists(folder)) Directory.CreateDirectory(folder);
                 var fileName = Guid.NewGuid().ToString() + Path.GetExtension(profilePhoto.FileName);
                 var filePath = Path.Combine(folder, fileName);
-
                 using (var stream = new FileStream(filePath, FileMode.Create))
-                {
                     await profilePhoto.CopyToAsync(stream);
-                }
-
                 imagePath = "/images/profiles/" + fileName;
             }
 
@@ -853,16 +847,14 @@ namespace HabitTrackerApp.Controllers
                 CreatedAt = DateTime.Now,
                 Role = "User",
                 EmailConfirmed = false,
-                ProfileImage = imagePath
+                ProfileImage = imagePath,
+                IsActive = false
             };
 
-            newUser.IsActive = false;
             _context.Users.Add(newUser);
             _context.SaveChanges();
 
-            // 🔥 ENVÍO DE CÓDIGO
             await SendConfirmationCode(newUser);
-
             _context.SaveChanges();
 
             TempData["RegisterData"] = System.Text.Json.JsonSerializer.Serialize(newUser);
@@ -1455,6 +1447,11 @@ namespace HabitTrackerApp.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ForgotPassword(ForgotPasswordViewModel model)
         {
+            var ip = HttpContext.Request.Headers["X-Forwarded-For"].FirstOrDefault()
+    ?? HttpContext.Connection.RemoteIpAddress?.ToString();
+            var blockedUser = _context.Users.FirstOrDefault(u => u.LastIp == ip && u.IsIpBlocked);
+            if (blockedUser != null)
+                return RedirectToAction("Login", new { blocked = true });
             if (!ModelState.IsValid)
                 return View(model);
 
@@ -1567,6 +1564,11 @@ namespace HabitTrackerApp.Controllers
                 }
 
                 var email = result.Principal.FindFirst(ClaimTypes.Email)?.Value;
+
+                // 🔌 Verificar bloqueo de conexión
+                var userCheck = _context.Users.FirstOrDefault(u => u.Email == email);
+                if (userCheck != null && userCheck.IsIpBlocked)
+                    return RedirectToAction("Login", new { blocked = true });
                 var name = result.Principal.FindFirst(ClaimTypes.Name)?.Value;
                 var picture = result.Principal.FindFirst("picture")?.Value;
 
@@ -1699,6 +1701,11 @@ namespace HabitTrackerApp.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> GuestRegister(string username)
         {
+            var ip = HttpContext.Request.Headers["X-Forwarded-For"].FirstOrDefault()
+    ?? HttpContext.Connection.RemoteIpAddress?.ToString();
+            var blockedUser = _context.Users.FirstOrDefault(u => u.LastIp == ip && u.IsIpBlocked);
+            if (blockedUser != null)
+                return RedirectToAction("Login", new { blocked = true });
             if (string.IsNullOrWhiteSpace(username))
             {
                 ModelState.AddModelError("", "El nombre de usuario es obligatorio.");
