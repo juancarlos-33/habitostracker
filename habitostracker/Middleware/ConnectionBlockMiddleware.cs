@@ -9,6 +9,7 @@ public class ConnectionBlockMiddleware
     public async Task Invoke(HttpContext context, HabitDbContext db)
     {
         var path = context.Request.Path.Value?.ToLower() ?? "";
+        Console.WriteLine($"🔍 PATH: {path} | Auth: {context.User.Identity?.IsAuthenticated}");
 
         // ── Rutas siempre libres ──
         if (path == "/" ||
