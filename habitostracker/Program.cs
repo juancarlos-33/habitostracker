@@ -199,7 +199,9 @@ options.ClientSecret = builder.Configuration["Google:ClientSecret"];
 
             app.Use(async (context, next) =>
             {
-                // Verificar usuario autenticado bloqueado
+                var path = context.Request.Path.Value?.ToLower() ?? "";
+
+                // Verificar usuario autenticado
                 if (context.User.Identity?.IsAuthenticated == true)
                 {
                     var userIdClaim = context.User.FindFirst("UserId");
@@ -207,20 +209,27 @@ options.ClientSecret = builder.Configuration["Google:ClientSecret"];
                     {
                         var db = context.RequestServices.GetRequiredService<HabitDbContext>();
                         var user = await db.Users.FirstOrDefaultAsync(u => u.Id == userId);
-                        if (user != null && user.IsIpBlocked)
+
+                        // Usuario eliminado
+                        if (user == null)
                         {
                             await context.SignOutAsync("Cookies");
-                            await context.SignOutAsync(GoogleDefaults.AuthenticationScheme);
+                            context.Response.Redirect("/Account/Login?deleted=true");
+                            return;
+                        }
+
+                        // Usuario bloqueado
+                        if (user.IsIpBlocked)
+                        {
+                            await context.SignOutAsync("Cookies");
                             context.Response.Redirect("/Account/Login?blocked=true");
                             return;
                         }
                     }
                 }
 
-                // Verificar IP bloqueada para cualquier request al login
-                var path = context.Request.Path.Value?.ToLower() ?? "";
-                var isLoginArea = path.Contains("/account/") || path.Contains("/home/");
-                if (isLoginArea)
+                // Verificar IP bloqueada para rutas de account
+                if (path.Contains("/account/") && !path.StartsWith("/account/login"))
                 {
                     var ip = context.Request.Headers["X-Forwarded-For"].FirstOrDefault()
                         ?? context.Connection.RemoteIpAddress?.ToString();
@@ -230,12 +239,8 @@ options.ClientSecret = builder.Configuration["Google:ClientSecret"];
                         var blockedUser = await db.Users.FirstOrDefaultAsync(u => u.LastIp == ip && u.IsIpBlocked);
                         if (blockedUser != null)
                         {
-                            var allowedPaths = new[] { "/account/login", "/home/privacy" };
-                            if (!allowedPaths.Any(p => path.StartsWith(p)))
-                            {
-                                context.Response.Redirect("/Account/Login?blocked=true");
-                                return;
-                            }
+                            context.Response.Redirect("/Account/Login?blocked=true");
+                            return;
                         }
                     }
                 }

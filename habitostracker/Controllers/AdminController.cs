@@ -952,8 +952,11 @@ namespace HabitTrackerApp.Controllers
             user.IsIpBlocked = true;
             await _context.SaveChangesAsync();
 
-            // Notificar al usuario via SignalR para sacarlo
+            // Notificar por grupo Y por userId
             await _hubContext.Clients.Group(dto.UserId.ToString())
+                .SendAsync("ConnectionBlocked", "🔌 Tu conexión ha sido bloqueada por el administrador.");
+
+            await _hubContext.Clients.User(dto.UserId.ToString())
                 .SendAsync("ConnectionBlocked", "🔌 Tu conexión ha sido bloqueada por el administrador.");
 
             return Json(new { success = true });

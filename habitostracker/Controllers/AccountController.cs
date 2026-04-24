@@ -8,6 +8,7 @@ using HabitTrackerApp.Services;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.Google;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
@@ -862,6 +863,17 @@ namespace HabitTrackerApp.Controllers
             TempData["FromRegister"] = true;
 
             return RedirectToAction("ConfirmEmail");
+        }
+
+        [HttpGet]
+        [Authorize]
+        public IActionResult CheckBlockStatus()
+        {
+            var userIdClaim = User.FindFirst("UserId");
+            if (userIdClaim == null) return Forbid();
+            var user = _context.Users.FirstOrDefault(u => u.Id == int.Parse(userIdClaim.Value));
+            if (user == null || user.IsIpBlocked) return StatusCode(403);
+            return Ok();
         }
         private async Task SendGoodbyeEmail(User user)
         {
