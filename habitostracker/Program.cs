@@ -150,11 +150,19 @@ namespace HabitTrackerApp
             app.UseRouting();
             app.UseAuthentication();
 
-        
 
+
+            // ── Verificar sesión activa ──
             // ── Verificar sesión activa ──
             app.Use(async (context, next) =>
             {
+                var path = context.Request.Path.Value?.ToLower() ?? "";
+                if (path.StartsWith("/account/") || path.StartsWith("/home/"))
+                {
+                    await next();
+                    return;
+                }
+
                 if (context.User.Identity?.IsAuthenticated == true)
                 {
                     var sessionToken = context.User.FindFirst("SessionToken")?.Value;
@@ -173,7 +181,6 @@ namespace HabitTrackerApp
                 }
                 await next();
             });
-
             // ── Bloqueo de conexión y seguridad ──
             app.UseMiddleware<ConnectionBlockMiddleware>();
 
