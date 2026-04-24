@@ -47,7 +47,14 @@ public class ConnectionBlockMiddleware
                 if (dbUser.IsIpBlocked)
                 {
                     await context.SignOutAsync("Cookies");
-                    context.Response.Redirect("/Account/Login?blocked=true");
+                    context.Response.Cookies.Delete(".AspNetCore.Cookies");
+                    context.Response.Cookies.Delete(".AspNetCore.Antiforgery");
+                    if (!path.StartsWith("/account/login"))
+                    {
+                        context.Response.Redirect("/Account/Login?blocked=true");
+                        return;
+                    }
+                    await _next(context);
                     return;
                 }
 
