@@ -1577,15 +1577,22 @@ namespace HabitTrackerApp.Controllers
                 }
 
                 var email = result.Principal.FindFirst(ClaimTypes.Email)?.Value;
+                if (email == null) return RedirectToAction("Login");
 
-                // 🔌 Verificar bloqueo de conexión
+                // 🔌 Verificar bloqueo de conexión — mostrar página de bloqueo
                 var userCheck = _context.Users.FirstOrDefault(u => u.Email == email);
                 if (userCheck != null && userCheck.IsIpBlocked)
+                {
+                    await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+                    await HttpContext.SignOutAsync(GoogleDefaults.AuthenticationScheme);
+                    // Limpiar todas las cookies
+                    foreach (var cookie in HttpContext.Request.Cookies.Keys)
+                        HttpContext.Response.Cookies.Delete(cookie);
                     return RedirectToAction("Login", new { blocked = true });
+                }
+
                 var name = result.Principal.FindFirst(ClaimTypes.Name)?.Value;
                 var picture = result.Principal.FindFirst("picture")?.Value;
-
-                if (email == null) return RedirectToAction("Login");
 
                 var user = _context.Users.FirstOrDefault(u => u.Email == email);
 
@@ -1641,9 +1648,7 @@ namespace HabitTrackerApp.Controllers
 
                 _context.SaveChanges();
 
-                // 🔥 generar token único para esta sesión
                 var sessionToken = Guid.NewGuid().ToString();
-
                 var claims = new List<Claim>
         {
             new Claim("UserId", user.Id.ToString()),
@@ -1652,13 +1657,12 @@ namespace HabitTrackerApp.Controllers
             new Claim(ClaimTypes.Email, user.Email),
             new Claim(ClaimTypes.Role, user.Role ?? "User"),
             new Claim("ProfileImage", user.ProfileImage ?? user.ProfilePicture ?? ""),
-            new Claim("SessionToken", sessionToken) // 🔥 incluir token
+            new Claim("SessionToken", sessionToken)
         };
                 var identity = new ClaimsIdentity(claims, "Cookies");
                 var principal = new ClaimsPrincipal(identity);
                 await HttpContext.SignInAsync("Cookies", principal);
 
-                // 🔥 guardar sesión en BD
                 try
                 {
                     _context.UserSessions.Add(new UserSession
@@ -1672,11 +1676,7 @@ namespace HabitTrackerApp.Controllers
                         IsActive = true
                     });
                     await _context.SaveChangesAsync();
-                    Console.WriteLine($"✅ Sesión guardada userId={user.Id} token={sessionToken}");
-
-                    // 🔥 notificar en tiempo real
-                    await _hubContext.Clients.Group(user.Id.ToString())
-                        .SendAsync("NewSessionDetected");
+                    await _hubContext.Clients.Group(user.Id.ToString()).SendAsync("NewSessionDetected");
                 }
                 catch (Exception ex)
                 {
