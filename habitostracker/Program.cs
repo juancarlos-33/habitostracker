@@ -4,7 +4,6 @@ using HabitTrackerApp.Hubs;
 using HabitTrackerApp.Services;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.HttpOverrides;
@@ -24,7 +23,6 @@ namespace HabitTrackerApp
             var builder = WebApplication.CreateBuilder(args);
             builder.Services.AddSession();
 
-            // ── BASE DE DATOS ──
             builder.Services.AddDbContext<HabitDbContext>(options =>
             {
                 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
@@ -34,7 +32,6 @@ namespace HabitTrackerApp
                     options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString));
             });
 
-            // ── FILTROS ──
             builder.Services.AddScoped<CheckBannedFilter>();
             builder.Services.AddControllersWithViews(options =>
             {
@@ -42,7 +39,6 @@ namespace HabitTrackerApp
                 options.Filters.Add<CheckGuestFilter>();
             });
 
-            // ── AUTENTICACIÓN ──
             builder.Services.AddAuthentication(options =>
             {
                 options.DefaultAuthenticateScheme = "Cookies";
@@ -77,17 +73,13 @@ namespace HabitTrackerApp
                 };
             });
 
-            // ── SIGNALR ──
             builder.Services.AddSignalR();
             builder.Services.AddSingleton<OnlineUsersService>();
             builder.Services.AddSingleton<IUserIdProvider, HabitTrackerApp.Hubs.CustomUserIdProvider>();
-
-            // ── SERVICIOS ──
             builder.Services.AddScoped<EmailService>();
             builder.Services.AddScoped<CloudinaryService>();
             builder.Services.AddDistributedMemoryCache();
 
-            // ── SWAGGER ──
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen(options =>
             {
@@ -110,10 +102,8 @@ namespace HabitTrackerApp
                 });
             });
 
-            // ── DATA PROTECTION ──
             builder.Services.AddDataProtection().SetApplicationName("habitostracker");
 
-            // ── LÍMITES ARCHIVOS GRANDES ──
             builder.Services.Configure<Microsoft.AspNetCore.Http.Features.FormOptions>(o =>
             {
                 o.MultipartBodyLengthLimit = 524288000;
@@ -150,20 +140,12 @@ namespace HabitTrackerApp
             app.UseRouting();
             app.UseAuthentication();
 
-
-
-            // ── Verificar sesión activa ──
-            // ── Verificar sesión activa ──
+            // ── Sesión activa ──
             app.Use(async (context, next) =>
             {
                 var path = context.Request.Path.Value?.ToLower() ?? "";
-                if (path.StartsWith("/account/") || path.StartsWith("/home/"))
-                {
-                    await next();
-                    return;
-                }
-
-                if (context.User.Identity?.IsAuthenticated == true)
+                if (!path.StartsWith("/account/") && !path.StartsWith("/home/") &&
+                    context.User.Identity?.IsAuthenticated == true)
                 {
                     var sessionToken = context.User.FindFirst("SessionToken")?.Value;
                     if (!string.IsNullOrEmpty(sessionToken))
@@ -181,21 +163,13 @@ namespace HabitTrackerApp
                 }
                 await next();
             });
-            // ── Bloqueo de conexión y seguridad ──
+
+            // ── Bloqueo conexión y seguridad ──
             app.UseMiddleware<ConnectionBlockMiddleware>();
 
             app.UseAuthorization();
 
-            // ══════════════════════════════════════════
-            // MIDDLEWARE 1 — Verificar sesión activa
-            // ══════════════════════════════════════════
-
-
-            app.UseAuthorization();
-
-            // ══════════════════════════════════════════
-            // MIDDLEWARE 4 — Notificaciones en ViewData
-            // ══════════════════════════════════════════
+            // ── Notificaciones ──
             app.Use(async (context, next) =>
             {
                 if (context.User.Identity?.IsAuthenticated == true)
@@ -217,7 +191,6 @@ namespace HabitTrackerApp
 
             app.MapHub<HabitTrackerApp.Hubs.ChatHub>("/chatHub");
 
-            // ── Auto-migración ──
             using (var scope = app.Services.CreateScope())
             {
                 var db = scope.ServiceProvider.GetRequiredService<HabitDbContext>();
