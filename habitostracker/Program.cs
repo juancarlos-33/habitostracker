@@ -150,9 +150,9 @@ namespace HabitTrackerApp
             app.UseRouting();
             app.UseAuthentication();
 
-            // ══════════════════════════════════════════
-            // MIDDLEWARE 1 — Verificar sesión activa
-            // ══════════════════════════════════════════
+        
+
+            // ── Verificar sesión activa ──
             app.Use(async (context, next) =>
             {
                 if (context.User.Identity?.IsAuthenticated == true)
@@ -174,96 +174,15 @@ namespace HabitTrackerApp
                 await next();
             });
 
-            // ══════════════════════════════════════════
-            // MIDDLEWARE 2 — ConnectionBlock global
-            // ══════════════════════════════════════════
+            // ── Bloqueo de conexión y seguridad ──
             app.UseMiddleware<ConnectionBlockMiddleware>();
 
+            app.UseAuthorization();
+
             // ══════════════════════════════════════════
-            // MIDDLEWARE 3 — Bloqueo por usuario (IsIpBlocked) + IP
+            // MIDDLEWARE 1 — Verificar sesión activa
             // ══════════════════════════════════════════
-            app.Use(async (context, next) =>
-            {
-                var path = context.Request.Path.Value?.ToLower() ?? "";
 
-                // Rutas siempre permitidas — no verificar nada
-                var freePaths = new[] {
-                    "/account/login",
-                    "/home/privacy",
-                    "/home/error",
-                    "/chathub",
-                    "/favicon.ico"
-                };
-                if (freePaths.Any(p => path.StartsWith(p)))
-                {
-                    await next();
-                    return;
-                }
-
-                var ip = context.Request.Headers["X-Forwarded-For"].FirstOrDefault()
-                    ?? context.Connection.RemoteIpAddress?.ToString();
-
-                var db = context.RequestServices.GetRequiredService<HabitDbContext>();
-
-                // ── Usuario autenticado ──
-                if (context.User.Identity?.IsAuthenticated == true)
-                {
-                    var userIdClaim = context.User.FindFirst("UserId");
-                    if (userIdClaim != null && int.TryParse(userIdClaim.Value, out int userId))
-                    {
-                        var user = await db.Users.FirstOrDefaultAsync(u => u.Id == userId);
-
-                        // Eliminado
-                        if (user == null)
-                        {
-                            await context.SignOutAsync("Cookies");
-                            context.Response.Redirect("/Account/Login?deleted=true");
-                            return;
-                        }
-
-                        // Bloqueado
-                        if (user.IsIpBlocked)
-                        {
-                            await context.SignOutAsync("Cookies");
-                            // Actualizar IP para detectar en otros dispositivos
-                            if (!string.IsNullOrEmpty(ip)) { user.LastIp = ip; await db.SaveChangesAsync(); }
-                            context.Response.Redirect("/Account/Login?blocked=true");
-                            return;
-                        }
-
-                        // Baneado o desactivado
-                        if (!user.IsActive || user.IsBanned)
-                        {
-                            await context.SignOutAsync("Cookies");
-                            context.Response.Redirect("/Account/Login");
-                            return;
-                        }
-                    }
-                }
-                else
-                {
-                    // ── No autenticado — verificar IP en rutas sensibles ──
-                    var blockedPaths = new[] {
-                        "/account/register",
-                        "/account/guestregister",
-                        "/account/forgotpassword",
-                        "/account/externallogin",
-                        "/account/completeprofile"
-                    };
-
-                    if (!string.IsNullOrEmpty(ip) && blockedPaths.Any(p => path.StartsWith(p)))
-                    {
-                        var blockedUser = await db.Users.FirstOrDefaultAsync(u => u.LastIp == ip && u.IsIpBlocked);
-                        if (blockedUser != null)
-                        {
-                            context.Response.Redirect("/Account/Login?blocked=true");
-                            return;
-                        }
-                    }
-                }
-
-                await next();
-            });
 
             app.UseAuthorization();
 
