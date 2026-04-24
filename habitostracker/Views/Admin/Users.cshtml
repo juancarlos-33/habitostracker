@@ -312,9 +312,18 @@
                                                    class="action-btn primary" onclick="return confirm('¿Hacer Admin?')">⬆️ Hacer Admin</a>
                                             }
 
-                                            <button class="action-btn block-conn" onclick="confirmarBloquearConexion(@user.Id, '@user.Username')">
-                                                🔌 Bloquear conexión
-                                            </button>
+                                           @if (user.IsIpBlocked)
+{
+    <button class="action-btn success" onclick="desbloquearConexion(@user.Id, '@user.Username')" data-no-loader="true">
+        🔓 Desbloquear conexión
+    </button>
+}
+else
+{
+    <button class="action-btn block-conn" onclick="confirmarBloquearConexion(@user.Id, '@user.Username')" data-no-loader="true">
+        🔌 Bloquear conexión
+    </button>
+}
                                         }
                                     }
 
@@ -752,6 +761,22 @@ document.getElementById("searchUser").addEventListener("keyup", function() {
         row.style.display = row.dataset.username.includes(val) ? "" : "none";
     });
 });
+function desbloquearConexion(userId, username) {
+    if (!confirm(`¿Desbloquear la conexión de ${username}?`)) return;
+    const token = document.querySelector('#antiForgeryForm input[name="__RequestVerificationToken"]').value;
+    fetch('/Admin/UnblockUserConnection', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': token },
+        body: JSON.stringify({ userId })
+    }).then(r => r.json()).then(data => {
+        if (data.success) {
+            mostrarToast(`🔓 Conexión de ${username} desbloqueada`);
+            setTimeout(() => location.reload(), 1500);
+        } else {
+            mostrarToast('⚠️ Error al desbloquear');
+        }
+    }).catch(() => mostrarToast('⚠️ Error de conexión'));
+}
 
 function confirmDelete(userId) {
     if (confirm("¿Desactivar este usuario?")) window.location.href = "/Admin/DeleteUser/" + userId;

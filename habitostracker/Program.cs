@@ -197,6 +197,26 @@ options.ClientSecret = builder.Configuration["Google:ClientSecret"];
 
             app.UseMiddleware<ConnectionBlockMiddleware>();
 
+            app.Use(async (context, next) =>
+            {
+                if (context.User.Identity?.IsAuthenticated == true)
+                {
+                    var userIdClaim = context.User.FindFirst("UserId");
+                    if (userIdClaim != null && int.TryParse(userIdClaim.Value, out int userId))
+                    {
+                        var db = context.RequestServices.GetRequiredService<HabitDbContext>();
+                        var user = await db.Users.FirstOrDefaultAsync(u => u.Id == userId);
+                        if (user != null && user.IsIpBlocked)
+                        {
+                            await context.SignOutAsync("Cookies");
+                            context.Response.Redirect("/Account/Login?blocked=true");
+                            return;
+                        }
+                    }
+                }
+                await next();
+            });
+
             app.UseAuthorization();
 
             // 🔥 BLOQUEO USUARIO

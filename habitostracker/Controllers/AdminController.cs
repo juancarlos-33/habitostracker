@@ -959,6 +959,19 @@ namespace HabitTrackerApp.Controllers
             return Json(new { success = true });
         }
 
+        [HttpPost]
+        [Authorize(Roles = "SuperAdmin")]
+        public async Task<IActionResult> UnblockUserConnection([FromBody] BlockUserDto dto)
+        {
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == dto.UserId);
+            if (user == null) return Json(new { success = false });
+
+            user.IsIpBlocked = false;
+            await _context.SaveChangesAsync();
+
+            return Json(new { success = true });
+        }
+
         public class BlockUserDto { public int UserId { get; set; } }
 
         public async Task<IActionResult> DeleteUserPermanently(int id)
