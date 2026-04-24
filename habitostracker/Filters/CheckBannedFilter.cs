@@ -18,8 +18,11 @@ namespace HabitTrackerApp.Filters
 
         public void OnActionExecuting(ActionExecutingContext context)
         {
-            var userIdClaim = context.HttpContext.User.FindFirst("UserId");
+            // Saltar filtro en Account y Home para evitar loops
+            var controller = context.RouteData.Values["controller"]?.ToString();
+            if (controller == "Account" || controller == "Home") return;
 
+            var userIdClaim = context.HttpContext.User.FindFirst("UserId");
             if (userIdClaim == null) return;
 
             int userId = int.Parse(userIdClaim.Value);
@@ -27,14 +30,14 @@ namespace HabitTrackerApp.Filters
 
             if (user == null) return;
 
-            if (!user.IsActive || user.IsBanned)
+            if (!user.IsActive || user.IsBanned || user.IsIpBlocked)
             {
-                context.HttpContext.SignOutAsync();
+                _ = context.HttpContext.SignOutAsync();
                 context.Result = new RedirectToActionResult("Login", "Account", null);
                 return;
             }
 
-            // 🔥 Si el claim ProfileImage está vacío pero el usuario tiene foto, refrescar sesión
+            // Refrescar foto si está vacía
             var currentProfileImage = context.HttpContext.User.FindFirst("ProfileImage")?.Value;
             var realPhoto = user.ProfileImage ?? user.ProfilePicture ?? "";
 
@@ -48,19 +51,12 @@ namespace HabitTrackerApp.Filters
                     new Claim(ClaimTypes.Role, user.Role ?? "User"),
                     new Claim("ProfileImage", realPhoto)
                 };
-
                 var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
                 var principal = new ClaimsPrincipal(identity);
-
-                // 🔥 async fire-and-forget para no bloquear el filtro
-                _ = context.HttpContext.SignInAsync(
-                    CookieAuthenticationDefaults.AuthenticationScheme,
-                    principal);
+                _ = context.HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal);
             }
         }
 
-        public void OnActionExecuted(ActionExecutedContext context)
-        {
-        }
+        public void OnActionExecuted(ActionExecutedContext context) { }
     }
 }
