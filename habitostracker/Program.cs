@@ -229,7 +229,22 @@ options.ClientSecret = builder.Configuration["Google:ClientSecret"];
                 }
 
                 // Verificar IP bloqueada para rutas de account
-                if (path.Contains("/account/") && !path.StartsWith("/account/login"))
+                var blockedPaths = new[] { "/account/register", "/account/guestregister", "/account/forgotpassword", "/account/externallogin" };
+                if (blockedPaths.Any(p => path.StartsWith(p)))
+                {
+                    var ip = context.Request.Headers["X-Forwarded-For"].FirstOrDefault()
+                        ?? context.Connection.RemoteIpAddress?.ToString();
+                    if (!string.IsNullOrEmpty(ip))
+                    {
+                        var db = context.RequestServices.GetRequiredService<HabitDbContext>();
+                        var blockedUser = await db.Users.FirstOrDefaultAsync(u => u.LastIp == ip && u.IsIpBlocked);
+                        if (blockedUser != null)
+                        {
+                            context.Response.Redirect("/Account/Login?blocked=true");
+                            return;
+                        }
+                    }
+                }
                 {
                     var ip = context.Request.Headers["X-Forwarded-For"].FirstOrDefault()
                         ?? context.Connection.RemoteIpAddress?.ToString();
