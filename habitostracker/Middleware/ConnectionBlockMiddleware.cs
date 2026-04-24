@@ -1,5 +1,6 @@
 ﻿using HabitTrackerApp.Data;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
 
 public class ConnectionBlockMiddleware
 {
@@ -9,11 +10,9 @@ public class ConnectionBlockMiddleware
     public async Task Invoke(HttpContext context, HabitDbContext db)
     {
         var path = context.Request.Path.Value?.ToLower() ?? "";
-        Console.WriteLine($"🔍 PATH: {path} | Auth: {context.User.Identity?.IsAuthenticated}");
 
-        // ── Rutas siempre libres ──
-        if (path == "/" ||
-            path.StartsWith("/account/") ||
+        // Rutas libres
+        if (path.StartsWith("/account/") ||
             path.StartsWith("/home/") ||
             path.StartsWith("/signin-google") ||
             path.StartsWith("/chathub") ||
@@ -23,6 +22,28 @@ public class ConnectionBlockMiddleware
             path.StartsWith("/images") ||
             path.StartsWith("/favicon"))
         {
+            // Aun en rutas libres, si está autenticado y bloqueado, borrar cookie
+            if (context.User.Identity?.IsAuthenticated == true)
+            {
+                var userIdClaim2 = context.User.FindFirst("UserId");
+                if (userIdClaim2 != null && int.TryParse(userIdClaim2.Value, out int uid2))
+                {
+                    var dbUser2 = db.Users.FirstOrDefault(u => u.Id == uid2);
+                    if (dbUser2 != null && dbUser2.IsIpBlocked)
+                    {
+                        // Borrar cookie manualmente
+                        foreach (var cookie in context.Request.Cookies.Keys)
+                            context.Response.Cookies.Delete(cookie);
+                        await context.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+                        // No redirigir si ya estamos en login
+                        if (!path.StartsWith("/account/login"))
+                        {
+                            context.Response.Redirect("/Account/Login?blocked=true");
+                            return;
+                        }
+                    }
+                }
+            }
             await _next(context);
             return;
         }
@@ -38,35 +59,43 @@ public class ConnectionBlockMiddleware
 
                 if (dbUser == null)
                 {
-                    await context.SignOutAsync("Cookies");
+                    foreach (var cookie in context.Request.Cookies.Keys)
+                        context.Response.Cookies.Delete(cookie);
+                    await context.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
                     context.Response.Redirect("/Account/Login?deleted=true");
                     return;
                 }
 
                 if (dbUser.IsIpBlocked)
                 {
-                    await context.SignOutAsync("Cookies");
+                    foreach (var cookie in context.Request.Cookies.Keys)
+                        context.Response.Cookies.Delete(cookie);
+                    await context.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
                     context.Response.Redirect("/Account/Login?blocked=true");
                     return;
                 }
 
                 if (dbUser.IsBanned)
                 {
-                    await context.SignOutAsync("Cookies");
+                    foreach (var cookie in context.Request.Cookies.Keys)
+                        context.Response.Cookies.Delete(cookie);
+                    await context.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
                     context.Response.Redirect("/Account/Login?banned=true");
                     return;
                 }
 
                 if (!dbUser.IsActive)
                 {
-                    await context.SignOutAsync("Cookies");
+                    foreach (var cookie in context.Request.Cookies.Keys)
+                        context.Response.Cookies.Delete(cookie);
+                    await context.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
                     context.Response.Redirect("/Account/Login?deactivated=true");
                     return;
                 }
             }
         }
 
-        // ── Bloqueo global ──
+        // Bloqueo global
         var block = db.ConnectionBlocks.FirstOrDefault();
         if (block != null && block.IsBlocked && user.Identity?.IsAuthenticated == true)
         {
