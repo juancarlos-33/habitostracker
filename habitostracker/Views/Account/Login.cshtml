@@ -445,7 +445,30 @@ background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/sv
         @if(Context.Request.Query["deleted"]=="true"){<div class="malert danger">⚠️ Cuenta eliminada</div><script>const _q=new URL(location);_q.searchParams.delete("deleted");history.replaceState({},'',_q.pathname);</script>}
         @if(Context.Request.Query["banned"]=="true"){<div class="malert danger">🚫 Cuenta baneada</div>}
         @if(Context.Request.Query["deactivated"]=="true"){<div class="malert warning">⚠️ Cuenta desactivada</div>}
-        @if(Context.Request.Query["blocked"]=="true"){<div class="malert danger">🔌 Conexión bloqueada</div>}
+       @if (Context.Request.Query["blocked"] == "true")
+{
+    <div class="malert danger">🔌 Tu acceso ha sido bloqueado permanentemente por el administrador.</div>
+    <script>
+        // Deshabilitar todo el formulario de login
+        document.addEventListener("DOMContentLoaded", function() {
+            // Ocultar todos los botones e inputs
+            document.querySelectorAll('.gbtn, .guestbtn, .msbtn, .minp, .ptog').forEach(el => {
+                el.style.pointerEvents = 'none';
+                el.style.opacity = '0.3';
+                el.style.cursor = 'not-allowed';
+            });
+            // Ocultar divider y form
+            document.querySelectorAll('.mdiv, .mfield, .strbar, .forgot, .mreg, .mtrust').forEach(el => {
+                el.style.display = 'none';
+            });
+            // Mostrar mensaje grande
+            const msg = document.createElement('div');
+            msg.style.cssText = 'text-align:center;padding:20px;background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.15);border-radius:14px;margin-top:8px;';
+            msg.innerHTML = '<div style="font-size:32px;margin-bottom:10px;">🔌</div><div style="font-size:14px;font-weight:700;color:#fca5a5;margin-bottom:6px;">Acceso bloqueado</div><div style="font-size:12px;color:rgba(255,255,255,0.3);line-height:1.6;">El propietario bloqueó tu acceso a esta plataforma. No puedes iniciar sesión, registrarte ni continuar como invitado.</div>';
+            document.querySelector('.mascot-wrap')?.after(msg);
+        });
+    </script>
+}
         @if(Context.Request.Query["ipblocked"]=="true"){<div class="malert danger">🚫 IP bloqueada</div>}
         @if(TempData["Success"]!=null){<div class="malert success">✅ @TempData["Success"]</div>}
         @if(TempData["Unblocked"]!=null){<script>localStorage.clear();sessionStorage.clear();</script>}
