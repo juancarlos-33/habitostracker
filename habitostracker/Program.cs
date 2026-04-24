@@ -10,7 +10,6 @@ using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Text;
@@ -25,7 +24,7 @@ namespace HabitTrackerApp
             var builder = WebApplication.CreateBuilder(args);
             builder.Services.AddSession();
 
-            // 🔥 Base de datos
+            // ── BASE DE DATOS ──
             builder.Services.AddDbContext<HabitDbContext>(options =>
             {
                 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
@@ -35,18 +34,15 @@ namespace HabitTrackerApp
                     options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString));
             });
 
-            // 🔥 Filtro
+            // ── FILTROS ──
             builder.Services.AddScoped<CheckBannedFilter>();
-
             builder.Services.AddControllersWithViews(options =>
             {
                 options.Filters.Add<CheckBannedFilter>();
-
                 options.Filters.Add<CheckGuestFilter>();
             });
-        
 
-            // 🔐 AUTENTICACIÓN
+            // ── AUTENTICACIÓN ──
             builder.Services.AddAuthentication(options =>
             {
                 options.DefaultAuthenticateScheme = "Cookies";
@@ -59,14 +55,11 @@ namespace HabitTrackerApp
                 options.LoginPath = "/Account/Login";
                 options.SlidingExpiration = true;
                 options.ExpireTimeSpan = TimeSpan.FromHours(1);
-              
             })
-
-
             .AddGoogle(options =>
             {
-               options.ClientId = builder.Configuration["Google:ClientId"];
-options.ClientSecret = builder.Configuration["Google:ClientSecret"];
+                options.ClientId = builder.Configuration["Google:ClientId"];
+                options.ClientSecret = builder.Configuration["Google:ClientSecret"];
                 options.SignInScheme = "Cookies";
             })
             .AddJwtBearer(JwtBearerDefaults.AuthenticationScheme, options =>
@@ -84,24 +77,21 @@ options.ClientSecret = builder.Configuration["Google:ClientSecret"];
                 };
             });
 
-            // 🔥 SignalR
+            // ── SIGNALR ──
             builder.Services.AddSignalR();
             builder.Services.AddSingleton<OnlineUsersService>();
             builder.Services.AddSingleton<IUserIdProvider, HabitTrackerApp.Hubs.CustomUserIdProvider>();
-         
 
-            // 🔥 Email
+            // ── SERVICIOS ──
             builder.Services.AddScoped<EmailService>();
-
-            // 🔥 Memoria
+            builder.Services.AddScoped<CloudinaryService>();
             builder.Services.AddDistributedMemoryCache();
 
-            // 🔥 Swagger
+            // ── SWAGGER ──
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen(options =>
             {
                 options.SwaggerDoc("v1", new OpenApiInfo { Title = "HabitTracker API", Version = "v1" });
-
                 options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
                 {
                     Name = "Authorization",
@@ -111,37 +101,26 @@ options.ClientSecret = builder.Configuration["Google:ClientSecret"];
                     In = ParameterLocation.Header,
                     Description = "Introduce el token así: Bearer {tu_token}"
                 });
-
                 options.AddSecurityRequirement(new OpenApiSecurityRequirement
                 {
                     {
-                        new OpenApiSecurityScheme
-                        {
-                            Reference = new OpenApiReference
-                            {
-                                Type = ReferenceType.SecurityScheme,
-                                Id = "Bearer"
-                            }
-                        },
+                        new OpenApiSecurityScheme { Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "Bearer" } },
                         new string[] {}
                     }
                 });
             });
 
-            builder.Services.AddScoped<CloudinaryService>();
+            // ── DATA PROTECTION ──
+            builder.Services.AddDataProtection().SetApplicationName("habitostracker");
 
-            builder.Services.AddDataProtection()
-     .SetApplicationName("habitostracker");
-
-            // 🔥 permitir archivos grandes (videos)
-            builder.Services.Configure<Microsoft.AspNetCore.Http.Features.FormOptions>(options =>
+            // ── LÍMITES ARCHIVOS GRANDES ──
+            builder.Services.Configure<Microsoft.AspNetCore.Http.Features.FormOptions>(o =>
             {
-                options.MultipartBodyLengthLimit = 524288000; // 500MB
+                o.MultipartBodyLengthLimit = 524288000;
             });
-
-            builder.WebHost.ConfigureKestrel(options =>
+            builder.WebHost.ConfigureKestrel(o =>
             {
-                options.Limits.MaxRequestBodySize = 524288000; // 500MB
+                o.Limits.MaxRequestBodySize = 524288000;
             });
 
             var app = builder.Build();
@@ -152,8 +131,7 @@ options.ClientSecret = builder.Configuration["Google:ClientSecret"];
                 app.UseSwagger();
                 app.UseSwaggerUI();
             }
-
-            if (!app.Environment.IsDevelopment())
+            else
             {
                 app.UseExceptionHandler("/Home/Error");
                 app.UseHsts();
@@ -161,22 +139,23 @@ options.ClientSecret = builder.Configuration["Google:ClientSecret"];
 
             app.UseHttpsRedirection();
             app.UseStaticFiles();
+
             app.UseForwardedHeaders(new ForwardedHeadersOptions
             {
                 ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto,
-
                 KnownNetworks = { },
                 KnownProxies = { }
             });
 
             app.UseRouting();
-
             app.UseAuthentication();
 
-            // 🔥 verificar sesión activa en cada request
+            // ══════════════════════════════════════════
+            // MIDDLEWARE 1 — Verificar sesión activa
+            // ══════════════════════════════════════════
             app.Use(async (context, next) =>
             {
-                if (context.User.Identity != null && context.User.Identity.IsAuthenticated)
+                if (context.User.Identity?.IsAuthenticated == true)
                 {
                     var sessionToken = context.User.FindFirst("SessionToken")?.Value;
                     if (!string.IsNullOrEmpty(sessionToken))
@@ -195,22 +174,46 @@ options.ClientSecret = builder.Configuration["Google:ClientSecret"];
                 await next();
             });
 
+            // ══════════════════════════════════════════
+            // MIDDLEWARE 2 — ConnectionBlock global
+            // ══════════════════════════════════════════
             app.UseMiddleware<ConnectionBlockMiddleware>();
 
+            // ══════════════════════════════════════════
+            // MIDDLEWARE 3 — Bloqueo por usuario (IsIpBlocked) + IP
+            // ══════════════════════════════════════════
             app.Use(async (context, next) =>
             {
                 var path = context.Request.Path.Value?.ToLower() ?? "";
 
-                // Verificar usuario autenticado
+                // Rutas siempre permitidas — no verificar nada
+                var freePaths = new[] {
+                    "/account/login",
+                    "/home/privacy",
+                    "/home/error",
+                    "/chathub",
+                    "/favicon.ico"
+                };
+                if (freePaths.Any(p => path.StartsWith(p)))
+                {
+                    await next();
+                    return;
+                }
+
+                var ip = context.Request.Headers["X-Forwarded-For"].FirstOrDefault()
+                    ?? context.Connection.RemoteIpAddress?.ToString();
+
+                var db = context.RequestServices.GetRequiredService<HabitDbContext>();
+
+                // ── Usuario autenticado ──
                 if (context.User.Identity?.IsAuthenticated == true)
                 {
                     var userIdClaim = context.User.FindFirst("UserId");
                     if (userIdClaim != null && int.TryParse(userIdClaim.Value, out int userId))
                     {
-                        var db = context.RequestServices.GetRequiredService<HabitDbContext>();
                         var user = await db.Users.FirstOrDefaultAsync(u => u.Id == userId);
 
-                        // Usuario eliminado
+                        // Eliminado
                         if (user == null)
                         {
                             await context.SignOutAsync("Cookies");
@@ -218,39 +221,38 @@ options.ClientSecret = builder.Configuration["Google:ClientSecret"];
                             return;
                         }
 
-                        // Usuario bloqueado
+                        // Bloqueado
                         if (user.IsIpBlocked)
                         {
                             await context.SignOutAsync("Cookies");
+                            // Actualizar IP para detectar en otros dispositivos
+                            if (!string.IsNullOrEmpty(ip)) { user.LastIp = ip; await db.SaveChangesAsync(); }
                             context.Response.Redirect("/Account/Login?blocked=true");
                             return;
                         }
-                    }
-                }
 
-                // Verificar IP bloqueada para rutas de account
-                var blockedPaths = new[] { "/account/register", "/account/guestregister", "/account/forgotpassword", "/account/externallogin" };
-                if (blockedPaths.Any(p => path.StartsWith(p)))
-                {
-                    var ip = context.Request.Headers["X-Forwarded-For"].FirstOrDefault()
-                        ?? context.Connection.RemoteIpAddress?.ToString();
-                    if (!string.IsNullOrEmpty(ip))
-                    {
-                        var db = context.RequestServices.GetRequiredService<HabitDbContext>();
-                        var blockedUser = await db.Users.FirstOrDefaultAsync(u => u.LastIp == ip && u.IsIpBlocked);
-                        if (blockedUser != null)
+                        // Baneado o desactivado
+                        if (!user.IsActive || user.IsBanned)
                         {
-                            context.Response.Redirect("/Account/Login?blocked=true");
+                            await context.SignOutAsync("Cookies");
+                            context.Response.Redirect("/Account/Login");
                             return;
                         }
                     }
                 }
+                else
                 {
-                    var ip = context.Request.Headers["X-Forwarded-For"].FirstOrDefault()
-                        ?? context.Connection.RemoteIpAddress?.ToString();
-                    if (!string.IsNullOrEmpty(ip))
+                    // ── No autenticado — verificar IP en rutas sensibles ──
+                    var blockedPaths = new[] {
+                        "/account/register",
+                        "/account/guestregister",
+                        "/account/forgotpassword",
+                        "/account/externallogin",
+                        "/account/completeprofile"
+                    };
+
+                    if (!string.IsNullOrEmpty(ip) && blockedPaths.Any(p => path.StartsWith(p)))
                     {
-                        var db = context.RequestServices.GetRequiredService<HabitDbContext>();
                         var blockedUser = await db.Users.FirstOrDefaultAsync(u => u.LastIp == ip && u.IsIpBlocked);
                         if (blockedUser != null)
                         {
@@ -265,55 +267,21 @@ options.ClientSecret = builder.Configuration["Google:ClientSecret"];
 
             app.UseAuthorization();
 
-            // 🔥 BLOQUEO USUARIO
+            // ══════════════════════════════════════════
+            // MIDDLEWARE 4 — Notificaciones en ViewData
+            // ══════════════════════════════════════════
             app.Use(async (context, next) =>
             {
-                if (context.User.Identity != null && context.User.Identity.IsAuthenticated)
+                if (context.User.Identity?.IsAuthenticated == true)
                 {
                     var userIdClaim = context.User.FindFirst("UserId");
-
-                    if (userIdClaim != null)
+                    if (userIdClaim != null && int.TryParse(userIdClaim.Value, out int userId))
                     {
-                        var userId = int.Parse(userIdClaim.Value);
-
-                        using (var scope = context.RequestServices.CreateScope())
-                        {
-                            var db = scope.ServiceProvider.GetRequiredService<HabitDbContext>();
-                            var user = db.Users.FirstOrDefault(u => u.Id == userId);
-
-                            if (user != null && (!user.IsActive || user.IsBanned))
-                            {
-                                await context.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-                                context.Response.Redirect("/Account/Login");
-                                return;
-                            }
-                        }
-                    }
-                }
-
-                await next();
-            });
-
-            // 🔥 NOTIFICACIONES
-            app.Use(async (context, next) =>
-            {
-                if (context.User.Identity != null && context.User.Identity.IsAuthenticated)
-                {
-                    var db = context.RequestServices.GetRequiredService<HabitTrackerApp.Data.HabitDbContext>();
-
-                    var userIdClaim = context.User.FindFirst("UserId");
-
-                    if (userIdClaim != null)
-                    {
-                        var userId = int.Parse(userIdClaim.Value);
-
-                        var count = db.Notifications
-                            .Count(n => n.UserId == userId && !n.IsRead);
-
+                        var db = context.RequestServices.GetRequiredService<HabitDbContext>();
+                        var count = db.Notifications.Count(n => n.UserId == userId && !n.IsRead);
                         context.Items["NewNotifications"] = count;
                     }
                 }
-
                 await next();
             });
 
@@ -323,13 +291,12 @@ options.ClientSecret = builder.Configuration["Google:ClientSecret"];
 
             app.MapHub<HabitTrackerApp.Hubs.ChatHub>("/chatHub");
 
-            // 🔥 Auto-migración al arrancar
+            // ── Auto-migración ──
             using (var scope = app.Services.CreateScope())
             {
                 var db = scope.ServiceProvider.GetRequiredService<HabitDbContext>();
                 db.Database.Migrate();
             }
-
 
             app.Run();
         }
