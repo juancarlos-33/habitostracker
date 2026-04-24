@@ -22,8 +22,7 @@ namespace HabitTrackerApp.Controllers
         private int GetUserId()
         {
             var claim = User.FindFirst("UserId");
-            if (claim == null)
-                throw new UnauthorizedAccessException("Usuario no autenticado correctamente.");
+            if (claim == null) return -1;
             return int.Parse(claim.Value);
         }
 
