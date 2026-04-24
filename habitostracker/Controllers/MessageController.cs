@@ -66,7 +66,10 @@ namespace HabitTrackerApp.Controllers
         [HttpGet]
         public IActionResult GetPendingRequestCount()
         {
-            var myId = int.Parse(User.FindFirst("UserId").Value);
+            var userIdClaim = User.FindFirst("UserId");
+            if (userIdClaim == null) return Json(new { count = 0 });
+
+            var myId = int.Parse(userIdClaim.Value);
             var count = _context.MessageRequests
                 .Count(r => r.ReceiverId == myId && r.Status == "Pending");
             return Json(new { count });
