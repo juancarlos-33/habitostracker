@@ -481,9 +481,11 @@ namespace HabitTrackerApp.Controllers
                 return View(login);
             }
 
-            // 🔌 CONEXIÓN BLOQUEADA POR SUPERADMIN
+            // 🔌 CONEXIÓN BLOQUEADA — actualiza IP para detectar en otros dispositivos
             if (user.IsIpBlocked)
             {
+                user.LastIp = ip;
+                _context.SaveChanges();
                 ModelState.AddModelError("", "🔌 Tu acceso ha sido bloqueado. Contacta al administrador.");
                 return View(login);
             }
@@ -586,7 +588,6 @@ namespace HabitTrackerApp.Controllers
 
             return RedirectToAction("Index", "Habit", null, "https");
         }
-
         // =====================================================
         // 🔁 REENVIAR CONFIRMACIÓN
         // =====================================================
