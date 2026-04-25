@@ -1571,10 +1571,10 @@ namespace HabitTrackerApp.Controllers
                 var userCheck = _context.Users.FirstOrDefault(u => u.Email == email);
                 if (userCheck != null && userCheck.IsIpBlocked)
                 {
+                    await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
                     foreach (var cookie in HttpContext.Request.Cookies.Keys)
                         HttpContext.Response.Cookies.Delete(cookie);
-                    await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-                    return RedirectToAction("Login", new { blocked = true });
+                    return Redirect("/Account/Login?blocked=true");
                 }
 
                 var name = result.Principal.FindFirst(ClaimTypes.Name)?.Value;
@@ -1849,10 +1849,10 @@ namespace HabitTrackerApp.Controllers
             var userCheck = _context.Users.FirstOrDefault(u => u.Email == email);
             if (userCheck != null && userCheck.IsIpBlocked)
             {
+                await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
                 foreach (var cookie in HttpContext.Request.Cookies.Keys)
                     HttpContext.Response.Cookies.Delete(cookie);
-                await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-                return RedirectToAction("Login", new { blocked = true });
+                return Redirect("/Account/Login?blocked=true");
             }
 
             // 🔥 Invitado → convertir
