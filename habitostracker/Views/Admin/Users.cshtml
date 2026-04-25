@@ -1,151 +1,280 @@
 ﻿@inject HabitTrackerApp.Data.HabitDbContext _context
 @model List<HabitTrackerApp.Models.User>
 
-<form id="antiForgeryForm" style="display:none;">
-    @Html.AntiForgeryToken()
-</form>
+<form id="antiForgeryForm" style="display:none;">@Html.AntiForgeryToken()</form>
 
 @{
     var myId = int.Parse(User.FindFirst("UserId").Value);
     var me = _context.Users.FirstOrDefault(u => u.Id == myId);
-    var activeNow = Model.Count(u =>
-        u.IsActive && !u.IsBanned && u.LastOnline != null &&
-        (DateTime.Now - u.LastOnline.Value).TotalSeconds < 60);
-    var block = Context.RequestServices
-        .GetService<HabitTrackerApp.Data.HabitDbContext>()
-        .ConnectionBlocks.FirstOrDefault();
+    var activeNow = Model.Count(u => u.IsActive && !u.IsBanned && u.LastOnline != null && (DateTime.Now - u.LastOnline.Value).TotalSeconds < 60);
+    var block = Context.RequestServices.GetService<HabitTrackerApp.Data.HabitDbContext>().ConnectionBlocks.FirstOrDefault();
     bool isBlocked = block != null && block.IsBlocked;
-    var ipInfo = ViewBag.IpInfo as Dictionary<string, (string country, string region, string city, string isp)>;
     bool isSuperAdmin = User.IsInRole("SuperAdmin");
 }
 
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
 
-<!-- ADVERTENCIA ADMIN -->
-<div id="adminWarningOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:999999;align-items:center;justify-content:center;flex-direction:column;backdrop-filter:blur(12px);">
-    <img src="https://res.cloudinary.com/dzrjag7ia/image/upload/v1776560628/NE_lmertz.jpg"
-         style="width:90px;height:90px;border-radius:22px;border:3px solid #ef4444;box-shadow:0 0 0 8px rgba(239,68,68,0.15),0 8px 30px rgba(0,0,0,0.5);margin-bottom:20px;animation:warnBounce 0.5s cubic-bezier(0.34,1.56,0.64,1);" />
-    <div style="background:linear-gradient(135deg,#1e293b,#0f172a);border:1px solid rgba(239,68,68,0.3);border-radius:24px;padding:28px 32px;text-align:center;max-width:360px;width:90%;box-shadow:0 30px 60px rgba(0,0,0,0.5);">
-        <div style="font-size:32px;margin-bottom:12px;">⛔</div>
+<!-- WARN OVERLAY -->
+<div id="warnOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:999999;align-items:center;justify-content:center;flex-direction:column;backdrop-filter:blur(16px);">
+    <img src="https://res.cloudinary.com/dzrjag7ia/image/upload/v1776560628/NE_lmertz.jpg" style="width:88px;height:88px;border-radius:22px;border:3px solid #ef4444;box-shadow:0 0 0 8px rgba(239,68,68,0.12);margin-bottom:20px;animation:wB 0.5s cubic-bezier(0.34,1.56,0.64,1);"/>
+    <div style="background:linear-gradient(135deg,#1e293b,#0f172a);border:1px solid rgba(239,68,68,0.25);border-radius:24px;padding:28px 32px;text-align:center;max-width:360px;width:90%;box-shadow:0 40px 80px rgba(0,0,0,0.6);">
+        <div style="font-size:36px;margin-bottom:12px;">⛔</div>
         <div style="font-size:17px;font-weight:800;color:white;margin-bottom:8px;">Acción no permitida</div>
-        <div style="font-size:13px;color:rgba(255,255,255,0.5);line-height:1.6;">No puedes banear ni desactivar a otro administrador. Esta acción va en contra de las normas del sistema.<br><br><span style="color:#fbbf24;font-weight:700;"></span></div>
+        <div style="font-size:13px;color:rgba(255,255,255,0.45);line-height:1.7;">No puedes banear ni desactivar a otro administrador.<br><br><span style="color:#fbbf24;font-weight:700;">⚠️ El propietario ha sido notificado.</span></div>
     </div>
 </div>
 
-<!-- MODAL CÓDIGO ADMIN -->
-<div id="codeModal" class="code-modal">
-    <div class="code-box">
-        <img src="https://res.cloudinary.com/dzrjag7ia/image/upload/v1776560628/NE_lmertz.jpg"
-             style="width:56px;height:56px;border-radius:14px;margin-bottom:14px;border:2px solid rgba(99,102,241,0.4);" />
-        <h5 style="margin:0 0 6px;color:white;font-size:16px;font-weight:800;">⚠️ Autorización requerida</h5>
-        <p style="font-size:12px;opacity:0.5;margin:0 0 14px;">Ingresa el código de 5 dígitos</p>
-        <input type="text" id="codeInput" maxlength="5" inputmode="numeric"
-               placeholder="• • • • •" oninput="this.value = this.value.replace(/\D/g, '')" />
-        <div id="codeError" class="code-error"></div>
-        <div class="code-actions">
-            <button onclick="validarCodigo()">Aceptar</button>
-            <button onclick="cerrarModal()">Cancelar</button>
+<!-- CODE MODAL -->
+<div id="codeModal" style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.75);display:none;align-items:center;justify-content:center;z-index:9999;backdrop-filter:blur(12px);">
+    <div style="background:linear-gradient(135deg,#1e293b,#0f172a);padding:32px 28px;border-radius:24px;width:320px;text-align:center;color:white;border:1px solid rgba(255,255,255,0.08);box-shadow:0 40px 80px rgba(0,0,0,0.6);">
+        <img src="https://res.cloudinary.com/dzrjag7ia/image/upload/v1776560628/NE_lmertz.jpg" style="width:52px;height:52px;border-radius:14px;margin-bottom:14px;border:2px solid rgba(99,102,241,0.4);"/>
+        <h5 style="margin:0 0 6px;font-size:16px;font-weight:800;">⚠️ Autorización requerida</h5>
+        <p style="font-size:12px;opacity:0.45;margin:0 0 14px;">Código de 5 dígitos</p>
+        <input type="text" id="codeInput" maxlength="5" inputmode="numeric" placeholder="• • • • •"
+               oninput="this.value=this.value.replace(/\D/g,'')"
+               style="width:100%;padding:12px;border-radius:12px;border:1.5px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.05);font-size:20px;text-align:center;letter-spacing:6px;color:white;outline:none;box-sizing:border-box;font-family:inherit;"/>
+        <div id="codeError" style="color:#f87171;font-size:12px;margin-top:8px;min-height:18px;"></div>
+        <div style="margin-top:16px;display:flex;gap:8px;">
+            <button onclick="validarCodigo()" style="flex:1;padding:10px;border-radius:12px;border:none;background:linear-gradient(135deg,#6366f1,#2563eb);color:white;font-weight:700;cursor:pointer;font-family:inherit;">Aceptar</button>
+            <button onclick="cerrarModal()" style="flex:1;padding:10px;border-radius:12px;border:none;background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.5);font-weight:700;cursor:pointer;font-family:inherit;">Cancelar</button>
         </div>
     </div>
 </div>
 
-<div class="admin-page">
+<style>
+*{font-family:'Plus Jakarta Sans',sans-serif;}
+@@keyframes wB{from{transform:scale(0.6) rotate(-10deg);opacity:0;}to{transform:scale(1) rotate(0);opacity:1;}}
+@@keyframes fadeUp{from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:translateY(0);}}
+@@keyframes floatM{0%,100%{transform:translateY(0);}50%{transform:translateY(-6px);}}
+@@keyframes pulse2{0%,100%{box-shadow:0 0 0 0 rgba(34,197,94,0.4);}50%{box-shadow:0 0 0 6px rgba(34,197,94,0);}}
+@@keyframes shimmer{0%{background-position:-200% center;}100%{background-position:200% center;}}
 
-    <!-- HERO HEADER -->
-    <div class="admin-hero">
-      
-        <div class="admin-hero-info">
-            <div class="admin-hero-badge">🛡️ Panel de Control</div>
-            <div class="admin-hero-title">Centro de Administración</div>
-            <div class="admin-hero-sub">Gestiona usuarios, conexiones y seguridad · <strong style="color:white;">@me?.Username</strong></div>
+.ap{max-width:1200px;margin:0 auto;padding-bottom:60px;}
+
+/* HERO */
+.ah{
+    background:linear-gradient(135deg,#0f172a 0%,#1e293b 50%,#0f172a 100%);
+    border-radius:24px;padding:28px 32px;margin-bottom:20px;
+    display:flex;align-items:center;gap:20px;
+    border:1px solid rgba(255,255,255,0.06);position:relative;overflow:hidden;
+    animation:fadeUp 0.6s ease both;
+}
+.ah::before{content:'';position:absolute;top:-60px;right:-60px;width:280px;height:280px;background:radial-gradient(circle,rgba(99,102,241,0.15),transparent 70%);border-radius:50%;pointer-events:none;}
+.ah::after{content:'';position:absolute;bottom:-40px;left:100px;width:180px;height:180px;background:radial-gradient(circle,rgba(234,179,8,0.08),transparent 70%);border-radius:50%;pointer-events:none;}
+.ah-mascot{width:72px;height:72px;border-radius:20px;object-fit:cover;flex-shrink:0;border:2px solid rgba(99,102,241,0.4);box-shadow:0 0 0 6px rgba(99,102,241,0.08),0 8px 28px rgba(0,0,0,0.4);animation:floatM 3s ease-in-out infinite;position:relative;z-index:1;}
+.ah-info{flex:1;position:relative;z-index:1;}
+.ah-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(99,102,241,0.12);border:1px solid rgba(99,102,241,0.25);border-radius:20px;padding:3px 12px;font-size:11px;font-weight:700;color:#818cf8;margin-bottom:8px;}
+.ah-title{font-size:22px;font-weight:900;color:white;margin-bottom:4px;letter-spacing:-0.5px;}
+.ah-sub{font-size:13px;color:rgba(255,255,255,0.35);}
+.ah-right{position:relative;z-index:1;flex-shrink:0;text-align:center;min-width:180px;}
+.conn-pill{display:inline-flex;align-items:center;gap:6px;padding:7px 16px;border-radius:20px;font-size:12px;font-weight:700;}
+.conn-pill.on{background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.25);color:#22c55e;}
+.conn-pill.off{background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.25);color:#ef4444;}
+.cdot{width:7px;height:7px;border-radius:50%;}
+.cdot.g{background:#22c55e;animation:pulse2 2s infinite;}
+.cdot.r{background:#ef4444;}
+.cab{padding:8px 16px;border-radius:11px;border:none;font-size:12px;font-weight:700;cursor:pointer;transition:0.2s;font-family:inherit;margin-top:8px;width:100%;}
+.cab.restore{background:rgba(34,197,94,0.12);color:#22c55e;border:1px solid rgba(34,197,94,0.25);}
+.cab.restore:hover{background:#22c55e;color:white;}
+.cab.blk{background:rgba(239,68,68,0.12);color:#ef4444;border:1px solid rgba(239,68,68,0.25);}
+.cab.blk:hover{background:#ef4444;color:white;}
+
+/* KPIs */
+.kg{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px;}
+.kc{background:white;border-radius:18px;padding:16px;display:flex;align-items:center;gap:12px;box-shadow:0 2px 10px rgba(0,0,0,0.06);border:1px solid rgba(0,0,0,0.04);transition:0.25s;cursor:pointer;}
+.kc:hover{transform:translateY(-3px);box-shadow:0 12px 28px rgba(0,0,0,0.12);}
+.kiw{width:44px;height:44px;border-radius:13px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:20px;}
+.kiw.b{background:rgba(37,99,235,0.1);}
+.kiw.r{background:rgba(239,68,68,0.1);}
+.kiw.y{background:rgba(217,119,6,0.1);}
+.kiw.g{background:rgba(22,163,74,0.1);}
+.kv{font-size:26px;font-weight:900;color:#111827;line-height:1;}
+.kv.r{color:#dc2626;}.kv.y{color:#d97706;}.kv.g{color:#16a34a;}
+.kl{font-size:10px;color:#9ca3af;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;margin-top:2px;}
+
+/* QUICK */
+.qa{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;}
+.qb{padding:9px 18px;border-radius:11px;font-size:12px;font-weight:700;text-decoration:none;border:none;cursor:pointer;transition:0.2s;font-family:inherit;}
+.qb.n{background:#f3f4f6;color:#374151;border:1px solid #e5e7eb;}
+.qb.n:hover{background:#e5e7eb;}
+.qb.r{background:#fef2f2;color:#dc2626;border:1px solid #fecaca;}
+.qb.r:hover{background:#dc2626;color:white;}
+.qb.y{background:#fef3c7;color:#d97706;border:1px solid #fde68a;}
+.qb.y:hover{background:#d97706;color:white;}
+.ip{padding:10px 16px;border-radius:12px;margin-bottom:14px;font-size:13px;font-weight:600;}
+.ip.g{background:#f0fdf4;color:#166534;border:1px solid #86efac;}
+
+/* SEARCH */
+.sw{position:relative;margin-bottom:16px;max-width:440px;}
+.si{position:absolute;left:14px;top:50%;transform:translateY(-50%);font-size:15px;}
+.sinp{width:100%;padding:12px 16px 12px 44px;border:1.5px solid #e5e7eb;border-radius:50px;font-size:13px;outline:none;transition:0.25s;box-sizing:border-box;background:white;font-family:inherit;box-shadow:0 2px 8px rgba(0,0,0,0.04);}
+.sinp:focus{border-color:#6366f1;box-shadow:0 0 0 3px rgba(99,102,241,0.1);}
+
+/* TABLE */
+.tw{overflow-x:auto;background:white;border-radius:22px;box-shadow:0 4px 20px rgba(0,0,0,0.07);border:1px solid rgba(0,0,0,0.05);margin-bottom:16px;}
+.mc2{display:none;}
+@@media(max-width:768px){.tw{display:none;}.mc2{display:flex;flex-direction:column;gap:10px;}.kg{grid-template-columns:repeat(2,1fr);}.ah{flex-wrap:wrap;}}
+
+.ut{width:100%;border-collapse:collapse;min-width:920px;}
+.ut thead th{padding:13px 14px;font-size:10px;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:0.8px;border-bottom:1px solid #f1f5f9;white-space:nowrap;background:white;}
+.ut tbody tr{transition:0.15s;}
+.ut tbody tr:hover{background:#f8fafc;}
+.ut td{padding:12px 14px;border-bottom:1px solid #f1f5f9;vertical-align:middle;}
+
+/* USER CELL */
+.uc{display:flex;align-items:center;gap:10px;}
+.uth{width:40px;height:40px;border-radius:50%;object-fit:cover;border:2px solid #e2e8f0;flex-shrink:0;transition:0.2s;}
+.uth:hover{border-color:#6366f1;transform:scale(1.05);}
+.utl{width:40px;height:40px;border-radius:50%;flex-shrink:0;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:white;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:15px;}
+.un{font-weight:700;color:#0f172a;font-size:13px;}
+
+/* BADGES */
+.bd{display:inline-flex;align-items:center;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;}
+.bd.ow{background:#0f172a;color:white;}
+.bd.ad{background:#dbeafe;color:#1d4ed8;}
+.bd.gu{background:#f1f5f9;color:#64748b;}
+.bd.pr{background:#fef3c7;color:#d97706;}
+.bd.go{background:#4285f4;color:white;}
+
+/* STATUS */
+.st{display:inline-flex;align-items:center;padding:4px 12px;border-radius:20px;font-size:11px;font-weight:700;white-space:nowrap;}
+.st.a{background:#dcfce7;color:#16a34a;}
+.st.bn{background:#fee2e2;color:#dc2626;}
+.st.in{background:#fef9c3;color:#854d0e;}
+.st.of{background:#f1f5f9;color:#94a3b8;}
+
+/* LOCATION */
+.lc{display:flex;flex-direction:column;gap:3px;}
+.lc span{font-size:11px;color:#475569;}
+.ipt{color:#94a3b8!important;font-size:10px!important;}
+.ml{color:#6366f1;font-size:11px;font-weight:600;text-decoration:none;}
+.ml:hover{text-decoration:underline;}
+.ipb{padding:3px 9px;border-radius:7px;border:none;cursor:pointer;font-size:11px;font-weight:700;font-family:inherit;margin-top:3px;transition:0.15s;}
+.ipb.bl{background:#fee2e2;color:#dc2626;}
+.ipb.bl:hover{background:#dc2626;color:white;}
+.ipb.ub{background:#dcfce7;color:#16a34a;}
+.ipb.ub:hover{background:#16a34a;color:white;}
+
+/* DEVICE */
+.dc{display:flex;flex-direction:column;gap:3px;}
+.dc span{font-size:11px;color:#475569;}
+
+/* ACTIONS */
+.acc{display:flex;flex-wrap:wrap;gap:4px;}
+.ab{padding:5px 11px;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;border:none;text-decoration:none;transition:0.15s;display:inline-flex;align-items:center;gap:3px;font-family:inherit;}
+.ab.su{background:#dcfce7;color:#16a34a;}.ab.su:hover{background:#16a34a;color:white;}
+.ab.da{background:#fee2e2;color:#dc2626;}.ab.da:hover{background:#dc2626;color:white;}
+.ab.wa{background:#fef9c3;color:#854d0e;}.ab.wa:hover{background:#d97706;color:white;}
+.ab.dl{background:#f1f5f9;color:#64748b;}.ab.dl:hover{background:#64748b;color:white;}
+.ab.pr2{background:#dbeafe;color:#2563eb;}.ab.pr2:hover{background:#2563eb;color:white;}
+.ab.se{background:#f1f5f9;color:#374151;}.ab.se:hover{background:#374151;color:white;}
+.ab.ne{background:#f1f5f9;color:#374151;}.ab.ne:hover{background:#374151;color:white;}
+.ab.bc{background:linear-gradient(135deg,rgba(99,102,241,0.1),rgba(37,99,235,0.08));color:#4f46e5;border:1px solid rgba(99,102,241,0.2);}
+.ab.bc:hover{background:linear-gradient(135deg,#6366f1,#2563eb);color:white;border-color:transparent;}
+.ab.ub2{background:linear-gradient(135deg,rgba(34,197,94,0.1),rgba(16,185,129,0.08));color:#16a34a;border:1px solid rgba(34,197,94,0.2);}
+.ab.ub2:hover{background:linear-gradient(135deg,#22c55e,#16a34a);color:white;border-color:transparent;}
+
+/* MOBILE CARDS */
+.mcard{background:white;border-radius:18px;padding:16px;box-shadow:0 4px 16px rgba(0,0,0,0.07);border:1px solid rgba(0,0,0,0.05);animation:fadeUp 0.4s ease both;}
+.mct{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;}
+.mi{background:#f8fafc;border-radius:13px;padding:10px 13px;margin-bottom:12px;display:flex;flex-direction:column;gap:6px;}
+.mir{display:flex;align-items:flex-start;gap:8px;font-size:12px;color:#475569;}
+.mic{flex-shrink:0;width:16px;text-align:center;}
+
+/* DARK */
+body.bg-dark .kc,body.bg-dark .tw,body.bg-dark .mcard{background:#1e293b!important;border-color:#334155!important;}
+body.bg-dark .kv{color:#f1f5f9!important;}
+body.bg-dark .un{color:#f1f5f9!important;}
+body.bg-dark .ut thead th{color:#64748b!important;border-color:#334155!important;background:#1e293b!important;}
+body.bg-dark .ut tbody tr:hover{background:#2d3748!important;}
+body.bg-dark .ut td{border-color:#334155!important;}
+body.bg-dark .sinp{background:#1e293b!important;border-color:#334155!important;color:#f1f5f9!important;}
+body.bg-dark .mi{background:#2d3748!important;}
+body.bg-dark .mir{color:#94a3b8!important;}
+body.bg-dark .lc span,.dc span{color:#94a3b8!important;}
+body.bg-dark .kl{color:#64748b!important;}
+body.bg-dark .qb.n{background:#1e293b!important;color:#94a3b8!important;border-color:#334155!important;}
+</style>
+
+<div class="ap">
+
+    <!-- HERO -->
+    <div class="ah">
+        <img src="https://res.cloudinary.com/dzrjag7ia/image/upload/v1776560628/NE_lmertz.jpg" class="ah-mascot"/>
+        <div class="ah-info">
+            <div class="ah-badge">🛡️ Panel de Control</div>
+            <div class="ah-title">Centro de Administración</div>
+            <div class="ah-sub">Gestiona usuarios, conexiones y seguridad · <strong style="color:white;">@me?.Username</strong></div>
         </div>
-        <div class="admin-hero-right">
-            <!-- CONEXIÓN -->
-            <div class="connection-pill @(isBlocked ? "blocked" : "active")">
-                <span class="conn-dot @(isBlocked ? "red" : "green")"></span>
-                @(isBlocked ? "🔴 Bloqueada" : "🟢 Conexión Activa")
+        <div class="ah-right">
+            <div class="conn-pill @(isBlocked ? "off" : "on")">
+                <span class="cdot @(isBlocked ? "r" : "g")"></span>
+                @(isBlocked ? "🔴 Bloqueada" : "🟢 Activa")
             </div>
             @if (isBlocked)
             {
-                <form asp-controller="Admin" asp-action="ToggleConnectionBlock" method="post" style="margin-top:8px;">
-                    <button class="conn-action-btn restore">🔓 Restaurar</button>
+                <form asp-controller="Admin" asp-action="ToggleConnectionBlock" method="post">
+                    <button class="cab restore">🔓 Restaurar conexión</button>
                 </form>
             }
             else if (me?.Role == "SuperAdmin")
             {
-                <form asp-controller="Admin" asp-action="ToggleConnectionBlock" method="post" style="margin-top:8px;">
-                    <button class="conn-action-btn block" onclick="return confirm('¿Bloquear la conexión global?')">🔒 Bloquear conexión para todos</button>
+                <form asp-controller="Admin" asp-action="ToggleConnectionBlock" method="post">
+                    <button class="cab blk" onclick="return confirm('¿Bloquear conexión global?')">🔒 Bloquear para todos</button>
                 </form>
             }
             else if (me?.Role == "Admin")
             {
-                <button class="conn-action-btn block" onclick="pedirCodigoAdmin()" style="margin-top:8px;">🔒 Bloquear conexión para todos</button>
+                <button class="cab blk" onclick="pedirCodigoAdmin()">🔒 Bloquear para todos</button>
             }
         </div>
     </div>
 
     <!-- KPIs -->
-    <div class="kpi-grid">
-        <div class="kpi-card" onclick="showAll()" style="cursor:pointer;">
-            <div class="kpi-icon-wrap blue">👥</div>
-            <div>
-                <div class="kpi-val">@Model.Count</div>
-                <div class="kpi-lbl">Usuarios</div>
-            </div>
+    <div class="kg">
+        <div class="kc" onclick="showAll()">
+            <div class="kiw b">👥</div>
+            <div><div class="kv">@Model.Count</div><div class="kl">Usuarios</div></div>
         </div>
-        <div class="kpi-card kpi-clickable" onclick="filterByStatus('banned')">
-            <div class="kpi-icon-wrap red">🚫</div>
-            <div>
-                <div class="kpi-val red">@Model.Count(u => u.IsBanned)</div>
-                <div class="kpi-lbl">Baneados</div>
-            </div>
+        <div class="kc" onclick="filterByStatus('banned')">
+            <div class="kiw r">🚫</div>
+            <div><div class="kv r">@Model.Count(u => u.IsBanned)</div><div class="kl">Baneados</div></div>
         </div>
-        <div class="kpi-card kpi-clickable" onclick="filterByStatus('inactive')">
-            <div class="kpi-icon-wrap yellow">⚠️</div>
-            <div>
-                <div class="kpi-val yellow">@Model.Count(u => !u.IsActive)</div>
-                <div class="kpi-lbl">Desactivados</div>
-            </div>
+        <div class="kc" onclick="filterByStatus('inactive')">
+            <div class="kiw y">⚠️</div>
+            <div><div class="kv y">@Model.Count(u => !u.IsActive)</div><div class="kl">Desactivados</div></div>
         </div>
-        <div class="kpi-card kpi-clickable" onclick="filterByStatus('active')">
-            <div class="kpi-icon-wrap green">✅</div>
-            <div>
-                <div class="kpi-val green" id="activeUsers">@activeNow</div>
-                <div class="kpi-lbl">Activos ahora</div>
-            </div>
+        <div class="kc" onclick="filterByStatus('active')">
+            <div class="kiw g">✅</div>
+            <div><div class="kv g" id="activeUsers">@activeNow</div><div class="kl">Activos ahora</div></div>
         </div>
     </div>
 
     <!-- ACCIONES -->
-    <div class="quick-actions">
-        <button class="quick-btn neutral" onclick="showAll()" data-no-loader>👥 Todos</button>
-        <a asp-controller="Admin" asp-action="Reports" class="quick-btn red">🚩 Reportes</a>
+    <div class="qa">
+        <button class="qb n" onclick="showAll()" data-no-loader>👥 Todos</button>
+        <a asp-controller="Admin" asp-action="Reports" class="qb r">🚩 Reportes</a>
         @if (isSuperAdmin)
         {
             <form asp-controller="Admin" asp-action="GenerateAccessCode" method="post" style="display:inline">
-                <button type="submit" class="quick-btn yellow">🔑 Generar código</button>
+                <button type="submit" class="qb y">🔑 Generar código</button>
             </form>
         }
     </div>
 
-    @if (TempData["GeneratedCode"] != null)
-    {
-        <div class="info-pill green">🔐 Código generado: <strong>@TempData["GeneratedCode"]</strong></div>
-    }
-    @if (TempData["NewPassword"] != null)
-    {
-        <div class="info-pill green">🔑 Nueva contraseña: <strong>@TempData["NewPassword"]</strong></div>
-    }
+    @if (TempData["GeneratedCode"] != null) { <div class="ip g">🔐 Código: <strong>@TempData["GeneratedCode"]</strong></div> }
+    @if (TempData["NewPassword"] != null) { <div class="ip g">🔑 Contraseña: <strong>@TempData["NewPassword"]</strong></div> }
 
-    <!-- BUSCADOR -->
-    <div class="search-wrap">
-        <span class="search-icon">🔍</span>
-        <input type="text" id="searchUser" placeholder="Buscar usuario por nombre..." class="search-input" />
+    <!-- SEARCH -->
+    <div class="sw">
+        <span class="si">🔍</span>
+        <input type="text" id="searchUser" placeholder="Buscar usuario..." class="sinp"/>
     </div>
 
     <!-- TABLA DESKTOP -->
-    <div class="table-wrap">
-        <table class="users-table">
+    <div class="tw">
+        <table class="ut">
             <thead>
                 <tr>
                     <th>Usuario</th>
@@ -162,176 +291,142 @@
                     var blockedIps = ViewBag.BlockedIps as List<string> ?? new List<string>();
                     bool isBlockedIp = user.LastIp != null && blockedIps.Contains(user.LastIp);
                     bool isAdminUser = user.Role == "Admin";
+                    var photo = user.ProfileImage ?? user.ProfilePicture ?? "";
 
                     <tr class="user-row" data-username="@user.Username.ToLower()">
                         <td>
-                            <div class="user-cell">
+                            <div class="uc">
                                 @if (user.Role == "SuperAdmin")
                                 {
-                                    @if (!string.IsNullOrEmpty(user.ProfileImage))
-                                    { <img src="@user.ProfileImage" class="user-thumb" /> }
-                                    else
-                                    { <div class="user-thumb-letter">@user.Username.Substring(0,1).ToUpper()</div> }
+                                    @if (!string.IsNullOrEmpty(photo))
+                                    { <img src="@photo" class="uth"/> }
+                                    else { <div class="utl">@user.Username.Substring(0,1).ToUpper()</div> }
                                 }
                                 else
                                 {
                                     <a href="/User/Profile/@user.Id" style="text-decoration:none;flex-shrink:0;">
-                                        @if (!string.IsNullOrEmpty(user.ProfileImage))
-                                        { <img src="@user.ProfileImage" class="user-thumb" /> }
-                                        else
-                                        { <div class="user-thumb-letter">@user.Username.Substring(0,1).ToUpper()</div> }
+                                        @if (!string.IsNullOrEmpty(photo))
+                                        { <img src="@photo" class="uth"/> }
+                                        else { <div class="utl">@user.Username.Substring(0,1).ToUpper()</div> }
                                     </a>
                                 }
                                 <div>
-                                    @if (user.Role == "SuperAdmin")
-                                    { <div class="user-name">@user.Username</div> }
-                                    else
-                                    { <a href="/User/Profile/@user.Id" class="user-name" style="text-decoration:none;color:inherit;">@user.Username</a> }
-                                    <div style="display:flex;gap:4px;margin-top:3px;flex-wrap:wrap;">
-                                        @if (user.Role == "SuperAdmin") { <span class="badge owner">👑 SuperAdmin</span> }
-                                        else if (user.Role == "Admin") { <span class="badge admin">🛡️ Admin</span> }
-                                        else if (user.Role == "Guest") { <span class="badge guest">👤 Invitado</span> }
-                                        @if (user.IsPremium) { <span class="badge premium">✨ Pro</span> }
-                                        @if (user.IsGoogleAccount) { <span class="badge google">G</span> }
+                                    @if (user.Role == "SuperAdmin") { <div class="un">@user.Username</div> }
+                                    else { <a href="/User/Profile/@user.Id" class="un" style="text-decoration:none;color:inherit;">@user.Username</a> }
+                                    <div style="display:flex;gap:3px;margin-top:3px;flex-wrap:wrap;">
+                                        @if (user.Role == "SuperAdmin") { <span class="bd ow">👑 SuperAdmin</span> }
+                                        else if (user.Role == "Admin") { <span class="bd ad">🛡️ Admin</span> }
+                                        else if (user.Role == "Guest") { <span class="bd gu">👤 Invitado</span> }
+                                        @if (user.IsPremium) { <span class="bd pr">✨ Pro</span> }
+                                        @if (user.IsGoogleAccount) { <span class="bd go">G</span> }
                                     </div>
                                 </div>
                             </div>
                         </td>
-                        <td class="text-sm text-muted">
+                        <td style="font-size:12px;color:#64748b;">
                             @if (user.Role == "SuperAdmin") { <span>🔒 Privado</span> }
                             else if (user.Role == "Guest") { <span>👤 Invitado</span> }
                             else { @user.Email }
                         </td>
                         <td id="status-@user.Id">
-                            @if (user.IsBanned) { <span class="status-tag banned">🚫 Baneado</span> }
-                            else if (!user.IsActive) { <span class="status-tag inactive">⚠️ Desactivado</span> }
-                            else if (user.LastOnline != null && (DateTime.Now - user.LastOnline.Value).TotalSeconds < 60)
-                            { <span class="status-tag active">🟢 Activo</span> }
-                            else { <span class="status-tag offline">⚫ Inactivo</span> }
+                            @if (user.IsBanned) { <span class="st bn">🚫 Baneado</span> }
+                            else if (!user.IsActive) { <span class="st in">⚠️ Desactivado</span> }
+                            else if (user.LastOnline != null && (DateTime.Now - user.LastOnline.Value).TotalSeconds < 60) { <span class="st a">🟢 Activo</span> }
+                            else { <span class="st of">⚫ Inactivo</span> }
                         </td>
-                        <td class="text-sm">
+                        <td>
                             @if (user.Role != "SuperAdmin")
                             {
-                                <div class="location-cell">
-                                    @if (!string.IsNullOrEmpty(user.Country))
-                                    {
-                                        <span>🌍 @user.Country</span>
-                                    }
-                                    @if (!string.IsNullOrEmpty(user.City))
-                                    {
-                                        <span>🏙️ @user.City</span>
-                                    }
-                                    @if (!string.IsNullOrEmpty(user.Municipality))
-                                    {
-                                        <span>📍 @user.Municipality</span>
-                                    }
-                                    <span class="ip-text">🌐 @(user.LastIp ?? "—")</span>
+                                <div class="lc">
+                                    @if (!string.IsNullOrEmpty(user.Country)) { <span>🌍 @user.Country</span> }
+                                    @if (!string.IsNullOrEmpty(user.City)) { <span>🏙️ @user.City</span> }
+                                    @if (!string.IsNullOrEmpty(user.Municipality)) { <span>📍 @user.Municipality</span> }
+                                    <span class="ipt">🌐 @(user.LastIp ?? "—")</span>
                                     @if (user.Latitude != null && user.Longitude != null)
                                     {
-                                        <a target="_blank" class="map-link"
-                                           href="https://maps.google.com/?q=@(user.Latitude.Value.ToString("F6", System.Globalization.CultureInfo.InvariantCulture)),@(user.Longitude.Value.ToString("F6", System.Globalization.CultureInfo.InvariantCulture))">
-                                            🗺️ Ver mapa
-                                        </a>
+                                        <a target="_blank" class="ml" href="https://maps.google.com/?q=@(user.Latitude.Value.ToString("F6",System.Globalization.CultureInfo.InvariantCulture)),@(user.Longitude.Value.ToString("F6",System.Globalization.CultureInfo.InvariantCulture))">🗺️ Ver mapa</a>
                                     }
                                     @if (isSuperAdmin && user.Id != myId)
                                     {
                                         @if (isBlockedIp)
                                         {
                                             <form asp-controller="Admin" asp-action="UnblockIP" method="post" style="margin:0">
-                                                <input type="hidden" name="ip" value="@user.LastIp" />
-                                                <button class="ip-btn unblock" onclick="return confirm('¿Desbloquear IP?')">🔓 Desbloquear IP</button>
+                                                <input type="hidden" name="ip" value="@user.LastIp"/>
+                                                <button class="ipb ub" onclick="return confirm('¿Desbloquear IP?')">🔓 Desbloquear IP</button>
                                             </form>
                                         }
                                         else
                                         {
                                             <form asp-controller="Admin" asp-action="BlockIP" method="post" style="margin:0" onsubmit="return confirm('¿Bloquear IP?')">
-                                                <input type="hidden" name="ip" value="@user.LastIp" />
-                                                <button type="submit" class="ip-btn block">🚫 Bloquear IP</button>
+                                                <input type="hidden" name="ip" value="@user.LastIp"/>
+                                                <button type="submit" class="ipb bl">🚫 Bloquear IP</button>
                                             </form>
                                         }
                                     }
                                 </div>
                             }
-                            else { <span class="text-muted">—</span> }
+                            else { <span style="color:#9ca3af;">—</span> }
                         </td>
-                        <td class="text-sm">
+                        <td>
                             @if (user.Role != "SuperAdmin")
                             {
-                                <div class="device-cell">
+                                <div class="dc">
                                     @if (!string.IsNullOrEmpty(user.OperatingSystem)) { <span>🖥️ @user.OperatingSystem</span> }
                                     @if (!string.IsNullOrEmpty(user.Device)) { <span>📱 @user.Device</span> }
                                     @if (!string.IsNullOrEmpty(user.Browser)) { <span>🌐 @user.Browser</span> }
                                 </div>
                             }
-                            else { <span class="text-muted">—</span> }
+                            else { <span style="color:#9ca3af;">—</span> }
                         </td>
                         <td>
-                            <div class="actions-cell">
-                                @if (user.Role == "SuperAdmin")
-                                { <span class="badge owner">Propietario</span> }
-                                else if (user.Id == myId)
-                                { <span class="badge guest">Tu cuenta</span> }
+                            <div class="acc">
+                                @if (user.Role == "SuperAdmin") { <span class="bd ow">Propietario</span> }
+                                else if (user.Id == myId) { <span class="bd gu">Tu cuenta</span> }
                                 else
                                 {
                                     if (!user.IsActive)
                                     {
-                                        <a asp-controller="Admin" asp-action="ReactivateUser" asp-route-id="@user.Id"
-                                           class="action-btn success" onclick="return confirm('¿Reactivar?')">🔓 Reactivar</a>
+                                        <a asp-controller="Admin" asp-action="ReactivateUser" asp-route-id="@user.Id" class="ab su" onclick="return confirm('¿Reactivar?')">🔓 Reactivar</a>
                                     }
                                     else if (user.IsBanned)
                                     {
-                                        <a asp-controller="Admin" asp-action="UnbanUser" asp-route-id="@user.Id"
-                                           class="action-btn success" onclick="return confirm('¿Desbanear?')">🔓 Desbanear</a>
+                                        <a asp-controller="Admin" asp-action="UnbanUser" asp-route-id="@user.Id" class="ab su" onclick="return confirm('¿Desbanear?')">🔓 Desbanear</a>
                                     }
                                     else
                                     {
                                         if (isAdminUser && !isSuperAdmin)
                                         {
-                                            <button class="action-btn danger" onclick="mostrarAdvertenciaAdmin()">🔒 Desactivar</button>
-                                            <button class="action-btn warning" onclick="mostrarAdvertenciaAdmin()">🚫 Banear</button>
+                                            <button class="ab da" onclick="mostrarWarn()">🔒 Desactivar</button>
+                                            <button class="ab wa" onclick="mostrarWarn()">🚫 Banear</button>
                                         }
                                         else
                                         {
-                                            <button class="action-btn danger" onclick="confirmDelete(@user.Id)">🔒 Desactivar</button>
-                                            <a asp-controller="Admin" asp-action="BanUser" asp-route-id="@user.Id"
-                                               class="action-btn warning" onclick="return confirm('¿Banear este usuario?')">🚫 Banear</a>
+                                            <button class="ab da" onclick="confirmDelete(@user.Id)">🔒 Desactivar</button>
+                                            <a asp-controller="Admin" asp-action="BanUser" asp-route-id="@user.Id" class="ab wa" onclick="return confirm('¿Banear?')">🚫 Banear</a>
                                         }
-
                                         @if (isSuperAdmin)
                                         {
-                                            <a asp-controller="Admin" asp-action="DeleteUserPermanently" asp-route-id="@user.Id"
-                                               class="action-btn delete" onclick="return confirm('¿Eliminar permanentemente? Esta acción no se puede deshacer.')">💀 Eliminar</a>
-
+                                            <a asp-controller="Admin" asp-action="DeleteUserPermanently" asp-route-id="@user.Id" class="ab dl" onclick="return confirm('¿Eliminar permanentemente?')">💀 Eliminar</a>
                                             if (user.Role == "Admin")
+                                            { <a href="#" class="ab se" onclick="event.preventDefault();confirmRemoveAdmin(@user.Id)">⬇️ Quitar Admin</a> }
+                                            else
+                                            { <a asp-controller="Admin" asp-action="MakeAdmin" asp-route-id="@user.Id" class="ab pr2" onclick="return confirm('¿Hacer Admin?')">⬆️ Hacer Admin</a> }
+
+                                            @if (user.IsIpBlocked)
                                             {
-                                                <a href="#" class="action-btn secondary" onclick="event.preventDefault();confirmRemoveAdmin(@user.Id)">⬇️ Quitar Admin</a>
+                                                <button class="ab ub2" onclick="desbloquearConexion(@user.Id,'@user.Username')" data-no-loader="true">🔓 Desbloquear conexión</button>
                                             }
                                             else
                                             {
-                                                <a asp-controller="Admin" asp-action="MakeAdmin" asp-route-id="@user.Id"
-                                                   class="action-btn primary" onclick="return confirm('¿Hacer Admin?')">⬆️ Hacer Admin</a>
+                                                <button class="ab bc" onclick="confirmarBloquearConexion(@user.Id,'@user.Username')" data-no-loader="true">🔌 Bloquear conexión</button>
                                             }
-
-                                           @if (user.IsIpBlocked)
-{
-    <button class="action-btn success" onclick="desbloquearConexion(@user.Id, '@user.Username')" data-no-loader="true">
-        🔓 Desbloquear conexión
-    </button>
-}
-else
-{
-    <button class="action-btn block-conn" onclick="confirmarBloquearConexion(@user.Id, '@user.Username')" data-no-loader="true">
-        🔌 Bloquear conexión
-    </button>
-}
                                         }
                                     }
-
                                     @if (isSuperAdmin && user.Id != myId)
                                     {
                                         <form asp-controller="Admin" asp-action="ResetPassword" method="post" style="display:inline">
-                                            <input type="hidden" name="userId" value="@user.Id" />
-                                            <button class="action-btn neutral" onclick="return confirm('¿Resetear contraseña?')">🔑 Reset</button>
+                                            <input type="hidden" name="userId" value="@user.Id"/>
+                                            <button class="ab ne" onclick="return confirm('¿Resetear contraseña?')">🔑 Reset</button>
                                         </form>
                                     }
                                 }
@@ -343,144 +438,108 @@ else
         </table>
     </div>
 
-    <!-- CARDS MÓVIL -->
-    <div class="mobile-cards">
+    <!-- MOBILE CARDS -->
+    <div class="mc2">
         @foreach (var user in Model)
         {
             var blockedIps = ViewBag.BlockedIps as List<string> ?? new List<string>();
             bool isBlockedIp = user.LastIp != null && blockedIps.Contains(user.LastIp);
             bool isAdminUser = user.Role == "Admin";
+            var photo = user.ProfileImage ?? user.ProfilePicture ?? "";
 
-            <div class="mobile-card user-row" data-username="@user.Username.ToLower()">
-                <div class="mobile-card-top">
-                    <div class="user-cell">
+            <div class="mcard user-row" data-username="@user.Username.ToLower()">
+                <div class="mct">
+                    <div class="uc">
                         @if (user.Role == "SuperAdmin")
                         {
-                            @if (!string.IsNullOrEmpty(user.ProfileImage))
-                            { <img src="@user.ProfileImage" class="user-thumb" /> }
-                            else
-                            { <div class="user-thumb-letter">@user.Username.Substring(0,1).ToUpper()</div> }
+                            @if (!string.IsNullOrEmpty(photo)) { <img src="@photo" class="uth"/> }
+                            else { <div class="utl">@user.Username.Substring(0,1).ToUpper()</div> }
                         }
                         else
                         {
                             <a href="/User/Profile/@user.Id" style="text-decoration:none;">
-                                @if (!string.IsNullOrEmpty(user.ProfileImage))
-                                { <img src="@user.ProfileImage" class="user-thumb" /> }
-                                else
-                                { <div class="user-thumb-letter">@user.Username.Substring(0,1).ToUpper()</div> }
+                                @if (!string.IsNullOrEmpty(photo)) { <img src="@photo" class="uth"/> }
+                                else { <div class="utl">@user.Username.Substring(0,1).ToUpper()</div> }
                             </a>
                         }
                         <div>
-                            @if (user.Role == "SuperAdmin")
-                            { <div class="user-name">@user.Username</div> }
-                            else
-                            { <a href="/User/Profile/@user.Id" class="user-name" style="text-decoration:none;color:inherit;">@user.Username</a> }
-                            <div style="display:flex;gap:4px;margin-top:3px;flex-wrap:wrap;">
-                                @if (user.Role == "SuperAdmin") { <span class="badge owner">👑 SuperAdmin</span> }
-                                else if (user.Role == "Admin") { <span class="badge admin">🛡️ Admin</span> }
-                                @if (user.IsPremium) { <span class="badge premium">✨ Pro</span> }
+                            @if (user.Role == "SuperAdmin") { <div class="un">@user.Username</div> }
+                            else { <a href="/User/Profile/@user.Id" class="un" style="text-decoration:none;color:inherit;">@user.Username</a> }
+                            <div style="display:flex;gap:3px;margin-top:3px;flex-wrap:wrap;">
+                                @if (user.Role == "SuperAdmin") { <span class="bd ow">👑 SuperAdmin</span> }
+                                else if (user.Role == "Admin") { <span class="bd ad">🛡️ Admin</span> }
+                                @if (user.IsPremium) { <span class="bd pr">✨ Pro</span> }
                             </div>
                         </div>
                     </div>
                     <div id="status-mob-@user.Id">
-                        @if (user.IsBanned) { <span class="status-tag banned">🚫</span> }
-                        else if (!user.IsActive) { <span class="status-tag inactive">⚠️</span> }
-                        else if (user.LastOnline != null && (DateTime.Now - user.LastOnline.Value).TotalSeconds < 60)
-                        { <span class="status-tag active">🟢</span> }
-                        else { <span class="status-tag offline">⚫</span> }
+                        @if (user.IsBanned) { <span class="st bn">🚫</span> }
+                        else if (!user.IsActive) { <span class="st in">⚠️</span> }
+                        else if (user.LastOnline != null && (DateTime.Now - user.LastOnline.Value).TotalSeconds < 60) { <span class="st a">🟢</span> }
+                        else { <span class="st of">⚫</span> }
                     </div>
                 </div>
 
                 @if (user.Role != "SuperAdmin")
                 {
-                    <div class="mobile-info">
-                        <div class="mobile-info-row">
-                            <span class="mobile-info-icon">📧</span>
-                            <span>@(user.Role == "Guest" ? "Usuario invitado" : (user.Email ?? "—"))</span>
-                        </div>
-                        @if (!string.IsNullOrEmpty(user.Country))
-                        {
-                            <div class="mobile-info-row">
-                                <span class="mobile-info-icon">🌍</span>
-                                <span>@user.Country @(!string.IsNullOrEmpty(user.City) ? $"· {user.City}" : "")</span>
-                            </div>
-                        }
-                        @if (!string.IsNullOrEmpty(user.Municipality))
-                        {
-                            <div class="mobile-info-row">
-                                <span class="mobile-info-icon">📍</span>
-                                <span>@user.Municipality</span>
-                            </div>
-                        }
-                        <div class="mobile-info-row">
-                            <span class="mobile-info-icon">🌐</span>
-                            <span>@(user.LastIp ?? "—")</span>
-                        </div>
+                    <div class="mi">
+                        <div class="mir"><span class="mic">📧</span><span>@(user.Role == "Guest" ? "Invitado" : (user.Email ?? "—"))</span></div>
+                        @if (!string.IsNullOrEmpty(user.Country)) { <div class="mir"><span class="mic">🌍</span><span>@user.Country @(!string.IsNullOrEmpty(user.City) ? $"· {user.City}" : "")</span></div> }
+                        @if (!string.IsNullOrEmpty(user.Municipality)) { <div class="mir"><span class="mic">📍</span><span>@user.Municipality</span></div> }
+                        <div class="mir"><span class="mic">🌐</span><span>@(user.LastIp ?? "—")</span></div>
                         @if (!string.IsNullOrEmpty(user.Device) || !string.IsNullOrEmpty(user.Browser))
-                        {
-                            <div class="mobile-info-row">
-                                <span class="mobile-info-icon">💻</span>
-                                <span>@(user.Device ?? "") @(!string.IsNullOrEmpty(user.Browser) ? $"· {user.Browser}" : "")</span>
-                            </div>
-                        }
+                        { <div class="mir"><span class="mic">💻</span><span>@(user.Device ?? "") @(!string.IsNullOrEmpty(user.Browser) ? $"· {user.Browser}" : "")</span></div> }
                         @if (user.Latitude != null && user.Longitude != null)
                         {
-                            <a target="_blank" class="map-link"
-                               href="https://maps.google.com/?q=@(user.Latitude.Value.ToString("F6", System.Globalization.CultureInfo.InvariantCulture)),@(user.Longitude.Value.ToString("F6", System.Globalization.CultureInfo.InvariantCulture))">
-                                🗺️ Ver en mapa
-                            </a>
+                            <a target="_blank" class="ml" href="https://maps.google.com/?q=@(user.Latitude.Value.ToString("F6",System.Globalization.CultureInfo.InvariantCulture)),@(user.Longitude.Value.ToString("F6",System.Globalization.CultureInfo.InvariantCulture))">🗺️ Ver en mapa</a>
                         }
                     </div>
                 }
 
-                <div class="actions-cell" style="margin-top:10px;">
-                    @if (user.Role == "SuperAdmin")
-                    { <span class="badge owner">Propietario</span> }
-                    else if (user.Id == myId)
-                    { <span class="badge guest">Tu cuenta</span> }
+                <div class="acc" style="margin-top:10px;">
+                    @if (user.Role == "SuperAdmin") { <span class="bd ow">Propietario</span> }
+                    else if (user.Id == myId) { <span class="bd gu">Tu cuenta</span> }
                     else
                     {
                         if (!user.IsActive)
-                        {
-                            <a asp-controller="Admin" asp-action="ReactivateUser" asp-route-id="@user.Id"
-                               class="action-btn success" onclick="return confirm('¿Reactivar?')">🔓 Reactivar</a>
-                        }
+                        { <a asp-controller="Admin" asp-action="ReactivateUser" asp-route-id="@user.Id" class="ab su" onclick="return confirm('¿Reactivar?')">🔓 Reactivar</a> }
                         else if (user.IsBanned)
-                        {
-                            <a asp-controller="Admin" asp-action="UnbanUser" asp-route-id="@user.Id"
-                               class="action-btn success" onclick="return confirm('¿Desbanear?')">🔓 Desbanear</a>
-                        }
+                        { <a asp-controller="Admin" asp-action="UnbanUser" asp-route-id="@user.Id" class="ab su" onclick="return confirm('¿Desbanear?')">🔓 Desbanear</a> }
                         else
                         {
                             if (isAdminUser && !isSuperAdmin)
                             {
-                                <button class="action-btn danger" onclick="mostrarAdvertenciaAdmin()">🔒 Desactivar</button>
-                                <button class="action-btn warning" onclick="mostrarAdvertenciaAdmin()">🚫 Banear</button>
+                                <button class="ab da" onclick="mostrarWarn()">🔒 Desactivar</button>
+                                <button class="ab wa" onclick="mostrarWarn()">🚫 Banear</button>
                             }
                             else
                             {
-                                <button class="action-btn danger" onclick="confirmDelete(@user.Id)">🔒 Desactivar</button>
-                                <a asp-controller="Admin" asp-action="BanUser" asp-route-id="@user.Id"
-                                   class="action-btn warning" onclick="return confirm('¿Banear?')">🚫 Banear</a>
+                                <button class="ab da" onclick="confirmDelete(@user.Id)">🔒 Desactivar</button>
+                                <a asp-controller="Admin" asp-action="BanUser" asp-route-id="@user.Id" class="ab wa" onclick="return confirm('¿Banear?')">🚫 Banear</a>
                             }
-
                             @if (isSuperAdmin)
                             {
-                                <a asp-controller="Admin" asp-action="DeleteUserPermanently" asp-route-id="@user.Id"
-                                   class="action-btn delete" onclick="return confirm('¿Eliminar permanentemente?')">💀 Eliminar</a>
+                                <a asp-controller="Admin" asp-action="DeleteUserPermanently" asp-route-id="@user.Id" class="ab dl" onclick="return confirm('¿Eliminar?')">💀 Eliminar</a>
                                 if (user.Role == "Admin")
-                                { <a href="#" class="action-btn secondary" onclick="event.preventDefault();confirmRemoveAdmin(@user.Id)">⬇️ Quitar Admin</a> }
+                                { <a href="#" class="ab se" onclick="event.preventDefault();confirmRemoveAdmin(@user.Id)">⬇️ Quitar Admin</a> }
                                 else
-                                { <a asp-controller="Admin" asp-action="MakeAdmin" asp-route-id="@user.Id" class="action-btn primary" onclick="return confirm('¿Hacer Admin?')">⬆️ Hacer Admin</a> }
-                                <button class="action-btn block-conn" onclick="confirmarBloquearConexion(@user.Id, '@user.Username')">🔌 Bloquear conexión</button>
+                                { <a asp-controller="Admin" asp-action="MakeAdmin" asp-route-id="@user.Id" class="ab pr2" onclick="return confirm('¿Hacer Admin?')">⬆️ Hacer Admin</a> }
+
+                                @if (user.IsIpBlocked)
+                                {
+                                    <button class="ab ub2" onclick="desbloquearConexion(@user.Id,'@user.Username')" data-no-loader="true">🔓 Desbloquear conexión</button>
+                                }
+                                else
+                                {
+                                    <button class="ab bc" onclick="confirmarBloquearConexion(@user.Id,'@user.Username')" data-no-loader="true">🔌 Bloquear conexión</button>
+                                }
                             }
                         }
-
                         @if (isSuperAdmin && user.Id != myId)
                         {
                             <form asp-controller="Admin" asp-action="ResetPassword" method="post" style="display:inline">
-                                <input type="hidden" name="userId" value="@user.Id" />
-                                <button class="action-btn neutral" onclick="return confirm('¿Resetear contraseña?')">🔑 Reset</button>
+                                <input type="hidden" name="userId" value="@user.Id"/>
+                                <button class="ab ne" onclick="return confirm('¿Resetear?')">🔑 Reset</button>
                             </form>
                         }
                     }
@@ -491,374 +550,105 @@ else
 
 </div>
 
-<style>
-* { font-family: 'Plus Jakarta Sans', sans-serif; }
-.admin-page { max-width: 1200px; margin: 0 auto; padding-bottom: 40px; }
-
-/* ══ HERO ══ */
-.admin-hero {
-    background: linear-gradient(135deg, #0f172a, #1e293b);
-    border-radius: 24px; padding: 22px 24px; margin-bottom: 16px;
-    display: flex; align-items: center; gap: 16px;
-    border: 1px solid rgba(255,255,255,0.06); position: relative; overflow: hidden;
-}
-.admin-hero::before {
-    content:''; position:absolute; top:-50px; right:-50px;
-    width:200px; height:200px;
-    background: radial-gradient(circle, rgba(99,102,241,0.15), transparent 70%);
-    border-radius:50%; pointer-events:none;
-}
-.admin-hero-mascot {
-    width:64px; height:64px; border-radius:16px; object-fit:cover; flex-shrink:0;
-    border:2px solid rgba(99,102,241,0.4); box-shadow:0 0 0 5px rgba(99,102,241,0.08);
-    animation:floatM 3s ease-in-out infinite; position:relative; z-index:1;
-}
-@@keyframes floatM { 0%,100%{transform:translateY(0);} 50%{transform:translateY(-5px);} }
-@@keyframes warnBounce { from{transform:scale(0.6) rotate(-10deg);opacity:0;} to{transform:scale(1) rotate(0);opacity:1;} }
-.admin-hero-info { flex:1; position:relative; z-index:1; }
-.admin-hero-badge {
-    display:inline-flex; align-items:center; gap:5px;
-    background:rgba(99,102,241,0.12); border:1px solid rgba(99,102,241,0.25);
-    border-radius:20px; padding:3px 10px;
-    font-size:11px; font-weight:700; color:#818cf8; margin-bottom:6px;
-}
-.admin-hero-title { font-size:18px; font-weight:800; color:white; margin-bottom:3px; }
-.admin-hero-sub { font-size:12px; color:rgba(255,255,255,0.35); }
-.admin-hero-right { position:relative; z-index:1; flex-shrink:0; text-align:center; }
-.connection-pill {
-    display:inline-flex; align-items:center; gap:6px;
-    padding:6px 14px; border-radius:20px; font-size:12px; font-weight:700;
-}
-.connection-pill.active { background:rgba(34,197,94,0.12); border:1px solid rgba(34,197,94,0.25); color:#22c55e; }
-.connection-pill.blocked { background:rgba(239,68,68,0.12); border:1px solid rgba(239,68,68,0.25); color:#ef4444; }
-.conn-dot { width:7px; height:7px; border-radius:50%; }
-.conn-dot.green { background:#22c55e; box-shadow:0 0 6px rgba(34,197,94,0.6); }
-.conn-dot.red { background:#ef4444; box-shadow:0 0 6px rgba(239,68,68,0.6); animation:pulseDot 1.5s infinite; }
-@@keyframes pulseDot { 0%,100%{opacity:1;} 50%{opacity:0.4;} }
-.conn-action-btn {
-    padding:7px 14px; border-radius:10px; border:none; font-size:12px; font-weight:700;
-    cursor:pointer; transition:0.2s; font-family:inherit; width:100%;
-}
-.conn-action-btn.restore { background:rgba(34,197,94,0.15); color:#22c55e; border:1px solid rgba(34,197,94,0.3); }
-.conn-action-btn.restore:hover { background:#22c55e; color:white; }
-.conn-action-btn.block { background:rgba(239,68,68,0.15); color:#ef4444; border:1px solid rgba(239,68,68,0.3); }
-.conn-action-btn.block:hover { background:#ef4444; color:white; }
-
-/* ══ KPIs ══ */
-.kpi-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:14px; }
-.kpi-card {
-    background:white; border-radius:16px; padding:14px;
-    display:flex; align-items:center; gap:10px;
-    box-shadow:0 2px 8px rgba(0,0,0,0.05); border:1px solid rgba(0,0,0,0.04); transition:0.2s;
-}
-.kpi-card:hover, .kpi-clickable:hover { transform:translateY(-2px); box-shadow:0 8px 20px rgba(0,0,0,0.1); }
-.kpi-clickable { cursor:pointer; }
-.kpi-icon-wrap { width:38px; height:38px; border-radius:11px; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:18px; }
-.kpi-icon-wrap.blue { background:rgba(37,99,235,0.1); }
-.kpi-icon-wrap.red { background:rgba(239,68,68,0.1); }
-.kpi-icon-wrap.yellow { background:rgba(217,119,6,0.1); }
-.kpi-icon-wrap.green { background:rgba(22,163,74,0.1); }
-.kpi-val { font-size:22px; font-weight:800; color:#111827; line-height:1; }
-.kpi-val.red { color:#dc2626; }
-.kpi-val.yellow { color:#d97706; }
-.kpi-val.green { color:#16a34a; }
-.kpi-lbl { font-size:10px; color:#9ca3af; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; margin-top:2px; }
-
-/* ══ QUICK ACTIONS ══ */
-.quick-actions { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:14px; }
-.quick-btn {
-    padding:9px 16px; border-radius:10px; font-size:12px; font-weight:700;
-    text-decoration:none; border:none; cursor:pointer; transition:0.2s; font-family:inherit;
-}
-.quick-btn.neutral { background:#f3f4f6; color:#374151; border:1px solid #e5e7eb; }
-.quick-btn.neutral:hover { background:#e5e7eb; }
-.quick-btn.red { background:#fef2f2; color:#dc2626; border:1px solid #fecaca; }
-.quick-btn.red:hover { background:#dc2626; color:white; }
-.quick-btn.yellow { background:#fef3c7; color:#d97706; border:1px solid #fde68a; }
-.quick-btn.yellow:hover { background:#d97706; color:white; }
-
-.info-pill { padding:10px 16px; border-radius:12px; margin-bottom:14px; font-size:13px; font-weight:600; }
-.info-pill.green { background:#f0fdf4; color:#166534; border:1px solid #86efac; }
-
-/* ══ SEARCH ══ */
-.search-wrap { position:relative; margin-bottom:16px; max-width:420px; }
-.search-icon { position:absolute; left:14px; top:50%; transform:translateY(-50%); font-size:15px; }
-.search-input {
-    width:100%; padding:11px 16px 11px 42px; border:1.5px solid #e5e7eb;
-    border-radius:50px; font-size:13px; outline:none; transition:0.2s;
-    box-sizing:border-box; background:white; font-family:inherit;
-}
-.search-input:focus { border-color:#6366f1; box-shadow:0 0 0 3px rgba(99,102,241,0.1); }
-
-/* ══ TABLE ══ */
-.table-wrap { overflow-x:auto; background:white; border-radius:20px; box-shadow:0 2px 12px rgba(0,0,0,0.06); border:1px solid rgba(0,0,0,0.04); margin-bottom:16px; }
-.mobile-cards { display:none; }
-@@media (max-width:768px) { .table-wrap { display:none; } .mobile-cards { display:flex; flex-direction:column; gap:10px; } .kpi-grid { grid-template-columns:repeat(2,1fr); } .admin-hero { flex-wrap:wrap; } }
-
-.users-table { width:100%; border-collapse:collapse; min-width:900px; }
-.users-table thead th {
-    padding:12px 14px; font-size:10px; font-weight:700; color:#6b7280;
-    text-transform:uppercase; letter-spacing:0.5px; border-bottom:1px solid #f3f4f6;
-    white-space:nowrap; background:white;
-}
-.users-table tbody tr:hover { background:#f9fafb; }
-.users-table td { padding:12px 14px; border-bottom:1px solid #f9fafb; vertical-align:top; }
-
-/* ══ USER CELL ══ */
-.user-cell { display:flex; align-items:center; gap:10px; }
-.user-thumb { width:38px; height:38px; border-radius:50%; object-fit:cover; border:2px solid #e5e7eb; flex-shrink:0; }
-.user-thumb-letter {
-    width:38px; height:38px; border-radius:50%; flex-shrink:0;
-    background:linear-gradient(135deg,#2563eb,#7c3aed); color:white;
-    display:flex; align-items:center; justify-content:center; font-weight:800; font-size:14px;
-}
-.user-name { font-weight:700; color:#111827; font-size:13px; }
-.text-sm { font-size:12px; }
-.text-muted { color:#9ca3af; }
-
-/* ══ BADGES ══ */
-.badge { display:inline-flex; align-items:center; padding:2px 7px; border-radius:20px; font-size:10px; font-weight:700; }
-.badge.owner { background:#111827; color:white; }
-.badge.admin { background:#dbeafe; color:#1d4ed8; }
-.badge.guest { background:#f3f4f6; color:#6b7280; }
-.badge.premium { background:#fef3c7; color:#d97706; }
-.badge.google { background:#4285f4; color:white; }
-
-/* ══ STATUS ══ */
-.status-tag { display:inline-flex; align-items:center; padding:3px 10px; border-radius:20px; font-size:11px; font-weight:700; white-space:nowrap; }
-.status-tag.active { background:#dcfce7; color:#16a34a; }
-.status-tag.banned { background:#fee2e2; color:#dc2626; }
-.status-tag.inactive { background:#fef3c7; color:#d97706; }
-.status-tag.offline { background:#f3f4f6; color:#9ca3af; }
-
-/* ══ LOCATION ══ */
-.location-cell { display:flex; flex-direction:column; gap:3px; }
-.location-cell span { font-size:11px; color:#374151; }
-.ip-text { color:#9ca3af !important; font-size:10px !important; }
-.map-link { color:#2563eb; font-size:11px; font-weight:600; text-decoration:none; }
-.map-link:hover { text-decoration:underline; }
-.ip-btn { padding:3px 8px; border-radius:6px; border:none; cursor:pointer; font-size:11px; font-weight:600; font-family:inherit; margin-top:2px; }
-.ip-btn.block { background:#fee2e2; color:#dc2626; }
-.ip-btn.block:hover { background:#dc2626; color:white; }
-.ip-btn.unblock { background:#dcfce7; color:#16a34a; }
-.ip-btn.unblock:hover { background:#16a34a; color:white; }
-
-/* ══ DEVICE ══ */
-.device-cell { display:flex; flex-direction:column; gap:3px; }
-.device-cell span { font-size:11px; color:#374151; }
-
-/* ══ ACTIONS ══ */
-.actions-cell { display:flex; flex-wrap:wrap; gap:5px; }
-.action-btn {
-    padding:5px 10px; border-radius:8px; font-size:11px; font-weight:700;
-    cursor:pointer; border:none; text-decoration:none; transition:0.15s;
-    display:inline-flex; align-items:center; gap:3px; font-family:inherit;
-}
-.action-btn.success { background:#dcfce7; color:#16a34a; }
-.action-btn.success:hover { background:#16a34a; color:white; }
-.action-btn.danger { background:#fee2e2; color:#dc2626; }
-.action-btn.danger:hover { background:#dc2626; color:white; }
-.action-btn.warning { background:#fef3c7; color:#d97706; }
-.action-btn.warning:hover { background:#d97706; color:white; }
-.action-btn.delete { background:#f3f4f6; color:#6b7280; }
-.action-btn.delete:hover { background:#6b7280; color:white; }
-.action-btn.primary { background:#dbeafe; color:#2563eb; }
-.action-btn.primary:hover { background:#2563eb; color:white; }
-.action-btn.secondary { background:#f3f4f6; color:#374151; }
-.action-btn.secondary:hover { background:#374151; color:white; }
-.action-btn.neutral { background:#f3f4f6; color:#374151; }
-.action-btn.neutral:hover { background:#374151; color:white; }
-.action-btn.block-conn { background:linear-gradient(135deg,rgba(99,102,241,0.1),rgba(37,99,235,0.1)); color:#4f46e5; border:1px solid rgba(99,102,241,0.2); }
-.action-btn.block-conn:hover { background:linear-gradient(135deg,#6366f1,#2563eb); color:white; border-color:transparent; }
-
-/* ══ MOBILE CARDS ══ */
-.mobile-card {
-    background:white; border-radius:16px; padding:16px;
-    box-shadow:0 2px 8px rgba(0,0,0,0.06); border:1px solid rgba(0,0,0,0.04);
-}
-.mobile-card-top { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px; }
-.mobile-info {
-    background:#f9fafb; border-radius:12px; padding:10px 12px;
-    margin-bottom:12px; display:flex; flex-direction:column; gap:6px;
-}
-.mobile-info-row { display:flex; align-items:flex-start; gap:8px; font-size:12px; color:#4b5563; }
-.mobile-info-icon { flex-shrink:0; width:16px; text-align:center; }
-
-/* ══ CODE MODAL ══ */
-.code-modal {
-    position:fixed; top:0; left:0; width:100%; height:100%;
-    background:rgba(0,0,0,0.7); display:none;
-    align-items:center; justify-content:center; z-index:9999; backdrop-filter:blur(8px);
-}
-.code-box {
-    background:linear-gradient(135deg,#1e293b,#0f172a); padding:32px 28px;
-    border-radius:24px; width:320px; text-align:center; color:white;
-    border:1px solid rgba(255,255,255,0.08); box-shadow:0 30px 60px rgba(0,0,0,0.5);
-}
-.code-box input {
-    width:100%; padding:12px; border-radius:12px; border:1.5px solid rgba(255,255,255,0.1);
-    background:rgba(255,255,255,0.05); margin-top:4px; font-size:20px;
-    text-align:center; letter-spacing:6px; color:white; outline:none; box-sizing:border-box;
-    font-family:inherit;
-}
-.code-box input:focus { border-color:#6366f1; }
-.code-error { color:#f87171; font-size:12px; margin-top:8px; min-height:18px; }
-.code-actions { margin-top:16px; display:flex; gap:8px; }
-.code-actions button {
-    flex:1; padding:10px; border-radius:12px; border:none;
-    font-weight:700; cursor:pointer; font-size:13px; font-family:inherit; transition:0.2s;
-}
-.code-actions button:first-child { background:linear-gradient(135deg,#6366f1,#2563eb); color:white; }
-.code-actions button:last-child { background:rgba(255,255,255,0.08); color:rgba(255,255,255,0.5); }
-
-/* ══ DARK MODE ══ */
-body.bg-dark .kpi-card,
-body.bg-dark .table-wrap,
-body.bg-dark .mobile-card { background:#1e293b !important; border-color:#2d3748 !important; }
-body.bg-dark .kpi-val { color:#f1f5f9 !important; }
-body.bg-dark .user-name { color:#f1f5f9 !important; }
-body.bg-dark .users-table thead th { color:#64748b !important; border-color:#2d3748 !important; background:#1e293b !important; }
-body.bg-dark .users-table tbody tr:hover { background:#2d3748 !important; }
-body.bg-dark .users-table td { border-color:#2d3748 !important; }
-body.bg-dark .search-input { background:#1e293b !important; border-color:#334155 !important; color:#f1f5f9 !important; }
-body.bg-dark .mobile-info { background:#2d3748 !important; }
-body.bg-dark .mobile-info-row { color:#94a3b8 !important; }
-body.bg-dark .location-cell span { color:#94a3b8 !important; }
-body.bg-dark .device-cell span { color:#94a3b8 !important; }
-body.bg-dark .kpi-lbl { color:#64748b !important; }
-body.bg-dark .action-btn.neutral { background:#2d3748 !important; color:#94a3b8 !important; }
-body.bg-dark .quick-btn.neutral { background:#1e293b !important; color:#94a3b8 !important; border-color:#334155 !important; }
-</style>
-
 <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
 <script>
-const connection = new signalR.HubConnectionBuilder().withUrl("/chatHub").build();
-connection.start().catch(err => console.error(err));
+// ── GSAP ANIMATIONS
+gsap.from(".ah",{opacity:0,y:-20,duration:0.7,ease:"expo.out"});
+gsap.from(".kc",{opacity:0,y:20,duration:0.5,stagger:0.08,delay:0.3,ease:"back.out(1.4)"});
+gsap.from(".qa",{opacity:0,y:10,duration:0.4,delay:0.6,ease:"power2.out"});
+gsap.from(".tw, .mc2",{opacity:0,y:20,duration:0.6,delay:0.5,ease:"power2.out"});
 
-connection.on("UserOnline", userId => {
-    const html = '<span class="status-tag active">🟢 Activo</span>';
-    const c = document.getElementById("status-" + userId);
-    const m = document.getElementById("status-mob-" + userId);
-    if (c) c.innerHTML = html;
-    if (m) m.innerHTML = '<span class="status-tag active">🟢</span>';
-    const counter = document.getElementById("activeUsers");
-    if (counter) counter.textContent = parseInt(counter.textContent) + 1;
+// ── SIGNALR
+const conn = new signalR.HubConnectionBuilder().withUrl("/chatHub").build();
+conn.start().catch(e=>console.error(e));
+
+conn.on("UserOnline",uid=>{
+    const c=document.getElementById("status-"+uid);
+    const m=document.getElementById("status-mob-"+uid);
+    if(c)c.innerHTML='<span class="st a">🟢 Activo</span>';
+    if(m)m.innerHTML='<span class="st a">🟢</span>';
+    const el=document.getElementById("activeUsers");
+    if(el)el.textContent=parseInt(el.textContent)+1;
+});
+conn.on("UserOffline",uid=>{
+    const c=document.getElementById("status-"+uid);
+    const m=document.getElementById("status-mob-"+uid);
+    if(c)c.innerHTML='<span class="st of">⚫ Inactivo</span>';
+    if(m)m.innerHTML='<span class="st of">⚫</span>';
+    const el=document.getElementById("activeUsers");
+    if(el)el.textContent=Math.max(0,parseInt(el.textContent)-1);
 });
 
-connection.on("UserOffline", userId => {
-    const html = '<span class="status-tag offline">⚫ Inactivo</span>';
-    const c = document.getElementById("status-" + userId);
-    const m = document.getElementById("status-mob-" + userId);
-    if (c) c.innerHTML = html;
-    if (m) m.innerHTML = '<span class="status-tag offline">⚫</span>';
-    const counter = document.getElementById("activeUsers");
-    if (counter) counter.textContent = Math.max(0, parseInt(counter.textContent) - 1);
+// ── SEARCH
+document.getElementById("searchUser").addEventListener("keyup",function(){
+    const v=this.value.toLowerCase();
+    document.querySelectorAll(".user-row").forEach(r=>r.style.display=r.dataset.username.includes(v)?"":"none");
 });
 
-document.getElementById("searchUser").addEventListener("keyup", function() {
-    const val = this.value.toLowerCase();
-    document.querySelectorAll(".user-row").forEach(row => {
-        row.style.display = row.dataset.username.includes(val) ? "" : "none";
-    });
-});
-function desbloquearConexion(userId, username) {
-    if (!confirm(`¿Desbloquear la conexión de ${username}?`)) return;
-    const token = document.querySelector('#antiForgeryForm input[name="__RequestVerificationToken"]').value;
-    fetch('/Admin/UnblockUserConnection', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': token },
-        body: JSON.stringify({ userId })
-    }).then(r => r.json()).then(data => {
-        if (data.success) {
-            mostrarToast(`🔓 Conexión de ${username} desbloqueada`);
-            setTimeout(() => location.reload(), 1500);
-        } else {
-            mostrarToast('⚠️ Error al desbloquear');
-        }
-    }).catch(() => mostrarToast('⚠️ Error de conexión'));
-}
+function showAll(){document.querySelectorAll(".user-row").forEach(r=>r.style.display="");}
 
-function confirmDelete(userId) {
-    if (confirm("¿Desactivar este usuario?")) window.location.href = "/Admin/DeleteUser/" + userId;
-}
-
-function confirmRemoveAdmin(userId) {
-    if (confirm("¿Quitar permisos de admin?")) window.location.href = "/Admin/RemoveAdmin/" + userId;
-}
-
-function pedirCodigoAdmin() { document.getElementById("codeModal").style.display = "flex"; }
-
-function cerrarModal() {
-    document.getElementById("codeModal").style.display = "none";
-    document.getElementById("codeInput").value = "";
-    document.getElementById("codeError").textContent = "";
-}
-
-function showAll() {
-    document.querySelectorAll(".user-row").forEach(row => row.style.display = "");
-}
-
-function filterByStatus(status) {
-    document.querySelectorAll(".user-row").forEach(row => {
-        const cell = row.querySelector("[id^='status-']");
-        if (!cell) return;
-        const text = cell.textContent.toLowerCase();
-        const show = status === 'banned' ? text.includes('baneado')
-            : status === 'inactive' ? text.includes('desactivado')
-            : status === 'active' ? (text.includes('activo') && !text.includes('inactivo') && !text.includes('desactivado'))
-            : true;
-        row.style.display = show ? "" : "none";
+function filterByStatus(s){
+    document.querySelectorAll(".user-row").forEach(r=>{
+        const c=r.querySelector("[id^='status-']");
+        if(!c)return;
+        const t=c.textContent.toLowerCase();
+        const show=s==='banned'?t.includes('baneado'):s==='inactive'?t.includes('desactivado'):s==='active'?(t.includes('activo')&&!t.includes('inactivo')&&!t.includes('desactivado')):true;
+        r.style.display=show?"":"none";
     });
 }
 
-function mostrarAdvertenciaAdmin() {
-    const overlay = document.getElementById("adminWarningOverlay");
-    overlay.style.display = "flex";
-    // Notificar al SuperAdmin via SignalR
-    connection.invoke("NotifyAdminAction").catch(() => {});
-    setTimeout(() => { overlay.style.display = "none"; }, 5000);
+function confirmDelete(id){if(confirm("¿Desactivar este usuario?"))window.location.href="/Admin/DeleteUser/"+id;}
+function confirmRemoveAdmin(id){if(confirm("¿Quitar admin?"))window.location.href="/Admin/RemoveAdmin/"+id;}
+function pedirCodigoAdmin(){document.getElementById("codeModal").style.display="flex";}
+function cerrarModal(){document.getElementById("codeModal").style.display="none";document.getElementById("codeInput").value="";document.getElementById("codeError").textContent="";}
+
+function mostrarWarn(){
+    const o=document.getElementById("warnOverlay");
+    o.style.display="flex";
+    conn.invoke("NotifyAdminAction").catch(()=>{});
+    setTimeout(()=>o.style.display="none",5000);
 }
 
-function confirmarBloquearConexion(userId, username) {
-    if (!confirm(`¿Bloquear completamente la conexión de ${username}? No podrá acceder a la plataforma desde ningún dispositivo ni red.`)) return;
-    const token = document.querySelector('#antiForgeryForm input[name="__RequestVerificationToken"]').value;
-    fetch('/Admin/BlockUserConnection', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': token },
-        body: JSON.stringify({ userId })
-    }).then(r => r.json()).then(data => {
-        if (data.success) {
-            mostrarToast(`🔌 Conexión de ${username} bloqueada`);
-        } else {
-            mostrarToast('⚠️ Error al bloquear');
-        }
-    }).catch(() => mostrarToast('⚠️ Error de conexión'));
+function confirmarBloquearConexion(userId,username){
+    if(!confirm(`¿Bloquear completamente la conexión de ${username}?`))return;
+    const token=document.querySelector('#antiForgeryForm input[name="__RequestVerificationToken"]').value;
+    fetch('/Admin/BlockUserConnection',{method:'POST',headers:{'Content-Type':'application/json','RequestVerificationToken':token},body:JSON.stringify({userId})})
+    .then(r=>r.json()).then(d=>{
+        if(d.success){toast(`🔌 Conexión de ${username} bloqueada`);setTimeout(()=>location.reload(),1500);}
+        else toast('⚠️ Error al bloquear');
+    }).catch(()=>toast('⚠️ Error de conexión'));
 }
 
-function mostrarToast(msg) {
-    const t = document.createElement("div");
-    t.textContent = msg;
-    t.style.cssText = "position:fixed;bottom:24px;right:24px;background:#1e293b;color:white;padding:12px 20px;border-radius:14px;font-size:13px;font-weight:600;z-index:99999;box-shadow:0 10px 30px rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.08);font-family:'Plus Jakarta Sans',sans-serif;";
+function desbloquearConexion(userId,username){
+    if(!confirm(`¿Desbloquear la conexión de ${username}?`))return;
+    const token=document.querySelector('#antiForgeryForm input[name="__RequestVerificationToken"]').value;
+    fetch('/Admin/UnblockUserConnection',{method:'POST',headers:{'Content-Type':'application/json','RequestVerificationToken':token},body:JSON.stringify({userId})})
+    .then(r=>r.json()).then(d=>{
+        if(d.success){toast(`🔓 Conexión de ${username} desbloqueada`);setTimeout(()=>location.reload(),1500);}
+        else toast('⚠️ Error al desbloquear');
+    }).catch(()=>toast('⚠️ Error de conexión'));
+}
+
+function toast(msg){
+    const t=document.createElement("div");
+    t.textContent=msg;
+    t.style.cssText="position:fixed;bottom:24px;right:24px;background:#0f172a;color:white;padding:12px 20px;border-radius:14px;font-size:13px;font-weight:600;z-index:99999;box-shadow:0 10px 30px rgba(0,0,0,0.4);border:1px solid rgba(255,255,255,0.08);font-family:'Plus Jakarta Sans',sans-serif;";
     document.body.appendChild(t);
-    setTimeout(() => { t.style.transition = 'opacity 0.3s'; t.style.opacity = '0'; setTimeout(() => t.remove(), 300); }, 3500);
+    gsap.from(t,{opacity:0,y:10,duration:0.3});
+    setTimeout(()=>{gsap.to(t,{opacity:0,duration:0.3,onComplete:()=>t.remove()});},3500);
 }
 
-function validarCodigo() {
-    const codigo = document.getElementById("codeInput").value.replace(/\D/g, '');
-    const error = document.getElementById("codeError");
-    if (!codigo) { error.textContent = "Debes escribir un código"; return; }
-    const token = document.querySelector('#antiForgeryForm input[name="__RequestVerificationToken"]').value;
-    fetch('/Admin/ValidateAccessCode', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': token },
-        body: JSON.stringify({ code: codigo })
-    }).then(res => res.json()).then(data => {
-        if (!data.success) { error.textContent = "❌ Código incorrecto"; return; }
+function validarCodigo(){
+    const c=document.getElementById("codeInput").value.replace(/\D/g,'');
+    const e=document.getElementById("codeError");
+    if(!c){e.textContent="Debes escribir un código";return;}
+    const token=document.querySelector('#antiForgeryForm input[name="__RequestVerificationToken"]').value;
+    fetch('/Admin/ValidateAccessCode',{method:'POST',headers:{'Content-Type':'application/json','RequestVerificationToken':token},body:JSON.stringify({code:c})})
+    .then(r=>r.json()).then(d=>{
+        if(!d.success){e.textContent="❌ Código incorrecto";return;}
         cerrarModal();
-        if (confirm("¿Bloquear la conexión global para todos?")) {
-            fetch('/Admin/ToggleConnectionBlock', { method: 'POST', headers: { 'RequestVerificationToken': token } })
-                .then(() => location.reload());
-        }
-    }).catch(() => { error.textContent = "⚠️ Error al validar"; });
+        if(confirm("¿Bloquear conexión global?"))
+            fetch('/Admin/ToggleConnectionBlock',{method:'POST',headers:{'RequestVerificationToken':token}}).then(()=>location.reload());
+    }).catch(()=>e.textContent="⚠️ Error al validar");
 }
 </script>
