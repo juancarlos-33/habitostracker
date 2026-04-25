@@ -238,29 +238,29 @@ body.bg-dark .qb.n{background:#1e293b!important;color:#94a3b8!important;border-c
     <!-- KPIs -->
  <!-- KPIs -->
 <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px;">
-    <div class="kc" onclick="showAll()">
-        <div class="kiw b">👥</div>
-        <div><div class="kv">@Model.Count</div><div class="kl">Total usuarios</div></div>
+    <div onclick="showAll()" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:18px;padding:16px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:0.25s;backdrop-filter:blur(10px);" onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='rgba(255,255,255,0.06)'">
+        <div style="width:44px;height:44px;border-radius:13px;background:rgba(37,99,235,0.2);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;">👥</div>
+        <div><div style="font-size:26px;font-weight:900;color:white;line-height:1;">@Model.Count</div><div style="font-size:10px;color:rgba(255,255,255,0.4);font-weight:700;text-transform:uppercase;letter-spacing:0.8px;margin-top:2px;">Total usuarios</div></div>
     </div>
-    <div class="kc" onclick="filterByStatus('active')">
-        <div class="kiw g">🟢</div>
-        <div><div class="kv g" id="activeUsers">@activeNow</div><div class="kl">Activos ahora</div></div>
+    <div onclick="filterByStatus('active')" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:18px;padding:16px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:0.25s;backdrop-filter:blur(10px);" onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='rgba(255,255,255,0.06)'">
+        <div style="width:44px;height:44px;border-radius:13px;background:rgba(22,163,74,0.2);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;">🟢</div>
+        <div><div id="activeUsers" style="font-size:26px;font-weight:900;color:#4ade80;line-height:1;">@activeNow</div><div style="font-size:10px;color:rgba(255,255,255,0.4);font-weight:700;text-transform:uppercase;letter-spacing:0.8px;margin-top:2px;">Activos ahora</div></div>
     </div>
-    <div class="kc" onclick="filterByStatus('offline')">
-        <div class="kiw" style="background:rgba(100,116,139,0.1);">⚫</div>
-        <div><div class="kv" style="color:#64748b;">@Model.Count(u => u.IsActive && !u.IsBanned && (u.LastOnline == null || (DateTime.Now - u.LastOnline.Value).TotalSeconds >= 60))</div><div class="kl">Inactivos</div></div>
+    <div onclick="filterByStatus('offline')" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:18px;padding:16px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:0.25s;backdrop-filter:blur(10px);" onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='rgba(255,255,255,0.06)'">
+        <div style="width:44px;height:44px;border-radius:13px;background:rgba(100,116,139,0.2);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;">⚫</div>
+        <div><div style="font-size:26px;font-weight:900;color:#94a3b8;line-height:1;">@Model.Count(u => u.IsActive && !u.IsBanned && (u.LastOnline == null || (DateTime.Now - u.LastOnline.Value).TotalSeconds >= 60))</div><div style="font-size:10px;color:rgba(255,255,255,0.4);font-weight:700;text-transform:uppercase;letter-spacing:0.8px;margin-top:2px;">Inactivos</div></div>
     </div>
-    <div class="kc" onclick="filterByStatus('banned')">
-        <div class="kiw r">🚫</div>
-        <div><div class="kv r">@Model.Count(u => u.IsBanned)</div><div class="kl">Baneados</div></div>
+    <div onclick="filterByStatus('banned')" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:18px;padding:16px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:0.25s;backdrop-filter:blur(10px);" onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='rgba(255,255,255,0.06)'">
+        <div style="width:44px;height:44px;border-radius:13px;background:rgba(239,68,68,0.2);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;">🚫</div>
+        <div><div style="font-size:26px;font-weight:900;color:#f87171;line-height:1;">@Model.Count(u => u.IsBanned)</div><div style="font-size:10px;color:rgba(255,255,255,0.4);font-weight:700;text-transform:uppercase;letter-spacing:0.8px;margin-top:2px;">Baneados</div></div>
     </div>
-    <div class="kc" onclick="filterByStatus('inactive')">
-        <div class="kiw y">⚠️</div>
-        <div><div class="kv y">@Model.Count(u => !u.IsActive)</div><div class="kl">Desactivados</div></div>
+    <div onclick="filterByStatus('inactive')" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:18px;padding:16px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:0.25s;backdrop-filter:blur(10px);" onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='rgba(255,255,255,0.06)'">
+        <div style="width:44px;height:44px;border-radius:13px;background:rgba(217,119,6,0.2);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;">⚠️</div>
+        <div><div style="font-size:26px;font-weight:900;color:#fbbf24;line-height:1;">@Model.Count(u => !u.IsActive)</div><div style="font-size:10px;color:rgba(255,255,255,0.4);font-weight:700;text-transform:uppercase;letter-spacing:0.8px;margin-top:2px;">Desactivados</div></div>
     </div>
-    <div class="kc" onclick="filterByStatus('blocked')">
-        <div class="kiw" style="background:rgba(99,102,241,0.1);">🔌</div>
-        <div><div class="kv" style="color:#6366f1;">@Model.Count(u => u.IsIpBlocked)</div><div class="kl">Con. bloqueada</div></div>
+    <div onclick="filterByStatus('blocked')" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:18px;padding:16px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:0.25s;backdrop-filter:blur(10px);" onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='rgba(255,255,255,0.06)'">
+        <div style="width:44px;height:44px;border-radius:13px;background:rgba(99,102,241,0.2);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;">🔌</div>
+        <div><div style="font-size:26px;font-weight:900;color:#a5b4fc;line-height:1;">@Model.Count(u => u.IsIpBlocked)</div><div style="font-size:10px;color:rgba(255,255,255,0.4);font-weight:700;text-transform:uppercase;letter-spacing:0.8px;margin-top:2px;">Con. bloqueada</div></div>
     </div>
 </div>
 
