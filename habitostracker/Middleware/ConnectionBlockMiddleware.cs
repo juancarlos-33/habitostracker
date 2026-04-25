@@ -11,11 +11,8 @@ public class ConnectionBlockMiddleware
     {
         var path = context.Request.Path.Value?.ToLower() ?? "";
 
-        // Rutas libres
-        // Rutas siempre libres — nunca redirigir desde aquí
-        if (path.StartsWith("/account/") ||
-            path.StartsWith("/home/") ||
-            path.StartsWith("/signin-google") ||
+        // Rutas 100% libres sin ninguna verificación
+        if (path.StartsWith("/home/") ||
             path.StartsWith("/chathub") ||
             path.StartsWith("/css") ||
             path.StartsWith("/js") ||
@@ -23,8 +20,14 @@ public class ConnectionBlockMiddleware
             path.StartsWith("/images") ||
             path.StartsWith("/favicon"))
         {
-            // Solo borrar cookies si está bloqueado y NO estamos ya en /account/
-            if (!path.StartsWith("/account/") && context.User.Identity?.IsAuthenticated == true)
+            await _next(context);
+            return;
+        }
+
+        // Rutas de account y signin-google: pasar pero borrar cookie si bloqueado
+        if (path.StartsWith("/account/") || path.StartsWith("/signin-google"))
+        {
+            if (context.User.Identity?.IsAuthenticated == true)
             {
                 var userIdClaim2 = context.User.FindFirst("UserId");
                 if (userIdClaim2 != null && int.TryParse(userIdClaim2.Value, out int uid2))
@@ -35,8 +38,12 @@ public class ConnectionBlockMiddleware
                         foreach (var cookie in context.Request.Cookies.Keys)
                             context.Response.Cookies.Delete(cookie);
                         await context.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-                        context.Response.Redirect("/Account/Login?blocked=true");
-                        return;
+                        // Solo redirigir si NO estamos ya en login para evitar loop
+                        if (!path.StartsWith("/account/login"))
+                        {
+                            context.Response.Redirect("/Account/Login?blocked=true");
+                            return;
+                        }
                     }
                 }
             }
