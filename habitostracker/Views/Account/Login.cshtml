@@ -445,7 +445,26 @@ background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/sv
         @if(Context.Request.Query["deleted"]=="true"){<div class="malert danger">⚠️ Cuenta eliminada</div><script>const _q=new URL(location);_q.searchParams.delete("deleted");history.replaceState({},'',_q.pathname);</script>}
         @if(Context.Request.Query["banned"]=="true"){<div class="malert danger">🚫 Cuenta baneada</div>}
         @if(Context.Request.Query["deactivated"]=="true"){<div class="malert warning">⚠️ Cuenta desactivada</div>}
-       @if (Context.Request.Query["blocked"] == "true")
+      @if (Context.Request.Query["blocked"] == "true")
+{
+    <div class="malert danger" style="flex-direction:column;text-align:center;padding:16px;gap:12px;">
+        <div style="font-size:32px;">🔌</div>
+        <div style="font-weight:800;font-size:15px;color:#fca5a5;">Acceso bloqueado</div>
+        <div style="font-size:12px;color:rgba(255,255,255,0.4);line-height:1.6;">Tu acceso a esta plataforma ha sido bloqueado por el administrador. No puedes iniciar sesión ni realizar ninguna acción.</div>
+    </div>
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            document.querySelectorAll('.gbtn, .guestbtn, .msbtn, .minp, .ptog, .nav-cta').forEach(el => {
+                el.style.pointerEvents = 'none';
+                el.style.opacity = '0.25';
+                el.style.cursor = 'not-allowed';
+            });
+            document.querySelectorAll('.mdiv, .mfield, .mreg, .mtrust, .strbar').forEach(el => {
+                el.style.display = 'none';
+            });
+        });
+    </script>
+}
 {
     <div class="malert danger">🔌 Tu acceso ha sido bloqueado permanentemente por el administrador.</div>
     <script>
@@ -540,6 +559,22 @@ background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/sv
             <div class="tag-pulse"></div>
             Disponible gratis · Sin tarjeta de crédito
         </div>
+        <div style="margin-bottom:28px;">
+    <div style="position:relative;display:inline-block;">
+        <img src="https://res.cloudinary.com/dzrjag7ia/image/upload/v1776560628/NE_lmertz.jpg"
+             style="width:90px;height:90px;border-radius:24px;object-fit:cover;
+             border:2px solid rgba(99,102,241,0.4);
+             box-shadow:0 0 0 8px rgba(99,102,241,0.08), 0 12px 32px rgba(0,0,0,0.5);
+             animation:floatMascot 3s ease-in-out infinite;" />
+        <div style="position:absolute;inset:-8px;border-radius:32px;
+             border:1.5px solid rgba(99,102,241,0.18);
+             animation:rp 3s ease-in-out infinite;"></div>
+    </div>
+    <div style="margin-top:14px;font-size:13px;color:rgba(255,255,255,0.3);font-weight:600;">Tu compañero de hábitos 🚀</div>
+</div>
+<style>
+@@keyframes floatMascot { 0%,100%{transform:translateY(0);} 50%{transform:translateY(-8px);} }
+</style>
         <h1 class="hero-h" id="hh">
             <span class="ln"><span class="wd">Construye</span> <span class="wd">hábitos</span></span>
             <span class="ln"><span class="wd grad">que transforman</span></span>
@@ -851,7 +886,24 @@ function openLoginModal(){
     document.getElementById("modal").classList.add("open");
     document.body.style.overflow="hidden";
     gsap.to(mc,{rotateY:0,rotateX:0,duration:0.1});
-    // Auto-abre si hay error
+}
+const q=new URLSearchParams(location.search);
+const autoOpen=["banned","deleted","deactivated","blocked","ipblocked"].some(k=>q.get(k)==="true");
+const hasError=document.querySelector(".malert");
+if(autoOpen||hasError) { setTimeout(openLoginModal,400); }
+
+// Deshabilitar botones de la landing si está bloqueado
+if(q.get("blocked")==="true"){
+    document.querySelectorAll('.btn-primary,.btn-ghost,.nav-cta,.footer button').forEach(el=>{
+        el.style.pointerEvents='none';
+        el.style.opacity='0.25';
+        el.style.cursor='not-allowed';
+    });
+    // Mostrar banner de bloqueo en la landing
+    const banner = document.createElement('div');
+    banner.style.cssText='position:fixed;top:70px;left:0;right:0;z-index:400;background:rgba(239,68,68,0.12);border-bottom:1px solid rgba(239,68,68,0.2);padding:12px 24px;text-align:center;font-size:13px;font-weight:600;color:#fca5a5;backdrop-filter:blur(10px);';
+    banner.innerHTML='🔌 Tu acceso ha sido bloqueado por el administrador. No puedes realizar ninguna acción en esta plataforma.';
+    document.body.prepend(banner);
 }
 function closeLoginModal(){
     document.getElementById("modal").classList.remove("open");
