@@ -12,6 +12,7 @@ public class ConnectionBlockMiddleware
         var path = context.Request.Path.Value?.ToLower() ?? "";
 
         // Rutas libres
+        // Rutas siempre libres — nunca redirigir desde aquí
         if (path.StartsWith("/account/") ||
             path.StartsWith("/home/") ||
             path.StartsWith("/signin-google") ||
@@ -22,8 +23,8 @@ public class ConnectionBlockMiddleware
             path.StartsWith("/images") ||
             path.StartsWith("/favicon"))
         {
-            // Aun en rutas libres, si está autenticado y bloqueado, borrar cookie
-            if (context.User.Identity?.IsAuthenticated == true)
+            // Solo borrar cookies si está bloqueado y NO estamos ya en /account/
+            if (!path.StartsWith("/account/") && context.User.Identity?.IsAuthenticated == true)
             {
                 var userIdClaim2 = context.User.FindFirst("UserId");
                 if (userIdClaim2 != null && int.TryParse(userIdClaim2.Value, out int uid2))
@@ -31,16 +32,11 @@ public class ConnectionBlockMiddleware
                     var dbUser2 = db.Users.FirstOrDefault(u => u.Id == uid2);
                     if (dbUser2 != null && dbUser2.IsIpBlocked)
                     {
-                        // Borrar cookie manualmente
                         foreach (var cookie in context.Request.Cookies.Keys)
                             context.Response.Cookies.Delete(cookie);
                         await context.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-                        // No redirigir si ya estamos en login
-                        if (!path.StartsWith("/account/login"))
-                        {
-                            context.Response.Redirect("/Account/Login?blocked=true");
-                            return;
-                        }
+                        context.Response.Redirect("/Account/Login?blocked=true");
+                        return;
                     }
                 }
             }
