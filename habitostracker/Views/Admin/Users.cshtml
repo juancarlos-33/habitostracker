@@ -10,6 +10,10 @@
     var block = Context.RequestServices.GetService<HabitTrackerApp.Data.HabitDbContext>().ConnectionBlocks.FirstOrDefault();
     bool isBlocked = block != null && block.IsBlocked;
     bool isSuperAdmin = User.IsInRole("SuperAdmin");
+    var totalInactive = Model.Count(u => u.IsActive && !u.IsBanned && (u.LastOnline == null || (DateTime.Now - u.LastOnline.Value).TotalSeconds >= 60));
+    var totalBanned = Model.Count(u => u.IsBanned);
+    var totalDeactivated = Model.Count(u => !u.IsActive);
+    var totalBlocked = Model.Count(u => u.IsIpBlocked);
 }
 
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -45,53 +49,108 @@
 <style>
 *{font-family:'Plus Jakarta Sans',sans-serif;}
 @@keyframes wB{from{transform:scale(0.6) rotate(-10deg);opacity:0;}to{transform:scale(1) rotate(0);opacity:1;}}
-@@keyframes fadeUp{from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:translateY(0);}}
+@@keyframes fadeUp{from{opacity:0;transform:translateY(24px);}to{opacity:1;transform:translateY(0);}}
 @@keyframes floatM{0%,100%{transform:translateY(0);}50%{transform:translateY(-6px);}}
 @@keyframes pulse2{0%,100%{box-shadow:0 0 0 0 rgba(34,197,94,0.4);}50%{box-shadow:0 0 0 6px rgba(34,197,94,0);}}
+@@keyframes scanline{0%{transform:translateY(-100%);}100%{transform:translateY(100vh);}}
+@@keyframes countUp{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
 @@keyframes shimmer{0%{background-position:-200% center;}100%{background-position:200% center;}}
+@@keyframes glow{0%,100%{box-shadow:0 0 20px rgba(99,102,241,0.3);}50%{box-shadow:0 0 40px rgba(99,102,241,0.6);}}
 
 .ap{max-width:1200px;margin:0 auto;padding-bottom:60px;}
 
 /* HERO */
 .ah{
-    background:linear-gradient(135deg,#0f172a 0%,#1e293b 50%,#0f172a 100%);
+    background:linear-gradient(135deg,#0f172a 0%,#1e293b 60%,#0f172a 100%);
     border-radius:24px;padding:28px 32px;margin-bottom:20px;
     display:flex;align-items:center;gap:20px;
-    border:1px solid rgba(255,255,255,0.06);position:relative;overflow:hidden;
-    animation:fadeUp 0.6s ease both;
+    border:1px solid rgba(255,255,255,0.07);position:relative;overflow:hidden;
 }
-.ah::before{content:'';position:absolute;top:-60px;right:-60px;width:280px;height:280px;background:radial-gradient(circle,rgba(99,102,241,0.15),transparent 70%);border-radius:50%;pointer-events:none;}
-.ah::after{content:'';position:absolute;bottom:-40px;left:100px;width:180px;height:180px;background:radial-gradient(circle,rgba(234,179,8,0.08),transparent 70%);border-radius:50%;pointer-events:none;}
-.ah-mascot{width:72px;height:72px;border-radius:20px;object-fit:cover;flex-shrink:0;border:2px solid rgba(99,102,241,0.4);box-shadow:0 0 0 6px rgba(99,102,241,0.08),0 8px 28px rgba(0,0,0,0.4);animation:floatM 3s ease-in-out infinite;position:relative;z-index:1;}
+.ah::before{content:'';position:absolute;top:-80px;right:-80px;width:320px;height:320px;background:radial-gradient(circle,rgba(99,102,241,0.18),transparent 70%);border-radius:50%;pointer-events:none;}
+.ah::after{content:'';position:absolute;bottom:-60px;left:60px;width:200px;height:200px;background:radial-gradient(circle,rgba(234,179,8,0.1),transparent 70%);border-radius:50%;pointer-events:none;}
+.ah-scan{position:absolute;inset:0;overflow:hidden;pointer-events:none;opacity:0.03;}
+.ah-scan::after{content:'';position:absolute;width:100%;height:2px;background:linear-gradient(90deg,transparent,#6366f1,transparent);animation:scanline 4s linear infinite;}
+.ah-mascot{width:76px;height:76px;border-radius:20px;object-fit:cover;flex-shrink:0;border:2px solid rgba(99,102,241,0.5);box-shadow:0 0 0 6px rgba(99,102,241,0.1),0 8px 28px rgba(0,0,0,0.5);animation:floatM 3s ease-in-out infinite;position:relative;z-index:1;}
 .ah-info{flex:1;position:relative;z-index:1;}
-.ah-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(99,102,241,0.12);border:1px solid rgba(99,102,241,0.25);border-radius:20px;padding:3px 12px;font-size:11px;font-weight:700;color:#818cf8;margin-bottom:8px;}
-.ah-title{font-size:22px;font-weight:900;color:white;margin-bottom:4px;letter-spacing:-0.5px;}
+.ah-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(99,102,241,0.15);border:1px solid rgba(99,102,241,0.3);border-radius:20px;padding:4px 13px;font-size:11px;font-weight:700;color:#a5b4fc;margin-bottom:8px;}
+.ah-title{font-size:23px;font-weight:900;color:white;margin-bottom:4px;letter-spacing:-0.5px;}
 .ah-sub{font-size:13px;color:rgba(255,255,255,0.35);}
-.ah-right{position:relative;z-index:1;flex-shrink:0;text-align:center;min-width:180px;}
-.conn-pill{display:inline-flex;align-items:center;gap:6px;padding:7px 16px;border-radius:20px;font-size:12px;font-weight:700;}
-.conn-pill.on{background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.25);color:#22c55e;}
-.conn-pill.off{background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.25);color:#ef4444;}
+.ah-stats{display:flex;gap:16px;margin-top:12px;}
+.ah-stat{font-size:11px;color:rgba(255,255,255,0.3);font-weight:600;display:flex;align-items:center;gap:5px;}
+.ah-stat span{color:white;font-weight:800;}
+.ah-right{position:relative;z-index:1;flex-shrink:0;text-align:center;min-width:190px;}
+.conn-pill{display:inline-flex;align-items:center;gap:7px;padding:8px 18px;border-radius:20px;font-size:12px;font-weight:700;}
+.conn-pill.on{background:rgba(34,197,94,0.12);border:1px solid rgba(34,197,94,0.3);color:#22c55e;}
+.conn-pill.off{background:rgba(239,68,68,0.12);border:1px solid rgba(239,68,68,0.3);color:#ef4444;}
 .cdot{width:7px;height:7px;border-radius:50%;}
 .cdot.g{background:#22c55e;animation:pulse2 2s infinite;}
 .cdot.r{background:#ef4444;}
-.cab{padding:8px 16px;border-radius:11px;border:none;font-size:12px;font-weight:700;cursor:pointer;transition:0.2s;font-family:inherit;margin-top:8px;width:100%;}
+.cab{padding:9px 18px;border-radius:12px;border:none;font-size:12px;font-weight:700;cursor:pointer;transition:0.2s;font-family:inherit;margin-top:8px;width:100%;}
 .cab.restore{background:rgba(34,197,94,0.12);color:#22c55e;border:1px solid rgba(34,197,94,0.25);}
-.cab.restore:hover{background:#22c55e;color:white;}
+.cab.restore:hover{background:#22c55e;color:white;transform:translateY(-1px);}
 .cab.blk{background:rgba(239,68,68,0.12);color:#ef4444;border:1px solid rgba(239,68,68,0.25);}
-.cab.blk:hover{background:#ef4444;color:white;}
+.cab.blk:hover{background:#ef4444;color:white;transform:translateY(-1px);}
 
-/* KPIs */
-.kg{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px;}
-.kc{background:white;border-radius:18px;padding:16px;display:flex;align-items:center;gap:12px;box-shadow:0 2px 10px rgba(0,0,0,0.06);border:1px solid rgba(0,0,0,0.04);transition:0.25s;cursor:pointer;color:#111827;}
-.kc:hover{transform:translateY(-3px);box-shadow:0 12px 28px rgba(0,0,0,0.12);}
-.kiw{width:44px;height:44px;border-radius:13px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:20px;}
-.kiw.b{background:rgba(37,99,235,0.1);}
-.kiw.r{background:rgba(239,68,68,0.1);}
-.kiw.y{background:rgba(217,119,6,0.1);}
-.kiw.g{background:rgba(22,163,74,0.1);}
-.kv{font-size:26px;font-weight:900;color:#111827;line-height:1;}
-.kv.r{color:#dc2626;}.kv.y{color:#d97706;}.kv.g{color:#16a34a;}
-.kl{font-size:10px;color:#9ca3af;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;margin-top:2px;}
+/* KPI CARDS */
+.kpi-wrap{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px;}
+.kpi-card{
+    border-radius:18px;padding:18px 16px;
+    display:flex;align-items:center;gap:14px;
+    cursor:pointer;transition:all 0.25s cubic-bezier(0.34,1.56,0.64,1);
+    position:relative;overflow:hidden;
+}
+.kpi-card::before{content:'';position:absolute;top:-30px;right:-30px;width:100px;height:100px;border-radius:50%;pointer-events:none;transition:0.3s;}
+.kpi-card:hover{transform:translateY(-4px);}
+.kpi-card:hover::before{width:130px;height:130px;}
+.kpi-icon{width:48px;height:48px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;position:relative;z-index:1;}
+.kpi-val{font-size:30px;font-weight:900;line-height:1;font-variant-numeric:tabular-nums;animation:countUp 0.5s ease both;position:relative;z-index:1;}
+.kpi-lbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;margin-top:3px;position:relative;z-index:1;}
+
+/* light mode */
+body:not(.bg-dark) .kpi-card{background:white;box-shadow:0 2px 12px rgba(0,0,0,0.07);border:1px solid rgba(0,0,0,0.05);}
+body:not(.bg-dark) .kpi-card:hover{box-shadow:0 16px 32px rgba(0,0,0,0.12);}
+body:not(.bg-dark) .kpi-lbl{color:#9ca3af;}
+body:not(.bg-dark) .kpi-card.total .kpi-val{color:#1e40af;}
+body:not(.bg-dark) .kpi-card.total .kpi-icon{background:rgba(37,99,235,0.1);}
+body:not(.bg-dark) .kpi-card.total::before{background:rgba(37,99,235,0.06);}
+body:not(.bg-dark) .kpi-card.active .kpi-val{color:#15803d;}
+body:not(.bg-dark) .kpi-card.active .kpi-icon{background:rgba(22,163,74,0.1);}
+body:not(.bg-dark) .kpi-card.active::before{background:rgba(22,163,74,0.06);}
+body:not(.bg-dark) .kpi-card.offline .kpi-val{color:#475569;}
+body:not(.bg-dark) .kpi-card.offline .kpi-icon{background:rgba(100,116,139,0.1);}
+body:not(.bg-dark) .kpi-card.offline::before{background:rgba(100,116,139,0.06);}
+body:not(.bg-dark) .kpi-card.banned .kpi-val{color:#dc2626;}
+body:not(.bg-dark) .kpi-card.banned .kpi-icon{background:rgba(239,68,68,0.1);}
+body:not(.bg-dark) .kpi-card.banned::before{background:rgba(239,68,68,0.06);}
+body:not(.bg-dark) .kpi-card.deact .kpi-val{color:#b45309;}
+body:not(.bg-dark) .kpi-card.deact .kpi-icon{background:rgba(217,119,6,0.1);}
+body:not(.bg-dark) .kpi-card.deact::before{background:rgba(217,119,6,0.06);}
+body:not(.bg-dark) .kpi-card.blkd .kpi-val{color:#4f46e5;}
+body:not(.bg-dark) .kpi-card.blkd .kpi-icon{background:rgba(99,102,241,0.1);}
+body:not(.bg-dark) .kpi-card.blkd::before{background:rgba(99,102,241,0.06);}
+
+/* dark mode */
+body.bg-dark .kpi-card{background:#1e293b;border:1px solid rgba(255,255,255,0.07);box-shadow:0 2px 16px rgba(0,0,0,0.3);}
+body.bg-dark .kpi-card:hover{box-shadow:0 16px 40px rgba(0,0,0,0.4);}
+body.bg-dark .kpi-lbl{color:rgba(255,255,255,0.35);}
+body.bg-dark .kpi-card.total .kpi-val{color:#60a5fa;}
+body.bg-dark .kpi-card.total .kpi-icon{background:rgba(37,99,235,0.2);}
+body.bg-dark .kpi-card.total::before{background:rgba(37,99,235,0.08);}
+body.bg-dark .kpi-card.active .kpi-val{color:#4ade80;}
+body.bg-dark .kpi-card.active .kpi-icon{background:rgba(22,163,74,0.2);}
+body.bg-dark .kpi-card.active::before{background:rgba(22,163,74,0.08);}
+body.bg-dark .kpi-card.offline .kpi-val{color:#94a3b8;}
+body.bg-dark .kpi-card.offline .kpi-icon{background:rgba(100,116,139,0.2);}
+body.bg-dark .kpi-card.offline::before{background:rgba(100,116,139,0.08);}
+body.bg-dark .kpi-card.banned .kpi-val{color:#f87171;}
+body.bg-dark .kpi-card.banned .kpi-icon{background:rgba(239,68,68,0.2);}
+body.bg-dark .kpi-card.banned::before{background:rgba(239,68,68,0.08);}
+body.bg-dark .kpi-card.deact .kpi-val{color:#fbbf24;}
+body.bg-dark .kpi-card.deact .kpi-icon{background:rgba(217,119,6,0.2);}
+body.bg-dark .kpi-card.deact::before{background:rgba(217,119,6,0.08);}
+body.bg-dark .kpi-card.blkd .kpi-val{color:#a5b4fc;}
+body.bg-dark .kpi-card.blkd .kpi-icon{background:rgba(99,102,241,0.2);}
+body.bg-dark .kpi-card.blkd::before{background:rgba(99,102,241,0.08);}
 
 /* QUICK */
 .qa{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;}
@@ -114,7 +173,12 @@
 /* TABLE */
 .tw{overflow-x:auto;background:white;border-radius:22px;box-shadow:0 4px 20px rgba(0,0,0,0.07);border:1px solid rgba(0,0,0,0.05);margin-bottom:16px;}
 .mc2{display:none;}
-@@media(max-width:768px){.tw{display:none;}.mc2{display:flex;flex-direction:column;gap:10px;}.kg{grid-template-columns:repeat(2,1fr);}.ah{flex-wrap:wrap;}}
+@@media(max-width:768px){
+    .tw{display:none;}.mc2{display:flex;flex-direction:column;gap:10px;}
+    .kpi-wrap{grid-template-columns:repeat(2,1fr);}
+    .ah{flex-wrap:wrap;}
+    .ah-stats{display:none;}
+}
 
 .ut{width:100%;border-collapse:collapse;min-width:920px;}
 .ut thead th{padding:13px 14px;font-size:10px;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:0.8px;border-bottom:1px solid #f1f5f9;white-space:nowrap;background:white;}
@@ -125,7 +189,7 @@
 /* USER CELL */
 .uc{display:flex;align-items:center;gap:10px;}
 .uth{width:40px;height:40px;border-radius:50%;object-fit:cover;border:2px solid #e2e8f0;flex-shrink:0;transition:0.2s;}
-.uth:hover{border-color:#6366f1;transform:scale(1.05);}
+.uth:hover{border-color:#6366f1;transform:scale(1.08);}
 .utl{width:40px;height:40px;border-radius:50%;flex-shrink:0;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:white;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:15px;}
 .un{font-weight:700;color:#0f172a;font-size:13px;}
 
@@ -176,19 +240,14 @@
 .ab.ub2:hover{background:linear-gradient(135deg,#22c55e,#16a34a);color:white;border-color:transparent;}
 
 /* MOBILE CARDS */
-.mcard{background:white;border-radius:18px;padding:16px;box-shadow:0 4px 16px rgba(0,0,0,0.07);border:1px solid rgba(0,0,0,0.05);animation:fadeUp 0.4s ease both;}
+.mcard{background:white;border-radius:18px;padding:16px;box-shadow:0 4px 16px rgba(0,0,0,0.07);border:1px solid rgba(0,0,0,0.05);}
 .mct{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;}
 .mi{background:#f8fafc;border-radius:13px;padding:10px 13px;margin-bottom:12px;display:flex;flex-direction:column;gap:6px;}
 .mir{display:flex;align-items:flex-start;gap:8px;font-size:12px;color:#475569;}
 .mic{flex-shrink:0;width:16px;text-align:center;}
 
 /* DARK */
-body.bg-dark .kc,body.bg-dark .tw,body.bg-dark .mcard{background:#1e293b!important;border-color:#334155!important;}
-body.bg-dark .kc .kv{color:#f1f5f9!important;}
-body.bg-dark .kc .kv.r{color:#f87171!important;}
-body.bg-dark .kc .kv.y{color:#fbbf24!important;}
-body.bg-dark .kc .kv.g{color:#4ade80!important;}
-body.bg-dark .kc .kl{color:#64748b!important;}
+body.bg-dark .tw,body.bg-dark .mcard{background:#1e293b!important;border-color:#334155!important;}
 body.bg-dark .un{color:#f1f5f9!important;}
 body.bg-dark .ut thead th{color:#64748b!important;border-color:#334155!important;background:#1e293b!important;}
 body.bg-dark .ut tbody tr:hover{background:#2d3748!important;}
@@ -205,11 +264,17 @@ body.bg-dark .qb.n{background:#1e293b!important;color:#94a3b8!important;border-c
 
     <!-- HERO -->
     <div class="ah">
+        <div class="ah-scan"></div>
         <img src="https://res.cloudinary.com/dzrjag7ia/image/upload/v1776560628/NE_lmertz.jpg" class="ah-mascot"/>
         <div class="ah-info">
             <div class="ah-badge">🛡️ Panel de Control</div>
             <div class="ah-title">Centro de Administración</div>
             <div class="ah-sub">Gestiona usuarios, conexiones y seguridad · <strong style="color:white;">@me?.Username</strong></div>
+            <div class="ah-stats">
+                <div class="ah-stat">👥 <span>@Model.Count</span> usuarios</div>
+                <div class="ah-stat">🟢 <span id="ahActive">@activeNow</span> activos</div>
+                <div class="ah-stat">🔌 <span>@totalBlocked</span> bloqueados</div>
+            </div>
         </div>
         <div class="ah-right">
             <div class="conn-pill @(isBlocked ? "off" : "on")">
@@ -236,33 +301,50 @@ body.bg-dark .qb.n{background:#1e293b!important;color:#94a3b8!important;border-c
     </div>
 
     <!-- KPIs -->
- <!-- KPIs -->
-<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px;">
-    <div onclick="showAll()" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:18px;padding:16px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:0.25s;backdrop-filter:blur(10px);" onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='rgba(255,255,255,0.06)'">
-        <div style="width:44px;height:44px;border-radius:13px;background:rgba(37,99,235,0.2);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;">👥</div>
-        <div><div style="font-size:26px;font-weight:900;color:white;line-height:1;">@Model.Count</div><div style="font-size:10px;color:rgba(255,255,255,0.4);font-weight:700;text-transform:uppercase;letter-spacing:0.8px;margin-top:2px;">Total usuarios</div></div>
+    <div class="kpi-wrap">
+        <div class="kpi-card total" onclick="showAll()">
+            <div class="kpi-icon">👥</div>
+            <div>
+                <div class="kpi-val">@Model.Count</div>
+                <div class="kpi-lbl">Total usuarios</div>
+            </div>
+        </div>
+        <div class="kpi-card active" onclick="filterByStatus('active')">
+            <div class="kpi-icon">🟢</div>
+            <div>
+                <div class="kpi-val" id="activeUsers">@activeNow</div>
+                <div class="kpi-lbl">Activos ahora</div>
+            </div>
+        </div>
+        <div class="kpi-card offline" onclick="filterByStatus('offline')">
+            <div class="kpi-icon">⚫</div>
+            <div>
+                <div class="kpi-val">@totalInactive</div>
+                <div class="kpi-lbl">Inactivos</div>
+            </div>
+        </div>
+        <div class="kpi-card banned" onclick="filterByStatus('banned')">
+            <div class="kpi-icon">🚫</div>
+            <div>
+                <div class="kpi-val">@totalBanned</div>
+                <div class="kpi-lbl">Baneados</div>
+            </div>
+        </div>
+        <div class="kpi-card deact" onclick="filterByStatus('inactive')">
+            <div class="kpi-icon">⚠️</div>
+            <div>
+                <div class="kpi-val">@totalDeactivated</div>
+                <div class="kpi-lbl">Desactivados</div>
+            </div>
+        </div>
+        <div class="kpi-card blkd" onclick="filterByStatus('blocked')">
+            <div class="kpi-icon">🔌</div>
+            <div>
+                <div class="kpi-val">@totalBlocked</div>
+                <div class="kpi-lbl">Con. bloqueada</div>
+            </div>
+        </div>
     </div>
-    <div onclick="filterByStatus('active')" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:18px;padding:16px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:0.25s;backdrop-filter:blur(10px);" onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='rgba(255,255,255,0.06)'">
-        <div style="width:44px;height:44px;border-radius:13px;background:rgba(22,163,74,0.2);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;">🟢</div>
-        <div><div id="activeUsers" style="font-size:26px;font-weight:900;color:#4ade80;line-height:1;">@activeNow</div><div style="font-size:10px;color:rgba(255,255,255,0.4);font-weight:700;text-transform:uppercase;letter-spacing:0.8px;margin-top:2px;">Activos ahora</div></div>
-    </div>
-    <div onclick="filterByStatus('offline')" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:18px;padding:16px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:0.25s;backdrop-filter:blur(10px);" onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='rgba(255,255,255,0.06)'">
-        <div style="width:44px;height:44px;border-radius:13px;background:rgba(100,116,139,0.2);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;">⚫</div>
-        <div><div style="font-size:26px;font-weight:900;color:#94a3b8;line-height:1;">@Model.Count(u => u.IsActive && !u.IsBanned && (u.LastOnline == null || (DateTime.Now - u.LastOnline.Value).TotalSeconds >= 60))</div><div style="font-size:10px;color:rgba(255,255,255,0.4);font-weight:700;text-transform:uppercase;letter-spacing:0.8px;margin-top:2px;">Inactivos</div></div>
-    </div>
-    <div onclick="filterByStatus('banned')" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:18px;padding:16px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:0.25s;backdrop-filter:blur(10px);" onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='rgba(255,255,255,0.06)'">
-        <div style="width:44px;height:44px;border-radius:13px;background:rgba(239,68,68,0.2);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;">🚫</div>
-        <div><div style="font-size:26px;font-weight:900;color:#f87171;line-height:1;">@Model.Count(u => u.IsBanned)</div><div style="font-size:10px;color:rgba(255,255,255,0.4);font-weight:700;text-transform:uppercase;letter-spacing:0.8px;margin-top:2px;">Baneados</div></div>
-    </div>
-    <div onclick="filterByStatus('inactive')" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:18px;padding:16px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:0.25s;backdrop-filter:blur(10px);" onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='rgba(255,255,255,0.06)'">
-        <div style="width:44px;height:44px;border-radius:13px;background:rgba(217,119,6,0.2);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;">⚠️</div>
-        <div><div style="font-size:26px;font-weight:900;color:#fbbf24;line-height:1;">@Model.Count(u => !u.IsActive)</div><div style="font-size:10px;color:rgba(255,255,255,0.4);font-weight:700;text-transform:uppercase;letter-spacing:0.8px;margin-top:2px;">Desactivados</div></div>
-    </div>
-    <div onclick="filterByStatus('blocked')" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:18px;padding:16px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:0.25s;backdrop-filter:blur(10px);" onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='rgba(255,255,255,0.06)'">
-        <div style="width:44px;height:44px;border-radius:13px;background:rgba(99,102,241,0.2);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;">🔌</div>
-        <div><div style="font-size:26px;font-weight:900;color:#a5b4fc;line-height:1;">@Model.Count(u => u.IsIpBlocked)</div><div style="font-size:10px;color:rgba(255,255,255,0.4);font-weight:700;text-transform:uppercase;letter-spacing:0.8px;margin-top:2px;">Con. bloqueada</div></div>
-    </div>
-</div>
 
     <!-- ACCIONES -->
     <div class="qa">
@@ -311,15 +393,13 @@ body.bg-dark .qb.n{background:#1e293b!important;color:#94a3b8!important;border-c
                             <div class="uc">
                                 @if (user.Role == "SuperAdmin")
                                 {
-                                    @if (!string.IsNullOrEmpty(photo))
-                                    { <img src="@photo" class="uth"/> }
+                                    @if (!string.IsNullOrEmpty(photo)) { <img src="@photo" class="uth"/> }
                                     else { <div class="utl">@user.Username.Substring(0,1).ToUpper()</div> }
                                 }
                                 else
                                 {
                                     <a href="/User/Profile/@user.Id" style="text-decoration:none;flex-shrink:0;">
-                                        @if (!string.IsNullOrEmpty(photo))
-                                        { <img src="@photo" class="uth"/> }
+                                        @if (!string.IsNullOrEmpty(photo)) { <img src="@photo" class="uth"/> }
                                         else { <div class="utl">@user.Username.Substring(0,1).ToUpper()</div> }
                                     </a>
                                 }
@@ -424,15 +504,10 @@ body.bg-dark .qb.n{background:#1e293b!important;color:#94a3b8!important;border-c
                                             { <a href="#" class="ab se" onclick="event.preventDefault();confirmRemoveAdmin(@user.Id)">⬇️ Quitar Admin</a> }
                                             else
                                             { <a asp-controller="Admin" asp-action="MakeAdmin" asp-route-id="@user.Id" class="ab pr2" onclick="return confirm('¿Hacer Admin?')">⬆️ Hacer Admin</a> }
-
                                             @if (user.IsIpBlocked)
-                                            {
-                                                <button class="ab ub2" onclick="desbloquearConexion(@user.Id,'@user.Username')" data-no-loader="true">🔓 Desbloquear conexión</button>
-                                            }
+                                            { <button class="ab ub2" onclick="desbloquearConexion(@user.Id,'@user.Username')" data-no-loader="true">🔓 Desbloquear conexión</button> }
                                             else
-                                            {
-                                                <button class="ab bc" onclick="confirmarBloquearConexion(@user.Id,'@user.Username')" data-no-loader="true">🔌 Bloquear conexión</button>
-                                            }
+                                            { <button class="ab bc" onclick="confirmarBloquearConexion(@user.Id,'@user.Username')" data-no-loader="true">🔌 Bloquear conexión</button> }
                                         }
                                     }
                                     @if (isSuperAdmin && user.Id != myId)
@@ -460,7 +535,7 @@ body.bg-dark .qb.n{background:#1e293b!important;color:#94a3b8!important;border-c
             bool isAdminUser = user.Role == "Admin";
             var photo = user.ProfileImage ?? user.ProfilePicture ?? "";
 
-          <div class="mcard user-row" data-username="@user.Username.ToLower()" data-blocked="@user.IsIpBlocked.ToString().ToLower()">
+            <div class="mcard user-row" data-username="@user.Username.ToLower()" data-blocked="@user.IsIpBlocked.ToString().ToLower()">
                 <div class="mct">
                     <div class="uc">
                         @if (user.Role == "SuperAdmin")
@@ -492,7 +567,6 @@ body.bg-dark .qb.n{background:#1e293b!important;color:#94a3b8!important;border-c
                         else { <span class="st of">⚫</span> }
                     </div>
                 </div>
-
                 @if (user.Role != "SuperAdmin")
                 {
                     <div class="mi">
@@ -503,12 +577,9 @@ body.bg-dark .qb.n{background:#1e293b!important;color:#94a3b8!important;border-c
                         @if (!string.IsNullOrEmpty(user.Device) || !string.IsNullOrEmpty(user.Browser))
                         { <div class="mir"><span class="mic">💻</span><span>@(user.Device ?? "") @(!string.IsNullOrEmpty(user.Browser) ? $"· {user.Browser}" : "")</span></div> }
                         @if (user.Latitude != null && user.Longitude != null)
-                        {
-                            <a target="_blank" class="ml" href="https://maps.google.com/?q=@(user.Latitude.Value.ToString("F6",System.Globalization.CultureInfo.InvariantCulture)),@(user.Longitude.Value.ToString("F6",System.Globalization.CultureInfo.InvariantCulture))">🗺️ Ver en mapa</a>
-                        }
+                        { <a target="_blank" class="ml" href="https://maps.google.com/?q=@(user.Latitude.Value.ToString("F6",System.Globalization.CultureInfo.InvariantCulture)),@(user.Longitude.Value.ToString("F6",System.Globalization.CultureInfo.InvariantCulture))">🗺️ Ver en mapa</a> }
                     </div>
                 }
-
                 <div class="acc" style="margin-top:10px;">
                     @if (user.Role == "SuperAdmin") { <span class="bd ow">Propietario</span> }
                     else if (user.Id == myId) { <span class="bd gu">Tu cuenta</span> }
@@ -537,15 +608,10 @@ body.bg-dark .qb.n{background:#1e293b!important;color:#94a3b8!important;border-c
                                 { <a href="#" class="ab se" onclick="event.preventDefault();confirmRemoveAdmin(@user.Id)">⬇️ Quitar Admin</a> }
                                 else
                                 { <a asp-controller="Admin" asp-action="MakeAdmin" asp-route-id="@user.Id" class="ab pr2" onclick="return confirm('¿Hacer Admin?')">⬆️ Hacer Admin</a> }
-
                                 @if (user.IsIpBlocked)
-                                {
-                                    <button class="ab ub2" onclick="desbloquearConexion(@user.Id,'@user.Username')" data-no-loader="true">🔓 Desbloquear conexión</button>
-                                }
+                                { <button class="ab ub2" onclick="desbloquearConexion(@user.Id,'@user.Username')" data-no-loader="true">🔓 Desbloquear conexión</button> }
                                 else
-                                {
-                                    <button class="ab bc" onclick="confirmarBloquearConexion(@user.Id,'@user.Username')" data-no-loader="true">🔌 Bloquear conexión</button>
-                                }
+                                { <button class="ab bc" onclick="confirmarBloquearConexion(@user.Id,'@user.Username')" data-no-loader="true">🔌 Bloquear conexión</button> }
                             }
                         }
                         @if (isSuperAdmin && user.Id != myId)
@@ -560,28 +626,41 @@ body.bg-dark .qb.n{background:#1e293b!important;color:#94a3b8!important;border-c
             </div>
         }
     </div>
-
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
 <script>
-// ── GSAP ANIMATIONS
+// ── GSAP
 gsap.from(".ah",{opacity:0,y:-20,duration:0.7,ease:"expo.out"});
-gsap.from(".kc",{opacity:0,y:20,duration:0.5,stagger:0.08,delay:0.3,ease:"back.out(1.4)"});
-gsap.from(".qa",{opacity:0,y:10,duration:0.4,delay:0.6,ease:"power2.out"});
-gsap.from(".tw, .mc2",{opacity:0,y:20,duration:0.6,delay:0.5,ease:"power2.out"});
+gsap.from(".kpi-card",{opacity:0,y:24,duration:0.5,stagger:0.07,delay:0.25,ease:"back.out(1.6)"});
+gsap.from(".qa",{opacity:0,y:10,duration:0.4,delay:0.7,ease:"power2.out"});
+gsap.from(".tw,.mc2",{opacity:0,y:20,duration:0.6,delay:0.5,ease:"power2.out"});
+
+// Animación de contadores
+document.querySelectorAll('.kpi-val').forEach(el=>{
+    const target=parseInt(el.textContent)||0;
+    if(target===0)return;
+    let current=0;
+    const step=Math.ceil(target/20);
+    const iv=setInterval(()=>{
+        current=Math.min(current+step,target);
+        el.textContent=current;
+        if(current>=target)clearInterval(iv);
+    },40);
+});
 
 // ── SIGNALR
-const conn = new signalR.HubConnectionBuilder().withUrl("/chatHub").build();
+const conn=new signalR.HubConnectionBuilder().withUrl("/chatHub").build();
 conn.start().catch(e=>console.error(e));
-
 conn.on("UserOnline",uid=>{
     const c=document.getElementById("status-"+uid);
     const m=document.getElementById("status-mob-"+uid);
     if(c)c.innerHTML='<span class="st a">🟢 Activo</span>';
     if(m)m.innerHTML='<span class="st a">🟢</span>';
     const el=document.getElementById("activeUsers");
+    const ah=document.getElementById("ahActive");
     if(el)el.textContent=parseInt(el.textContent)+1;
+    if(ah)ah.textContent=parseInt(ah.textContent)+1;
 });
 conn.on("UserOffline",uid=>{
     const c=document.getElementById("status-"+uid);
@@ -589,7 +668,9 @@ conn.on("UserOffline",uid=>{
     if(c)c.innerHTML='<span class="st of">⚫ Inactivo</span>';
     if(m)m.innerHTML='<span class="st of">⚫</span>';
     const el=document.getElementById("activeUsers");
+    const ah=document.getElementById("ahActive");
     if(el)el.textContent=Math.max(0,parseInt(el.textContent)-1);
+    if(ah)ah.textContent=Math.max(0,parseInt(ah.textContent)-1);
 });
 
 // ── SEARCH
@@ -598,25 +679,30 @@ document.getElementById("searchUser").addEventListener("keyup",function(){
     document.querySelectorAll(".user-row").forEach(r=>r.style.display=r.dataset.username.includes(v)?"":"none");
 });
 
-function showAll(){document.querySelectorAll(".user-row").forEach(r=>r.style.display="");}
+function showAll(){
+    document.querySelectorAll(".user-row").forEach(r=>r.style.display="");
+    document.querySelectorAll(".kpi-card").forEach(c=>c.style.outline="");
+}
 
 function filterByStatus(status){
+    document.querySelectorAll(".kpi-card").forEach(c=>c.style.outline="");
+    const map={active:'.active',offline:'.offline',banned:'.banned',inactive:'.deact',blocked:'.blkd',all:'.total'};
+    const sel=document.querySelector('.kpi-card'+map[status]);
+    if(sel)sel.style.outline="2px solid currentColor";
     document.querySelectorAll(".user-row").forEach(r=>{
         const c=r.querySelector("[id^='status-']");
         if(!c)return;
         const t=c.textContent.toLowerCase();
         let show=true;
-        if(status==='banned') show=t.includes('baneado');
-        else if(status==='inactive') show=t.includes('desactivado');
-        else if(status==='active') show=t.includes('activo')&&!t.includes('inactivo')&&!t.includes('desactivado');
-        else if(status==='offline') show=t.includes('inactivo');
-        else if(status==='blocked'){
-            // filtrar por data attribute
-            show=r.dataset.blocked==='true';
-        }
+        if(status==='banned')show=t.includes('baneado');
+        else if(status==='inactive')show=t.includes('desactivado');
+        else if(status==='active')show=t.includes('activo')&&!t.includes('inactivo')&&!t.includes('desactivado');
+        else if(status==='offline')show=t.includes('inactivo');
+        else if(status==='blocked')show=r.dataset.blocked==='true';
         r.style.display=show?"":"none";
     });
 }
+
 function confirmDelete(id){if(confirm("¿Desactivar este usuario?"))window.location.href="/Admin/DeleteUser/"+id;}
 function confirmRemoveAdmin(id){if(confirm("¿Quitar admin?"))window.location.href="/Admin/RemoveAdmin/"+id;}
 function pedirCodigoAdmin(){document.getElementById("codeModal").style.display="flex";}
@@ -634,9 +720,9 @@ function confirmarBloquearConexion(userId,username){
     const token=document.querySelector('#antiForgeryForm input[name="__RequestVerificationToken"]').value;
     fetch('/Admin/BlockUserConnection',{method:'POST',headers:{'Content-Type':'application/json','RequestVerificationToken':token},body:JSON.stringify({userId})})
     .then(r=>r.json()).then(d=>{
-        if(d.success){toast(`🔌 Conexión de ${username} bloqueada`);setTimeout(()=>location.reload(),1500);}
-        else toast('⚠️ Error al bloquear');
-    }).catch(()=>toast('⚠️ Error de conexión'));
+        if(d.success){toast(`🔌 Conexión de ${username} bloqueada`,'#6366f1');setTimeout(()=>location.reload(),1500);}
+        else toast('⚠️ Error al bloquear','#ef4444');
+    }).catch(()=>toast('⚠️ Error de conexión','#ef4444'));
 }
 
 function desbloquearConexion(userId,username){
@@ -644,18 +730,18 @@ function desbloquearConexion(userId,username){
     const token=document.querySelector('#antiForgeryForm input[name="__RequestVerificationToken"]').value;
     fetch('/Admin/UnblockUserConnection',{method:'POST',headers:{'Content-Type':'application/json','RequestVerificationToken':token},body:JSON.stringify({userId})})
     .then(r=>r.json()).then(d=>{
-        if(d.success){toast(`🔓 Conexión de ${username} desbloqueada`);setTimeout(()=>location.reload(),1500);}
-        else toast('⚠️ Error al desbloquear');
-    }).catch(()=>toast('⚠️ Error de conexión'));
+        if(d.success){toast(`🔓 Conexión de ${username} desbloqueada`,'#22c55e');setTimeout(()=>location.reload(),1500);}
+        else toast('⚠️ Error al desbloquear','#ef4444');
+    }).catch(()=>toast('⚠️ Error de conexión','#ef4444'));
 }
 
-function toast(msg){
+function toast(msg,color='#6366f1'){
     const t=document.createElement("div");
     t.textContent=msg;
-    t.style.cssText="position:fixed;bottom:24px;right:24px;background:#0f172a;color:white;padding:12px 20px;border-radius:14px;font-size:13px;font-weight:600;z-index:99999;box-shadow:0 10px 30px rgba(0,0,0,0.4);border:1px solid rgba(255,255,255,0.08);font-family:'Plus Jakarta Sans',sans-serif;";
+    t.style.cssText=`position:fixed;bottom:24px;right:24px;background:#0f172a;color:white;padding:13px 22px;border-radius:14px;font-size:13px;font-weight:600;z-index:99999;box-shadow:0 10px 30px rgba(0,0,0,0.4);border:1px solid ${color}44;border-left:3px solid ${color};font-family:'Plus Jakarta Sans',sans-serif;`;
     document.body.appendChild(t);
-    gsap.from(t,{opacity:0,y:10,duration:0.3});
-    setTimeout(()=>{gsap.to(t,{opacity:0,duration:0.3,onComplete:()=>t.remove()});},3500);
+    gsap.from(t,{opacity:0,x:20,duration:0.35,ease:"back.out(1.4)"});
+    setTimeout(()=>{gsap.to(t,{opacity:0,x:20,duration:0.3,onComplete:()=>t.remove()});},3500);
 }
 
 function validarCodigo(){
