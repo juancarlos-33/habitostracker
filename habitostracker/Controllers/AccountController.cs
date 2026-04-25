@@ -470,10 +470,7 @@ namespace HabitTrackerApp.Controllers
 
             var blockedIp = _context.BlockedIPs.FirstOrDefault(b => b.IpAddress == ip);
             if (blockedIp != null)
-            {
-                ModelState.AddModelError("", "Tu IP ha sido bloqueada por el propietario.");
-                return View(login);
-            }
+                return RedirectToAction("Login", new { ipblocked = true });
 
             if (user == null)
             {
@@ -486,8 +483,7 @@ namespace HabitTrackerApp.Controllers
             {
                 user.LastIp = ip;
                 _context.SaveChanges();
-                ModelState.AddModelError("", "🔌 Tu acceso ha sido bloqueado. Contacta al administrador.");
-                return View(login);
+                return RedirectToAction("Login", new { blocked = true });
             }
 
             if (user.IsGoogleAccount)
