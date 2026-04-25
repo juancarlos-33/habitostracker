@@ -788,25 +788,19 @@ namespace HabitTrackerApp.Controllers
         [HttpPost]
         public async Task<IActionResult> Register(RegisterViewModel model, IFormFile profilePhoto)
         {
-            // 🚫 VALIDAR IP BLOQUEADA
             var ip = HttpContext.Request.Headers["X-Forwarded-For"].FirstOrDefault();
             if (string.IsNullOrEmpty(ip))
                 ip = HttpContext.Connection.RemoteIpAddress?.ToString();
 
             var blockedIp = _context.BlockedIPs.FirstOrDefault(b => b.IpAddress == ip);
             if (blockedIp != null)
-            {
-                ModelState.AddModelError("", "Tu IP ha sido bloqueada por el propietario.");
-                return View(model);
-            }
+                return RedirectToAction("Login", new { ipblocked = true });
 
-            // 🔌 VERIFICAR BLOQUEO DE CONEXIÓN
             var blockedUser = _context.Users.FirstOrDefault(u => u.LastIp == ip && u.IsIpBlocked);
             if (blockedUser != null)
                 return RedirectToAction("Login", new { blocked = true });
 
             ModelState.Remove("profilePhoto");
-
             if (!ModelState.IsValid) return View(model);
 
             if (_context.Users.Any(u => u.Username == model.Username))
@@ -822,7 +816,6 @@ namespace HabitTrackerApp.Controllers
             }
 
             string imagePath = null;
-
             if (profilePhoto != null && profilePhoto.Length > 0)
             {
                 var folder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/images/profiles");
@@ -861,7 +854,6 @@ namespace HabitTrackerApp.Controllers
 
             return RedirectToAction("ConfirmEmail");
         }
-
         [HttpGet]
         [Authorize]
         public IActionResult CheckBlockStatus()
@@ -1579,11 +1571,9 @@ namespace HabitTrackerApp.Controllers
                 var userCheck = _context.Users.FirstOrDefault(u => u.Email == email);
                 if (userCheck != null && userCheck.IsIpBlocked)
                 {
-                    await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-                    await HttpContext.SignOutAsync(GoogleDefaults.AuthenticationScheme);
-                    // Limpiar todas las cookies
                     foreach (var cookie in HttpContext.Request.Cookies.Keys)
                         HttpContext.Response.Cookies.Delete(cookie);
+                    await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
                     return RedirectToAction("Login", new { blocked = true });
                 }
 
@@ -1705,16 +1695,22 @@ namespace HabitTrackerApp.Controllers
             return View();
         }
 
-
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> GuestRegister(string username)
         {
-            var ip = HttpContext.Request.Headers["X-Forwarded-For"].FirstOrDefault()
-    ?? HttpContext.Connection.RemoteIpAddress?.ToString();
+            var ip = HttpContext.Request.Headers["X-Forwarded-For"].FirstOrDefault();
+            if (string.IsNullOrEmpty(ip))
+                ip = HttpContext.Connection.RemoteIpAddress?.ToString();
+
+            var blockedIp = _context.BlockedIPs.FirstOrDefault(b => b.IpAddress == ip);
+            if (blockedIp != null)
+                return RedirectToAction("Login", new { ipblocked = true });
+
             var blockedUser = _context.Users.FirstOrDefault(u => u.LastIp == ip && u.IsIpBlocked);
             if (blockedUser != null)
                 return RedirectToAction("Login", new { blocked = true });
+
             if (string.IsNullOrWhiteSpace(username))
             {
                 ModelState.AddModelError("", "El nombre de usuario es obligatorio.");
@@ -1730,7 +1726,7 @@ namespace HabitTrackerApp.Controllers
             var user = new User
             {
                 Username = username,
-                Email = $"guest_{Guid.NewGuid()}@guest.local", // 👈 cambia aquí
+                Email = $"guest_{Guid.NewGuid()}@guest.local",
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword(Guid.NewGuid().ToString()),
                 EmailConfirmed = true,
                 Role = "Guest",
@@ -1746,7 +1742,6 @@ namespace HabitTrackerApp.Controllers
             await _context.SaveChangesAsync();
 
             await SignInUser(user);
-
             HttpContext.Session.SetString("Guest", "true");
 
             return RedirectToAction("Index", "Habit");
@@ -1831,19 +1826,34 @@ namespace HabitTrackerApp.Controllers
                 ip = ip.Split(',').First().Trim();
             else
                 ip = HttpContext.Connection.RemoteIpAddress?.ToString();
-
             var blocked = _context.BlockedIPs.FirstOrDefault(x => x.IpAddress == ip);
             if (blocked != null)
                 return RedirectToAction("Login", new { ipblocked = true });
 
             var result = await HttpContext.AuthenticateAsync("Cookies");
-            var claims = result.Principal.Identities.FirstOrDefault()?.Claims;
+            if (!result.Succeeded)
+            {
+                foreach (var cookie in HttpContext.Request.Cookies.Keys)
+                    HttpContext.Response.Cookies.Delete(cookie);
+                return RedirectToAction("Login");
+            }
 
+            var claims = result.Principal.Identities.FirstOrDefault()?.Claims;
             var email = claims?.FirstOrDefault(c => c.Type == ClaimTypes.Email)?.Value;
             var name = claims?.FirstOrDefault(c => c.Type == ClaimTypes.Name)?.Value;
             var picture = claims?.FirstOrDefault(c => c.Type == "picture")?.Value;
 
             if (email == null) return RedirectToAction("Login");
+
+            // Verificar bloqueo de conexión por email
+            var userCheck = _context.Users.FirstOrDefault(u => u.Email == email);
+            if (userCheck != null && userCheck.IsIpBlocked)
+            {
+                foreach (var cookie in HttpContext.Request.Cookies.Keys)
+                    HttpContext.Response.Cookies.Delete(cookie);
+                await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+                return RedirectToAction("Login", new { blocked = true });
+            }
 
             // 🔥 Invitado → convertir
             var userIdClaim = User.FindFirst("UserId");
