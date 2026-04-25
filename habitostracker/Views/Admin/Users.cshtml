@@ -232,24 +232,33 @@ body.bg-dark .qb.n{background:#1e293b!important;color:#94a3b8!important;border-c
     </div>
 
     <!-- KPIs -->
-    <div class="kg">
-        <div class="kc" onclick="showAll()">
-            <div class="kiw b">👥</div>
-            <div><div class="kv">@Model.Count</div><div class="kl">Usuarios</div></div>
-        </div>
-        <div class="kc" onclick="filterByStatus('banned')">
-            <div class="kiw r">🚫</div>
-            <div><div class="kv r">@Model.Count(u => u.IsBanned)</div><div class="kl">Baneados</div></div>
-        </div>
-        <div class="kc" onclick="filterByStatus('inactive')">
-            <div class="kiw y">⚠️</div>
-            <div><div class="kv y">@Model.Count(u => !u.IsActive)</div><div class="kl">Desactivados</div></div>
-        </div>
-        <div class="kc" onclick="filterByStatus('active')">
-            <div class="kiw g">✅</div>
-            <div><div class="kv g" id="activeUsers">@activeNow</div><div class="kl">Activos ahora</div></div>
-        </div>
+ <!-- KPIs -->
+<div class="kg" style="grid-template-columns:repeat(3,1fr);">
+    <div class="kc" onclick="showAll()">
+        <div class="kiw b">👥</div>
+        <div><div class="kv">@Model.Count</div><div class="kl">Total usuarios</div></div>
     </div>
+    <div class="kc" onclick="filterByStatus('active')">
+        <div class="kiw g">🟢</div>
+        <div><div class="kv g" id="activeUsers">@activeNow</div><div class="kl">Activos ahora</div></div>
+    </div>
+    <div class="kc" onclick="filterByStatus('offline')">
+        <div class="kiw" style="background:rgba(100,116,139,0.1);">⚫</div>
+        <div><div class="kv" style="color:#64748b;">@Model.Count(u => u.IsActive && !u.IsBanned && (u.LastOnline == null || (DateTime.Now - u.LastOnline.Value).TotalSeconds >= 60))</div><div class="kl">Inactivos</div></div>
+    </div>
+    <div class="kc" onclick="filterByStatus('banned')">
+        <div class="kiw r">🚫</div>
+        <div><div class="kv r">@Model.Count(u => u.IsBanned)</div><div class="kl">Baneados</div></div>
+    </div>
+    <div class="kc" onclick="filterByStatus('inactive')">
+        <div class="kiw y">⚠️</div>
+        <div><div class="kv y">@Model.Count(u => !u.IsActive)</div><div class="kl">Desactivados</div></div>
+    </div>
+    <div class="kc" onclick="filterByStatus('blocked')">
+        <div class="kiw" style="background:rgba(99,102,241,0.1);">🔌</div>
+        <div><div class="kv" style="color:#6366f1;">@Model.Count(u => u.IsIpBlocked)</div><div class="kl">Con. bloqueada</div></div>
+    </div>
+</div>
 
     <!-- ACCIONES -->
     <div class="qa">
@@ -293,7 +302,7 @@ body.bg-dark .qb.n{background:#1e293b!important;color:#94a3b8!important;border-c
                     bool isAdminUser = user.Role == "Admin";
                     var photo = user.ProfileImage ?? user.ProfilePicture ?? "";
 
-                    <tr class="user-row" data-username="@user.Username.ToLower()">
+                    <tr class="user-row" data-username="@user.Username.ToLower()" data-blocked="@user.IsIpBlocked.ToString().ToLower()">
                         <td>
                             <div class="uc">
                                 @if (user.Role == "SuperAdmin")
@@ -447,7 +456,7 @@ body.bg-dark .qb.n{background:#1e293b!important;color:#94a3b8!important;border-c
             bool isAdminUser = user.Role == "Admin";
             var photo = user.ProfileImage ?? user.ProfilePicture ?? "";
 
-            <div class="mcard user-row" data-username="@user.Username.ToLower()">
+          <div class="mcard user-row" data-username="@user.Username.ToLower()" data-blocked="@user.IsIpBlocked.ToString().ToLower()">
                 <div class="mct">
                     <div class="uc">
                         @if (user.Role == "SuperAdmin")
@@ -587,16 +596,23 @@ document.getElementById("searchUser").addEventListener("keyup",function(){
 
 function showAll(){document.querySelectorAll(".user-row").forEach(r=>r.style.display="");}
 
-function filterByStatus(s){
+function filterByStatus(status){
     document.querySelectorAll(".user-row").forEach(r=>{
         const c=r.querySelector("[id^='status-']");
         if(!c)return;
         const t=c.textContent.toLowerCase();
-        const show=s==='banned'?t.includes('baneado'):s==='inactive'?t.includes('desactivado'):s==='active'?(t.includes('activo')&&!t.includes('inactivo')&&!t.includes('desactivado')):true;
+        let show=true;
+        if(status==='banned') show=t.includes('baneado');
+        else if(status==='inactive') show=t.includes('desactivado');
+        else if(status==='active') show=t.includes('activo')&&!t.includes('inactivo')&&!t.includes('desactivado');
+        else if(status==='offline') show=t.includes('inactivo');
+        else if(status==='blocked'){
+            // filtrar por data attribute
+            show=r.dataset.blocked==='true';
+        }
         r.style.display=show?"":"none";
     });
 }
-
 function confirmDelete(id){if(confirm("¿Desactivar este usuario?"))window.location.href="/Admin/DeleteUser/"+id;}
 function confirmRemoveAdmin(id){if(confirm("¿Quitar admin?"))window.location.href="/Admin/RemoveAdmin/"+id;}
 function pedirCodigoAdmin(){document.getElementById("codeModal").style.display="flex";}
