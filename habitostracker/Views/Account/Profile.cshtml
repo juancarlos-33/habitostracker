@@ -677,7 +677,7 @@ function loadAvatarStyle(style) {
 
     let loaded = 0;
     avatarSeeds.forEach(seed => {
-       const url = `https://api.dicebear.com/7.x/${style}/png?seed=${seed}&size=200`;
+     const url = `https://api.dicebear.com/7.x/${style}/png?seed=${seed}&size=200&backgroundColor=b6e3f4,c0aede,d1d4f9,ffd5dc,ffdfbf`;
         const div = document.createElement('div');
         div.className = 'avatar-option';
         div.onclick = () => selectAvatar(url, div);
@@ -686,7 +686,11 @@ function loadAvatarStyle(style) {
         img.src = url;
         img.alt = seed;
         img.onload = () => { loaded++; if (loaded >= avatarSeeds.length) loading.style.display = 'none'; };
-        img.onerror = () => { loaded++; if (loaded >= avatarSeeds.length) loading.style.display = 'none'; };
+       img.onerror = () => {
+    loaded++;
+    div.style.display = 'none'; // ocultar los que no cargan
+    if (loaded >= avatarSeeds.length) loading.style.display = 'none';
+};
 
         div.appendChild(img);
         grid.appendChild(div);
