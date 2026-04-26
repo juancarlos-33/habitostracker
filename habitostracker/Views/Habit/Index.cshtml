@@ -332,6 +332,15 @@ new Chart(document.getElementById('habitChart'), {
         }
     }
 });
+// ══ SONIDO AL COMPLETAR HÁBITO ══
+document.querySelectorAll('.hab-btn.complete, .hca-btn.complete').forEach(btn => {
+    btn.addEventListener('click', function(e) {
+        e.preventDefault();
+        const href = this.getAttribute('href');
+        HabitSounds.complete();
+        setTimeout(() => window.location.href = href, 350);
+    });
+});
 
 // FRASES
 const frases = ["La disciplina es el puente entre metas y logros. 🚀","Cada día es una nueva oportunidad para mejorar. 💪","Los pequeños hábitos crean grandes cambios. 🌱","El éxito no es un destino, es un hábito diario. 🏆","No necesitas ser perfecto, solo consistente. 🔥","Un hábito a la vez. Un día a la vez. ⚡","La constancia vence al talento cuando el talento no es constante. 🎯","Tu futuro depende de lo que hagas hoy. 💡","La motivación te arranca, el hábito te mantiene. 🛤️","El dolor de la disciplina es menor que el dolor del arrepentimiento. 💎","Sé la mejor versión de ti mismo, cada día. 🌟","No cuentes los días, haz que los días cuenten. ⏳","Cae siete veces, levántate ocho. 🥊","El éxito es la suma de pequeños esfuerzos repetidos cada día. 📈","La única forma de hacer un gran trabajo es amar lo que haces. ❤️","Primero forma el hábito, luego el hábito te forma a ti. 🔄","El progreso, no la perfección, es el objetivo. 📊","Los hábitos son el interés compuesto del auto-mejoramiento. 📉","La excelencia no es un acto, es un hábito. 👌","Comienza donde estás, usa lo que tienes, haz lo que puedas. 🛠️"];

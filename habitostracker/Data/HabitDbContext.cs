@@ -21,6 +21,8 @@ namespace HabitTrackerApp.Data
         public DbSet<UserSession> UserSessions { get; set; }
         public DbSet<GroupMessageReaction> GroupMessageReactions { get; set; }
 
+        public DbSet<Story> Stories { get; set; }
+        public DbSet<StoryView> StoryViews { get; set; }
         public DbSet<Group> Groups { get; set; }
         public DbSet<GroupMember> GroupMembers { get; set; }
         public DbSet<GroupMessage> GroupMessages { get; set; }

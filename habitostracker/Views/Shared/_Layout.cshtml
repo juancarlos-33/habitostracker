@@ -724,7 +724,7 @@ function showToastNotif(username, message, userImage, link) {
     card.appendChild(bar);
     if (link) card.addEventListener("click", () => window.location.href = link);
 
-    document.getElementById("ht-notifs").appendChild(card);
+  HabitSounds.notification();
     requestAnimationFrame(() => requestAnimationFrame(() => { card.classList.add("show"); bar.style.width = "0%"; }));
     setTimeout(() => { card.classList.remove("show"); card.classList.add("hide"); setTimeout(() => card.remove(), 400); }, 4000);
 }
@@ -881,6 +881,61 @@ document.addEventListener("DOMContentLoaded", () => { if (localStorage.getItem("
 })();
 
 });
+
+// ══ SONIDOS ══════════════════════════
+const HabitSounds = {
+    enabled: localStorage.getItem('ht_sounds') !== 'false',
+
+    ctx: null,
+    getCtx() {
+        if (!this.ctx) this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+        return this.ctx;
+    },
+
+    complete() {
+        if (!this.enabled) return;
+        const ctx = this.getCtx();
+        const t = ctx.currentTime;
+        // Tres notas ascendentes — sensación de logro
+        [523, 659, 784].forEach((freq, i) => {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.connect(gain); gain.connect(ctx.destination);
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(freq, t + i * 0.12);
+            gain.gain.setValueAtTime(0, t + i * 0.12);
+            gain.gain.linearRampToValueAtTime(0.18, t + i * 0.12 + 0.02);
+            gain.gain.exponentialRampToValueAtTime(0.001, t + i * 0.12 + 0.25);
+            osc.start(t + i * 0.12);
+            osc.stop(t + i * 0.12 + 0.3);
+        });
+    },
+
+    notification() {
+        if (!this.enabled) return;
+        const ctx = this.getCtx();
+        const t = ctx.currentTime;
+        // Dos notas suaves — tipo mensaje
+        [880, 1100].forEach((freq, i) => {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.connect(gain); gain.connect(ctx.destination);
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(freq, t + i * 0.1);
+            gain.gain.setValueAtTime(0, t + i * 0.1);
+            gain.gain.linearRampToValueAtTime(0.12, t + i * 0.1 + 0.02);
+            gain.gain.exponentialRampToValueAtTime(0.001, t + i * 0.1 + 0.2);
+            osc.start(t + i * 0.1);
+            osc.stop(t + i * 0.1 + 0.25);
+        });
+    },
+
+    toggle() {
+        this.enabled = !this.enabled;
+        localStorage.setItem('ht_sounds', this.enabled ? 'true' : 'false');
+        return this.enabled;
+    }
+};
 </script>
 
 <script>

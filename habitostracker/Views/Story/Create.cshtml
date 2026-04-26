@@ -1,0 +1,190 @@
+﻿@{
+    ViewData["Title"] = "Nueva Historia";
+}
+
+<style>
+.story-create-wrap{max-width:480px;margin:0 auto;padding:20px 0;}
+.story-tabs{display:flex;gap:8px;margin-bottom:20px;}
+.story-tab{flex:1;padding:10px;border-radius:12px;border:2px solid #e5e7eb;background:white;font-size:13px;font-weight:700;cursor:pointer;transition:0.2s;color:#374151;text-align:center;}
+.story-tab.active{border-color:#6366f1;background:#6366f1;color:white;}
+.story-panel{display:none;}
+.story-panel.active{display:block;}
+.story-preview{
+    width:100%;aspect-ratio:9/16;border-radius:22px;overflow:hidden;
+    position:relative;margin-bottom:16px;max-height:400px;
+    background:#1e293b;display:flex;align-items:center;justify-content:center;
+}
+.story-preview img,.story-preview video{width:100%;height:100%;object-fit:cover;}
+.story-text-preview{
+    width:100%;aspect-ratio:9/16;border-radius:22px;
+    display:flex;align-items:center;justify-content:center;
+    padding:32px;text-align:center;max-height:400px;
+    font-size:22px;font-weight:800;color:white;
+    word-break:break-word;line-height:1.4;
+}
+.story-colors{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;}
+.story-color{width:32px;height:32px;border-radius:50%;cursor:pointer;border:3px solid transparent;transition:0.2s;}
+.story-color.active{border-color:white;box-shadow:0 0 0 2px #6366f1;}
+.story-textarea{
+    width:100%;padding:14px;border-radius:14px;border:1.5px solid #e5e7eb;
+    font-size:15px;resize:none;outline:none;font-family:inherit;
+    background:white;color:#111827;box-sizing:border-box;
+}
+.story-textarea:focus{border-color:#6366f1;box-shadow:0 0 0 3px rgba(99,102,241,0.1);}
+.story-upload-area{
+    border:2px dashed #e5e7eb;border-radius:18px;padding:40px 20px;
+    text-align:center;cursor:pointer;transition:0.2s;background:#f9fafb;
+    margin-bottom:16px;
+}
+.story-upload-area:hover{border-color:#6366f1;background:#f5f3ff;}
+.story-upload-icon{font-size:40px;margin-bottom:10px;}
+.story-upload-text{font-size:14px;font-weight:600;color:#374151;margin-bottom:4px;}
+.story-upload-sub{font-size:12px;color:#9ca3af;}
+.story-submit-btn{
+    width:100%;padding:14px;border-radius:14px;border:none;
+    background:linear-gradient(135deg,#6366f1,#4f46e5);color:white;
+    font-size:15px;font-weight:700;cursor:pointer;transition:0.2s;font-family:inherit;
+    box-shadow:0 4px 14px rgba(99,102,241,0.35);
+}
+.story-submit-btn:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(99,102,241,0.45);}
+
+body.bg-dark .story-tab{background:#1e293b!important;border-color:#334155!important;color:#f1f5f9!important;}
+body.bg-dark .story-tab.active{background:#6366f1!important;border-color:#6366f1!important;color:white!important;}
+body.bg-dark .story-textarea{background:#1e293b!important;border-color:#334155!important;color:#f1f5f9!important;}
+body.bg-dark .story-upload-area{background:#1e293b!important;border-color:#334155!important;}
+body.bg-dark .story-upload-text{color:#f1f5f9!important;}
+</style>
+
+<div class="story-create-wrap">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;">
+        <a href="/Post/Index" style="color:#6366f1;font-size:20px;text-decoration:none;">←</a>
+        <h4 style="margin:0;font-size:18px;font-weight:800;">Nueva historia</h4>
+    </div>
+
+    <!-- TABS -->
+    <div class="story-tabs">
+        <button class="story-tab active" onclick="switchTab('image')">📷 Foto</button>
+        <button class="story-tab" onclick="switchTab('video')">🎥 Video</button>
+        <button class="story-tab" onclick="switchTab('text')">✏️ Texto</button>
+    </div>
+
+    <!-- FORM -->
+    <form asp-controller="Story" asp-action="Create" method="post" enctype="multipart/form-data">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="type" id="storyType" value="image"/>
+        <input type="hidden" name="bgColor" id="storyBgColor" value="#6366f1"/>
+
+        <!-- PANEL FOTO -->
+        <div class="story-panel active" id="panel-image">
+            <div class="story-preview" id="imagePreview">
+                <div style="text-align:center;color:rgba(255,255,255,0.4);">
+                    <div style="font-size:48px;margin-bottom:8px;">📷</div>
+                    <div style="font-size:13px;">Vista previa</div>
+                </div>
+            </div>
+            <div class="story-upload-area" onclick="document.getElementById('imageFile').click()">
+                <div class="story-upload-icon">🖼️</div>
+                <div class="story-upload-text">Selecciona una foto</div>
+                <div class="story-upload-sub">JPG, PNG, WEBP · Máx 10MB</div>
+            </div>
+            <input type="file" id="imageFile" name="media" accept="image/*" style="display:none;" onchange="previewImage(this)"/>
+        </div>
+
+        <!-- PANEL VIDEO -->
+        <div class="story-panel" id="panel-video">
+            <div class="story-preview" id="videoPreview">
+                <div style="text-align:center;color:rgba(255,255,255,0.4);">
+                    <div style="font-size:48px;margin-bottom:8px;">🎥</div>
+                    <div style="font-size:13px;">Vista previa</div>
+                </div>
+            </div>
+            <div class="story-upload-area" onclick="document.getElementById('videoFile').click()">
+                <div class="story-upload-icon">🎬</div>
+                <div class="story-upload-text">Selecciona un video</div>
+                <div class="story-upload-sub">MP4, MOV · Máx 30 segundos</div>
+            </div>
+            <input type="file" id="videoFile" name="media" accept="video/*" style="display:none;" onchange="previewVideo(this)"/>
+            <div id="videoDurationWarning" style="display:none;background:#fee2e2;color:#dc2626;padding:10px 14px;border-radius:10px;font-size:13px;font-weight:600;margin-bottom:12px;">
+                ⚠️ El video supera 30 segundos. Se recortará al publicar.
+            </div>
+        </div>
+
+        <!-- PANEL TEXTO -->
+        <div class="story-panel" id="panel-text">
+            <div class="story-text-preview" id="textPreview" style="background:#6366f1;">
+                <span id="textPreviewContent" style="opacity:0.4;">Tu texto aquí...</span>
+            </div>
+            <div class="story-colors">
+                @foreach (var color in new[] { "#6366f1","#ec4899","#f97316","#22c55e","#ef4444","#3b82f6","#8b5cf6","#0f172a","#1e293b","#d97706" })
+                {
+                    <div class="story-color" style="background:@color;" data-color="@color" onclick="setBgColor('@color')"></div>
+                }
+            </div>
+            <textarea name="textContent" id="storyText" class="story-textarea" rows="4"
+                      placeholder="Escribe algo..." maxlength="200"
+                      oninput="updateTextPreview(this.value)"></textarea>
+            <div style="text-align:right;font-size:11px;color:#9ca3af;margin-top:4px;" id="charCount">0/200</div>
+        </div>
+
+        <button type="submit" class="story-submit-btn" style="margin-top:16px;">
+            📤 Publicar historia
+        </button>
+    </form>
+</div>
+
+<script>
+let currentTab = 'image';
+
+function switchTab(tab) {
+    currentTab = tab;
+    document.getElementById('storyType').value = tab;
+    document.querySelectorAll('.story-tab').forEach((t,i) => {
+        t.classList.toggle('active', ['image','video','text'][i] === tab);
+    });
+    document.querySelectorAll('.story-panel').forEach(p => p.classList.remove('active'));
+    document.getElementById('panel-' + tab).classList.add('active');
+}
+
+function previewImage(input) {
+    const file = input.files[0];
+    if (!file) return;
+    const url = URL.createObjectURL(file);
+    const preview = document.getElementById('imagePreview');
+    preview.innerHTML = `<img src="${url}" style="width:100%;height:100%;object-fit:cover;border-radius:20px;"/>`;
+}
+
+function previewVideo(input) {
+    const file = input.files[0];
+    if (!file) return;
+    const url = URL.createObjectURL(file);
+    const preview = document.getElementById('videoPreview');
+    preview.innerHTML = `<video src="${url}" style="width:100%;height:100%;object-fit:cover;border-radius:20px;" controls muted></video>`;
+
+    // Verificar duración
+    const video = preview.querySelector('video');
+    video.onloadedmetadata = () => {
+        const warning = document.getElementById('videoDurationWarning');
+        warning.style.display = video.duration > 30 ? 'block' : 'none';
+    };
+}
+
+function setBgColor(color) {
+    document.getElementById('storyBgColor').value = color;
+    document.getElementById('textPreview').style.background = color;
+    document.querySelectorAll('.story-color').forEach(c => {
+        c.classList.toggle('active', c.dataset.color === color);
+    });
+}
+
+function updateTextPreview(text) {
+    const preview = document.getElementById('textPreviewContent');
+    preview.textContent = text || 'Tu texto aquí...';
+    preview.style.opacity = text ? '1' : '0.4';
+    document.getElementById('charCount').textContent = text.length + '/200';
+}
+
+// Activar primer color
+document.addEventListener('DOMContentLoaded', () => {
+    document.querySelector('.story-color').classList.add('active');
+});
+</script>
