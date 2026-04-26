@@ -232,13 +232,38 @@ body::after{content:'';position:fixed;inset:0;z-index:9998;pointer-events:none;o
         @if(Context.Request.Query["deleted"]=="true"){<div class="malert danger">⚠️ Cuenta eliminada</div><script>const _q=new URL(location);_q.searchParams.delete("deleted");history.replaceState({},'',_q.pathname);</script>}
         @if(Context.Request.Query["banned"]=="true"){<div class="malert danger">🚫 Cuenta baneada</div>}
         @if(Context.Request.Query["deactivated"]=="true"){<div class="malert warning">⚠️ Cuenta desactivada</div>}
-        @if(Context.Request.Query["blocked"]=="true"){
-            <div class="malert danger" style="flex-direction:column;text-align:center;padding:16px;gap:12px;">
-                <div style="font-size:32px;">🔌</div>
-                <div style="font-weight:800;font-size:15px;color:#fca5a5;">Acceso bloqueado</div>
-                <div style="font-size:12px;color:rgba(255,255,255,0.4);line-height:1.6;">Tu acceso ha sido bloqueado por el administrador.</div>
-            </div>
-        }
+      @if(Context.Request.Query["blocked"]=="true"){
+    <div style="flex-direction:column;text-align:center;padding:20px 16px;gap:10px;display:flex;
+                background:linear-gradient(135deg,rgba(239,68,68,0.08),rgba(127,29,29,0.12));
+                border:1px solid rgba(239,68,68,0.2);border-radius:16px;margin-bottom:10px;
+                box-shadow:0 0 30px rgba(239,68,68,0.08);position:relative;overflow:hidden;">
+        <div style="position:absolute;inset:0;background:radial-gradient(ellipse at center top,rgba(239,68,68,0.1),transparent 70%);pointer-events:none;"></div>
+        <div style="font-size:36px;filter:drop-shadow(0 0 12px rgba(239,68,68,0.6));animation:warnPulse 2s ease-in-out infinite;">⚠️</div>
+        <div style="font-weight:900;font-size:16px;color:#fca5a5;letter-spacing:-0.3px;">Acceso denegado :(</div>
+        <div style="font-size:12px;color:rgba(255,255,255,0.35);line-height:1.7;">Lo sentimos, tu conexión ha sido bloqueada<br>por el propietario de esta página.</div>
+        <div style="width:40px;height:2px;background:linear-gradient(90deg,transparent,#ef4444,transparent);margin:4px auto 0;"></div>
+    </div>
+    <style>
+        @@keyframes warnPulse{0%,100%{filter:drop-shadow(0 0 8px rgba(239,68,68,0.4));}50%{filter:drop-shadow(0 0 20px rgba(239,68,68,0.9));}}
+    </style>
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+          document.querySelectorAll('.gbtn, .guestbtn, .msbtn, .minp, .ptog, .nav-cta').forEach(el => {
+    el.style.pointerEvents = 'none';
+   el.style.opacity = '0.15';
+el.style.filter = 'grayscale(100%)';
+    el.style.cursor = 'not-allowed';
+    el.setAttribute('disabled', 'true');
+    el.onclick = e => { e.preventDefault(); e.stopPropagation(); return false; };
+});
+document.querySelectorAll('.mdiv, .mfield, .mreg, .mtrust, .strbar, .forgot').forEach(el => {
+    el.style.display = 'none';
+});
+// Deshabilitar también doLogin
+window.doLogin = () => false;
+        });
+    </script>
+}
         @if(Context.Request.Query["ipblocked"]=="true"){<div class="malert danger">🚫 IP bloqueada</div>}
         @if(TempData["Success"]!=null){<div class="malert success">✅ @TempData["Success"]</div>}
         @if(TempData["Unblocked"]!=null){<script>localStorage.clear();sessionStorage.clear();</script>}
@@ -282,7 +307,7 @@ body::after{content:'';position:fixed;inset:0;z-index:9998;pointer-events:none;o
             </div>
             <input type="hidden" id="lat" name="Latitude"/>
             <input type="hidden" id="lon" name="Longitude"/>
-            <button type="button" class="msbtn" onclick="doLogin()">Entrar →</button>
+         <button type="button" class="msbtn" onclick="doLogin()">Entrar →</button>
             <div class="mreg">¿No tienes cuenta? <a asp-controller="Account" asp-action="Register" class="mreglink">Crear cuenta gratis</a></div>
         </form>
         <div class="mtrust"><span>🔒 SSL</span><span>🛡️ Sin spam</span><span>✨ Gratis</span></div>
