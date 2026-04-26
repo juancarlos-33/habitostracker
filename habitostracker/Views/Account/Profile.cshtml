@@ -49,6 +49,11 @@
                 var pic = !string.IsNullOrEmpty(Model.ProfileImage)
                     ? Model.ProfileImage
                     : Model.ProfilePicture;
+                    @if (!string.IsNullOrEmpty(pic))
+{
+    <img id="previewImage" src="@pic" class="profile-avatar"
+         onerror="this.style.display='none';document.getElementById('previewLetter').style.display='flex';" />
+}
             }
             @if (!string.IsNullOrEmpty(pic))
             {
@@ -673,7 +678,7 @@ function loadAvatarStyle(style) {
 
     let loaded = 0;
     avatarSeeds.forEach(seed => {
-        const url = `https://api.dicebear.com/7.x/${style}/svg?seed=${seed}&size=80`;
+       const url = `https://api.dicebear.com/7.x/${style}/png?seed=${seed}&size=200`;
         const div = document.createElement('div');
         div.className = 'avatar-option';
         div.onclick = () => selectAvatar(url, div);
