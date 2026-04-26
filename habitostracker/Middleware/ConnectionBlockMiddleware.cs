@@ -73,10 +73,21 @@ public class ConnectionBlockMiddleware
             }
         }
 
-        // Bloqueo global
+      
+        // Bloqueo global — SuperAdmin siempre pasa
         var block = db.ConnectionBlocks.FirstOrDefault();
         if (block != null && block.IsBlocked && user.Identity?.IsAuthenticated == true)
         {
+            var superCheck = user.FindFirst("UserId");
+            if (superCheck != null && int.TryParse(superCheck.Value, out int superUid))
+            {
+                var superUser = db.Users.FirstOrDefault(u => u.Id == superUid);
+                if (superUser?.Role == "SuperAdmin")
+                {
+                    await _next(context);
+                    return;
+                }
+            }
             context.Response.Redirect("/Home/ConnectionBlocked");
             return;
         }
