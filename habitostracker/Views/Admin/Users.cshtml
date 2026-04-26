@@ -441,20 +441,7 @@ body.bg-dark .qb.n{background:#1e293b!important;color:#94a3b8!important;border-c
                                     }
                                     @if (isSuperAdmin && user.Id != myId)
                                     {
-                                        @if (isBlockedIp)
-                                        {
-                                            <form asp-controller="Admin" asp-action="UnblockIP" method="post" style="margin:0">
-                                                <input type="hidden" name="ip" value="@user.LastIp"/>
-                                                <button class="ipb ub" onclick="return confirm('¿Desbloquear IP?')">🔓 Desbloquear IP</button>
-                                            </form>
-                                        }
-                                        else
-                                        {
-                                            <form asp-controller="Admin" asp-action="BlockIP" method="post" style="margin:0" onsubmit="return confirm('¿Bloquear IP?')">
-                                                <input type="hidden" name="ip" value="@user.LastIp"/>
-                                                <button type="submit" class="ipb bl">🚫 Bloquear IP</button>
-                                            </form>
-                                        }
+                                       
                                     }
                                 </div>
                             }
@@ -530,8 +517,7 @@ body.bg-dark .qb.n{background:#1e293b!important;color:#94a3b8!important;border-c
     <div class="mc2">
         @foreach (var user in Model)
         {
-            var blockedIps = ViewBag.BlockedIps as List<string> ?? new List<string>();
-            bool isBlockedIp = user.LastIp != null && blockedIps.Contains(user.LastIp);
+         
             bool isAdminUser = user.Role == "Admin";
             var photo = user.ProfileImage ?? user.ProfilePicture ?? "";
 
