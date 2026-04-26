@@ -116,6 +116,7 @@ body.bg-dark .sc-preview{background:#0f172a!important;}
         <input type="hidden" name="type" id="storyType" value="image"/>
         <input type="hidden" name="bgColor" value="#6366f1"/>
         <input type="hidden" name="visibility" id="storyVisibility" value="friends"/>
+        <input type="hidden" name="trimEnd" id="trimEndInput" value="30"/>
         <input type="file" id="mediaInput" name="media" accept="image/*,video/*" style="display:none;" onchange="handleMedia(this)"/>
 
         <!-- VISIBILIDAD -->
@@ -173,7 +174,7 @@ function handleMedia(input) {
     } else {
         const img = document.createElement('img');
         img.src = url;
-        img.style.cssText = 'width:100%;height:100%;object-fit:cover;border-radius:20px;';
+     img.style.cssText = 'width:100%;height:100%;object-fit:contain;border-radius:20px;background:#000;';
         preview.innerHTML = '';
         preview.appendChild(img);
         preview.style.cursor = 'pointer';
@@ -187,53 +188,37 @@ function handleMedia(input) {
 function setupTrimBar(duration) {
     const wrap = document.getElementById('trimBarWrap');
     wrap.style.display = 'block';
+    trimEnd = Math.min(duration, 30);
 
-    if (duration <= 30) {
-        document.getElementById('trimDuration').textContent = Math.round(duration) + 's / 30s';
-        document.getElementById('trimHandle').style.left = '100%';
-        document.getElementById('trimFill').style.width = '100%';
-        document.getElementById('trimWarning').style.display = 'none';
-        trimEnd = duration;
-        return;
-    }
+    const updateTrim = (secs) => {
+        trimEnd = Math.min(secs, 30);
+        const pct = (trimEnd / duration) * 100;
+        document.getElementById('trimHandle').style.left = pct + '%';
+        document.getElementById('trimFill').style.width = pct + '%';
+        document.getElementById('trimDuration').textContent = Math.round(trimEnd) + 's / ' + Math.round(duration) + 's';
+        const vid = document.getElementById('previewVideo');
+        if (vid) vid.currentTime = trimEnd;
+        document.getElementById('trimWarning').style.display = duration > 30 ? 'flex' : 'none';
+        document.getElementById('trimEndInput').value = Math.round(trimEnd);
+    };
 
-    // Video supera 30s — mostrar trim
-    document.getElementById('trimWarning').style.display = 'flex';
-    trimEnd = 30;
-    const pct = (30 / duration) * 100;
-    document.getElementById('trimHandle').style.left = pct + '%';
-    document.getElementById('trimFill').style.width = pct + '%';
-    document.getElementById('trimDuration').textContent = '30s / ' + Math.round(duration) + 's';
+    updateTrim(Math.min(duration, 30));
 
-    // Drag del handle
-    const handle = document.getElementById('trimHandle');
     const bar = document.getElementById('trimBar');
     let dragging = false;
 
-    handle.addEventListener('mousedown', () => dragging = true);
-    handle.addEventListener('touchstart', () => dragging = true);
+    const getPos = (clientX) => {
+        const rect = bar.getBoundingClientRect();
+        const pct = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+        return pct * duration;
+    };
+
+    document.getElementById('trimHandle').addEventListener('mousedown', e => { dragging = true; e.preventDefault(); });
+    document.getElementById('trimHandle').addEventListener('touchstart', e => { dragging = true; }, {passive:true});
     document.addEventListener('mouseup', () => dragging = false);
     document.addEventListener('touchend', () => dragging = false);
-
-    document.addEventListener('mousemove', e => moveTrim(e.clientX, bar, duration));
-    document.addEventListener('touchmove', e => moveTrim(e.touches[0].clientX, bar, duration), {passive:true});
-
-    function moveTrim(clientX, bar, duration) {
-        if (!dragging) return;
-        const rect = bar.getBoundingClientRect();
-        let pct = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
-        const secs = pct * duration;
-        if (secs > 30) { pct = 30 / duration; }
-        trimEnd = Math.min(pct * duration, 30);
-        const finalPct = (trimEnd / duration) * 100;
-        handle.style.left = finalPct + '%';
-        document.getElementById('trimFill').style.width = finalPct + '%';
-        document.getElementById('trimDuration').textContent = Math.round(trimEnd) + 's / ' + Math.round(duration) + 's';
-
-        // Sincronizar video
-        const vid = document.getElementById('previewVideo');
-        if (vid) vid.currentTime = trimEnd;
-    }
+    document.addEventListener('mousemove', e => { if (dragging) updateTrim(getPos(e.clientX)); });
+    document.addEventListener('touchmove', e => { if (dragging) updateTrim(getPos(e.touches[0].clientX)); }, {passive:true});
 }
 
 function setVisibility(vis) {

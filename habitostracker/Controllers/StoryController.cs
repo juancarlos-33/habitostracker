@@ -138,7 +138,7 @@ namespace HabitTrackerApp.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(string type, string? textContent, string? bgColor, string? caption, string? visibility, IFormFile? media)
+        public async Task<IActionResult> Create(string type, string? textContent, string? bgColor, string? caption, string? visibility, double trimEnd = 30, IFormFile? media = null)
         {
             var myId = int.Parse(User.FindFirst("UserId").Value);
 
@@ -159,10 +159,18 @@ namespace HabitTrackerApp.Controllers
             }
             else if (media != null && media.Length > 0)
             {
-                var folder = type == "video" ? "habitostracker/stories/videos" : "habitostracker/stories/images";
-                var url = await _cloudinary.UploadImageAsync(media, folder);
+                string url;
+                if (type == "video")
+                {
+                    url = await _cloudinary.UploadVideoAsync(media, "habitostracker/stories/videos", (int)Math.Min(trimEnd, 30));
+                    story.Duration = (int)Math.Min(trimEnd, 30);
+                }
+                else
+                {
+                    url = await _cloudinary.UploadImageAsync(media, "habitostracker/stories/images");
+                    story.Duration = 7;
+                }
                 story.MediaUrl = url;
-                story.Duration = type == "video" ? 30 : 7;
             }
 
             story.Visibility = visibility ?? "friends";

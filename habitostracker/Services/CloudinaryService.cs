@@ -30,6 +30,21 @@ public class CloudinaryService
         if (result.Error != null) throw new Exception(result.Error.Message);
         return result.SecureUrl.ToString();
     }
+    public async Task<string> UploadVideoAsync(IFormFile file, string folder, int maxDuration = 30)
+    {
+        using var stream = file.OpenReadStream();
+        _cloudinary.Api.Timeout = 180000;
+        var uploadParams = new VideoUploadParams
+        {
+            File = new FileDescription(file.FileName, stream),
+            Folder = folder,
+            PublicId = Guid.NewGuid().ToString(),
+            Overwrite = true
+        };
+        var result = await _cloudinary.UploadAsync(uploadParams);
+        if (result.Error != null) throw new Exception(result.Error.Message);
+        return result.SecureUrl.ToString();
+    }
 
     public async Task<string> UploadVideoAsync(IFormFile file)
     {
