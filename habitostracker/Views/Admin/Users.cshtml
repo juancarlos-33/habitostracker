@@ -279,7 +279,7 @@ body.bg-dark .qb.n{background:#1e293b!important;color:#94a3b8!important;border-c
         <div class="ah-right">
             <div class="conn-pill @(isBlocked ? "off" : "on")">
                 <span class="cdot @(isBlocked ? "r" : "g")"></span>
-                @(isBlocked ? "🔴 Bloqueada" : "🟢 Activa")
+                @(isBlocked ? "🔴 Bloqueada" : "🟢 Conexión Activa")
             </div>
             @if (isBlocked)
             {
@@ -290,12 +290,12 @@ body.bg-dark .qb.n{background:#1e293b!important;color:#94a3b8!important;border-c
             else if (me?.Role == "SuperAdmin")
             {
                 <form asp-controller="Admin" asp-action="ToggleConnectionBlock" method="post">
-                    <button class="cab blk" onclick="return confirm('¿Bloquear conexión global?')">🔒 Bloquear para todos</button>
+                    <button class="cab blk" onclick="return confirm('¿Bloquear conexión global?')">🔒 Bloquear conexión para todos</button>
                 </form>
             }
             else if (me?.Role == "Admin")
             {
-                <button class="cab blk" onclick="pedirCodigoAdmin()">🔒 Bloquear para todos</button>
+                <button class="cab blk" onclick="pedirCodigoAdmin()">🔒 Bloquear conexión para todos</button>
             }
         </div>
     </div>
