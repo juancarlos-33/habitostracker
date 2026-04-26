@@ -1177,7 +1177,7 @@ namespace HabitTrackerApp.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Profile(User updatedUser, IFormFile profilePhoto, string croppedImage)
+        public async Task<IActionResult> Profile(User updatedUser, IFormFile profilePhoto, string croppedImage, string selectedAvatarUrl)
         {
             var userId = int.Parse(User.FindFirst("UserId").Value);
             var user = _context.Users.FirstOrDefault(u => u.Id == userId);
@@ -1197,6 +1197,11 @@ namespace HabitTrackerApp.Controllers
             if (croppedImage == "REMOVE")
             {
                 user.ProfileImage = null;
+            }
+            else if (!string.IsNullOrEmpty(selectedAvatarUrl) && selectedAvatarUrl.StartsWith("https://api.dicebear.com"))
+            {
+                user.ProfileImage = selectedAvatarUrl;
+                user.ProfilePicture = null;
             }
             else if (!string.IsNullOrEmpty(croppedImage))
             {
