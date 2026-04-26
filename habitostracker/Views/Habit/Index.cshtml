@@ -104,6 +104,55 @@
     </div>
 </div>
 
+<!-- ══ HISTORIAS ══ -->
+<div class="stories-bar" id="storiesBar">
+    <div class="story-item" onclick="window.location.href='/Story/Create'">
+        <div class="story-avatar-wrap my-story">
+            @{ var myPic = User.FindFirst("ProfileImage")?.Value; var myUsername = User.Identity?.Name ?? "Yo"; }
+            @if (!string.IsNullOrEmpty(myPic))
+            { <img src="@myPic" class="story-avatar-img"/> }
+            else
+            { <div class="story-avatar-letter">@myUsername.Substring(0,1).ToUpper()</div> }
+            <div class="story-add-btn">+</div>
+        </div>
+        <div class="story-name">Tu historia</div>
+    </div>
+    <div id="friendStories"></div>
+</div>
+
+<!-- VISOR DE HISTORIAS -->
+<div id="storyViewer" class="story-viewer" style="display:none;">
+    <div class="story-viewer-bg" onclick="closeStoryViewer()"></div>
+    <div class="story-viewer-card">
+        <div class="story-progress-bars" id="storyProgressBars"></div>
+        <div class="story-viewer-header">
+            <div style="display:flex;align-items:center;gap:10px;">
+                <img id="svAvatar" style="width:36px;height:36px;border-radius:50%;object-fit:cover;border:2px solid white;"/>
+                <div>
+                    <div id="svUsername" style="font-size:13px;font-weight:700;color:white;"></div>
+                    <div id="svTime" style="font-size:11px;color:rgba(255,255,255,0.6);"></div>
+                </div>
+            </div>
+            <div style="display:flex;gap:8px;align-items:center;">
+                <button id="svHighlight" onclick="toggleHighlight()" style="background:none;border:none;color:white;font-size:20px;cursor:pointer;">☆</button>
+                <button id="svDelete" onclick="deleteCurrentStory()" style="background:none;border:none;color:white;font-size:18px;cursor:pointer;display:none;">🗑</button>
+                <button onclick="closeStoryViewer()" style="background:none;border:none;color:white;font-size:22px;cursor:pointer;">✕</button>
+            </div>
+        </div>
+        <div class="story-viewer-content" id="svContent">
+            <img id="svImg" style="display:none;width:100%;height:100%;object-fit:cover;"/>
+            <video id="svVideo" style="display:none;width:100%;height:100%;object-fit:cover;" playsinline muted></video>
+            <div id="svText" style="display:none;width:100%;height:100%;align-items:center;justify-content:center;padding:32px;text-align:center;font-size:22px;font-weight:800;color:white;line-height:1.4;word-break:break-word;"></div>
+        </div>
+        <div class="story-nav-left" onclick="prevStory()"></div>
+        <div class="story-nav-right" onclick="nextStory()"></div>
+        <div id="svCaption" style="position:absolute;bottom:44px;left:16px;right:16px;z-index:10;font-size:13px;color:white;font-weight:600;text-shadow:0 1px 4px rgba(0,0,0,0.5);text-align:center;"></div>
+        <div class="story-views-bar">
+            <span id="svViews">👁 0 vistas</span>
+        </div>
+    </div>
+</div>
+
 <!-- ══ QUOTE ══ -->
 <div class="quote-pill">
     <span class="quote-star">✨</span>
@@ -538,6 +587,33 @@ if (navigator.geolocation) {
     box-shadow: 0 2px 12px rgba(0,0,0,0.06);
     border: 1px solid rgba(0,0,0,0.04);
 }
+
+/* ══ STORIES ══ */
+.stories-bar{display:flex;gap:14px;overflow-x:auto;padding:4px 2px 16px;scrollbar-width:none;-webkit-overflow-scrolling:touch;margin-bottom:8px;}
+.stories-bar::-webkit-scrollbar{display:none;}
+.story-item{display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;flex-shrink:0;}
+.story-avatar-wrap{width:64px;height:64px;border-radius:50%;position:relative;padding:3px;background:linear-gradient(135deg,#f97316,#ec4899,#6366f1);}
+.story-avatar-wrap.my-story{background:linear-gradient(135deg,#6366f1,#4f46e5);}
+.story-avatar-wrap.viewed{background:#e5e7eb;}
+.story-avatar-img{width:100%;height:100%;border-radius:50%;object-fit:cover;border:2px solid white;}
+.story-avatar-letter{width:100%;height:100%;border-radius:50%;background:linear-gradient(135deg,#2563eb,#7c3aed);color:white;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:22px;border:2px solid white;}
+.story-add-btn{position:absolute;bottom:0;right:0;width:20px;height:20px;border-radius:50%;background:#6366f1;color:white;font-size:14px;font-weight:800;display:flex;align-items:center;justify-content:center;border:2px solid white;line-height:1;}
+.story-name{font-size:11px;font-weight:600;color:#374151;max-width:64px;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.story-viewer{position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;}
+.story-viewer-bg{position:absolute;inset:0;background:rgba(0,0,0,0.92);}
+.story-viewer-card{position:relative;width:100%;max-width:400px;height:100vh;max-height:720px;border-radius:20px;overflow:hidden;background:#000;z-index:1;}
+.story-progress-bars{position:absolute;top:12px;left:12px;right:12px;display:flex;gap:4px;z-index:10;}
+.story-progress-bar{flex:1;height:3px;background:rgba(255,255,255,0.3);border-radius:10px;overflow:hidden;}
+.story-progress-fill{height:100%;background:white;width:0%;}
+.story-viewer-header{position:absolute;top:28px;left:12px;right:12px;display:flex;align-items:center;justify-content:space-between;z-index:10;}
+.story-viewer-content{width:100%;height:100%;position:relative;}
+.story-nav-left{position:absolute;left:0;top:0;width:40%;height:100%;z-index:5;cursor:pointer;}
+.story-nav-right{position:absolute;right:0;top:0;width:40%;height:100%;z-index:5;cursor:pointer;}
+.story-views-bar{position:absolute;bottom:16px;left:16px;right:16px;display:flex;align-items:center;justify-content:center;z-index:10;}
+.story-views-bar span{font-size:12px;color:rgba(255,255,255,0.7);font-weight:600;}
+body.bg-dark .story-name{color:#94a3b8!important;}
+body.bg-dark .story-avatar-wrap.viewed{background:#334155!important;}
+@@media(max-width:768px){.story-viewer-card{border-radius:0;max-height:100vh;}}
 .empty-emoji { font-size: 52px; margin-bottom: 12px; }
 .empty-title { font-size: 17px; font-weight: 800; color: #111827; margin-bottom: 6px; }
 .empty-sub { font-size: 13px; color: #9ca3af; }
@@ -697,4 +773,144 @@ document.addEventListener("DOMContentLoaded", function () {
     history.pushState(null, null, location.href);
     window.onpopstate = function () { history.go(1); };
 });
+// ══ STORIES ══
+const myUserId = @(int.Parse(User.FindFirst("UserId").Value));
+let currentUserStories = [], currentStoryIndex = 0, storyProgressInterval = null;
+
+async function loadFriendStories() {
+    try {
+        const res = await fetch('/Story/GetFriendsStories');
+        const data = await res.json();
+        const container = document.getElementById('friendStories');
+        container.innerHTML = '';
+        data.forEach(group => {
+            const pic = group.user.profileImage || group.user.profilePicture || '';
+            const item = document.createElement('div');
+            item.className = 'story-item';
+            item.onclick = () => openStoryViewer(group);
+            const wrap = document.createElement('div');
+            wrap.className = `story-avatar-wrap ${group.hasUnviewed ? '' : 'viewed'}`;
+            wrap.innerHTML = pic
+                ? `<img src="${pic}" class="story-avatar-img"/>`
+                : `<div class="story-avatar-letter">${group.user.username.charAt(0).toUpperCase()}</div>`;
+            const name = document.createElement('div');
+            name.className = 'story-name';
+            name.textContent = group.user.username;
+            item.appendChild(wrap);
+            item.appendChild(name);
+            container.appendChild(item);
+        });
+    } catch(e) { console.error(e); }
+}
+
+function openStoryViewer(group) {
+    currentUserStories = group.stories;
+    currentStoryIndex = 0;
+    document.getElementById('svAvatar').src = group.user.profileImage || group.user.profilePicture || '';
+    document.getElementById('svUsername').textContent = group.user.username;
+    document.getElementById('svDelete').style.display = group.user.id === myUserId ? 'block' : 'none';
+    document.getElementById('storyViewer').style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+    buildProgressBars();
+    showStory(0);
+}
+
+function buildProgressBars() {
+    const bars = document.getElementById('storyProgressBars');
+    bars.innerHTML = '';
+    currentUserStories.forEach((_, i) => {
+        const bar = document.createElement('div');
+        bar.className = 'story-progress-bar';
+        bar.innerHTML = `<div class="story-progress-fill" id="progress-${i}"></div>`;
+        bars.appendChild(bar);
+    });
+}
+
+function showStory(index) {
+    if (index >= currentUserStories.length) { closeStoryViewer(); return; }
+    if (index < 0) { closeStoryViewer(); return; }
+    currentStoryIndex = index;
+    const story = currentUserStories[index];
+
+    fetch('/Story/View', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(story.id)});
+
+    document.getElementById('svImg').style.display = 'none';
+    document.getElementById('svVideo').style.display = 'none';
+    document.getElementById('svText').style.display = 'none';
+
+    if (story.type === 'image') {
+        const img = document.getElementById('svImg');
+        img.src = story.mediaUrl; img.style.display = 'block';
+    } else if (story.type === 'video') {
+        const vid = document.getElementById('svVideo');
+        vid.src = story.mediaUrl; vid.style.display = 'block'; vid.play();
+    } else {
+        const txt = document.getElementById('svText');
+        txt.textContent = story.textContent;
+        txt.style.background = story.bgColor || '#6366f1';
+        txt.style.display = 'flex';
+    }
+
+    document.getElementById('svTime').textContent = getTimeAgo(new Date(story.createdAt));
+    document.getElementById('svViews').textContent = `👁 ${story.views} vistas`;
+    document.getElementById('svHighlight').textContent = story.isHighlight ? '★' : '☆';
+    document.getElementById('svCaption').textContent = story.caption || '';
+
+    currentUserStories.forEach((_, i) => {
+        const fill = document.getElementById('progress-' + i);
+        if (fill) fill.style.width = i < index ? '100%' : '0%';
+    });
+    startProgress(index, story.duration * 1000);
+}
+
+function startProgress(index, duration) {
+    clearInterval(storyProgressInterval);
+    const fill = document.getElementById('progress-' + index);
+    if (!fill) return;
+    let elapsed = 0;
+    storyProgressInterval = setInterval(() => {
+        elapsed += 50;
+        fill.style.width = (elapsed / duration * 100) + '%';
+        if (elapsed >= duration) { clearInterval(storyProgressInterval); showStory(currentStoryIndex + 1); }
+    }, 50);
+}
+
+function nextStory() { clearInterval(storyProgressInterval); showStory(currentStoryIndex + 1); }
+function prevStory() { clearInterval(storyProgressInterval); showStory(currentStoryIndex - 1); }
+
+function closeStoryViewer() {
+    clearInterval(storyProgressInterval);
+    document.getElementById('storyViewer').style.display = 'none';
+    document.body.style.overflow = '';
+    const vid = document.getElementById('svVideo');
+    vid.pause(); vid.src = '';
+}
+
+async function deleteCurrentStory() {
+    if (!confirm('¿Eliminar esta historia?')) return;
+    const story = currentUserStories[currentStoryIndex];
+    await fetch('/Story/Delete', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(story.id)});
+    currentUserStories.splice(currentStoryIndex, 1);
+    if (!currentUserStories.length) { closeStoryViewer(); return; }
+    buildProgressBars();
+    showStory(Math.min(currentStoryIndex, currentUserStories.length - 1));
+}
+
+async function toggleHighlight() {
+    const story = currentUserStories[currentStoryIndex];
+    const res = await fetch('/Story/ToggleHighlight', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(story.id)});
+    const data = await res.json();
+    story.isHighlight = data.isHighlight;
+    document.getElementById('svHighlight').textContent = data.isHighlight ? '★' : '☆';
+}
+
+function getTimeAgo(date) {
+    const diff = Math.floor((Date.now() - date) / 60000);
+    if (diff < 1) return 'ahora';
+    if (diff < 60) return `hace ${diff} min`;
+    if (diff < 1440) return `hace ${Math.floor(diff/60)}h`;
+    return `hace ${Math.floor(diff/1440)}d`;
+}
+
+document.addEventListener('DOMContentLoaded', loadFriendStories);
 </script>
