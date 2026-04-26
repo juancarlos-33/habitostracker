@@ -139,7 +139,8 @@ namespace HabitTrackerApp.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> View(int storyId)
+        public async Task<IActionResult> View([FromBody] int storyId)
+
         {
             var myId = int.Parse(User.FindFirst("UserId").Value);
 
@@ -161,7 +162,8 @@ namespace HabitTrackerApp.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> Delete(int id)
+        public async Task<IActionResult> Delete([FromBody] int id)
+
         {
             var myId = int.Parse(User.FindFirst("UserId").Value);
             var story = await _context.Stories.FirstOrDefaultAsync(s => s.Id == id && s.UserId == myId);
@@ -172,7 +174,7 @@ namespace HabitTrackerApp.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> ToggleHighlight(int id)
+        public async Task<IActionResult> ToggleHighlight([FromBody] int id)
         {
             var myId = int.Parse(User.FindFirst("UserId").Value);
             var story = await _context.Stories.FirstOrDefaultAsync(s => s.Id == id && s.UserId == myId);

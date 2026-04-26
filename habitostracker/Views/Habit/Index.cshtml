@@ -851,7 +851,7 @@ function showStory(index) {
         txt.style.display = 'flex';
     }
 
-    document.getElementById('svTime').textContent = getTimeAgo(new Date(story.createdAt));
+ document.getElementById('svTime').textContent = getTimeAgo(new Date(story.createdAt + 'Z'));
     document.getElementById('svViews').textContent = `👁 ${story.views} vistas`;
     document.getElementById('svHighlight').textContent = story.isHighlight ? '★' : '☆';
     document.getElementById('svCaption').textContent = story.caption || '';
