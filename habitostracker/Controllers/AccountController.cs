@@ -468,9 +468,7 @@ namespace HabitTrackerApp.Controllers
             if (string.IsNullOrEmpty(ip))
                 ip = HttpContext.Connection.RemoteIpAddress?.ToString();
 
-            var blockedIp = _context.BlockedIPs.FirstOrDefault(b => b.IpAddress == ip);
-            if (blockedIp != null)
-                return RedirectToAction("Login", new { ipblocked = true });
+         
 
             if (user == null)
             {
@@ -792,9 +790,7 @@ namespace HabitTrackerApp.Controllers
             if (string.IsNullOrEmpty(ip))
                 ip = HttpContext.Connection.RemoteIpAddress?.ToString();
 
-            var blockedIp = _context.BlockedIPs.FirstOrDefault(b => b.IpAddress == ip);
-            if (blockedIp != null)
-                return RedirectToAction("Login", new { ipblocked = true });
+        
 
             var blockedUser = _context.Users.FirstOrDefault(u => u.LastIp == ip && u.IsIpBlocked);
             if (blockedUser != null)
@@ -1703,9 +1699,7 @@ namespace HabitTrackerApp.Controllers
             if (string.IsNullOrEmpty(ip))
                 ip = HttpContext.Connection.RemoteIpAddress?.ToString();
 
-            var blockedIp = _context.BlockedIPs.FirstOrDefault(b => b.IpAddress == ip);
-            if (blockedIp != null)
-                return RedirectToAction("Login", new { ipblocked = true });
+        
 
             var blockedUser = _context.Users.FirstOrDefault(u => u.LastIp == ip && u.IsIpBlocked);
             if (blockedUser != null)
@@ -1802,12 +1796,7 @@ namespace HabitTrackerApp.Controllers
             }
 
             // 🔥 VALIDAR BLOQUEO ANTES DE GOOGLE
-            var blocked = _context.BlockedIPs.FirstOrDefault(x => x.IpAddress == ip);
-
-            if (blocked != null)
-            {
-                return RedirectToAction("Login", new { ipblocked = true });
-            }
+       
 
             var redirectUrl = Url.Action("GoogleResponse", "Account");
 
@@ -1826,9 +1815,7 @@ namespace HabitTrackerApp.Controllers
                 ip = ip.Split(',').First().Trim();
             else
                 ip = HttpContext.Connection.RemoteIpAddress?.ToString();
-            var blocked = _context.BlockedIPs.FirstOrDefault(x => x.IpAddress == ip);
-            if (blocked != null)
-                return RedirectToAction("Login", new { ipblocked = true });
+       
 
             var result = await HttpContext.AuthenticateAsync("Cookies");
             if (!result.Succeeded)
