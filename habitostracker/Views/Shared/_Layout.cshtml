@@ -869,7 +869,18 @@ function toggleDarkMode() { body.classList.contains("bg-dark") ? disableDarkMode
 function enableDarkMode() { body.classList.remove("bg-light","text-dark"); body.classList.add("bg-dark","text-light"); localStorage.setItem("darkMode","enabled"); }
 function disableDarkMode() { body.classList.remove("bg-dark","text-light"); body.classList.add("bg-light","text-dark"); localStorage.setItem("darkMode","disabled"); }
 if (localStorage.getItem("darkMode") === "enabled") enableDarkMode();
-document.addEventListener("DOMContentLoaded", () => { if (localStorage.getItem("darkMode") === "enabled") enableDarkMode(); });
+document.addEventListener("DOMContentLoaded", () => { if (localStorage.getItem("darkMode") === "enabled") enableDarkMode(); 
+// Aplicar personalización guardada globalmente
+(function(){
+    const c = localStorage.getItem('ht_color');
+    const f = localStorage.getItem('ht_font');
+    const s = localStorage.getItem('ht_size_px');
+    if (c) { document.documentElement.style.setProperty('--primary',c); document.documentElement.style.setProperty('--accent',c); }
+    if (f) document.body.style.fontFamily = `'${f}',sans-serif`;
+    if (s) document.documentElement.style.fontSize = s;
+})();
+
+});
 </script>
 
 <script>

@@ -166,6 +166,82 @@
                 <button type="button" id="cropButton" data-no-loader class="crop-btn">✂️ Confirmar recorte</button>
             </div>
 
+            <!-- PANEL PERSONALIZACIÓN -->
+<div class="form-section" id="customSection">
+    <div class="section-header">
+        <h4 class="section-title">🎨 Personalización</h4>
+        <span class="section-subtitle">Ajusta la apariencia a tu gusto</span>
+    </div>
+
+    <!-- COLOR ACENTO -->
+    <div style="margin-bottom:24px;">
+        <label class="field-label">Color principal</label>
+        <div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:8px;" id="colorPalette">
+            @foreach (var c in new[] {
+                ("#2563eb","Azul"),("#7c3aed","Morado"),("#db2777","Rosa"),
+                ("#dc2626","Rojo"),("#ea580c","Naranja"),("#16a34a","Verde"),
+                ("#0891b2","Cian"),("#d97706","Dorado"),("#111827","Negro"),
+                ("#6366f1","Índigo")
+            })
+            {
+                <button type="button" class="color-swatch" data-color="@c.Item1"
+                        title="@c.Item2"
+                        style="width:36px;height:36px;border-radius:50%;background:@c.Item1;border:3px solid transparent;cursor:pointer;transition:0.2s;"
+                        onclick="setAccentColor('@c.Item1')">
+                </button>
+            }
+            <!-- Color personalizado -->
+            <label title="Color personalizado" style="width:36px;height:36px;border-radius:50%;overflow:hidden;cursor:pointer;border:3px solid #e5e7eb;display:flex;align-items:center;justify-content:center;font-size:18px;">
+                🎨
+                <input type="color" id="customColorInput" style="opacity:0;position:absolute;width:0;height:0;" oninput="setAccentColor(this.value)"/>
+            </label>
+        </div>
+        <div style="margin-top:10px;display:flex;align-items:center;gap:8px;">
+            <div id="colorPreview" style="width:20px;height:20px;border-radius:50%;background:var(--primary);"></div>
+            <span style="font-size:12px;color:#9ca3af;" id="colorLabel">Color actual</span>
+        </div>
+    </div>
+
+    <!-- FUENTE -->
+    <div style="margin-bottom:24px;">
+        <label class="field-label">Fuente</label>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;">
+            @foreach (var f in new[] {
+                ("Plus Jakarta Sans","Jakarta"),("Inter","Inter"),
+                ("Poppins","Poppins"),("Montserrat","Montserrat")
+            })
+            {
+                <button type="button" class="font-btn" data-font="@f.Item1"
+                        onclick="setFont('@f.Item1')"
+                        style="padding:8px 16px;border-radius:10px;border:2px solid #e5e7eb;background:white;font-family:'@f.Item1',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:0.2s;color:#374151;">
+                    @f.Item2
+                </button>
+            }
+        </div>
+    </div>
+
+    <!-- TAMAÑO DE TEXTO -->
+    <div style="margin-bottom:8px;">
+        <label class="field-label">Tamaño de texto</label>
+        <div style="display:flex;gap:8px;margin-top:8px;">
+            @foreach (var s in new[] { ("small","Pequeño","13px"), ("normal","Normal","15px"), ("large","Grande","17px") })
+            {
+                <button type="button" class="size-btn" data-size="@s.Item1"
+                        onclick="setFontSize('@s.Item1','@s.Item3')"
+                        style="flex:1;padding:10px;border-radius:10px;border:2px solid #e5e7eb;background:white;font-size:@s.Item3;font-weight:600;cursor:pointer;transition:0.2s;color:#374151;">
+                    @s.Item2
+                </button>
+            }
+        </div>
+    </div>
+
+    <!-- RESET -->
+    <button type="button" onclick="resetCustomization()" data-no-loader
+            style="margin-top:16px;padding:9px 18px;border-radius:10px;border:1px solid #e5e7eb;background:white;font-size:12px;font-weight:600;color:#6b7280;cursor:pointer;transition:0.2s;">
+        🔄 Restablecer valores
+    </button>
+</div>
+
             <button type="submit" class="save-btn">
                 💾 Guardar cambios
             </button>
@@ -185,6 +261,19 @@
 </div>
 
 <style>
+    .color-swatch:hover { transform: scale(1.15); }
+.color-swatch.active { border-color: white !important; box-shadow: 0 0 0 2px var(--primary); }
+.font-btn:hover { border-color: var(--primary) !important; color: var(--primary) !important; }
+.font-btn.active { border-color: var(--primary) !important; background: var(--primary) !important; color: white !important; }
+.size-btn:hover { border-color: var(--primary) !important; color: var(--primary) !important; }
+.size-btn.active { border-color: var(--primary) !important; background: var(--primary) !important; color: white !important; }
+
+body.bg-dark #customSection { background: #1e1e2e !important; border-color: #2d2d3d !important; }
+body.bg-dark .color-swatch { border-color: #3d3d4d !important; }
+body.bg-dark .font-btn,
+body.bg-dark .size-btn { background: #2d2d3d !important; border-color: #3d3d4d !important; color: #f1f5f9 !important; }
+body.bg-dark .font-btn.active,
+body.bg-dark .size-btn.active { background: var(--primary) !important; color: white !important; }
 .cover-wrap {
     position: relative; width: 100%; height: 200px;
     border-radius: 22px; overflow: hidden; margin-bottom: 24px;
@@ -456,6 +545,68 @@ document.getElementById("removePhotoBtn").addEventListener("click", function() {
     letter.id = "previewLetter"; letter.className = "profile-avatar-letter";
     letter.innerText = "@Model.Username.Substring(0, 1).ToUpper()";
     document.querySelector(".avatar-section").prepend(letter);
+});
+// ══ PERSONALIZACIÓN ══════════════════════
+function setAccentColor(color) {
+    document.documentElement.style.setProperty('--primary', color);
+    document.documentElement.style.setProperty('--accent', color);
+    localStorage.setItem('ht_color', color);
+    document.getElementById('colorPreview').style.background = color;
+    document.getElementById('colorLabel').textContent = color;
+    document.querySelectorAll('.color-swatch').forEach(s => {
+        s.classList.toggle('active', s.dataset.color === color);
+        s.style.borderColor = s.dataset.color === color ? 'white' : 'transparent';
+    });
+}
+
+function setFont(font) {
+    document.body.style.fontFamily = `'${font}', sans-serif`;
+    localStorage.setItem('ht_font', font);
+    // Cargar fuente si no está cargada
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = `https://fonts.googleapis.com/css2?family=${font.replace(/ /g,'+')}:wght@400;500;600;700;800&display=swap`;
+    document.head.appendChild(link);
+    document.querySelectorAll('.font-btn').forEach(b => {
+        b.classList.toggle('active', b.dataset.font === font);
+    });
+}
+
+function setFontSize(size, px) {
+    document.documentElement.style.fontSize = px;
+    localStorage.setItem('ht_size', size);
+    localStorage.setItem('ht_size_px', px);
+    document.querySelectorAll('.size-btn').forEach(b => {
+        b.classList.toggle('active', b.dataset.size === size);
+    });
+}
+
+function resetCustomization() {
+    localStorage.removeItem('ht_color');
+    localStorage.removeItem('ht_font');
+    localStorage.removeItem('ht_size');
+    localStorage.removeItem('ht_size_px');
+    document.documentElement.style.setProperty('--primary', '#2563eb');
+    document.documentElement.style.setProperty('--accent', '#7c3aed');
+    document.body.style.fontFamily = "'Plus Jakarta Sans', sans-serif";
+    document.documentElement.style.fontSize = '15px';
+    document.querySelectorAll('.color-swatch,.font-btn,.size-btn').forEach(b => b.classList.remove('active'));
+    setAccentColor('#2563eb');
+}
+
+// Aplicar preferencias guardadas al cargar
+document.addEventListener('DOMContentLoaded', () => {
+    const color = localStorage.getItem('ht_color');
+    const font = localStorage.getItem('ht_font');
+    const sizePx = localStorage.getItem('ht_size_px');
+    const size = localStorage.getItem('ht_size');
+
+    if (color) setAccentColor(color);
+    if (font) setFont(font);
+    if (sizePx) {
+        document.documentElement.style.fontSize = sizePx;
+        document.querySelectorAll('.size-btn').forEach(b => b.classList.toggle('active', b.dataset.size === size));
+    }
 });
 
 async function uploadCover(input) {
