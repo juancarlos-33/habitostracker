@@ -103,6 +103,11 @@ body.bg-dark .story-upload-text{color:#f1f5f9!important;}
                 <div class="story-upload-text">Selecciona un video</div>
                 <div class="story-upload-sub">MP4, MOV · Máx 30 segundos</div>
             </div>
+            <div style="margin-top:12px;">
+    <input type="text" name="caption" maxlength="100"
+           placeholder="📝 Añade una descripción... (opcional)"
+           style="width:100%;padding:12px 16px;border-radius:12px;border:1.5px solid #e5e7eb;font-size:14px;outline:none;font-family:inherit;box-sizing:border-box;"/>
+</div>
             <input type="file" id="videoFile" name="media" accept="video/*" style="display:none;" onchange="previewVideo(this)"/>
             <div id="videoDurationWarning" style="display:none;background:#fee2e2;color:#dc2626;padding:10px 14px;border-radius:10px;font-size:13px;font-weight:600;margin-bottom:12px;">
                 ⚠️ El video supera 30 segundos. Se recortará al publicar.

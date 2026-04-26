@@ -4,7 +4,6 @@ using HabitTrackerApp.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using System.Security.Claims;
 
 namespace HabitTrackerApp.Controllers
 {
@@ -58,6 +57,7 @@ namespace HabitTrackerApp.Controllers
                         s.Duration,
                         s.IsHighlight,
                         s.CreatedAt,
+                        s.Caption,
                         views = s.Views.Count,
                         viewed = s.Views.Any(v => v.ViewerId == myId)
                     }).ToList(),
@@ -67,17 +67,16 @@ namespace HabitTrackerApp.Controllers
             return Json(grouped);
         }
 
-        // GET: ver historias de amigos
         [HttpGet]
         public async Task<IActionResult> Index()
         {
             var myId = int.Parse(User.FindFirst("UserId").Value);
 
-            // IDs de amigos
             var friendIds = await _context.FriendRequests
-       .Where(f => (f.SenderId == myId || f.ReceiverId == myId) && f.Status == "Accepted")
-       .Select(f => f.SenderId == myId ? f.ReceiverId : f.SenderId)
-       .ToListAsync();
+                .Where(f => (f.SenderId == myId || f.ReceiverId == myId) && f.Status == "Accepted")
+                .Select(f => f.SenderId == myId ? f.ReceiverId : f.SenderId)
+                .ToListAsync();
+
             friendIds.Add(myId);
 
             var stories = await _context.Stories
@@ -87,30 +86,25 @@ namespace HabitTrackerApp.Controllers
                 .OrderByDescending(s => s.CreatedAt)
                 .ToListAsync();
 
-            // Agrupar por usuario
             var grouped = stories
                 .GroupBy(s => s.UserId)
-                .Select(g => new
-                {
+                .Select(g => new {
                     User = g.First().User,
                     Stories = g.ToList(),
                     HasUnviewed = g.Any(s => !s.Views.Any(v => v.ViewerId == myId))
-                })
-                .ToList();
+                }).ToList();
 
             ViewBag.Grouped = grouped;
             ViewBag.MyId = myId;
             return View();
         }
 
-        // GET: crear historia
         [HttpGet]
         public IActionResult Create() => View();
 
-        // POST: crear historia
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(string type, string? textContent, string? bgColor, IFormFile? media)
+        public async Task<IActionResult> Create(string type, string? textContent, string? bgColor, string? caption, IFormFile? media)
         {
             var myId = int.Parse(User.FindFirst("UserId").Value);
 
@@ -119,6 +113,7 @@ namespace HabitTrackerApp.Controllers
                 UserId = myId,
                 Type = type,
                 BgColor = bgColor ?? "#6366f1",
+                Caption = caption,
                 CreatedAt = DateTime.Now,
                 ExpiresAt = DateTime.Now.AddHours(24)
             };
@@ -126,24 +121,23 @@ namespace HabitTrackerApp.Controllers
             if (type == "text")
             {
                 story.TextContent = textContent;
-                story.Duration = 10;
+                story.Duration = 7;
             }
             else if (media != null && media.Length > 0)
             {
                 var folder = type == "video" ? "habitostracker/stories/videos" : "habitostracker/stories/images";
                 var url = await _cloudinary.UploadImageAsync(media, folder);
                 story.MediaUrl = url;
-                story.Duration = type == "video" ? 30 : 10;
+                story.Duration = type == "video" ? 30 : 7;
             }
 
             _context.Stories.Add(story);
             await _context.SaveChangesAsync();
 
             TempData["Success"] = "Historia publicada ✅";
-            return RedirectToAction("Index", "Post");
+            return RedirectToAction("Index", "Habit");
         }
 
-        // POST: marcar historia como vista
         [HttpPost]
         public async Task<IActionResult> View(int storyId)
         {
@@ -166,7 +160,6 @@ namespace HabitTrackerApp.Controllers
             return Ok();
         }
 
-        // POST: eliminar historia
         [HttpPost]
         public async Task<IActionResult> Delete(int id)
         {
@@ -178,7 +171,6 @@ namespace HabitTrackerApp.Controllers
             return Ok();
         }
 
-        // POST: marcar como destacada
         [HttpPost]
         public async Task<IActionResult> ToggleHighlight(int id)
         {
@@ -190,7 +182,6 @@ namespace HabitTrackerApp.Controllers
             return Json(new { isHighlight = story.IsHighlight });
         }
 
-        // GET: obtener historias de un usuario en JSON
         [HttpGet]
         public async Task<IActionResult> GetUserStories(int userId)
         {
@@ -207,9 +198,10 @@ namespace HabitTrackerApp.Controllers
                     s.TextContent,
                     s.BgColor,
                     s.Duration,
+                    s.IsHighlight,
+                    s.Caption,
                     viewed = s.Views.Any(v => v.ViewerId == myId),
-                    views = s.Views.Count,
-                    s.IsHighlight
+                    views = s.Views.Count
                 })
                 .ToListAsync();
 

@@ -26,9 +26,11 @@ namespace HabitTrackerApp.Models
         public string? BgColor { get; set; } = "#6366f1";
 
         // Duración en segundos (10 para foto/texto, máx 30 para video)
-        public int Duration { get; set; } = 10;
+        public int Duration { get; set; } = 7;
 
         public DateTime CreatedAt { get; set; } = DateTime.Now;
+        [Column(TypeName = "text")]
+        public string? Caption { get; set; }
 
         // Expira 24h después
         public DateTime ExpiresAt { get; set; } = DateTime.Now.AddHours(24);
