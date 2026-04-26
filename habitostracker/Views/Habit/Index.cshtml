@@ -889,11 +889,23 @@ function closeStoryViewer() {
 async function deleteCurrentStory() {
     if (!confirm('¿Eliminar esta historia?')) return;
     const story = currentUserStories[currentStoryIndex];
-    await fetch('/Story/Delete', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(story.id)});
-    currentUserStories.splice(currentStoryIndex, 1);
-    if (!currentUserStories.length) { closeStoryViewer(); return; }
-    buildProgressBars();
-    showStory(Math.min(currentStoryIndex, currentUserStories.length - 1));
+const res = await fetch('/Story/Delete', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(story.id)});
+if (!res.ok) { alert('Error al eliminar'); return; }
+
+currentUserStories.splice(currentStoryIndex, 1);
+
+if (!currentUserStories.length) {
+    closeStoryViewer();
+    // Quitar el grupo del bar si no quedan historias
+    await loadFriendStories();
+    return;
+}
+
+buildProgressBars();
+showStory(Math.min(currentStoryIndex, currentUserStories.length - 1));
+
+// Actualizar barra sin recargar página
+await loadFriendStories();
 }
 
 async function toggleHighlight() {
