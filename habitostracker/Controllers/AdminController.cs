@@ -331,7 +331,7 @@ namespace HabitTrackerApp.Controllers
 
             // 🔔 avisar al usuario desactivado
             await _hubContext.Clients.User(id.ToString())
-                .SendAsync("ForceLogout", "Tu cuenta fue desactivada por un administrador");
+                .SendAsync("ForceLogout", "Tu cuenta fue desactivada por un administrador.");
 
             return RedirectToAction("Users");
         }
@@ -386,7 +386,7 @@ namespace HabitTrackerApp.Controllers
 
             // 🔔 avisar al usuario baneado
             await _hubContext.Clients.User(id.ToString())
-                .SendAsync("ForceLogout", "Tu cuenta ha sido baneada por un administrador");
+                .SendAsync("ForceLogout", "Tu cuenta fue baneada por un administrador.");
 
             return RedirectToAction("Users");
         }
@@ -954,10 +954,10 @@ namespace HabitTrackerApp.Controllers
 
             // Notificar por grupo Y por userId
             await _hubContext.Clients.Group(dto.UserId.ToString())
-                .SendAsync("ConnectionBlocked", "🔌 Tu conexión ha sido bloqueada por el administrador.");
+                .SendAsync("ConnectionBlocked", "🔌 Tu conexión ha sido bloqueada.");
 
             await _hubContext.Clients.User(dto.UserId.ToString())
-                .SendAsync("ConnectionBlocked", "🔌 Tu conexión ha sido bloqueada por el administrador.");
+                .SendAsync("ConnectionBlocked", "🔌 Tu conexión ha sido bloqueada.");
 
             return Json(new { success = true });
         }
