@@ -195,7 +195,7 @@
     </div>
 
     <!-- GRID DE AVATARES -->
-    <div id="avatarGrid" style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;max-height:280px;overflow-y:auto;padding:4px;"></div>
+    <div id="avatarGrid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;max-height:280px;overflow-y:auto;padding:4px;"></div>
 
     <div id="avatarLoading" style="text-align:center;padding:20px;color:#9ca3af;display:none;">
         ⏳ Cargando avatares...
@@ -387,10 +387,10 @@ body.bg-dark .size-btn.active { background: var(--primary) !important; color: wh
 .style-btn:hover { border-color: var(--primary) !important; color: var(--primary) !important; }
 .style-btn.active { border-color: var(--primary) !important; background: var(--primary) !important; color: white !important; }
 .avatar-option {
-    border-radius: 14px; overflow: hidden; cursor: pointer;
+    border-radius: 16px; overflow: hidden; cursor: pointer;
     border: 3px solid transparent; transition: 0.2s; aspect-ratio: 1;
     display: flex; align-items: center; justify-content: center;
-    background: #f9fafb;
+    background: #f9fafb; padding: 6px;
 }
 .avatar-option:hover { border-color: var(--primary); transform: scale(1.05); }
 .avatar-option.selected { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(37,99,235,0.2); }
@@ -690,32 +690,31 @@ function loadAvatarStyle(style) {
 
     setTimeout(() => loading.style.display = 'none', 3000);
 }
-
 function selectAvatar(url, el) {
     selectedAvatarUrl = url;
     document.getElementById('selectedAvatarUrl').value = url;
     document.getElementById('selectedAvatarImg').src = url;
-
-    const selected = document.getElementById('avatarSelected');
-    selected.style.display = 'flex';
+    document.getElementById('avatarSelected').style.display = 'flex';
 
     document.querySelectorAll('.avatar-option').forEach(a => a.classList.remove('selected'));
     el.classList.add('selected');
 
-    // Preview en el avatar del perfil
-    let preview = document.getElementById('previewImage');
-    if (!preview) {
-        const letter = document.getElementById('previewLetter');
-        if (letter) letter.style.display = 'none';
-        const img = document.createElement('img');
-        img.id = 'previewImage'; img.className = 'profile-avatar';
-        document.querySelector('.avatar-section').prepend(img);
-        preview = img;
-    }
-    preview.src = url;
-    preview.style.display = 'block';
-}
+    // Preview en avatar del perfil — maneja ambos casos
+    const letter = document.getElementById('previewLetter');
+    if (letter) letter.style.display = 'none';
 
+    let preview = document.getElementById('previewImage');
+    if (preview) {
+        preview.src = url;
+        preview.style.display = 'block';
+    } else {
+        const img = document.createElement('img');
+        img.id = 'previewImage';
+        img.className = 'profile-avatar';
+        img.src = url;
+        document.querySelector('.avatar-section').prepend(img);
+    }
+}
 function cancelAvatar() {
     selectedAvatarUrl = null;
     document.getElementById('selectedAvatarUrl').value = '';
