@@ -44,31 +44,30 @@
     <!-- COLUMNA IZQUIERDA -->
     <div class="profile-left">
 
-        <div class="avatar-section">
-            @{
-                var pic = !string.IsNullOrEmpty(Model.ProfileImage)
-                    ? Model.ProfileImage
-                    : Model.ProfilePicture;
-                    @if (!string.IsNullOrEmpty(pic))
-{
-    <img id="previewImage" src="@pic" class="profile-avatar"
-         onerror="this.style.display='none';document.getElementById('previewLetter').style.display='flex';" />
-}
-            }
-            @if (!string.IsNullOrEmpty(pic))
-            {
-                <img id="previewImage" src="@pic?v=@DateTime.Now.Ticks" class="profile-avatar" />
-            }
-            else
-            {
-                <div id="previewLetter" class="profile-avatar-letter">
-                    @Model.Username.Substring(0, 1).ToUpper()
-                </div>
-            }
-            <div class="avatar-overlay" onclick="document.getElementById('imageInput').click()">
-                📷
-            </div>
+      <div class="avatar-section">
+    @{
+        var pic = !string.IsNullOrEmpty(Model.ProfileImage)
+            ? Model.ProfileImage
+            : Model.ProfilePicture;
+    }
+    @if (!string.IsNullOrEmpty(pic))
+    {
+        <img id="previewImage" src="@pic" class="profile-avatar"
+             onerror="this.style.display='none';document.getElementById('previewLetter').style.display='flex';"/>
+        <div id="previewLetter" class="profile-avatar-letter" style="display:none;">
+            @Model.Username.Substring(0, 1).ToUpper()
         </div>
+    }
+    else
+    {
+        <div id="previewLetter" class="profile-avatar-letter">
+            @Model.Username.Substring(0, 1).ToUpper()
+        </div>
+    }
+    <div class="avatar-overlay" onclick="document.getElementById('imageInput').click()">
+        📷
+    </div>
+</div>
 
         <h2 class="profile-name">@Model.Username</h2>
 
