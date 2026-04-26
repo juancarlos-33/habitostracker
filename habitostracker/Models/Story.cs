@@ -31,6 +31,8 @@ namespace HabitTrackerApp.Models
         public DateTime CreatedAt { get; set; } = DateTime.Now;
         [Column(TypeName = "text")]
         public string? Caption { get; set; }
+        [Column(TypeName = "varchar(20)")]
+        public string Visibility { get; set; } = "friends"; // "private", "friends", "public"
 
         // Expira 24h después
         public DateTime ExpiresAt { get; set; } = DateTime.Now.AddHours(24);

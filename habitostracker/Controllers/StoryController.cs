@@ -20,6 +20,36 @@ namespace HabitTrackerApp.Controllers
         }
 
         [HttpGet]
+        public async Task<IActionResult> GetViews(int storyId)
+        {
+            var myId = int.Parse(User.FindFirst("UserId").Value);
+            var story = await _context.Stories.FirstOrDefaultAsync(s => s.Id == storyId && s.UserId == myId);
+            if (story == null) return Forbid();
+
+            var views = await _context.StoryViews
+                .Include(v => v.Viewer)
+                .Where(v => v.StoryId == storyId)
+                .OrderByDescending(v => v.ViewedAt)
+                .ToListAsync();
+
+            var result = views.Select(v => new {
+                username = v.Viewer.Username,
+                profileImage = v.Viewer.ProfileImage ?? v.Viewer.ProfilePicture ?? "",
+                viewedAt = GetTimeAgoStory(v.ViewedAt)
+            }).ToList();
+
+            return Json(result);
+        }
+
+        private string GetTimeAgoStory(DateTime date)
+        {
+            var diff = (int)(DateTime.Now - date).TotalMinutes;
+            if (diff < 1) return "justo ahora";
+            if (diff < 60) return $"hace {diff} min";
+            return $"a las {date:hh:mm tt}";
+        }
+
+        [HttpGet]
         public async Task<IActionResult> GetFriendsStories()
         {
             var myId = int.Parse(User.FindFirst("UserId").Value);
@@ -34,7 +64,11 @@ namespace HabitTrackerApp.Controllers
             var stories = await _context.Stories
                 .Include(s => s.User)
                 .Include(s => s.Views)
-                .Where(s => friendIds.Contains(s.UserId) && s.ExpiresAt > DateTime.Now)
+              .Where(s => (
+    (friendIds.Contains(s.UserId) && (s.Visibility == "friends" || s.Visibility == "public")) ||
+    s.UserId == myId ||
+    s.Visibility == "public"
+) && s.ExpiresAt > DateTime.Now)
                 .OrderByDescending(s => s.CreatedAt)
                 .ToListAsync();
 
@@ -104,7 +138,7 @@ namespace HabitTrackerApp.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(string type, string? textContent, string? bgColor, string? caption, IFormFile? media)
+        public async Task<IActionResult> Create(string type, string? textContent, string? bgColor, string? caption, string? visibility, IFormFile? media)
         {
             var myId = int.Parse(User.FindFirst("UserId").Value);
 
@@ -130,6 +164,8 @@ namespace HabitTrackerApp.Controllers
                 story.MediaUrl = url;
                 story.Duration = type == "video" ? 30 : 7;
             }
+
+            story.Visibility = visibility ?? "friends";
 
             _context.Stories.Add(story);
             await _context.SaveChangesAsync();

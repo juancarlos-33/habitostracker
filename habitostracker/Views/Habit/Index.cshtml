@@ -147,9 +147,15 @@
         <div class="story-nav-left" onclick="prevStory()"></div>
         <div class="story-nav-right" onclick="nextStory()"></div>
         <div id="svCaption" style="position:absolute;bottom:44px;left:16px;right:16px;z-index:10;font-size:13px;color:white;font-weight:600;text-shadow:0 1px 4px rgba(0,0,0,0.5);text-align:center;"></div>
-        <div class="story-views-bar">
-            <span id="svViews">👁 0 vistas</span>
-        </div>
+       <div class="story-views-bar" onclick="openStoryViews()" style="cursor:pointer;">
+    <span id="svViews">👁 0 vistas</span>
+</div>
+
+<!-- MODAL VISTAS -->
+<div id="storyViewsModal" style="display:none;position:absolute;bottom:60px;left:12px;right:12px;background:rgba(15,23,42,0.95);border-radius:16px;padding:16px;z-index:20;max-height:200px;overflow-y:auto;backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,0.08);">
+    <div style="font-size:12px;font-weight:700;color:rgba(255,255,255,0.5);margin-bottom:10px;">👁 Visto por</div>
+    <div id="storyViewsList"></div>
+</div>
     </div>
 </div>
 
@@ -884,6 +890,49 @@ function closeStoryViewer() {
     document.body.style.overflow = '';
     const vid = document.getElementById('svVideo');
     vid.pause(); vid.src = '';
+}
+async function openStoryViews() {
+    const story = currentUserStories[currentStoryIndex];
+    if (story.userId !== myUserId && story.userId !== undefined) {
+        // Solo el dueño puede ver quién vio
+        if (story.views === 0) return;
+    }
+
+    const modal = document.getElementById('storyViewsModal');
+    const list = document.getElementById('storyViewsList');
+
+    if (modal.style.display === 'block') {
+        modal.style.display = 'none';
+        return;
+    }
+
+    list.innerHTML = '<div style="color:rgba(255,255,255,0.4);font-size:12px;text-align:center;padding:8px;">Cargando...</div>';
+    modal.style.display = 'block';
+
+    try {
+        const res = await fetch('/Story/GetViews?storyId=' + story.id);
+        const data = await res.json();
+
+        if (!data.length) {
+            list.innerHTML = '<div style="color:rgba(255,255,255,0.4);font-size:12px;text-align:center;padding:12px;">Nadie ha visto tu estado</div>';
+            return;
+        }
+
+        list.innerHTML = data.map(v => `
+            <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.06);">
+                ${v.profileImage
+                    ? `<img src="${v.profileImage}" style="width:32px;height:32px;border-radius:50%;object-fit:cover;flex-shrink:0;"/>`
+                    : `<div style="width:32px;height:32px;border-radius:50%;background:#6366f1;color:white;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;flex-shrink:0;">${v.username.charAt(0).toUpperCase()}</div>`
+                }
+                <div style="flex:1;min-width:0;">
+                    <div style="font-size:13px;font-weight:700;color:white;">${v.username}</div>
+                    <div style="font-size:11px;color:rgba(255,255,255,0.4);">${v.viewedAt}</div>
+                </div>
+            </div>
+        `).join('');
+    } catch(e) {
+        list.innerHTML = '<div style="color:#ef4444;font-size:12px;text-align:center;">Error al cargar</div>';
+    }
 }
 
 async function deleteCurrentStory() {
