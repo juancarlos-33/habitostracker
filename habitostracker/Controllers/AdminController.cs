@@ -331,7 +331,7 @@ namespace HabitTrackerApp.Controllers
 
             // 🔔 avisar al usuario desactivado
             await _hubContext.Clients.User(id.ToString())
-                .SendAsync("ForceLogout", "Tu cuenta fue desactivada por un administrador bro :(");
+                .SendAsync("ForceLogout", "Tu cuenta fue desactivada por un administrador");
 
             return RedirectToAction("Users");
         }
@@ -386,7 +386,7 @@ namespace HabitTrackerApp.Controllers
 
             // 🔔 avisar al usuario baneado
             await _hubContext.Clients.User(id.ToString())
-                .SendAsync("ForceLogout", "Tu cuenta ha sido baneada por un administrador bro :(");
+                .SendAsync("ForceLogout", "Tu cuenta ha sido baneada por un administrador");
 
             return RedirectToAction("Users");
         }
@@ -1063,7 +1063,7 @@ namespace HabitTrackerApp.Controllers
 
             // 🚨 avisar al usuario en tiempo real
             await _hubContext.Clients.Group(id.ToString())
-        .SendAsync("ForceLogout", "Tu cuenta fue eliminada por un Propietario.");
+        .SendAsync("ForceLogout", "Tu cuenta fue eliminada");
 
             // 🔥 eliminar reacciones de mensajes de grupo
             var groupReactions = _context.GroupMessageReactions.Where(r => r.UserId == id);
