@@ -111,7 +111,7 @@ body.bg-dark .sc-preview{background:#0f172a!important;}
         </div>
     </div>
 
-    <form asp-controller="Story" asp-action="Create" method="post" enctype="multipart/form-data" id="storyForm">
+ <form asp-controller="Story" asp-action="Create" method="post" enctype="multipart/form-data" id="storyForm" data-no-loader>
         @Html.AntiForgeryToken()
         <input type="hidden" name="type" id="storyType" value="image"/>
         <input type="hidden" name="bgColor" value="#6366f1"/>
@@ -133,10 +133,9 @@ body.bg-dark .sc-preview{background:#0f172a!important;}
         <!-- DESCRIPCIÓN -->
         <input type="text" name="caption" id="storyCaption" class="sc-caption"
                placeholder="📝 Añade una descripción... (opcional)" maxlength="100"/>
-
-        <button type="submit" class="sc-submit" id="scSubmit" disabled>
-            📤 Publicar historia
-        </button>
+<button type="submit" class="sc-submit" id="scSubmit" disabled onclick="this.textContent='⏳ Subiendo...';this.disabled=true;">
+    📤 Publicar historia
+</button>
     </form>
 </div>
 

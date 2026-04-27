@@ -135,7 +135,8 @@ namespace HabitTrackerApp.Controllers
 
         [HttpGet]
         public IActionResult Create() => View();
-
+        [RequestSizeLimit(104857600)]
+        [RequestFormLimits(MultipartBodyLengthLimit = 104857600)]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(string type, string? textContent, string? bgColor, string? caption, string? visibility, double trimEnd = 30, IFormFile? media = null)
