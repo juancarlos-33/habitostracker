@@ -28,6 +28,8 @@ namespace HabitTrackerApp.Models
         // Duración en segundos (10 para foto/texto, máx 30 para video)
         public int Duration { get; set; } = 7;
 
+        public ICollection<StoryLike> Likes { get; set; } = new List<StoryLike>();
+
         public DateTime CreatedAt { get; set; } = DateTime.Now;
         [Column(TypeName = "text")]
         public string? Caption { get; set; }
@@ -36,6 +38,7 @@ namespace HabitTrackerApp.Models
 
         // Expira 24h después
         public DateTime ExpiresAt { get; set; } = DateTime.Now.AddHours(24);
+
 
         // Destacada — visible para todos aunque perfil privado
         public bool IsHighlight { get; set; } = false;
@@ -54,5 +57,16 @@ namespace HabitTrackerApp.Models
         [ForeignKey("ViewerId")]
         public User Viewer { get; set; }
         public DateTime ViewedAt { get; set; } = DateTime.Now;
+    }
+    public class StoryLike
+    {
+        public int Id { get; set; }
+        public int StoryId { get; set; }
+        [ForeignKey("StoryId")]
+        public Story Story { get; set; }
+        public int UserId { get; set; }
+        [ForeignKey("UserId")]
+        public User User { get; set; }
+        public DateTime CreatedAt { get; set; } = DateTime.Now;
     }
 }

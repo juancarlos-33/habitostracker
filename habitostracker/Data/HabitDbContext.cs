@@ -32,6 +32,7 @@ namespace HabitTrackerApp.Data
         public DbSet<Post> Posts { get; set; }
         public DbSet<Follow> Follows { get; set; }
         public DbSet<PostLike> PostLikes { get; set; }
+        public DbSet<StoryLike> StoryLikes { get; set; }
         public DbSet<ConnectionBlock> ConnectionBlocks { get; set; }
         public DbSet<SavedPost> SavedPosts { get; set; }
         public DbSet<CommentReply> CommentReplies { get; set; }

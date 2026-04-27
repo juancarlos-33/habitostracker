@@ -20,36 +20,6 @@ namespace HabitTrackerApp.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetViews(int storyId)
-        {
-            var myId = int.Parse(User.FindFirst("UserId").Value);
-            var story = await _context.Stories.FirstOrDefaultAsync(s => s.Id == storyId && s.UserId == myId);
-            if (story == null) return Forbid();
-
-            var views = await _context.StoryViews
-                .Include(v => v.Viewer)
-                .Where(v => v.StoryId == storyId)
-                .OrderByDescending(v => v.ViewedAt)
-                .ToListAsync();
-
-            var result = views.Select(v => new {
-                username = v.Viewer.Username,
-                profileImage = v.Viewer.ProfileImage ?? v.Viewer.ProfilePicture ?? "",
-                viewedAt = GetTimeAgoStory(v.ViewedAt)
-            }).ToList();
-
-            return Json(result);
-        }
-
-        private string GetTimeAgoStory(DateTime date)
-        {
-            var diff = (int)(DateTime.Now - date).TotalMinutes;
-            if (diff < 1) return "justo ahora";
-            if (diff < 60) return $"hace {diff} min";
-            return $"a las {date:hh:mm tt}";
-        }
-
-        [HttpGet]
         public async Task<IActionResult> GetFriendsStories()
         {
             var myId = int.Parse(User.FindFirst("UserId").Value);
@@ -64,11 +34,12 @@ namespace HabitTrackerApp.Controllers
             var stories = await _context.Stories
                 .Include(s => s.User)
                 .Include(s => s.Views)
-              .Where(s => (
-    (friendIds.Contains(s.UserId) && (s.Visibility == "friends" || s.Visibility == "public")) ||
-    s.UserId == myId ||
-    s.Visibility == "public"
-) && s.ExpiresAt > DateTime.Now)
+                .Include(s => s.Likes)
+                .Where(s => (
+                    (friendIds.Contains(s.UserId) && (s.Visibility == "friends" || s.Visibility == "public")) ||
+                    s.UserId == myId ||
+                    s.Visibility == "public"
+                ) && s.ExpiresAt > DateTime.Now)
                 .OrderByDescending(s => s.CreatedAt)
                 .ToListAsync();
 
@@ -92,13 +63,47 @@ namespace HabitTrackerApp.Controllers
                         s.IsHighlight,
                         s.CreatedAt,
                         s.Caption,
+                        s.Visibility,
                         views = s.Views.Count,
-                        viewed = s.Views.Any(v => v.ViewerId == myId)
+                        viewed = s.Views.Any(v => v.ViewerId == myId),
+                        likes = s.Likes.Count,
+                        liked = s.Likes.Any(l => l.UserId == myId)
                     }).ToList(),
                     hasUnviewed = g.Any(s => !s.Views.Any(v => v.ViewerId == myId))
                 }).ToList();
 
             return Json(grouped);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetViews(int storyId)
+        {
+            var myId = int.Parse(User.FindFirst("UserId").Value);
+            var story = await _context.Stories.FirstOrDefaultAsync(s => s.Id == storyId && s.UserId == myId);
+            if (story == null) return Forbid();
+
+            var views = await _context.StoryViews
+                .Include(v => v.Viewer)
+                .Where(v => v.StoryId == storyId)
+                .OrderByDescending(v => v.ViewedAt)
+                .ToListAsync();
+
+            var result = views.Select(v => new {
+                username = v.Viewer.Username,
+                profileImage = v.Viewer.ProfileImage ?? v.Viewer.ProfilePicture ?? "",
+                viewedAt = GetTimeAgoStory(v.ViewedAt),
+                liked = _context.StoryLikes.Any(l => l.StoryId == storyId && l.UserId == v.ViewerId)
+            }).ToList();
+
+            return Json(result);
+        }
+
+        private string GetTimeAgoStory(DateTime date)
+        {
+            var diff = (int)(DateTime.Now - date).TotalMinutes;
+            if (diff < 1) return "justo ahora";
+            if (diff < 60) return $"hace {diff} min";
+            return $"a las {date:hh:mm tt}";
         }
 
         [HttpGet]
@@ -135,6 +140,7 @@ namespace HabitTrackerApp.Controllers
 
         [HttpGet]
         public IActionResult Create() => View();
+
         [RequestSizeLimit(104857600)]
         [RequestFormLimits(MultipartBodyLengthLimit = 104857600)]
         [HttpPost]
@@ -142,13 +148,14 @@ namespace HabitTrackerApp.Controllers
         public async Task<IActionResult> Create(string type, string? textContent, string? bgColor, string? caption, string? visibility, double trimEnd = 30, IFormFile? media = null)
         {
             var myId = int.Parse(User.FindFirst("UserId").Value);
-            
+
             var story = new Story
             {
                 UserId = myId,
                 Type = type,
                 BgColor = bgColor ?? "#6366f1",
                 Caption = caption,
+                Visibility = visibility ?? "friends",
                 CreatedAt = DateTime.Now,
                 ExpiresAt = DateTime.Now.AddHours(24)
             };
@@ -174,15 +181,12 @@ namespace HabitTrackerApp.Controllers
                 story.MediaUrl = url;
             }
 
-            story.Visibility = visibility ?? "friends";
-
             _context.Stories.Add(story);
             await _context.SaveChangesAsync();
 
             TempData["Success"] = "Historia publicada ✅";
             return RedirectToAction("Index", "Habit");
         }
-
 
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -214,12 +218,12 @@ namespace HabitTrackerApp.Controllers
 
             return Ok();
         }
+
         [HttpPost]
         public async Task<IActionResult> View([FromBody] int storyId)
         {
             var myId = int.Parse(User.FindFirst("UserId").Value);
 
-            // No contar vista propia
             var story = await _context.Stories.FirstOrDefaultAsync(s => s.Id == storyId);
             if (story == null) return NotFound();
             if (story.UserId == myId) return Ok();
@@ -242,8 +246,50 @@ namespace HabitTrackerApp.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> Delete([FromBody] int id)
+        public async Task<IActionResult> ToggleLike([FromBody] int storyId)
+        {
+            var myId = int.Parse(User.FindFirst("UserId").Value);
 
+            var existing = await _context.StoryLikes
+                .FirstOrDefaultAsync(l => l.StoryId == storyId && l.UserId == myId);
+
+            if (existing != null)
+            {
+                _context.StoryLikes.Remove(existing);
+                await _context.SaveChangesAsync();
+                return Json(new { liked = false });
+            }
+            else
+            {
+                _context.StoryLikes.Add(new StoryLike
+                {
+                    StoryId = storyId,
+                    UserId = myId,
+                    CreatedAt = DateTime.Now
+                });
+                await _context.SaveChangesAsync();
+                if (existing == null) // Solo notificar al dar like, no al quitar
+                {
+                    var story2 = await _context.Stories.FirstOrDefaultAsync(s => s.Id == storyId);
+                    var liker = await _context.Users.FirstOrDefaultAsync(u => u.Id == myId);
+                    if (story2 != null && story2.UserId != myId)
+                    {
+                        _context.Notifications.Add(new Notification
+                        {
+                            UserId = story2.UserId,
+                            Message = $"{liker.Username} le dio ❤️ a tu historia",
+                            CreatedAt = DateTime.Now,
+                            IsRead = false
+                        });
+                        await _context.SaveChangesAsync();
+                    }
+                }
+                return Json(new { liked = true });
+            }
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> Delete([FromBody] int id)
         {
             var myId = int.Parse(User.FindFirst("UserId").Value);
             var story = await _context.Stories.FirstOrDefaultAsync(s => s.Id == id && s.UserId == myId);
@@ -271,6 +317,7 @@ namespace HabitTrackerApp.Controllers
 
             var stories = await _context.Stories
                 .Include(s => s.Views)
+                .Include(s => s.Likes)
                 .Where(s => s.UserId == userId && s.ExpiresAt > DateTime.Now)
                 .OrderBy(s => s.CreatedAt)
                 .Select(s => new {
@@ -282,8 +329,11 @@ namespace HabitTrackerApp.Controllers
                     s.Duration,
                     s.IsHighlight,
                     s.Caption,
+                    s.Visibility,
                     viewed = s.Views.Any(v => v.ViewerId == myId),
-                    views = s.Views.Count
+                    views = s.Views.Count,
+                    likes = s.Likes.Count,
+                    liked = s.Likes.Any(l => l.UserId == myId)
                 })
                 .ToListAsync();
 
