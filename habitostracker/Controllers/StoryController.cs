@@ -142,7 +142,7 @@ namespace HabitTrackerApp.Controllers
         public async Task<IActionResult> Create(string type, string? textContent, string? bgColor, string? caption, string? visibility, double trimEnd = 30, IFormFile? media = null)
         {
             var myId = int.Parse(User.FindFirst("UserId").Value);
-
+            
             var story = new Story
             {
                 UserId = myId,
@@ -183,6 +183,37 @@ namespace HabitTrackerApp.Controllers
             return RedirectToAction("Index", "Habit");
         }
 
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CreateFromUrl(string type, string? textContent, string? bgColor, string? caption, string? visibility, double trimEnd = 30, string? mediaUrl = null)
+        {
+            var myId = int.Parse(User.FindFirst("UserId").Value);
+
+            var story = new Story
+            {
+                UserId = myId,
+                Type = type,
+                BgColor = bgColor ?? "#6366f1",
+                Caption = caption,
+                Visibility = visibility ?? "friends",
+                MediaUrl = mediaUrl,
+                CreatedAt = DateTime.Now,
+                ExpiresAt = DateTime.Now.AddHours(24)
+            };
+
+            if (type == "text")
+                story.Duration = 7;
+            else if (type == "video")
+                story.Duration = (int)Math.Min(trimEnd, 30);
+            else
+                story.Duration = 7;
+
+            _context.Stories.Add(story);
+            await _context.SaveChangesAsync();
+
+            return Ok();
+        }
         [HttpPost]
         public async Task<IActionResult> View([FromBody] int storyId)
         {

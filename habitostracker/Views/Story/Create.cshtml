@@ -142,8 +142,7 @@ body.bg-dark .sc-preview{background:#0f172a!important;}
 <script>
 let videoDuration = 0;
 let trimEnd = 30;
-
-function handleMedia(input) {
+async function handleMedia(input) {
     const file = input.files[0];
     if (!file) return;
 
@@ -158,23 +157,18 @@ function handleMedia(input) {
         const vid = document.createElement('video');
         vid.src = url;
         vid.controls = true;
-      vid.muted = true;
-vid.setAttribute('controls', true);
+        vid.muted = true;
         vid.playsinline = true;
         vid.style.cssText = 'width:100%;height:100%;object-fit:cover;border-radius:20px;';
         vid.id = 'previewVideo';
         preview.innerHTML = '';
         preview.appendChild(vid);
         preview.style.cursor = 'default';
-
-        vid.onloadedmetadata = () => {
-            videoDuration = vid.duration;
-            setupTrimBar(vid.duration);
-        };
+        vid.onloadedmetadata = () => setupTrimBar(vid.duration);
     } else {
         const img = document.createElement('img');
         img.src = url;
-     img.style.cssText = 'width:100%;height:100%;object-fit:contain;border-radius:20px;background:#000;';
+        img.style.cssText = 'width:100%;height:100%;object-fit:contain;border-radius:20px;background:#000;';
         preview.innerHTML = '';
         preview.appendChild(img);
         preview.style.cursor = 'pointer';
@@ -183,7 +177,11 @@ vid.setAttribute('controls', true);
     }
 
     document.getElementById('scSubmit').disabled = false;
+    window._selectedFile = file;
+    window._isVideo = isVideo;
 }
+const CLOUDINARY_CLOUD = 'dzrjag7ia';
+const CLOUDINARY_PRESET = 'historias_de_habitostracker';
 
 function setupTrimBar(duration) {
     const wrap = document.getElementById('trimBarWrap');
@@ -231,4 +229,57 @@ function setVisibility(vis) {
     };
     document.getElementById('visInfo').textContent = msgs[vis];
 }
+document.getElementById('storyForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const btn = document.getElementById('scSubmit');
+    btn.disabled = true;
+    btn.textContent = '⏳ Subiendo...';
+
+    try {
+        let mediaUrl = '';
+
+        if (window._selectedFile) {
+            const formData = new FormData();
+            formData.append('file', window._selectedFile);
+            formData.append('upload_preset', CLOUDINARY_PRESET);
+            formData.append('folder', window._isVideo ? 'habitostracker/stories/videos' : 'habitostracker/stories/images');
+
+            const resourceType = window._isVideo ? 'video' : 'image';
+            const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/${resourceType}/upload`, {
+                method: 'POST',
+                body: formData
+            });
+
+            if (!res.ok) throw new Error('Error al subir a Cloudinary');
+            const data = await res.json();
+            mediaUrl = data.secure_url;
+        }
+
+        const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+        const payload = new FormData();
+        payload.append('type', document.getElementById('storyType').value);
+        payload.append('bgColor', document.getElementById('storyBgColor')?.value || '#6366f1');
+        payload.append('visibility', document.getElementById('storyVisibility').value);
+        payload.append('caption', document.getElementById('storyCaption').value);
+        payload.append('trimEnd', document.getElementById('trimEndInput').value);
+        payload.append('mediaUrl', mediaUrl);
+        payload.append('__RequestVerificationToken', token);
+
+        const saveRes = await fetch('/Story/CreateFromUrl', {
+            method: 'POST',
+            body: payload
+        });
+
+        if (saveRes.ok) {
+            window.location.href = '/Habit/Index';
+        } else {
+            throw new Error('Error al guardar historia');
+        }
+    } catch(err) {
+        btn.disabled = false;
+        btn.textContent = '📤 Publicar historia';
+        alert('Error: ' + err.message);
+    }
+});
 </script>
