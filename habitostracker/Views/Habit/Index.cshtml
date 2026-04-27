@@ -818,6 +818,11 @@ function openStoryViewer(group) {
     document.getElementById('svAvatar').src = group.user.profileImage || group.user.profilePicture || '';
     document.getElementById('svUsername').textContent = group.user.username;
     document.getElementById('svDelete').style.display = group.user.id === myUserId ? 'block' : 'none';
+    document.getElementById('storyViewer').style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+    buildProgressBars();
+    showStory(0);
+}
 
 function buildProgressBars() {
     const bars = document.getElementById('storyProgressBars');
