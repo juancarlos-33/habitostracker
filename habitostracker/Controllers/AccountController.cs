@@ -1198,6 +1198,7 @@ namespace HabitTrackerApp.Controllers
 
             user.FullName = updatedUser.FullName;
             user.Bio = updatedUser.Bio;
+            user.IsPrivate = Request.Form["IsPrivate"] == "true";
 
             if (croppedImage == "REMOVE")
             {

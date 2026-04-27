@@ -278,6 +278,25 @@
     </button>
 </div>
 
+<div class="form-section">
+    <div class="section-header">
+        <h4 class="section-title">🔒 Privacidad</h4>
+        <span class="section-subtitle">Controla quién puede ver tu perfil</span>
+    </div>
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:16px;background:#f9fafb;border-radius:14px;border:1.5px solid #e5e7eb;">
+        <div>
+            <div style="font-size:14px;font-weight:700;color:#111827;">Perfil privado</div>
+            <div style="font-size:12px;color:#9ca3af;margin-top:2px;">Solo tus amigos podrán ver tu perfil completo</div>
+        </div>
+        <label style="position:relative;display:inline-block;width:48px;height:26px;cursor:pointer;">
+            <input type="checkbox" name="IsPrivate" value="true" @(Model.IsPrivate ? "checked" : "") style="opacity:0;width:0;height:0;" onchange="this.form.submit()" />
+            <span id="privacyToggle" style="position:absolute;inset:0;background:@(Model.IsPrivate ? "#6366f1" : "#e5e7eb");border-radius:26px;transition:0.3s;">
+                <span style="position:absolute;top:3px;left:@(Model.IsPrivate ? "25px" : "3px");width:20px;height:20px;background:white;border-radius:50%;transition:0.3s;box-shadow:0 2px 6px rgba(0,0,0,0.15);"></span>
+            </span>
+        </label>
+    </div>
+</div>
+
             <button type="submit" class="save-btn">
                 💾 Guardar cambios
             </button>

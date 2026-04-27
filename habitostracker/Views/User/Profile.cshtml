@@ -18,8 +18,8 @@
         ? Model.ProfileImage : Model.ProfilePicture;
     bool isMe = Model.Id == myId;
     bool isFriend = friendStatus == "Accepted";
+    bool canSeeProfile = !Model.IsPrivate || isFriend || isMe;
 
-    // 🔥 estado solicitud de mensaje
     var msgRequest = db.MessageRequests
         .FirstOrDefault(r => (r.SenderId == myId && r.ReceiverId == Model.Id) ||
                               (r.SenderId == Model.Id && r.ReceiverId == myId));
@@ -38,13 +38,14 @@
     overflow: hidden; position: relative;
 }
 .prof-hero-banner {
-    height: 120px;
+    height: 160px;
     background: linear-gradient(135deg, #6366f1 0%, #2563eb 50%, #7c3aed 100%);
     position: relative; overflow: hidden;
 }
 .prof-hero-banner::before {
     content:""; position:absolute; inset:0;
     background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Ccircle cx='30' cy='30' r='20'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+    pointer-events:none;
 }
 .prof-hero-body { padding: 0 24px 24px; }
 .prof-avatar-wrap { position: relative; display: inline-block; margin-top: -48px; margin-bottom: 14px; }
@@ -59,9 +60,9 @@
     font-size: 38px; font-weight: 800;
     border: 4px solid #0f172a; box-shadow: 0 8px 24px rgba(0,0,0,0.4);
 }
-
 .prof-info-row { display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 14px; }
-.prof-username { font-size: 22px; font-weight: 800; color: white; margin: 0 0 4px; }
+.prof-username { font-size: 22px; font-weight: 800; color: white; margin: 0 0 4px; display:flex;align-items:center;gap:8px; }
+.prof-private-badge { font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;background:rgba(255,255,255,0.1);color:rgba(255,255,255,0.6);border:1px solid rgba(255,255,255,0.15); }
 .prof-fullname { font-size: 14px; color: rgba(255,255,255,0.5); margin: 0 0 6px; }
 .prof-bio { font-size: 13px; color: rgba(255,255,255,0.65); line-height: 1.6; margin: 0 0 8px; max-width: 420px; }
 .prof-joined { font-size: 12px; color: rgba(255,255,255,0.3); }
@@ -120,7 +121,6 @@
     font-size: 12px; font-weight: 700; padding: 3px 10px;
     border-radius: 20px; background: #ede9fe; color: #6366f1; margin-left: auto;
 }
-
 .posts-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
 .post-tile {
     position: relative; border-radius: 16px; overflow: hidden;
@@ -150,7 +150,6 @@
 .post-tile:hover .post-tile-overlay { opacity: 1; }
 .post-tile-overlay span { color: white; font-weight: 700; font-size: 13px; }
 .post-tile-overlay small { color: rgba(255,255,255,0.6); font-size: 11px; }
-
 .prof-empty { text-align: center; padding: 50px 20px; color: #9ca3af; }
 .prof-empty-icon { font-size: 52px; margin-bottom: 14px; }
 .prof-empty-text { font-size: 15px; font-weight: 600; color: #6b7280; margin: 0 0 6px; }
@@ -177,7 +176,6 @@
 }
 .close-btn:hover { background: #e5e7eb; color: #111827; }
 
-/* MODAL SOLICITUD MENSAJE */
 .msg-req-modal {
     display: none; position: fixed; inset: 0;
     background: rgba(0,0,0,0.65); z-index: 99999;
@@ -218,7 +216,17 @@
 .msg-req-send:hover { transform: translateY(-1px); }
 .msg-req-send:disabled { background: #334155; cursor: not-allowed; transform: none; }
 
-/* DARK */
+/* PRIVATE WALL */
+.private-wall {
+    text-align:center; padding:60px 20px;
+    background:linear-gradient(135deg,#1e293b,#0f172a);
+    border-radius:22px; border:1px solid rgba(255,255,255,0.06);
+    box-shadow:0 4px 20px rgba(0,0,0,0.2);
+}
+.private-wall-icon { font-size:64px; margin-bottom:18px; filter:drop-shadow(0 4px 16px rgba(0,0,0,0.4)); }
+.private-wall-title { font-size:20px; font-weight:800; color:white; margin-bottom:8px; }
+.private-wall-sub { font-size:13px; color:rgba(255,255,255,0.4); line-height:1.7; max-width:280px; margin:0 auto; }
+
 body.bg-dark .prof-posts { background: #1e293b !important; border-color: #2d3748 !important; }
 body.bg-dark .prof-posts-title { color: #f1f5f9 !important; border-color: #2d3748 !important; }
 body.bg-dark .follow-content { background: #1e293b !important; }
@@ -235,6 +243,7 @@ body.bg-dark .prof-posts-count { background: rgba(99,102,241,0.15) !important; }
     .prof-stat { flex: 1; padding: 12px 8px; }
     .prof-username { font-size: 18px; }
     .prof-actions { flex-wrap: wrap; }
+    .prof-hero-banner { height: 120px; }
 }
 </style>
 
@@ -252,22 +261,19 @@ body.bg-dark .prof-posts-count { background: rgba(99,102,241,0.15) !important; }
         <div class="msg-req-chars"><span id="reqCharsCount">0</span>/200</div>
         <div class="msg-req-btns">
             <button class="msg-req-cancel" onclick="closeMsgReqModal()">Cancelar</button>
-            <button class="msg-req-send" id="msgReqSendBtn" onclick="sendMsgReq()" disabled>
-                Enviar solicitud
-            </button>
+            <button class="msg-req-send" id="msgReqSendBtn" onclick="sendMsgReq()" disabled>Enviar solicitud</button>
         </div>
     </div>
 </div>
 
 <div class="prof-page">
-
     <div class="prof-hero">
-       <div class="prof-hero-banner">
-    @if (!string.IsNullOrEmpty(Model.CoverImage))
-    {
-        <img src="@Model.CoverImage" style="width:100%;height:100%;object-fit:cover;display:block;" />
-    }
-</div>
+        <div class="prof-hero-banner">
+            @if (!string.IsNullOrEmpty(Model.CoverImage))
+            {
+                <img src="@Model.CoverImage" style="width:100%;height:100%;object-fit:cover;display:block;position:relative;z-index:1;" />
+            }
+        </div>
         <div class="prof-hero-body">
             <div class="prof-info-row">
                 <div>
@@ -277,18 +283,30 @@ body.bg-dark .prof-posts-count { background: rgba(99,102,241,0.15) !important; }
                         else
                         { <div class="prof-avatar-letter">@Model.Username.Substring(0,1).ToUpper()</div> }
                     </div>
-                    <h2 class="prof-username">@Model.Username</h2>
-                    @if (!string.IsNullOrEmpty(Model.FullName))
-                    { <p class="prof-fullname">@Model.FullName</p> }
-                    @if (!string.IsNullOrEmpty(Model.Bio))
-                    { <p class="prof-bio">@Model.Bio</p> }
-                    <p class="prof-joined">📅 Se unió el @Model.CreatedAt?.ToString("dd MMM yyyy", culture)</p>
+                    <h2 class="prof-username">
+                        @Model.Username
+                        @if (Model.IsPrivate)
+                        { <span class="prof-private-badge">🔒 Privado</span> }
+                    </h2>
+                    @if (canSeeProfile)
+                    {
+                        @if (!string.IsNullOrEmpty(Model.FullName))
+                        { <p class="prof-fullname">@Model.FullName</p> }
+                        @if (!string.IsNullOrEmpty(Model.Bio))
+                        { <p class="prof-bio">@Model.Bio</p> }
+                        <p class="prof-joined">📅 Se unió el @Model.CreatedAt?.ToString("dd MMM yyyy", culture)</p>
+                    }
+                    else
+                    {
+                        <p class="prof-bio" style="color:rgba(255,255,255,0.35);font-style:italic;margin-top:6px;">
+                            Agrega a @Model.Username para ver su perfil completo.
+                        </p>
+                    }
                 </div>
 
                 @if (!isMe)
                 {
                     <div class="prof-actions">
-                        @* SEGUIR *@
                         @if (isFollowing)
                         {
                             <form asp-controller="User" asp-action="Unfollow" method="post">
@@ -304,13 +322,10 @@ body.bg-dark .prof-posts-count { background: rgba(99,102,241,0.15) !important; }
                             </form>
                         }
 
-                        @* AMISTAD *@
                         @if (isFriend)
                         {
                             <button class="prof-btn friends" disabled>✅ Amigos</button>
-                            <button class="prof-btn remove-friend" onclick="confirmarEliminarAmigo()" id="removeFriendBtn">
-                                👋 Eliminar amigo
-                            </button>
+                            <button class="prof-btn remove-friend" onclick="confirmarEliminarAmigo()" id="removeFriendBtn">👋 Eliminar amigo</button>
                         }
                         else if (friendStatus == "Pending")
                         {
@@ -324,12 +339,9 @@ body.bg-dark .prof-posts-count { background: rgba(99,102,241,0.15) !important; }
                             </form>
                         }
 
-                        @* MENSAJE *@
                         @if (canChat)
                         {
-                            <a href="/Message/Chat?userId=@Model.Id" class="prof-btn message">
-                                💬 Mensaje
-                            </a>
+                            <a href="/Message/Chat?userId=@Model.Id" class="prof-btn message">💬 Mensaje</a>
                         }
                         else if (msgStatus == "Pending")
                         {
@@ -341,76 +353,89 @@ body.bg-dark .prof-posts-count { background: rgba(99,102,241,0.15) !important; }
                         }
                         else
                         {
-                            <button class="prof-btn message" onclick="document.getElementById('msgReqModal').style.display='flex'">
-                                💬 Mensaje
-                            </button>
+                            <button class="prof-btn message" onclick="document.getElementById('msgReqModal').style.display='flex'">💬 Mensaje</button>
                         }
                     </div>
                 }
             </div>
 
-            <div class="prof-stats">
-                <div class="prof-stat" onclick="if(@ViewBag.Followers > 0) openModal('followers')">
-                    <span class="prof-stat-num">@ViewBag.Followers</span>
-                    <span class="prof-stat-label">Seguidores</span>
+            @if (canSeeProfile)
+            {
+                <div class="prof-stats">
+                    <div class="prof-stat" onclick="if(@ViewBag.Followers > 0) openModal('followers')">
+                        <span class="prof-stat-num">@ViewBag.Followers</span>
+                        <span class="prof-stat-label">Seguidores</span>
+                    </div>
+                    <div class="prof-stat" onclick="if(@ViewBag.Following > 0) openModal('following')">
+                        <span class="prof-stat-num">@ViewBag.Following</span>
+                        <span class="prof-stat-label">Siguiendo</span>
+                    </div>
+                    <div class="prof-stat">
+                        <span class="prof-stat-num">@userPosts.Count</span>
+                        <span class="prof-stat-label">Posts</span>
+                    </div>
                 </div>
-                <div class="prof-stat" onclick="if(@ViewBag.Following > 0) openModal('following')">
-                    <span class="prof-stat-num">@ViewBag.Following</span>
-                    <span class="prof-stat-label">Siguiendo</span>
-                </div>
-                <div class="prof-stat">
-                    <span class="prof-stat-num">@userPosts.Count</span>
-                    <span class="prof-stat-label">Posts</span>
-                </div>
-            </div>
+            }
         </div>
     </div>
 
-    <div class="prof-posts">
-        <div class="prof-posts-title">
-            📸 Publicaciones
-            <span class="prof-posts-count">@userPosts.Count</span>
-        </div>
-
-        @if (!userPosts.Any())
-        {
-            <div class="prof-empty">
-                <div class="prof-empty-icon">📭</div>
-                <div class="prof-empty-text">Sin publicaciones todavía</div>
-                <div class="prof-empty-sub">@Model.Username aún no ha subido nada.</div>
+    @if (canSeeProfile)
+    {
+        <div class="prof-posts">
+            <div class="prof-posts-title">
+                📸 Publicaciones
+                <span class="prof-posts-count">@userPosts.Count</span>
             </div>
-        }
-        else
-        {
-            <div class="posts-grid">
-                @foreach (var post in userPosts)
-                {
-                    var isVideo = !string.IsNullOrEmpty(post.ImagePath) &&
-                                  (post.ImagePath.Contains("/video/upload/") ||
-                                   post.ImagePath.EndsWith(".mp4") ||
-                                   post.ImagePath.EndsWith(".mov") ||
-                                   post.ImagePath.EndsWith(".webm"));
-                    <a href="/Post/Index" class="post-tile">
-                        @if (isVideo)
-                        {
-                            <div class="post-tile-video">
-                                <video muted preload="metadata"><source src="@post.ImagePath" /></video>
-                                <span class="post-tile-badge">▶ Video</span>
+            @if (!userPosts.Any())
+            {
+                <div class="prof-empty">
+                    <div class="prof-empty-icon">📭</div>
+                    <div class="prof-empty-text">Sin publicaciones todavía</div>
+                    <div class="prof-empty-sub">@Model.Username aún no ha subido nada.</div>
+                </div>
+            }
+            else
+            {
+                <div class="posts-grid">
+                    @foreach (var post in userPosts)
+                    {
+                        var isVideo = !string.IsNullOrEmpty(post.ImagePath) &&
+                                      (post.ImagePath.Contains("/video/upload/") ||
+                                       post.ImagePath.EndsWith(".mp4") ||
+                                       post.ImagePath.EndsWith(".mov") ||
+                                       post.ImagePath.EndsWith(".webm"));
+                        <a href="/Post/Index" class="post-tile">
+                            @if (isVideo)
+                            {
+                                <div class="post-tile-video">
+                                    <video muted preload="metadata"><source src="@post.ImagePath" /></video>
+                                    <span class="post-tile-badge">▶ Video</span>
+                                </div>
+                            }
+                            else if (!string.IsNullOrEmpty(post.ImagePath))
+                            { <img src="@post.ImagePath" class="post-tile-img" /> }
+                            else
+                            { <div class="post-tile-noimg">📝</div> }
+                            <div class="post-tile-overlay">
+                                <span>@(isVideo ? "▶ Ver video" : "👁 Ver post")</span>
+                                <small>@post.CreatedAt.ToString("dd MMM yyyy", culture)</small>
                             </div>
-                        }
-                        else if (!string.IsNullOrEmpty(post.ImagePath))
-                        { <img src="@post.ImagePath" class="post-tile-img" /> }
-                        else
-                        { <div class="post-tile-noimg">📝</div> }
-                        <div class="post-tile-overlay">
-                            <span>@(isVideo ? "▶ Ver video" : "👁 Ver post")</span>
-                            <small>@post.CreatedAt.ToString("dd MMM yyyy", culture)</small>
-                        </div>
-                    </a>
-                }
+                        </a>
+                    }
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="private-wall">
+            <div class="private-wall-icon">🔒</div>
+            <div class="private-wall-title">Este perfil es privado</div>
+            <div class="private-wall-sub">
+                Agrega a <strong style="color:white;">@Model.Username</strong> como amigo para ver sus publicaciones y estadísticas.
             </div>
-        }
-    </div>
+        </div>
+    }
 </div>
 
 <!-- MODAL SEGUIDORES/SIGUIENDO -->
@@ -429,7 +454,6 @@ body.bg-dark .prof-posts-count { background: rgba(99,102,241,0.15) !important; }
 <script>
 const targetUserId = @Model.Id;
 
-// ── SEGUIR MODAL ────────────────────────
 function openModal(type) {
     const modal = document.getElementById("followModal");
     const list = document.getElementById("followList");
@@ -437,7 +461,7 @@ function openModal(type) {
     modal.style.display = "flex";
     list.innerHTML = "<div style='text-align:center;padding:20px;color:#9ca3af;'>Cargando...</div>";
     title.innerText = type === "followers" ? "Seguidores" : "Siguiendo";
-    fetch(`/User/${type === "followers" ? "GetFollowers" : "GetFollowing"}?userId=${targetUserId}`)
+    fetch('/User/' + (type === "followers" ? "GetFollowers" : "GetFollowing") + '?userId=' + targetUserId)
         .then(r => r.text())
         .then(data => list.innerHTML = data);
 }
@@ -450,7 +474,6 @@ document.getElementById("followModal").addEventListener("click", function(e) {
     if (e.target === this) closeModal();
 });
 
-// ── SOLICITUD DE MENSAJE ─────────────────
 function closeMsgReqModal() {
     document.getElementById("msgReqModal").style.display = "none";
 }
@@ -464,11 +487,9 @@ function updateReqChars() {
 async function sendMsgReq() {
     const msg = document.getElementById("msgReqText").value.trim();
     if (!msg) return;
-
     const btn = document.getElementById("msgReqSendBtn");
     btn.disabled = true;
     btn.textContent = "⏳ Enviando...";
-
     try {
         const res = await fetch("/Message/SendMessageRequest", {
             method: "POST",
@@ -476,15 +497,10 @@ async function sendMsgReq() {
             body: JSON.stringify({ receiverId: targetUserId, message: msg })
         });
         const data = await res.json();
-
         if (data.success) {
             closeMsgReqModal();
-            // reemplazar botón de mensaje
-            const msgBtns = document.querySelectorAll(".prof-btn.message");
-            msgBtns.forEach(b => {
-                if (!b.href) {
-                    b.outerHTML = `<button class="prof-btn msg-pending" disabled>⏳ Solicitud enviada</button>`;
-                }
+            document.querySelectorAll(".prof-btn.message").forEach(b => {
+                if (!b.href) b.outerHTML = '<button class="prof-btn msg-pending" disabled>⏳ Solicitud enviada</button>';
             });
             showProfToast("✅ Solicitud enviada. Espera a que la acepte.");
         } else {
@@ -492,7 +508,7 @@ async function sendMsgReq() {
             btn.disabled = false;
             btn.textContent = "Enviar solicitud";
         }
-    } catch (err) {
+    } catch {
         showProfToast("❌ Error de conexión");
         btn.disabled = false;
         btn.textContent = "Enviar solicitud";
@@ -503,10 +519,8 @@ document.getElementById("msgReqModal").addEventListener("click", function(e) {
     if (e.target === this) closeMsgReqModal();
 });
 
-// ── ELIMINAR AMIGO ───────────────────────
 function confirmarEliminarAmigo() {
-    if (!confirm("¿Eliminar a @Model.Username de tus amigos? Esta acción no se puede deshacer.")) return;
-
+    if (!confirm("¿Eliminar a @Model.Username de tus amigos?")) return;
     fetch("/User/RemoveFriend", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -514,21 +528,13 @@ function confirmarEliminarAmigo() {
     }).then(r => r.json()).then(data => {
         if (data.success) {
             showProfToast("✅ Amigo eliminado");
-            // actualizar botones
             const friendBtn = document.querySelector(".prof-btn.friends");
             const removeBtn = document.getElementById("removeFriendBtn");
-            if (friendBtn) friendBtn.outerHTML = `
-                <form action="/User/SendFriendRequest" method="post" style="display:inline;">
-                    <input type="hidden" name="receiverId" value="${targetUserId}" />
-                    <button class="prof-btn add">👤 Agregar</button>
-                </form>`;
+            if (friendBtn) friendBtn.outerHTML = '<form action="/User/SendFriendRequest" method="post" style="display:inline;"><input type="hidden" name="receiverId" value="' + targetUserId + '" /><button class="prof-btn add">👤 Agregar</button></form>';
             if (removeBtn) removeBtn.remove();
-            // actualizar botón de mensaje
             const chatBtn = document.querySelector(".prof-btn.message[href]");
-            if (chatBtn) chatBtn.outerHTML = `<button class="prof-btn message" onclick="document.getElementById('msgReqModal').style.display='flex'">💬 Mensaje</button>`;
-        } else {
-            showProfToast("❌ No se pudo eliminar");
-        }
+            if (chatBtn) chatBtn.outerHTML = '<button class="prof-btn message" onclick="document.getElementById(\'msgReqModal\').style.display=\'flex\'">💬 Mensaje</button>';
+        } else { showProfToast("❌ No se pudo eliminar"); }
     }).catch(() => showProfToast("❌ Error de conexión"));
 }
 
