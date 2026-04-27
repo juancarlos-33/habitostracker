@@ -746,7 +746,7 @@ namespace HabitTrackerApp.Controllers
                 user.ResetCode = null;
                 _context.SaveChanges();
                 _ = SendWelcomeEmail(user);
-                // ✅ login automático y redirigir a CompleteProfile
+                await SendSystemWelcomeMessage(user.Id);
                 await RefreshUserSession(user);
                 return RedirectToAction("CompleteProfile", "Account");
             }
@@ -1607,6 +1607,7 @@ namespace HabitTrackerApp.Controllers
                     };
                     _context.Users.Add(user);
                     _context.SaveChanges();
+                    _ = SendSystemWelcomeMessage(user.Id);
                 }
                 else
                 {
@@ -1903,6 +1904,7 @@ namespace HabitTrackerApp.Controllers
                 };
                 _context.Users.Add(user);
                 _context.SaveChanges();
+                _ = SendSystemWelcomeMessage(user.Id);
             }
 
             // 🔥 Foto de Google
@@ -2230,6 +2232,79 @@ namespace HabitTrackerApp.Controllers
             await _context.SaveChangesAsync();
 
             return Ok();
+        }
+        private async Task SendSystemWelcomeMessage(int newUserId)
+        {
+            try
+            {
+                const string SYSTEM_USERNAME = "HabitTracker";
+                const string SYSTEM_EMAIL = "system@habittracker.app";
+                const string SYSTEM_IMAGE = "https://res.cloudinary.com/dzrjag7ia/image/upload/v1733000000/habitostracker/logo_habittracker.png";
+
+                var systemUser = _context.Users.FirstOrDefault(u => u.Username == SYSTEM_USERNAME);
+                if (systemUser == null)
+                {
+                    systemUser = new User
+                    {
+                        Username = SYSTEM_USERNAME,
+                        Email = SYSTEM_EMAIL,
+                        PasswordHash = BCrypt.Net.BCrypt.HashPassword(Guid.NewGuid().ToString()),
+                        Role = "System",
+                        IsActive = true,
+                        EmailConfirmed = true,
+                        CreatedAt = DateTime.UtcNow,
+                        ProfileImage = SYSTEM_IMAGE,
+                        Bio = "Cuenta oficial de HabitTracker",
+                        FullName = "HabitTracker Official"
+                    };
+                    _context.Users.Add(systemUser);
+                    await _context.SaveChangesAsync();
+                }
+
+                var newUser = _context.Users.FirstOrDefault(u => u.Id == newUserId);
+                var welcomeMsg =
+                    $"👋 ¡Bienvenido/a a HabitTracker, {newUser?.Username}!\n\n" +
+                    $"Estamos muy contentos de tenerte aquí. 🚀\n\n" +
+                    $"HabitTracker es tu espacio para construir hábitos poderosos y conectar con una comunidad que también busca crecer cada día.\n\n" +
+                    $"⚠️ Aviso de seguridad importante:\n" +
+                    $"Por tu seguridad, nunca compartas tu contraseña, número de teléfono, datos bancarios ni información personal sensible dentro de la plataforma.\n\n" +
+                    $"🚨 Si alguien se hace pasar por el propietario o administrador de HabitTracker para pedirte datos, repórtalo de inmediato a:\n" +
+                    $"📧 privacidad@habittracker.app\n\n" +
+                    $"Recuerda: el equipo de HabitTracker NUNCA te pedirá tu contraseña ni datos personales por mensajes.\n\n" +
+                    $"¡Mucho éxito en tu camino! 💪🔥";
+
+                var message = new Message
+                {
+                    SenderId = systemUser.Id,
+                    ReceiverId = newUserId,
+                    Content = welcomeMsg,
+                    SentAt = DateTime.UtcNow,
+                    IsRead = false
+                };
+                _context.Messages.Add(message);
+                await _context.SaveChangesAsync();
+
+                // notificación en tiempo real
+                await _hubContext.Clients.Group(newUserId.ToString())
+                    .SendAsync("ReceiveMessage",
+                        systemUser.Id,
+                        newUserId,
+                        SYSTEM_USERNAME,
+                        welcomeMsg,
+                        "");
+
+                await _hubContext.Clients.Group(newUserId.ToString())
+                    .SendAsync("ReceiveNotification",
+                        systemUser.Id,
+                        "👋 ¡Bienvenido/a a HabitTracker!",
+                        SYSTEM_USERNAME,
+                        SYSTEM_IMAGE,
+                        "/Message/Chat?userId=" + systemUser.Id);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error enviando mensaje de bienvenida: " + ex.Message);
+            }
         }
 
         public class LocationDto

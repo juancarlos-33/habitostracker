@@ -125,6 +125,8 @@ namespace HabitTrackerApp.Controllers
                                      (r.SenderId == userId && r.ReceiverId == myId));
             ViewBag.MessageRequestStatus = request?.Status ?? "None";
             ViewBag.IsFriend = IsFriend(myId, userId);
+            var otherUserRole = _context.Users.Where(u => u.Id == userId).Select(u => u.Role).FirstOrDefault();
+            ViewBag.IsSystemChat = otherUserRole == "System";
 
             return View(messages);
         }
@@ -289,6 +291,9 @@ namespace HabitTrackerApp.Controllers
             // 🔥 verificar que pueden chatear
             if (!CanChat(senderId, receiverId))
                 return Json(new { success = false, error = "Primero debes enviar una solicitud de mensaje." });
+            var receiverUser2 = _context.Users.FirstOrDefault(u => u.Id == receiverId);
+            if (receiverUser2?.Role == "System")
+                return Json(new { success = false, error = "Este es un mensaje automático del sistema. No puedes responder." });
 
             var senderName = User.Identity?.Name ?? "Usuario";
             var receiverExists = _context.Users.Any(u => u.Id == receiverId);
