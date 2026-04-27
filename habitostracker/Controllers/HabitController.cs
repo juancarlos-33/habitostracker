@@ -412,7 +412,6 @@ namespace HabitTrackerApp.Controllers
             var progress = _context.HabitProgresses.FirstOrDefault(p => p.Id == dto.ProgressId);
             if (progress == null) return Json(new { success = false });
 
-            // si ya reaccionó con el mismo emoji, quitarlo (toggle)
             var existing = _context.HabitProgressReactions
                 .FirstOrDefault(r => r.HabitProgressId == dto.ProgressId && r.UserId == userId && r.Emoji == dto.Emoji);
 
@@ -422,7 +421,6 @@ namespace HabitTrackerApp.Controllers
             }
             else
             {
-                // quitar reacción anterior si tenía otra
                 var old = _context.HabitProgressReactions
                     .FirstOrDefault(r => r.HabitProgressId == dto.ProgressId && r.UserId == userId);
                 if (old != null) _context.HabitProgressReactions.Remove(old);
@@ -434,7 +432,6 @@ namespace HabitTrackerApp.Controllers
                     Emoji = dto.Emoji
                 });
 
-                // notificar al dueño del progreso
                 if (progress.UserId != userId)
                 {
                     var me = _context.Users.FirstOrDefault(u => u.Id == userId);
@@ -453,16 +450,17 @@ namespace HabitTrackerApp.Controllers
 
             await _context.SaveChangesAsync();
 
-            // contar reacciones agrupadas
             var counts = _context.HabitProgressReactions
                 .Where(r => r.HabitProgressId == dto.ProgressId)
                 .GroupBy(r => r.Emoji)
                 .Select(g => new { emoji = g.Key, count = g.Count() })
                 .ToList();
 
-            return Json(new { success = true, counts });
-        }
+            var myReaction = _context.HabitProgressReactions
+                .FirstOrDefault(r => r.HabitProgressId == dto.ProgressId && r.UserId == userId)?.Emoji;
 
+            return Json(new { success = true, counts, myReaction });
+        }
         // 📤 EXPORTAR HISTORIAL PDF (solo Premium)
         public IActionResult ExportHistory()
         {

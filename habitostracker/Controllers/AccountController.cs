@@ -251,8 +251,7 @@ namespace HabitTrackerApp.Controllers
             var user = _context.Users.FirstOrDefault(u => u.Id == userId);
             if (user == null) return Json(new { success = false });
 
-            if (!user.IsPremium)
-                return Json(new { success = false, error = "Solo usuarios Premium pueden cambiar la foto de portada." });
+       
 
             if (coverPhoto == null || coverPhoto.Length == 0)
                 return Json(new { success = false });
@@ -1444,13 +1443,12 @@ namespace HabitTrackerApp.Controllers
         {
             return View();
         }
-
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ForgotPassword(ForgotPasswordViewModel model)
         {
             var ip = HttpContext.Request.Headers["X-Forwarded-For"].FirstOrDefault()
-    ?? HttpContext.Connection.RemoteIpAddress?.ToString();
+                ?? HttpContext.Connection.RemoteIpAddress?.ToString();
             var blockedUser = _context.Users.FirstOrDefault(u => u.LastIp == ip && u.IsIpBlocked);
             if (blockedUser != null)
                 return RedirectToAction("Login", new { blocked = true });
@@ -1465,15 +1463,18 @@ namespace HabitTrackerApp.Controllers
                 return View(model);
             }
 
+            // Usuario de Google — no tiene contraseña local
+            if (string.IsNullOrEmpty(user.PasswordHash))
+            {
+                TempData["Error"] = "Tu cuenta está vinculada a Google. Usa el botón 'Continuar con Google' para iniciar sesión, no necesitas contraseña.";
+                return RedirectToAction("Login");
+            }
+
             await SendResetCode(user);
-
             TempData["ResetEmail"] = user.Email;
-
             TempData["FromReset"] = true;
-
             return RedirectToAction("ConfirmEmail");
         }
-
         private async Task SendResetCode(User user)
         {
             var random = new Random();

@@ -24,19 +24,10 @@
             <div class="cover-gradient"></div>
         </div>
     }
-    @if (Model.IsPremium)
-    {
-        <label class="cover-edit-btn" for="coverInput">
-            📷 Cambiar portada
-        </label>
-        <input type="file" id="coverInput" accept="image/*" style="display:none;" onchange="uploadCover(this)" />
-    }
-    else
-    {
-        <div class="cover-lock-btn">
-            🔒 <a href="/User/Pay" style="color:white;text-decoration:none;">Premium para portada</a>
-        </div>
-    }
+  <label class="cover-edit-btn" for="coverInput">
+    📷 Cambiar portada
+</label>
+<input type="file" id="coverInput" accept="image/*" style="display:none;" onchange="uploadCover(this)" />
 </div>
 
 <div class="profile-wrapper">
