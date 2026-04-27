@@ -320,14 +320,18 @@
             @if (!string.IsNullOrEmpty(Model.Bio))
             { <p class="prof-bio">@Model.Bio</p> }
 
-            <div class="prof-meta">
-                @if (Model.CreatedAt.HasValue)
-                { <span class="prof-meta-item">📅 Se unió en @Model.CreatedAt.Value.ToString("MMM yyyy", culture)</span> }
-                @if (!string.IsNullOrEmpty(Model.Country))
-                { <span class="prof-meta-item">🌍 @Model.Country</span> }
-                @if (Model.IsPremium)
-                { <span class="prof-meta-item" style="color:#fbbf24;">⭐ Premium</span> }
-            </div>
+           <div class="prof-meta">
+    @if (Model.CreatedAt.HasValue)
+    { <span class="prof-meta-item">📅 Se unió en @Model.CreatedAt.Value.ToString("MMM yyyy", culture)</span> }
+    @if (Model.IsPremium)
+    { <span class="prof-meta-item" style="color:#fbbf24;">⭐ Premium</span> }
+</div>
+@if (!string.IsNullOrEmpty(Model.Country))
+{
+    <div style="margin-bottom:14px;">
+        <span class="prof-meta-item">🌍 @Model.Country</span>
+    </div>
+}
 
             <div class="prof-stats-row">
                 <div class="prof-stat" onclick="openModal('followers')">
@@ -346,13 +350,15 @@
 
             @if (canSeeProfile && totalHabits > 0)
             {
-                <div class="prof-habit-strip">
-                    <div class="prof-habit-chip habit">📋 @totalHabits hábitos</div>
-                    @if (bestStreak > 0)
-                    { <div class="prof-habit-chip fire">🔥 @bestStreak días de racha</div> }
-                    @if (isFriend)
-                    { <div class="prof-habit-chip trophy">🤝 Amigos</div> }
-                </div>
+               @if (bestStreak > 0 || isFriend)
+{
+    <div class="prof-habit-strip">
+        @if (bestStreak > 0)
+        { <div class="prof-habit-chip fire">🔥 @bestStreak días de racha</div> }
+        @if (isFriend)
+        { <div class="prof-habit-chip trophy">🤝 Amigos</div> }
+    </div>
+}
             }
         }
         else
