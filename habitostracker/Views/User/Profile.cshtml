@@ -262,7 +262,12 @@ body.bg-dark .prof-posts-count { background: rgba(99,102,241,0.15) !important; }
 <div class="prof-page">
 
     <div class="prof-hero">
-        <div class="prof-hero-banner"></div>
+       <div class="prof-hero-banner">
+    @if (!string.IsNullOrEmpty(Model.CoverImage))
+    {
+        <img src="@Model.CoverImage" style="width:100%;height:100%;object-fit:cover;display:block;" />
+    }
+</div>
         <div class="prof-hero-body">
             <div class="prof-info-row">
                 <div>
