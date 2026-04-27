@@ -463,12 +463,11 @@ else
          
 
             <!-- Solicitudes de mensaje -->
-            <a href="/Message/Inbox" class="ht-icon-btn guest-block" title="Mensajes"
-               id="msgReqNavBtn" style="display:none; position:relative;">
-                💬
-                <span class="notif-dot" id="msgReqDot"></span>
-            </a>
-
+         <a href="/Message/Inbox" class="ht-icon-btn guest-block" title="Mensajes"
+   id="msgReqNavBtn" style="display:none; position:relative;">
+    💬
+    <span class="notif-dot" id="msgReqDot" style="display:none;"></span>
+</a>
             <!-- Dropdown usuario -->
             <div class="ht-dropdown" id="ht-user-dropdown">
                 <button class="ht-avatar-btn" data-no-loader onclick="toggleUserDropdown()" type="button">
@@ -917,12 +916,14 @@ document.addEventListener("click", e => {
 
                 if (navBtn) navBtn.style.display = "flex";
 
-                if (count > 0) {
-                    if (menuItem) menuItem.style.display = "flex";
-                    if (menuBadge) menuBadge.textContent = count;
-                    if (sidebarBadge) { sidebarBadge.style.display = "inline"; sidebarBadge.textContent = count; }
-                    if (bnBadge) { bnBadge.style.display = "inline"; bnBadge.textContent = count; }
-                }
+              if (count > 0) {
+    if (menuItem) menuItem.style.display = "flex";
+    if (menuBadge) menuBadge.textContent = count;
+    if (sidebarBadge) { sidebarBadge.style.display = "inline"; sidebarBadge.textContent = count; }
+    if (bnBadge) { bnBadge.style.display = "inline"; bnBadge.textContent = count; }
+    const dot = document.getElementById("msgReqDot");
+    if (dot) dot.style.display = "block";
+}
             }).catch(() => {});
     }
     </text>
