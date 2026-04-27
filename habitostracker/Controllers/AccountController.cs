@@ -2237,12 +2237,15 @@ namespace HabitTrackerApp.Controllers
         {
             try
             {
+                Console.WriteLine($"🚀 Iniciando SendSystemWelcomeMessage para userId={newUserId}");
+
                 const string SYSTEM_USERNAME = "HabitTracker";
                 const string SYSTEM_EMAIL = "system@habittracker.app";
-                // Usa la misma imagen del login que ya existe en Cloudinary
                 const string SYSTEM_IMAGE = "https://res.cloudinary.com/dzrjag7ia/image/upload/v1776560628/NE_lmertz.jpg";
 
                 var systemUser = _context.Users.FirstOrDefault(u => u.Username == SYSTEM_USERNAME);
+                Console.WriteLine($"👤 systemUser encontrado: {systemUser?.Id.ToString() ?? "NULL - creando nuevo"}");
+
                 if (systemUser == null)
                 {
                     systemUser = new User
@@ -2256,24 +2259,28 @@ namespace HabitTrackerApp.Controllers
                         CreatedAt = DateTime.UtcNow,
                         ProfileImage = SYSTEM_IMAGE,
                         Bio = "Cuenta oficial de HabitTracker",
-                        FullName = "HabitTracker Official"
+                        FullName = "HabitTracker Official",
+                        Gender = "No especificado"
                     };
                     _context.Users.Add(systemUser);
                     await _context.SaveChangesAsync();
+                    Console.WriteLine($"✅ systemUser creado con Id={systemUser.Id}");
                 }
 
                 var newUser = _context.Users.FirstOrDefault(u => u.Id == newUserId);
-                if (newUser == null) return;
+                Console.WriteLine($"👤 newUser encontrado: {newUser?.Username ?? "NULL"}");
+                if (newUser == null)
+                {
+                    Console.WriteLine("❌ newUser es NULL, abortando");
+                    return;
+                }
 
                 var welcomeMsg =
                     $"👋 ¡Bienvenido/a a HabitTracker, {newUser.Username}!\n\n" +
                     $"Estamos muy contentos de tenerte aquí. 🚀\n\n" +
-                    $"HabitTracker es tu espacio para construir hábitos poderosos y conectar con una comunidad que también busca crecer cada día.\n\n" +
-                    $"⚠️ Aviso de seguridad importante:\n" +
                     $"Por tu seguridad, nunca compartas tu contraseña, número de teléfono, datos bancarios ni información personal sensible dentro de la plataforma.\n\n" +
-                    $"🚨 Si alguien se hace pasar por el propietario o administrador de HabitTracker para pedirte datos, repórtalo de inmediato a:\n" +
+                    $"🚨 Si alguien se hace pasar por el propietario o administrador de HabitTracker para pedirte datos, repórtalo a:\n" +
                     $"📧 privacidad@habittracker.app\n\n" +
-                    $"Recuerda: el equipo de HabitTracker NUNCA te pedirá tu contraseña ni datos personales por mensajes.\n\n" +
                     $"¡Mucho éxito en tu camino! 💪🔥";
 
                 var message = new Message
@@ -2286,30 +2293,14 @@ namespace HabitTrackerApp.Controllers
                 };
                 _context.Messages.Add(message);
                 await _context.SaveChangesAsync();
-
-                Console.WriteLine($"✅ Mensaje de bienvenida enviado a userId={newUserId}");
-
-                try
-                {
-                    await _hubContext.Clients.Group(newUserId.ToString())
-                        .SendAsync("ReceiveNotification",
-                            systemUser.Id,
-                            "👋 ¡Bienvenido/a a HabitTracker!",
-                            SYSTEM_USERNAME,
-                            SYSTEM_IMAGE,
-                            "/Message/Chat?userId=" + systemUser.Id);
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine("SignalR bienvenida error (no crítico): " + ex.Message);
-                }
+                Console.WriteLine($"✅ Mensaje guardado en DB con Id={message.Id}");
             }
             catch (Exception ex)
             {
-                Console.WriteLine("❌ Error SendSystemWelcomeMessage: " + ex.Message);
+                Console.WriteLine($"❌ SendSystemWelcomeMessage EXCEPTION: {ex.Message}");
+                Console.WriteLine($"❌ StackTrace: {ex.StackTrace}");
             }
         }
-
         public class LocationDto
         {
             public double latitude { get; set; }
