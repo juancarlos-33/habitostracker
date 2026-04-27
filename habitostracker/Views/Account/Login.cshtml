@@ -266,6 +266,7 @@ window.doLogin = () => false;
 }
         @if(Context.Request.Query["ipblocked"]=="true"){<div class="malert danger">🚫 IP bloqueada</div>}
         @if(TempData["Success"]!=null){<div class="malert success">✅ @TempData["Success"]</div>}
+            @if(TempData["Error"]!=null){<div class="malert danger">❌ @TempData["Error"]</div>}
         @if(TempData["Unblocked"]!=null){<script>localStorage.clear();sessionStorage.clear();</script>}
         @if(!ViewData.ModelState.IsValid){
             var e0=ViewData.ModelState.Values.SelectMany(v=>v.Errors).Select(e=>e.ErrorMessage).FirstOrDefault();
@@ -556,7 +557,8 @@ const q=new URLSearchParams(location.search);
 const isBlocked=q.get("blocked")==="true";
 const autoOpen=["banned","deleted","deactivated","blocked","ipblocked"].some(k=>q.get(k)==="true");
 const hasError=document.querySelector(".malert");
-if(autoOpen||hasError){setTimeout(openLoginModal,400);}
+const hasTempError=@(TempData.Peek("Error") != null ? "true" : "false");
+if(autoOpen||hasError||hasTempError){setTimeout(openLoginModal,400);}
 
 if(isBlocked){
     // Deshabilitar botones de la landing
