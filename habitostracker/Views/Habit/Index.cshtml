@@ -141,13 +141,13 @@
         </div>
         <div class="story-viewer-content" id="svContent">
             <img id="svImg" style="display:none;width:100%;height:100%;object-fit:cover;"/>
-            <video id="svVideo" style="display:none;width:100%;height:100%;object-fit:cover;" playsinline muted></video>
+          <video id="svVideo" style="display:none;width:100%;height:100%;object-fit:cover;" playsinline></video>
             <div id="svText" style="display:none;width:100%;height:100%;align-items:center;justify-content:center;padding:32px;text-align:center;font-size:22px;font-weight:800;color:white;line-height:1.4;word-break:break-word;"></div>
         </div>
         <div class="story-nav-left" onclick="prevStory()"></div>
         <div class="story-nav-right" onclick="nextStory()"></div>
         <div id="svCaption" style="position:absolute;bottom:44px;left:16px;right:16px;z-index:10;font-size:13px;color:white;font-weight:600;text-shadow:0 1px 4px rgba(0,0,0,0.5);text-align:center;"></div>
-       <div class="story-views-bar" onclick="openStoryViews()" style="cursor:pointer;">
+     <div class="story-views-bar" id="svViewsBar" style="cursor:pointer;">
     <span id="svViews">👁 0 vistas</span>
 </div>
 
@@ -809,17 +809,15 @@ async function loadFriendStories() {
     } catch(e) { console.error(e); }
 }
 
+let currentStoryOwnerId = null;
+
 function openStoryViewer(group) {
     currentUserStories = group.stories;
     currentStoryIndex = 0;
+    currentStoryOwnerId = group.user.id;
     document.getElementById('svAvatar').src = group.user.profileImage || group.user.profilePicture || '';
     document.getElementById('svUsername').textContent = group.user.username;
     document.getElementById('svDelete').style.display = group.user.id === myUserId ? 'block' : 'none';
-    document.getElementById('storyViewer').style.display = 'flex';
-    document.body.style.overflow = 'hidden';
-    buildProgressBars();
-    showStory(0);
-}
 
 function buildProgressBars() {
     const bars = document.getElementById('storyProgressBars');
@@ -858,7 +856,16 @@ function showStory(index) {
     }
 
  document.getElementById('svTime').textContent = getTimeAgo(new Date(story.createdAt + 'Z'));
+const isOwner = currentStoryOwnerId === myUserId;
+const viewsBar = document.getElementById('svViewsBar');
+if (isOwner) {
+    viewsBar.style.display = 'flex';
+    viewsBar.onclick = openStoryViews;
     document.getElementById('svViews').textContent = `👁 ${story.views} vistas`;
+} else {
+    viewsBar.style.display = 'none';
+    viewsBar.onclick = null;
+}
     document.getElementById('svHighlight').textContent = story.isHighlight ? '★' : '☆';
     document.getElementById('svCaption').textContent = story.caption || '';
 

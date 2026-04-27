@@ -184,9 +184,13 @@ namespace HabitTrackerApp.Controllers
 
         [HttpPost]
         public async Task<IActionResult> View([FromBody] int storyId)
-
         {
             var myId = int.Parse(User.FindFirst("UserId").Value);
+
+            // No contar vista propia
+            var story = await _context.Stories.FirstOrDefaultAsync(s => s.Id == storyId);
+            if (story == null) return NotFound();
+            if (story.UserId == myId) return Ok();
 
             var already = await _context.StoryViews
                 .AnyAsync(v => v.StoryId == storyId && v.ViewerId == myId);

@@ -159,7 +159,8 @@ function handleMedia(input) {
         const vid = document.createElement('video');
         vid.src = url;
         vid.controls = true;
-        vid.muted = false;
+      vid.muted = true;
+vid.setAttribute('controls', true);
         vid.playsinline = true;
         vid.style.cssText = 'width:100%;height:100%;object-fit:cover;border-radius:20px;';
         vid.id = 'previewVideo';
