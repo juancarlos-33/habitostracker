@@ -420,7 +420,8 @@ body.bg-dark .story-avatar-wrap.viewed{background:#334155!important;}
 .story-viewer{position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;}
 .story-viewer-bg{position:absolute;inset:0;background:rgba(0,0,0,0.95);}
 .story-viewer-card{position:relative;width:100%;max-width:420px;height:100vh;max-height:780px;border-radius:24px;overflow:hidden;background:#000;z-index:1;box-shadow:0 40px 100px rgba(0,0,0,0.8);}
-.story-progress-bars{position:absolute;top:10px;left:10px;right:10px;display:flex;gap:3px;z-index:10;}
+.story-viewer-header{padding-top:env(safe-area-inset-top,0px);}
+.story-progress-bars{position:absolute;top:calc(10px + env(safe-area-inset-top,0px));left:10px;right:10px;display:flex;gap:3px;z-index:10;}
 .story-progress-bar{flex:1;height:3px;background:rgba(255,255,255,0.25);border-radius:10px;overflow:hidden;}
 .story-progress-fill{height:100%;background:white;width:0%;border-radius:10px;}
 .story-viewer-header{position:absolute;top:22px;left:10px;right:10px;display:flex;align-items:center;justify-content:space-between;z-index:10;}
@@ -589,8 +590,11 @@ body.bg-dark .hca-btn.delete{background:#2d3748!important;color:#94a3b8!importan
 
 <script>
 document.addEventListener("DOMContentLoaded", function () {
-    history.pushState(null, null, location.href);
-    window.onpopstate = function () { history.go(1); };
+    // Solo bloquear atrás si venimos de la página de crear historia
+    if (document.referrer.includes('/Story/Create')) {
+        history.pushState(null, null, location.href);
+        window.onpopstate = function () { history.go(1); };
+    }
 });
 
 // ══ STORIES ══
@@ -719,6 +723,7 @@ function showStory(index) {
     // Likes
     const likeBtn = document.getElementById('svLikeBtn');
     likeBtn.textContent = story.liked ? '❤️' : '🤍';
+    likeBtn.style.filter = story.liked ? 'drop-shadow(0 0 6px rgba(239,68,68,0.8))' : 'none';
     document.getElementById('svLikesCount').textContent = story.likes > 0 ? story.likes + ' ❤️' : '';
 
     currentUserStories.forEach((_, i) => {
@@ -775,6 +780,7 @@ async function toggleStoryLike() {
     story.liked = data.liked;
     story.likes = data.liked ? (story.likes || 0) + 1 : Math.max(0, (story.likes || 0) - 1);
     btn.textContent = data.liked ? '❤️' : '🤍';
+    btn.style.filter = data.liked ? 'drop-shadow(0 0 6px rgba(239,68,68,0.8))' : 'none';
     document.getElementById('svLikesCount').textContent = story.likes > 0 ? story.likes + ' ❤️' : '';
 }
 
