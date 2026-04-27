@@ -729,58 +729,10 @@ function showToastNotif(username, message, userImage, link) {
     setTimeout(() => { card.classList.remove("show"); card.classList.add("hide"); setTimeout(() => card.remove(), 400); }, 4000);
 }
 </script>
+
 <script>
-// ══ LOADER ══════════════════════════════
-const htLoader = document.getElementById("ht-loader");
-const htBar = document.getElementById("ht-loader-bar");
-const isChatPage = window.location.pathname.toLowerCase().includes("/message") ||
-                   window.location.pathname.toLowerCase().includes("/group/chat");
-let loaderProgress = 0;
 
-if (!isChatPage) {
-    document.querySelectorAll("a").forEach(link => {
-        link.addEventListener("click", () => { if (!link.hasAttribute("data-no-loader") && htLoader) htLoader.style.display = "flex"; });
-    });
-    document.querySelectorAll("form").forEach(form => {
-        form.addEventListener("submit", () => { if (!form.hasAttribute("data-no-loader") && htLoader) htLoader.style.display = "flex"; });
-    });
-}
 
-const loaderInterval = setInterval(() => {
-    if (loaderProgress < 88) { loaderProgress += Math.random() * 12; if(htBar) htBar.style.width = loaderProgress + "%"; }
-}, 200);
-
-window.addEventListener("load", () => {
-    if(htBar) htBar.style.width = "100%";
-    setTimeout(() => {
-        if(htLoader) { htLoader.style.opacity = "0"; htLoader.style.transition = "opacity 0.4s"; }
-        setTimeout(() => { if(htLoader) htLoader.style.display = "none"; clearInterval(loaderInterval); }, 400);
-    }, 500);
-});
-window.addEventListener("pageshow", e => { if (e.persisted && htLoader) htLoader.style.display = "none"; });
-</script>
-<script>
-const isSuperAdmin = @(User.IsInRole("SuperAdmin").ToString().ToLower());
-
-// ══ SIGNALR ÚNICO ══════════════════════
-const connectionGlobal = new signalR.HubConnectionBuilder().withUrl("/chatHub").build();
-
-// Eventos de seguridad y sistema
-connectionGlobal.on("ForceLogout", msg => {
-    document.body.innerHTML = `<div style="height:100vh;display:flex;align-items:center;justify-content:center;background:#0f172a;font-family:sans-serif;color:white;text-align:center;"><div style="background:#1e293b;padding:50px;border-radius:14px;"><h2 style="color:#f59e0b">⚠ Atención</h2><p>${msg}</p></div></div>`;
-    setTimeout(() => window.location.href="/Account/LogoutGet", 2500);
-});
-connectionGlobal.on("IPBlocked", ip => {
-    fetch("/Home/GetMyIP").then(r => r.text()).then(myIp => {
-        if (myIp === ip) { document.body.innerHTML = `<div style="height:100vh;display:flex;align-items:center;justify-content:center;background:#0f172a;font-family:sans-serif;color:white;text-align:center;"><div style="background:#1e293b;padding:50px;border-radius:14px;"><h2 style="color:#ef4444">🚫 IP bloqueada</h2></div></div>`; setTimeout(() => window.location.href="/Account/Login?ipblocked=true", 2500); }
-    });
-});
-connectionGlobal.on("ConnectionBlocked", msg => {
-    if (!isSuperAdmin) {
-        document.body.innerHTML = `<div style="height:100vh;display:flex;align-items:center;justify-content:center;background:#050a14;font-family:'Plus Jakarta Sans',sans-serif;color:white;text-align:center;"><div style="background:#1e293b;padding:50px 40px;border-radius:24px;border:1px solid rgba(239,68,68,0.2);max-width:380px;"><img src="https://res.cloudinary.com/dzrjag7ia/image/upload/v1776560628/NE_lmertz.jpg" style="width:80px;height:80px;border-radius:20px;margin-bottom:20px;border:2px solid rgba(239,68,68,0.4);" /><h2 style="color:#ef4444;margin:0 0 10px;">🔌 Acceso bloqueado</h2><p style="color:rgba(255,255,255,0.4);font-size:14px;margin:0;">${msg}</p></div></div>`;
-        setTimeout(() => window.location.href = "/Account/Login?blocked=true", 3000);
-    }
-});
 
 // Polling cada 10s para detectar bloqueo aunque SignalR falle
 if (!isSuperAdmin) {
