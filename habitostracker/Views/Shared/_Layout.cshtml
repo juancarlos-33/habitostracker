@@ -1,5 +1,11 @@
-﻿<!DOCTYPE html>
+﻿@inject HabitTrackerApp.Data.HabitDbContext _context
+@{
+    var layoutUsername = User.Identity?.Name ?? "";
+    var layoutUser = _context.Users.FirstOrDefault(u => u.Username == layoutUsername);
+}
+<!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -352,12 +358,24 @@ body.bg-dark .modal-content { background: #1e293b !important; color: #f1f5f9 !im
 <a class="ht-sidebar-link guest-block" asp-controller="Habit" asp-action="Community">
     <span class="sl-icon">🌍</span> Comunidad
 </a>
-<a class="ht-sidebar-link guest-block" asp-controller="Habit" asp-action="Statistics">
-    <span class="sl-icon">📈</span> Estadísticas
-</a>
-<a class="ht-sidebar-link guest-block" asp-controller="Habit" asp-action="ExportHistory">
-    <span class="sl-icon">📤</span> Exportar historial
-</a>
+@if (layoutUser != null && layoutUser.IsPremium)
+{
+    <a class="ht-sidebar-link guest-block" asp-controller="Habit" asp-action="Statistics">
+        <span class="sl-icon">📈</span> Estadísticas
+    </a>
+    <a class="ht-sidebar-link guest-block" asp-controller="Habit" asp-action="ExportHistory">
+        <span class="sl-icon">📤</span> Exportar historial
+    </a>
+}
+else
+{
+    <div class="ht-sidebar-link" style="opacity:0.4;cursor:not-allowed;" title="Solo Premium">
+        <span class="sl-icon">📈</span> Estadísticas <span style="margin-left:auto;font-size:11px;">👑</span>
+    </div>
+    <div class="ht-sidebar-link" style="opacity:0.4;cursor:not-allowed;" title="Solo Premium">
+        <span class="sl-icon">📤</span> Exportar historial <span style="margin-left:auto;font-size:11px;">👑</span>
+    </div>
+}
 <a class="ht-sidebar-link guest-block" asp-controller="Habit" asp-action="Achievements">
     <span class="sl-icon">🏆</span> Logros
 </a>
