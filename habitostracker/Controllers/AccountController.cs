@@ -753,7 +753,7 @@ namespace HabitTrackerApp.Controllers
             else if (fromReset)
             {
                 // Usuario de Google — no tiene contraseña local
-                if (string.IsNullOrEmpty(user.PasswordHash))
+                if (user.IsGoogleAccount)
                 {
                     TempData["Error"] = "Tu cuenta está vinculada a Google. Usa el botón 'Continuar con Google' para iniciar sesión, no necesitas contraseña.";
                     return RedirectToAction("Login");
@@ -1470,7 +1470,7 @@ namespace HabitTrackerApp.Controllers
             }
 
             // Usuario de Google — no tiene contraseña local
-            if (string.IsNullOrEmpty(user.PasswordHash))
+            if (user.IsGoogleAccount)
             {
                 TempData["Error"] = "Tu cuenta está vinculada a Google. Usa el botón 'Continuar con Google' para iniciar sesión, no necesitas contraseña.";
                 return RedirectToAction("Login");
