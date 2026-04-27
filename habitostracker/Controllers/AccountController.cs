@@ -2239,7 +2239,8 @@ namespace HabitTrackerApp.Controllers
             {
                 const string SYSTEM_USERNAME = "HabitTracker";
                 const string SYSTEM_EMAIL = "system@habittracker.app";
-                const string SYSTEM_IMAGE = "https://res.cloudinary.com/dzrjag7ia/image/upload/v1733000000/habitostracker/logo_habittracker.png";
+                // Usa la misma imagen del login que ya existe en Cloudinary
+                const string SYSTEM_IMAGE = "https://res.cloudinary.com/dzrjag7ia/image/upload/v1776560628/NE_lmertz.jpg";
 
                 var systemUser = _context.Users.FirstOrDefault(u => u.Username == SYSTEM_USERNAME);
                 if (systemUser == null)
@@ -2262,8 +2263,10 @@ namespace HabitTrackerApp.Controllers
                 }
 
                 var newUser = _context.Users.FirstOrDefault(u => u.Id == newUserId);
+                if (newUser == null) return;
+
                 var welcomeMsg =
-                    $"👋 ¡Bienvenido/a a HabitTracker, {newUser?.Username}!\n\n" +
+                    $"👋 ¡Bienvenido/a a HabitTracker, {newUser.Username}!\n\n" +
                     $"Estamos muy contentos de tenerte aquí. 🚀\n\n" +
                     $"HabitTracker es tu espacio para construir hábitos poderosos y conectar con una comunidad que también busca crecer cada día.\n\n" +
                     $"⚠️ Aviso de seguridad importante:\n" +
@@ -2284,26 +2287,26 @@ namespace HabitTrackerApp.Controllers
                 _context.Messages.Add(message);
                 await _context.SaveChangesAsync();
 
-                // notificación en tiempo real
-                await _hubContext.Clients.Group(newUserId.ToString())
-                    .SendAsync("ReceiveMessage",
-                        systemUser.Id,
-                        newUserId,
-                        SYSTEM_USERNAME,
-                        welcomeMsg,
-                        "");
+                Console.WriteLine($"✅ Mensaje de bienvenida enviado a userId={newUserId}");
 
-                await _hubContext.Clients.Group(newUserId.ToString())
-                    .SendAsync("ReceiveNotification",
-                        systemUser.Id,
-                        "👋 ¡Bienvenido/a a HabitTracker!",
-                        SYSTEM_USERNAME,
-                        SYSTEM_IMAGE,
-                        "/Message/Chat?userId=" + systemUser.Id);
+                try
+                {
+                    await _hubContext.Clients.Group(newUserId.ToString())
+                        .SendAsync("ReceiveNotification",
+                            systemUser.Id,
+                            "👋 ¡Bienvenido/a a HabitTracker!",
+                            SYSTEM_USERNAME,
+                            SYSTEM_IMAGE,
+                            "/Message/Chat?userId=" + systemUser.Id);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine("SignalR bienvenida error (no crítico): " + ex.Message);
+                }
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Error enviando mensaje de bienvenida: " + ex.Message);
+                Console.WriteLine("❌ Error SendSystemWelcomeMessage: " + ex.Message);
             }
         }
 
