@@ -672,11 +672,18 @@ connectionGlobal.on("IPBlocked", ip => {
         if (myIp === ip) { document.body.innerHTML = `<div style="height:100vh;display:flex;align-items:center;justify-content:center;background:#0f172a;font-family:sans-serif;color:white;text-align:center;"><div style="background:#1e293b;padding:50px;border-radius:14px;"><h2 style="color:#ef4444">🚫 IP bloqueada</h2></div></div>`; setTimeout(() => window.location.href="/Account/Login?ipblocked=true", 2500); }
     });
 });
-connectionGlobal.on("ConnectionBlocked", msg => {
+connectionGlobal.on("ConnectionBlocked", function(msg) {
     if (!isSuperAdmin) {
-        document.body.innerHTML = `
-            <div style="height:100vh;display:flex;align-items:center;justify-content:center;
-                background:#050a14;font-family:'Plus Jakarta Sans',sans-serif;color:white;text-align:center;">
+        var html = '<div style="height:100vh;display:flex;align-items:center;justify-content:center;background:#050a14;font-family:Plus Jakarta Sans,sans-serif;color:white;text-align:center;">';
+        html += '<div style="background:#1e293b;padding:50px 40px;border-radius:24px;border:1px solid rgba(239,68,68,0.2);max-width:380px;">';
+        html += '<img src="https://res.cloudinary.com/dzrjag7ia/image/upload/v1776560628/NE_lmertz.jpg" style="width:80px;height:80px;border-radius:20px;margin-bottom:20px;border:2px solid rgba(239,68,68,0.4);" />';
+        html += '<h2 style="color:#ef4444;margin:0 0 10px;">🔌 Acceso bloqueado</h2>';
+        html += '<p style="color:rgba(255,255,255,0.4);font-size:14px;margin:0;">' + msg + '</p>';
+        html += '</div></div>';
+        document.body.innerHTML = html;
+        setTimeout(function() { window.location.href = "/Account/Login?blocked=true"; }, 3000);
+    }
+});
                 <div style="background:#1e293b;padding:50px 40px;border-radius:24px;
                     border:1px solid rgba(239,68,68,0.2);max-width:380px;">
                     <img src="https://res.cloudinary.com/dzrjag7ia/image/upload/v1776560628/NE_lmertz.jpg"
