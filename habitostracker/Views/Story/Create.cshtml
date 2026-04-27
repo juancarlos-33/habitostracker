@@ -17,58 +17,22 @@
 .sc-preview-placeholder .icon{font-size:56px;margin-bottom:12px;}
 .sc-preview-placeholder .txt{font-size:15px;font-weight:700;margin-bottom:6px;}
 .sc-preview-placeholder .sub{font-size:12px;opacity:0.6;}
-
-/* TRIM BAR */
-.trim-bar-wrap{
-    background:#1e293b;border-radius:14px;padding:14px;
-    margin-bottom:16px;display:none;
-}
+.trim-bar-wrap{background:#1e293b;border-radius:14px;padding:14px;margin-bottom:16px;display:none;}
 .trim-bar-label{font-size:12px;color:#94a3b8;font-weight:600;margin-bottom:8px;display:flex;justify-content:space-between;}
 .trim-bar{position:relative;height:6px;background:#334155;border-radius:10px;margin-bottom:12px;}
 .trim-bar-fill{position:absolute;left:0;top:0;height:100%;background:linear-gradient(90deg,#6366f1,#4f46e5);border-radius:10px;pointer-events:none;}
 .trim-limit{position:absolute;top:-4px;width:14px;height:14px;background:#ef4444;border-radius:50%;border:2px solid white;cursor:pointer;transform:translateX(-50%);}
 .trim-warning{font-size:12px;color:#ef4444;font-weight:600;display:flex;align-items:center;gap:6px;}
-
-/* VISIBILITY */
 .vis-options{display:flex;gap:8px;margin-bottom:16px;}
-.vis-btn{
-    flex:1;padding:10px 8px;border-radius:12px;border:2px solid #e5e7eb;
-    background:white;font-size:12px;font-weight:700;cursor:pointer;
-    transition:0.2s;color:#374151;text-align:center;font-family:inherit;
-}
+.vis-btn{flex:1;padding:10px 8px;border-radius:12px;border:2px solid #e5e7eb;background:white;font-size:12px;font-weight:700;cursor:pointer;transition:0.2s;color:#374151;text-align:center;font-family:inherit;}
 .vis-btn.active{border-color:#6366f1;background:#6366f1;color:white;}
-.vis-info{
-    font-size:12px;color:#9ca3af;padding:10px 14px;background:#f9fafb;
-    border-radius:10px;margin-bottom:16px;line-height:1.6;
-}
-
-/* CAPTION */
-.sc-caption{
-    width:100%;padding:12px 16px;border-radius:12px;
-    border:1.5px solid #e5e7eb;font-size:14px;outline:none;
-    font-family:inherit;background:white;color:#111827;
-    transition:0.2s;margin-bottom:16px;
-}
+.vis-info{font-size:12px;color:#9ca3af;padding:10px 14px;background:#f9fafb;border-radius:10px;margin-bottom:16px;line-height:1.6;}
+.sc-notice{background:linear-gradient(135deg,rgba(99,102,241,0.08),rgba(37,99,235,0.06));border:1px solid rgba(99,102,241,0.2);border-radius:12px;padding:12px 16px;margin-bottom:16px;font-size:12px;color:#4f46e5;font-weight:600;line-height:1.6;}
+.sc-caption{width:100%;padding:12px 16px;border-radius:12px;border:1.5px solid #e5e7eb;font-size:14px;outline:none;font-family:inherit;background:white;color:#111827;transition:0.2s;margin-bottom:16px;}
 .sc-caption:focus{border-color:#6366f1;box-shadow:0 0 0 3px rgba(99,102,241,0.1);}
-
-/* NOTICE */
-.sc-notice{
-    background:linear-gradient(135deg,rgba(99,102,241,0.08),rgba(37,99,235,0.06));
-    border:1px solid rgba(99,102,241,0.2);border-radius:12px;
-    padding:12px 16px;margin-bottom:16px;font-size:12px;
-    color:#4f46e5;font-weight:600;line-height:1.6;
-}
-
-/* SUBMIT */
-.sc-submit{
-    width:100%;padding:14px;border-radius:14px;border:none;
-    background:linear-gradient(135deg,#6366f1,#4f46e5);color:white;
-    font-size:15px;font-weight:700;cursor:pointer;transition:0.2s;
-    font-family:inherit;box-shadow:0 4px 14px rgba(99,102,241,0.35);
-}
+.sc-submit{width:100%;padding:14px;border-radius:14px;border:none;background:linear-gradient(135deg,#6366f1,#4f46e5);color:white;font-size:15px;font-weight:700;cursor:pointer;transition:0.2s;font-family:inherit;box-shadow:0 4px 14px rgba(99,102,241,0.35);}
 .sc-submit:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(99,102,241,0.45);}
 .sc-submit:disabled{opacity:0.5;cursor:not-allowed;transform:none;}
-
 body.bg-dark .sc-caption{background:#1e293b!important;border-color:#334155!important;color:#f1f5f9!important;}
 body.bg-dark .vis-btn{background:#1e293b!important;border-color:#334155!important;color:#f1f5f9!important;}
 body.bg-dark .vis-btn.active{background:#6366f1!important;border-color:#6366f1!important;color:white!important;}
@@ -82,12 +46,10 @@ body.bg-dark .sc-preview{background:#0f172a!important;}
         <h4 style="margin:0;font-size:18px;font-weight:800;">Nueva historia</h4>
     </div>
 
-    <!-- AVISO VISIBILIDAD -->
     <div class="sc-notice">
         ℹ️ Tu historia se mostrará según la visibilidad que elijas abajo. Por defecto solo la verán tus amigos.
     </div>
 
-    <!-- PREVIEW -->
     <div class="sc-preview" id="scPreview" onclick="document.getElementById('mediaInput').click()">
         <div class="sc-preview-placeholder" id="scPlaceholder">
             <div class="icon">📷</div>
@@ -96,7 +58,6 @@ body.bg-dark .sc-preview{background:#0f172a!important;}
         </div>
     </div>
 
-    <!-- TRIM BAR (solo video) -->
     <div class="trim-bar-wrap" id="trimBarWrap">
         <div class="trim-bar-label">
             <span>✂️ Recortar video</span>
@@ -111,66 +72,59 @@ body.bg-dark .sc-preview{background:#0f172a!important;}
         </div>
     </div>
 
- <form asp-controller="Story" asp-action="Create" method="post" enctype="multipart/form-data" id="storyForm" data-no-loader>
-        @Html.AntiForgeryToken()
-        <input type="hidden" name="type" id="storyType" value="image"/>
-        <input type="hidden" name="bgColor" value="#6366f1"/>
-        <input type="hidden" name="visibility" id="storyVisibility" value="friends"/>
-        <input type="hidden" name="trimEnd" id="trimEndInput" value="30"/>
-        <input type="file" id="mediaInput" name="media" accept="image/*,video/*" style="display:none;" onchange="handleMedia(this)"/>
+    @Html.AntiForgeryToken()
+    <input type="hidden" id="storyType" value="image"/>
+    <input type="hidden" id="storyBgColor" value="#6366f1"/>
+    <input type="hidden" id="storyVisibility" value="friends"/>
+    <input type="hidden" id="trimEndInput" value="30"/>
+    <input type="file" id="mediaInput" accept="image/*,video/*" style="display:none;" onchange="handleMedia(this)"/>
 
-        <!-- VISIBILIDAD -->
-        <label style="font-size:12px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:8px;">👁 Visibilidad</label>
-        <div class="vis-options">
-            <button type="button" class="vis-btn" data-vis="private" onclick="setVisibility('private')">🔒 Solo yo</button>
-            <button type="button" class="vis-btn active" data-vis="friends" onclick="setVisibility('friends')">👥 Amigos</button>
-            <button type="button" class="vis-btn" data-vis="public" onclick="setVisibility('public')">🌍 Público</button>
-        </div>
-        <div class="vis-info" id="visInfo">
-            👥 Solo tus amigos podrán ver esta historia.
-        </div>
+    <label style="font-size:12px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:8px;">👁 Visibilidad</label>
+    <div class="vis-options">
+        <button type="button" class="vis-btn" data-vis="private" onclick="setVisibility('private')">🔒 Solo yo</button>
+        <button type="button" class="vis-btn active" data-vis="friends" onclick="setVisibility('friends')">👥 Amigos</button>
+        <button type="button" class="vis-btn" data-vis="public" onclick="setVisibility('public')">🌍 Público</button>
+    </div>
+    <div class="vis-info" id="visInfo">
+        👥 Solo tus amigos podrán ver esta historia.
+    </div>
 
-        <!-- DESCRIPCIÓN -->
-        <input type="text" name="caption" id="storyCaption" class="sc-caption"
-               placeholder="📝 Añade una descripción... (opcional)" maxlength="100"/>
-<button type="submit" class="sc-submit" id="scSubmit" disabled onclick="this.textContent='⏳ Subiendo...';this.disabled=true;">
-    📤 Publicar historia
-</button>
-    </form>
+    <input type="text" id="storyCaption" class="sc-caption"
+           placeholder="📝 Añade una descripción... (opcional)" maxlength="100"/>
+
+    <button type="button" class="sc-submit" id="scSubmit" disabled onclick="submitStory()">
+        📤 Publicar historia
+    </button>
 </div>
 
 <script>
-let videoDuration = 0;
+const CLOUDINARY_CLOUD = 'dzrjag7ia';
+const CLOUDINARY_PRESET = 'historias_de_habitostracker';
 let trimEnd = 30;
+
 async function handleMedia(input) {
     const file = input.files[0];
     if (!file) return;
-
     const isVideo = file.type.startsWith('video/');
     document.getElementById('storyType').value = isVideo ? 'video' : 'image';
-
     const url = URL.createObjectURL(file);
     const preview = document.getElementById('scPreview');
     document.getElementById('scPlaceholder').style.display = 'none';
 
     if (isVideo) {
         const vid = document.createElement('video');
-        vid.src = url;
-        vid.controls = true;
-        vid.muted = true;
-        vid.playsinline = true;
+        vid.src = url; vid.controls = true; vid.muted = true; vid.playsinline = true;
         vid.style.cssText = 'width:100%;height:100%;object-fit:cover;border-radius:20px;';
         vid.id = 'previewVideo';
-        preview.innerHTML = '';
-        preview.appendChild(vid);
+        preview.innerHTML = ''; preview.appendChild(vid);
         preview.style.cursor = 'default';
+        preview.onclick = null;
         vid.onloadedmetadata = () => setupTrimBar(vid.duration);
     } else {
         const img = document.createElement('img');
         img.src = url;
         img.style.cssText = 'width:100%;height:100%;object-fit:contain;border-radius:20px;background:#000;';
-        preview.innerHTML = '';
-        preview.appendChild(img);
+        preview.innerHTML = ''; preview.appendChild(img);
         preview.style.cursor = 'pointer';
         preview.onclick = () => document.getElementById('mediaInput').click();
         document.getElementById('trimBarWrap').style.display = 'none';
@@ -180,12 +134,9 @@ async function handleMedia(input) {
     window._selectedFile = file;
     window._isVideo = isVideo;
 }
-const CLOUDINARY_CLOUD = 'dzrjag7ia';
-const CLOUDINARY_PRESET = 'historias_de_habitostracker';
 
 function setupTrimBar(duration) {
-    const wrap = document.getElementById('trimBarWrap');
-    wrap.style.display = 'block';
+    document.getElementById('trimBarWrap').style.display = 'block';
     trimEnd = Math.min(duration, 30);
 
     const updateTrim = (secs) => {
@@ -204,15 +155,13 @@ function setupTrimBar(duration) {
 
     const bar = document.getElementById('trimBar');
     let dragging = false;
-
     const getPos = (clientX) => {
         const rect = bar.getBoundingClientRect();
-        const pct = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
-        return pct * duration;
+        return Math.max(0, Math.min(1, (clientX - rect.left) / rect.width)) * duration;
     };
 
     document.getElementById('trimHandle').addEventListener('mousedown', e => { dragging = true; e.preventDefault(); });
-    document.getElementById('trimHandle').addEventListener('touchstart', e => { dragging = true; }, {passive:true});
+    document.getElementById('trimHandle').addEventListener('touchstart', () => { dragging = true; }, {passive:true});
     document.addEventListener('mouseup', () => dragging = false);
     document.addEventListener('touchend', () => dragging = false);
     document.addEventListener('mousemove', e => { if (dragging) updateTrim(getPos(e.clientX)); });
@@ -229,9 +178,8 @@ function setVisibility(vis) {
     };
     document.getElementById('visInfo').textContent = msgs[vis];
 }
-document.getElementById('storyForm').addEventListener('submit', async function(e) {
-    e.preventDefault();
-    
+
+async function submitStory() {
     const btn = document.getElementById('scSubmit');
     btn.disabled = true;
     btn.textContent = '⏳ Subiendo...';
@@ -251,7 +199,10 @@ document.getElementById('storyForm').addEventListener('submit', async function(e
                 body: formData
             });
 
-            if (!res.ok) throw new Error('Error al subir a Cloudinary');
+            if (!res.ok) {
+                const err = await res.json();
+                throw new Error(err.error?.message || 'Error al subir a Cloudinary');
+            }
             const data = await res.json();
             mediaUrl = data.secure_url;
         }
@@ -259,7 +210,7 @@ document.getElementById('storyForm').addEventListener('submit', async function(e
         const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
         const payload = new FormData();
         payload.append('type', document.getElementById('storyType').value);
-        payload.append('bgColor', document.getElementById('storyBgColor')?.value || '#6366f1');
+        payload.append('bgColor', document.getElementById('storyBgColor').value);
         payload.append('visibility', document.getElementById('storyVisibility').value);
         payload.append('caption', document.getElementById('storyCaption').value);
         payload.append('trimEnd', document.getElementById('trimEndInput').value);
@@ -274,12 +225,13 @@ document.getElementById('storyForm').addEventListener('submit', async function(e
         if (saveRes.ok) {
             window.location.href = '/Habit/Index';
         } else {
-            throw new Error('Error al guardar historia');
+            const txt = await saveRes.text();
+            throw new Error('Error al guardar: ' + saveRes.status);
         }
     } catch(err) {
         btn.disabled = false;
         btn.textContent = '📤 Publicar historia';
-        alert('Error: ' + err.message);
+        alert('❌ ' + err.message);
     }
-});
+}
 </script>
