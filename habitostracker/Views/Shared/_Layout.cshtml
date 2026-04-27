@@ -684,18 +684,7 @@ connectionGlobal.on("ConnectionBlocked", function(msg) {
         setTimeout(function() { window.location.href = "/Account/Login?blocked=true"; }, 3000);
     }
 });
-                <div style="background:#1e293b;padding:50px 40px;border-radius:24px;
-                    border:1px solid rgba(239,68,68,0.2);max-width:380px;">
-                    <img src="https://res.cloudinary.com/dzrjag7ia/image/upload/v1776560628/NE_lmertz.jpg"
-                         style="width:80px;height:80px;border-radius:20px;margin-bottom:20px;
-                         border:2px solid rgba(239,68,68,0.4);" />
-                    <h2 style="color:#ef4444;margin:0 0 10px;">🔌 Acceso bloqueado</h2>
-                    <p style="color:rgba(255,255,255,0.4);font-size:14px;margin:0;">${msg}</p>
-                </div>
-            </div>`;
-        setTimeout(() => window.location.href = "/Account/Login?blocked=true", 3000);
-    }
-});
+            
 connectionGlobal.on("IPBlockedNow", msg => { document.body.innerHTML = `<div style="height:100vh;display:flex;align-items:center;justify-content:center;background:#020617;color:white;font-family:sans-serif;text-align:center;"><div style="background:#1e293b;padding:50px;border-radius:16px;"><h2 style="color:#ef4444">🚫 Acceso bloqueado</h2><p>${msg}</p></div></div>`; setTimeout(() => window.location.href="/Account/Login?ipblocked=true", 2000); });
 connectionGlobal.on("UserDeleted", uid => { const myId = '@User.FindFirst("UserId")?.Value'; if (myId == uid) { alert("⚠ Esta cuenta fue eliminada."); setTimeout(() => window.location.href="/Account/Login", 1500); } });
 connectionGlobal.on("UserConnectedNotification", u => showToastNotif(u, "● En línea", "", null));
