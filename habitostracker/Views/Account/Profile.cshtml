@@ -6,564 +6,602 @@
 }
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.css" />
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 
 @if (TempData["Success"] != null)
 {
-    <div class="profile-alert">✅ @TempData["Success"]</div>
+    <div class="prof-alert success">✅ @TempData["Success"]</div>
+}
+@if (TempData["Error"] != null)
+{
+    <div class="prof-alert danger">❌ @TempData["Error"]</div>
 }
 
-<!-- FOTO DE PORTADA -->
-<div class="cover-wrap" id="coverWrap">
-    @if (!string.IsNullOrEmpty(Model.CoverImage))
-    {
-        <img src="@Model.CoverImage" class="cover-img" id="coverImg" />
-    }
-    else
-    {
-        <div class="cover-placeholder" id="coverImg">
-            <div class="cover-gradient"></div>
-        </div>
-    }
-  <label class="cover-edit-btn" for="coverInput">
-    📷 Cambiar portada
-</label>
-<input type="file" id="coverInput" accept="image/*" style="display:none;" onchange="uploadCover(this)" />
-</div>
+<div class="my-prof-wrap">
 
-<div class="profile-wrapper">
-
-    <!-- COLUMNA IZQUIERDA -->
-    <div class="profile-left">
-
-      <div class="avatar-section">
-    @{
-        var pic = !string.IsNullOrEmpty(Model.ProfileImage)
-            ? Model.ProfileImage
-            : Model.ProfilePicture;
-    }
-    @if (!string.IsNullOrEmpty(pic))
-    {
-        <img id="previewImage" src="@pic" class="profile-avatar"
-             onerror="this.style.display='none';document.getElementById('previewLetter').style.display='flex';"/>
-        <div id="previewLetter" class="profile-avatar-letter" style="display:none;">
-            @Model.Username.Substring(0, 1).ToUpper()
-        </div>
-    }
-    else
-    {
-        <div id="previewLetter" class="profile-avatar-letter">
-            @Model.Username.Substring(0, 1).ToUpper()
-        </div>
-    }
-    <div class="avatar-overlay" onclick="document.getElementById('imageInput').click()">
-        📷
-    </div>
-</div>
-
-        <h2 class="profile-name">@Model.Username</h2>
-
-        @if (!string.IsNullOrEmpty(Model.FullName))
+    <!-- ══ COVER ══ -->
+    <div class="my-cover-wrap" id="coverWrap">
+        @if (!string.IsNullOrEmpty(Model.CoverImage))
         {
-            <p class="profile-fullname">@Model.FullName</p>
+            <img src="@Model.CoverImage" class="my-cover-img" id="coverImg" />
         }
-
-        <p class="profile-bio-preview">@(string.IsNullOrEmpty(Model.Bio) ? "Sin biografía aún..." : Model.Bio)</p>
-
-        @if (Model.IsGoogleAccount)
+        else
         {
-            <div class="google-badge">
-                <img src="https://developers.google.com/identity/images/g-logo.png" style="width:14px;" />
-                Cuenta de Google
+            <div class="my-cover-placeholder" id="coverImg">
+                <div class="my-cover-dots"></div>
+                <div class="my-cover-gradient"></div>
             </div>
         }
-
-        @if (Model.IsPremium)
-        {
-            <div class="premium-badge">👑 Usuario Premium</div>
-        }
-
-        <div class="follow-stats">
-            <div class="follow-stat" onclick="if(@ViewBag.Followers > 0) openModal('followers')">
-                <span class="stat-num">@ViewBag.Followers</span>
-                <span class="stat-label">Seguidores</span>
-            </div>
-            <div class="follow-divider"></div>
-            <div class="follow-stat" onclick="if(@ViewBag.Following > 0) openModal('following')">
-                <span class="stat-num">@ViewBag.Following</span>
-                <span class="stat-label">Siguiendo</span>
-            </div>
-        </div>
-
-        @if (Model.CreatedAt.HasValue)
-        {
-            <div class="member-since">
-                📅 Miembro desde @Model.CreatedAt.Value.ToString("dd MMM yyyy", culture)
-            </div>
-        }
-
-        <button type="button" id="removePhotoBtn" data-no-loader class="remove-photo-btn">
-            🗑️ Eliminar foto
-        </button>
-    </div>
-
-    <!-- COLUMNA DERECHA -->
-    <div class="profile-right">
-        <form asp-controller="Account" asp-action="Profile" method="post" enctype="multipart/form-data" data-no-loader>
-            @Html.AntiForgeryToken()
-            <input type="hidden" id="croppedImageInput" name="croppedImage" />
-            <input type="file" id="imageInput" name="profilePhoto" accept="image/*" style="display:none;" />
-
-            <div class="form-section">
-                <div class="section-header">
-                    <h4 class="section-title">✏️ Información personal</h4>
-                    <span class="section-subtitle">Actualiza tus datos de perfil</span>
-                </div>
-
-                <div class="fields-grid">
-                    <div class="field-group">
-                        <label class="field-label">Usuario</label>
-                        <div class="field-input-wrapper">
-                            <input class="field-input" value="@Model.Username" disabled />
-                            <span class="field-icon">🔒</span>
-                        </div>
-                    </div>
-
-                    <div class="field-group">
-                        <label class="field-label">Nombre completo</label>
-                        <div class="field-input-wrapper">
-                            <input asp-for="FullName" class="field-input" placeholder="Tu nombre completo" />
-                            <span class="field-icon">👤</span>
-                        </div>
-                    </div>
-
-                    <div class="field-group full-width">
-                        <label class="field-label">Correo electrónico</label>
-                        <div class="field-input-wrapper">
-                            <input asp-for="Email" class="field-input" disabled />
-                            <span class="field-icon">📧</span>
-                        </div>
-                    </div>
-
-                    <div class="field-group full-width">
-                        <label class="field-label">Biografía</label>
-                        <textarea asp-for="Bio" class="field-textarea" rows="3" placeholder="Cuéntanos sobre ti..."></textarea>
-                        <span class="field-hint">Máximo 300 caracteres</span>
-                    </div>
-                </div>
-            </div>
-
-            <div class="form-section" id="cropperSection" style="display:none;">
-                <div class="section-header">
-                    <h4 class="section-title">✂️ Recortar imagen</h4>
-                    <span class="section-subtitle">Ajusta tu foto antes de guardar</span>
-                </div>
-                <img id="cropImage" style="max-width:100%;" />
-                <button type="button" id="cropButton" data-no-loader class="crop-btn">✂️ Confirmar recorte</button>
-            </div>
-
-            <!-- PANEL PERSONALIZACIÓN -->
-<div class="form-section" id="customSection">
-    <div class="section-header">
-        <h4 class="section-title">🎨 Personalización</h4>
-        <span class="section-subtitle">Ajusta la apariencia a tu gusto</span>
-    </div>
-
-    <!-- AVATARES -->
-<div style="margin-bottom:24px;">
-    <label class="field-label">Avatar prediseñado</label>
-    <p style="font-size:12px;color:#9ca3af;margin:4px 0 12px;">Elige un avatar o sube tu propia foto</p>
-
-    <!-- ESTILOS -->
-    <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px;" id="avatarStyles">
-        @foreach (var style in new[] {
-            ("pixel-art","🎮 Pixel Art"),("adventurer","🧝 Adventurer"),
-            ("notionists","🌸 Notionists"),("bottts","👾 Bottts"),
-            ("lorelei","🦊 Lorelei"),("personas","🎭 Personas"),("micah","🐱 Micah")
-        })
-        {
-            <button type="button" class="style-btn" data-style="@style.Item1"
-                    onclick="loadAvatarStyle('@style.Item1')"
-                    style="padding:6px 12px;border-radius:8px;border:2px solid #e5e7eb;background:white;font-size:12px;font-weight:600;cursor:pointer;transition:0.2s;color:#374151;">
-                @style.Item2
-            </button>
-        }
-    </div>
-
-    <!-- GRID DE AVATARES -->
-    <div id="avatarGrid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;max-height:280px;overflow-y:auto;padding:4px;"></div>
-
-    <div id="avatarLoading" style="text-align:center;padding:20px;color:#9ca3af;display:none;">
-        ⏳ Cargando avatares...
-    </div>
-
-    <!-- AVATAR SELECCIONADO -->
-    <div id="avatarSelected" style="display:none;margin-top:12px;padding:12px;background:#f0fdf4;border:1px solid #86efac;border-radius:12px;display:flex;align-items:center;gap:12px;">
-        <img id="avatarSelectedImg" style="width:48px;height:48px;border-radius:50%;" />
-        <div>
-            <div style="font-size:13px;font-weight:700;color:#15803d;">✅ Avatar seleccionado</div>
-            <div style="font-size:11px;color:#9ca3af;">Guarda los cambios para aplicarlo</div>
-        </div>
-        <button type="button" onclick="cancelAvatar()" style="margin-left:auto;background:none;border:none;color:#9ca3af;cursor:pointer;font-size:18px;">✕</button>
-    </div>
-
-    <input type="hidden" id="selectedAvatarUrl" name="selectedAvatarUrl" />
-</div>
-
-    <!-- COLOR ACENTO -->
-    <div style="margin-bottom:24px;">
-        <label class="field-label">Color principal</label>
-        <div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:8px;" id="colorPalette">
-            @foreach (var c in new[] {
-                ("#2563eb","Azul"),("#7c3aed","Morado"),("#db2777","Rosa"),
-                ("#dc2626","Rojo"),("#ea580c","Naranja"),("#16a34a","Verde"),
-                ("#0891b2","Cian"),("#d97706","Dorado"),("#111827","Negro"),
-                ("#6366f1","Índigo")
-            })
-            {
-                <button type="button" class="color-swatch" data-color="@c.Item1"
-                        title="@c.Item2"
-                        style="width:36px;height:36px;border-radius:50%;background:@c.Item1;border:3px solid transparent;cursor:pointer;transition:0.2s;"
-                        onclick="setAccentColor('@c.Item1')">
-                </button>
-            }
-            <!-- Color personalizado -->
-            <label title="Color personalizado" style="width:36px;height:36px;border-radius:50%;overflow:hidden;cursor:pointer;border:3px solid #e5e7eb;display:flex;align-items:center;justify-content:center;font-size:18px;">
-                🎨
-                <input type="color" id="customColorInput" style="opacity:0;position:absolute;width:0;height:0;" oninput="setAccentColor(this.value)"/>
-            </label>
-        </div>
-        <div style="margin-top:10px;display:flex;align-items:center;gap:8px;">
-            <div id="colorPreview" style="width:20px;height:20px;border-radius:50%;background:var(--primary);"></div>
-            <span style="font-size:12px;color:#9ca3af;" id="colorLabel">Color actual</span>
-        </div>
-    </div>
-
-    <!-- FUENTE -->
-    <div style="margin-bottom:24px;">
-        <label class="field-label">Fuente</label>
-        <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;">
-            @foreach (var f in new[] {
-                ("Plus Jakarta Sans","Jakarta"),("Inter","Inter"),
-                ("Poppins","Poppins"),("Montserrat","Montserrat")
-            })
-            {
-                <button type="button" class="font-btn" data-font="@f.Item1"
-                        onclick="setFont('@f.Item1')"
-                        style="padding:8px 16px;border-radius:10px;border:2px solid #e5e7eb;background:white;font-family:'@f.Item1',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:0.2s;color:#374151;">
-                    @f.Item2
-                </button>
-            }
-        </div>
-    </div>
-
-    <!-- TAMAÑO DE TEXTO -->
-    <div style="margin-bottom:8px;">
-        <label class="field-label">Tamaño de texto</label>
-        <div style="display:flex;gap:8px;margin-top:8px;">
-            @foreach (var s in new[] { ("small","Pequeño","13px"), ("normal","Normal","15px"), ("large","Grande","17px") })
-            {
-                <button type="button" class="size-btn" data-size="@s.Item1"
-                        onclick="setFontSize('@s.Item1','@s.Item3')"
-                        style="flex:1;padding:10px;border-radius:10px;border:2px solid #e5e7eb;background:white;font-size:@s.Item3;font-weight:600;cursor:pointer;transition:0.2s;color:#374151;">
-                    @s.Item2
-                </button>
-            }
-        </div>
-    </div>
-
-    <!-- RESET -->
-    <button type="button" onclick="resetCustomization()" data-no-loader
-            style="margin-top:16px;padding:9px 18px;border-radius:10px;border:1px solid #e5e7eb;background:white;font-size:12px;font-weight:600;color:#6b7280;cursor:pointer;transition:0.2s;">
-        🔄 Restablecer valores
-    </button>
-</div>
-
-<div class="form-section">
-    <div class="section-header">
-        <h4 class="section-title">🔒 Privacidad</h4>
-        <span class="section-subtitle">Controla quién puede ver tu perfil</span>
-    </div>
-    <div style="display:flex;align-items:center;justify-content:space-between;padding:16px;background:#f9fafb;border-radius:14px;border:1.5px solid #e5e7eb;">
-        <div>
-            <div style="font-size:14px;font-weight:700;color:#111827;">Perfil privado</div>
-            <div style="font-size:12px;color:#9ca3af;margin-top:2px;">Solo tus amigos podrán ver tu perfil completo</div>
-        </div>
-        <label style="position:relative;display:inline-block;width:48px;height:26px;cursor:pointer;">
-            <input type="checkbox" name="IsPrivate" value="true" @(Model.IsPrivate ? "checked" : "") style="opacity:0;width:0;height:0;" onchange="this.form.submit()" />
-            <span id="privacyToggle" style="position:absolute;inset:0;background:@(Model.IsPrivate ? "#6366f1" : "#e5e7eb");border-radius:26px;transition:0.3s;">
-                <span style="position:absolute;top:3px;left:@(Model.IsPrivate ? "25px" : "3px");width:20px;height:20px;background:white;border-radius:50%;transition:0.3s;box-shadow:0 2px 6px rgba(0,0,0,0.15);"></span>
-            </span>
+        <div class="my-cover-overlay"></div>
+        <label class="my-cover-edit-btn" for="coverInput">
+            <span>📷</span> Cambiar portada
         </label>
+        <input type="file" id="coverInput" accept="image/*" style="display:none;" onchange="uploadCover(this)" />
     </div>
-</div>
 
-            <button type="submit" class="save-btn">
-                💾 Guardar cambios
-            </button>
-        </form>
+    <!-- ══ LAYOUT ══ -->
+    <div class="my-prof-layout">
+
+        <!-- SIDEBAR IZQUIERDA -->
+        <div class="my-prof-sidebar">
+
+            <!-- AVATAR CARD -->
+            <div class="my-card">
+                <div class="my-avatar-zone">
+                    <div class="my-avatar-section">
+                        @{
+                            var pic = !string.IsNullOrEmpty(Model.ProfileImage)
+                                ? Model.ProfileImage : Model.ProfilePicture;
+                        }
+                        @if (!string.IsNullOrEmpty(pic))
+                        {
+                            <img id="previewImage" src="@pic" class="my-avatar"
+                                 onerror="this.style.display='none';document.getElementById('previewLetter').style.display='flex';"/>
+                            <div id="previewLetter" class="my-avatar-letter" style="display:none;">
+                                @Model.Username.Substring(0, 1).ToUpper()
+                            </div>
+                        }
+                        else
+                        {
+                            <div id="previewLetter" class="my-avatar-letter">
+                                @Model.Username.Substring(0, 1).ToUpper()
+                            </div>
+                        }
+                        <div class="my-avatar-edit-btn" onclick="document.getElementById('imageInput').click()" title="Cambiar foto">
+                            📷
+                        </div>
+                    </div>
+
+                    <div class="my-user-info">
+                        <div class="my-username">
+                            @Model.Username
+                            @if (Model.IsPremium)
+                            { <span class="my-premium-icon" title="Premium">👑</span> }
+                            @if (Model.IsPrivate)
+                            { <span class="my-private-badge">🔒</span> }
+                        </div>
+                        @if (!string.IsNullOrEmpty(Model.FullName))
+                        { <div class="my-fullname">@Model.FullName</div> }
+                        <div class="my-bio-preview">@(string.IsNullOrEmpty(Model.Bio) ? "Sin biografía aún..." : Model.Bio)</div>
+                    </div>
+                </div>
+
+                <!-- BADGES -->
+                <div class="my-badges-row">
+                    @if (Model.IsGoogleAccount)
+                    {
+                        <div class="my-badge google">
+                            <img src="https://developers.google.com/identity/images/g-logo.png" style="width:13px;" />
+                            Google
+                        </div>
+                    }
+                    @if (Model.IsPremium)
+                    {
+                        <div class="my-badge premium">👑 Premium</div>
+                    }
+                    @if (Model.IsPrivate)
+                    {
+                        <div class="my-badge private">🔒 Privado</div>
+                    }
+                    else
+                    {
+                        <div class="my-badge public">🌍 Público</div>
+                    }
+                </div>
+
+                <!-- STATS -->
+                <div class="my-stats-row">
+                    <div class="my-stat" onclick="if(@ViewBag.Followers > 0) openFollowModal('followers')">
+                        <div class="my-stat-num">@ViewBag.Followers</div>
+                        <div class="my-stat-label">Seguidores</div>
+                    </div>
+                    <div class="my-stat-sep"></div>
+                    <div class="my-stat" onclick="if(@ViewBag.Following > 0) openFollowModal('following')">
+                        <div class="my-stat-num">@ViewBag.Following</div>
+                        <div class="my-stat-label">Siguiendo</div>
+                    </div>
+                </div>
+
+                @if (Model.CreatedAt.HasValue)
+                {
+                    <div class="my-meta-item">📅 Miembro desde @Model.CreatedAt.Value.ToString("MMM yyyy", culture)</div>
+                }
+
+                <button type="button" id="removePhotoBtn" data-no-loader class="my-remove-photo-btn">
+                    🗑️ Eliminar foto de perfil
+                </button>
+            </div>
+        </div>
+
+        <!-- COLUMNA DERECHA -->
+        <div class="my-prof-right">
+            <form asp-controller="Account" asp-action="Profile" method="post" enctype="multipart/form-data" data-no-loader>
+                @Html.AntiForgeryToken()
+                <input type="hidden" id="croppedImageInput" name="croppedImage" />
+                <input type="file" id="imageInput" name="profilePhoto" accept="image/*" style="display:none;" />
+
+                <!-- ══ INFO PERSONAL ══ -->
+                <div class="my-card">
+                    <div class="my-card-header">
+                        <div>
+                            <div class="my-card-title">✏️ Información personal</div>
+                            <div class="my-card-sub">Actualiza tus datos de perfil</div>
+                        </div>
+                    </div>
+                    <div class="my-fields-grid">
+                        <div class="my-field">
+                            <label class="my-label">Usuario</label>
+                            <div class="my-input-wrap">
+                                <input class="my-input" value="@Model.Username" disabled />
+                                <span class="my-input-icon">🔒</span>
+                            </div>
+                        </div>
+                        <div class="my-field">
+                            <label class="my-label">Nombre completo</label>
+                            <div class="my-input-wrap">
+                                <input asp-for="FullName" class="my-input" placeholder="Tu nombre completo" />
+                                <span class="my-input-icon">👤</span>
+                            </div>
+                        </div>
+                        <div class="my-field my-full">
+                            <label class="my-label">Correo electrónico</label>
+                            <div class="my-input-wrap">
+                                <input asp-for="Email" class="my-input" disabled />
+                                <span class="my-input-icon">📧</span>
+                            </div>
+                        </div>
+                        <div class="my-field my-full">
+                            <label class="my-label">Biografía</label>
+                            <textarea asp-for="Bio" class="my-textarea" rows="3" placeholder="Cuéntanos sobre ti..." maxlength="300"></textarea>
+                            <span class="my-hint">Máximo 300 caracteres</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ══ RECORTAR ══ -->
+                <div class="my-card" id="cropperSection" style="display:none;">
+                    <div class="my-card-header">
+                        <div>
+                            <div class="my-card-title">✂️ Recortar imagen</div>
+                            <div class="my-card-sub">Ajusta tu foto antes de guardar</div>
+                        </div>
+                    </div>
+                    <img id="cropImage" style="max-width:100%;border-radius:12px;" />
+                    <button type="button" id="cropButton" data-no-loader class="my-crop-btn">✂️ Confirmar recorte</button>
+                </div>
+
+                <!-- ══ AVATARES ══ -->
+                <div class="my-card">
+                    <div class="my-card-header">
+                        <div>
+                            <div class="my-card-title">🧑‍🎤 Avatar prediseñado</div>
+                            <div class="my-card-sub">Elige un avatar o sube tu propia foto</div>
+                        </div>
+                    </div>
+
+                    <div class="my-avatar-styles" id="avatarStyles">
+                        @foreach (var style in new[] {
+                            ("pixel-art","🎮 Pixel"),("adventurer","🧝 Adventurer"),
+                            ("notionists","🌸 Notion"),("bottts","👾 Bottts"),
+                            ("lorelei","🦊 Lorelei"),("personas","🎭 Personas"),("micah","🐱 Micah")
+                        })
+                        {
+                            <button type="button" class="my-style-btn" data-style="@style.Item1"
+                                    onclick="loadAvatarStyle('@style.Item1')">
+                                @style.Item2
+                            </button>
+                        }
+                    </div>
+
+                    <div id="avatarGrid" class="my-avatar-grid"></div>
+                    <div id="avatarLoading" style="text-align:center;padding:16px;color:rgba(255,255,255,0.3);display:none;">⏳ Cargando...</div>
+
+                    <div id="avatarSelected" style="display:none;margin-top:12px;padding:12px 16px;background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.2);border-radius:14px;display:flex;align-items:center;gap:12px;">
+                        <img id="avatarSelectedImg" style="width:44px;height:44px;border-radius:50%;border:2px solid rgba(34,197,94,0.4);" />
+                        <div style="flex:1;">
+                            <div style="font-size:13px;font-weight:700;color:#4ade80;">✅ Avatar seleccionado</div>
+                            <div style="font-size:11px;color:rgba(255,255,255,0.3);">Guarda los cambios para aplicarlo</div>
+                        </div>
+                        <button type="button" onclick="cancelAvatar()" style="background:none;border:none;color:rgba(255,255,255,0.3);cursor:pointer;font-size:18px;padding:0;">✕</button>
+                    </div>
+                    <input type="hidden" id="selectedAvatarUrl" name="selectedAvatarUrl" />
+                </div>
+
+                <!-- ══ PERSONALIZACIÓN ══ -->
+                <div class="my-card">
+                    <div class="my-card-header">
+                        <div>
+                            <div class="my-card-title">🎨 Personalización</div>
+                            <div class="my-card-sub">Ajusta la apariencia a tu gusto</div>
+                        </div>
+                    </div>
+
+                    <div class="my-custom-section">
+                        <label class="my-label">Color principal</label>
+                        <div class="my-color-row" id="colorPalette">
+                            @foreach (var c in new[] {
+                                ("#2563eb","Azul"),("#7c3aed","Morado"),("#db2777","Rosa"),
+                                ("#dc2626","Rojo"),("#ea580c","Naranja"),("#16a34a","Verde"),
+                                ("#0891b2","Cian"),("#d97706","Dorado"),("#111827","Negro"),("#6366f1","Índigo")
+                            })
+                            {
+                                <button type="button" class="my-color-swatch" data-color="@c.Item1"
+                                        title="@c.Item2" style="background:@c.Item1;"
+                                        onclick="setAccentColor('@c.Item1')"></button>
+                            }
+                            <label class="my-color-custom" title="Color personalizado">
+                                🎨
+                                <input type="color" id="customColorInput" style="opacity:0;position:absolute;width:0;height:0;" oninput="setAccentColor(this.value)"/>
+                            </label>
+                        </div>
+                        <div class="my-color-preview-row">
+                            <div id="colorPreview" class="my-color-dot" style="background:var(--primary);"></div>
+                            <span id="colorLabel" style="font-size:12px;color:rgba(255,255,255,0.3);">Color actual</span>
+                        </div>
+                    </div>
+
+                    <div class="my-custom-section">
+                        <label class="my-label">Fuente</label>
+                        <div class="my-font-row">
+                            @foreach (var f in new[] {
+                                ("Plus Jakarta Sans","Jakarta"),("Inter","Inter"),
+                                ("Poppins","Poppins"),("Montserrat","Montserrat")
+                            })
+                            {
+                                <button type="button" class="my-font-btn" data-font="@f.Item1"
+                                        onclick="setFont('@f.Item1')"
+                                        style="font-family:'@f.Item1',sans-serif;">
+                                    @f.Item2
+                                </button>
+                            }
+                        </div>
+                    </div>
+
+                    <div class="my-custom-section">
+                        <label class="my-label">Tamaño de texto</label>
+                        <div class="my-size-row">
+                            @foreach (var s in new[] { ("small","Pequeño","13px"), ("normal","Normal","15px"), ("large","Grande","17px") })
+                            {
+                                <button type="button" class="my-size-btn" data-size="@s.Item1"
+                                        onclick="setFontSize('@s.Item1','@s.Item3')"
+                                        style="font-size:@s.Item3;">
+                                    @s.Item2
+                                </button>
+                            }
+                        </div>
+                    </div>
+
+                    <button type="button" onclick="resetCustomization()" data-no-loader class="my-reset-btn">
+                        🔄 Restablecer valores
+                    </button>
+                </div>
+
+                <!-- ══ PRIVACIDAD ══ -->
+                <div class="my-card">
+                    <div class="my-card-header">
+                        <div>
+                            <div class="my-card-title">🔒 Privacidad de la cuenta</div>
+                            <div class="my-card-sub">Controla quién puede ver tu perfil y contenido</div>
+                        </div>
+                    </div>
+
+                    <div class="my-privacy-options">
+                        <div class="my-privacy-option @(!Model.IsPrivate ? "active" : "")" onclick="setPrivacy(false)" id="opt-public">
+                            <div class="my-privacy-icon">🌍</div>
+                            <div class="my-privacy-info">
+                                <div class="my-privacy-title">Cuenta pública</div>
+                                <div class="my-privacy-desc">Cualquier persona puede ver tu perfil, publicaciones y estadísticas</div>
+                            </div>
+                            <div class="my-privacy-check" id="check-public">@(!Model.IsPrivate ? "✓" : "")</div>
+                        </div>
+
+                        <div class="my-privacy-option @(Model.IsPrivate ? "active" : "")" onclick="setPrivacy(true)" id="opt-private">
+                            <div class="my-privacy-icon">🔒</div>
+                            <div class="my-privacy-info">
+                                <div class="my-privacy-title">Cuenta privada</div>
+                                <div class="my-privacy-desc">Solo tus amigos pueden ver tu perfil, publicaciones y estadísticas</div>
+                            </div>
+                            <div class="my-privacy-check" id="check-private">@(Model.IsPrivate ? "✓" : "")</div>
+                        </div>
+                    </div>
+
+                    <input type="hidden" id="isPrivateInput" name="IsPrivate" value="@(Model.IsPrivate ? "true" : "false")" />
+                </div>
+
+                <button type="submit" class="my-save-btn">
+                    💾 Guardar cambios
+                </button>
+            </form>
+        </div>
     </div>
 </div>
 
 <!-- MODAL SEGUIDORES -->
-<div id="followModal" class="follow-modal" style="display:none;">
-    <div class="follow-content">
-        <div class="follow-header">
+<div id="followModal" class="my-follow-modal" style="display:none;">
+    <div class="my-follow-content">
+        <div class="my-follow-header">
             <span id="modalTitle">Usuarios</span>
-            <span class="close-btn" onclick="closeModal()">✖</span>
+            <button onclick="closeFollowModal()" style="background:rgba(255,255,255,0.08);border:none;color:white;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:14px;">✕</button>
         </div>
         <div id="followList"></div>
     </div>
 </div>
 
 <style>
-    .color-swatch:hover { transform: scale(1.15); }
-.color-swatch.active { border-color: white !important; box-shadow: 0 0 0 2px var(--primary); }
-.font-btn:hover { border-color: var(--primary) !important; color: var(--primary) !important; }
-.font-btn.active { border-color: var(--primary) !important; background: var(--primary) !important; color: white !important; }
-.size-btn:hover { border-color: var(--primary) !important; color: var(--primary) !important; }
-.size-btn.active { border-color: var(--primary) !important; background: var(--primary) !important; color: white !important; }
+* { box-sizing: border-box; }
+.my-prof-wrap { max-width: 980px; margin: 0 auto; font-family: 'Plus Jakarta Sans', sans-serif; padding-bottom: 60px; }
 
-body.bg-dark #customSection { background: #1e1e2e !important; border-color: #2d2d3d !important; }
-body.bg-dark .color-swatch { border-color: #3d3d4d !important; }
-body.bg-dark .font-btn,
-body.bg-dark .size-btn { background: #2d2d3d !important; border-color: #3d3d4d !important; color: #f1f5f9 !important; }
-body.bg-dark .font-btn.active,
-body.bg-dark .size-btn.active { background: var(--primary) !important; color: white !important; }
-.cover-wrap {
-    position: relative; width: 100%; height: 200px;
-    border-radius: 22px; overflow: hidden; margin-bottom: 24px;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.12); max-width: 960px; margin-left: auto; margin-right: auto;
+/* ══ ALERTS ══ */
+.prof-alert { padding:13px 18px; border-radius:14px; margin-bottom:20px; font-size:14px; font-weight:600; display:flex; align-items:center; gap:8px; }
+.prof-alert.success { background:rgba(34,197,94,0.1); color:#4ade80; border:1px solid rgba(34,197,94,0.2); }
+.prof-alert.danger { background:rgba(239,68,68,0.1); color:#f87171; border:1px solid rgba(239,68,68,0.2); }
+
+/* ══ COVER ══ */
+.my-cover-wrap {
+    position:relative; width:100%; height:220px;
+    border-radius:24px; overflow:hidden; margin-bottom:24px;
+    box-shadow:0 20px 60px rgba(0,0,0,0.4);
 }
-.cover-img { width: 100%; height: 100%; object-fit: cover; display: block; }
-.cover-placeholder { width: 100%; height: 100%; background: linear-gradient(135deg, #1e293b, #334155); }
-.cover-gradient { width: 100%; height: 100%; background: linear-gradient(135deg, rgba(99,102,241,0.3), rgba(37,99,235,0.2), rgba(124,58,237,0.3)); }
-.cover-edit-btn {
-    position: absolute; bottom: 14px; right: 14px;
-    background: rgba(0,0,0,0.6); backdrop-filter: blur(8px);
-    color: white; padding: 8px 16px; border-radius: 20px;
-    font-size: 12px; font-weight: 700; cursor: pointer;
-    border: 1px solid rgba(255,255,255,0.15); transition: 0.2s;
+.my-cover-img { width:100%; height:100%; object-fit:cover; display:block; }
+.my-cover-placeholder { width:100%; height:100%; background:linear-gradient(135deg,#1e1b4b,#312e81,#4c1d95); }
+.my-cover-dots { position:absolute; inset:0; opacity:0.06; background-image:radial-gradient(circle,white 1px,transparent 1px); background-size:24px 24px; }
+.my-cover-gradient { position:absolute; inset:0; background:linear-gradient(135deg,rgba(99,102,241,0.3),rgba(124,58,237,0.2),rgba(37,99,235,0.3)); }
+.my-cover-overlay { position:absolute; inset:0; background:linear-gradient(to bottom,transparent 50%,rgba(0,0,0,0.4) 100%); }
+.my-cover-edit-btn {
+    position:absolute; bottom:16px; right:16px;
+    background:rgba(0,0,0,0.6); backdrop-filter:blur(10px);
+    color:white; padding:9px 18px; border-radius:20px;
+    font-size:12px; font-weight:700; cursor:pointer;
+    border:1px solid rgba(255,255,255,0.15); transition:0.2s;
+    display:flex; align-items:center; gap:6px; z-index:2;
 }
-.cover-edit-btn:hover { background: rgba(0,0,0,0.8); }
-.cover-lock-btn {
-    position: absolute; bottom: 14px; right: 14px;
-    background: rgba(0,0,0,0.5); backdrop-filter: blur(8px);
-    color: rgba(255,255,255,0.7); padding: 8px 16px; border-radius: 20px;
-    font-size: 12px; font-weight: 700; border: 1px solid rgba(255,255,255,0.1);
+.my-cover-edit-btn:hover { background:rgba(0,0,0,0.8); transform:translateY(-1px); }
+@@media(max-width:768px){ .my-cover-wrap { height:150px; border-radius:18px; } }
+
+/* ══ LAYOUT ══ */
+.my-prof-layout { display:grid; grid-template-columns:300px 1fr; gap:20px; align-items:start; }
+@@media(max-width:900px){ .my-prof-layout { grid-template-columns:1fr; } }
+.my-prof-sidebar { position:sticky; top:80px; }
+@@media(max-width:900px){ .my-prof-sidebar { position:static; } }
+.my-prof-right { display:flex; flex-direction:column; gap:16px; }
+
+/* ══ CARD ══ */
+.my-card {
+    background:linear-gradient(180deg,#1a1f35,#111827);
+    border-radius:22px; padding:24px;
+    border:1px solid rgba(255,255,255,0.07);
+    box-shadow:0 8px 32px rgba(0,0,0,0.3);
+    margin-bottom:0;
 }
+.my-card-header { margin-bottom:20px; }
+.my-card-title { font-size:15px; font-weight:800; color:white; margin-bottom:3px; }
+.my-card-sub { font-size:12px; color:rgba(255,255,255,0.35); }
 
-.profile-alert {
-    background: linear-gradient(135deg, #dcfce7, #bbf7d0);
-    color: #15803d; padding: 14px 20px; border-radius: 14px;
-    margin-bottom: 24px; font-weight: 600; font-size: 14px;
-    border: 1px solid #86efac; display: flex; align-items: center; gap: 8px;
-    max-width: 960px; margin-left: auto; margin-right: auto;
+/* ══ AVATAR ZONE ══ */
+.my-avatar-zone { display:flex; align-items:center; gap:16px; margin-bottom:18px; }
+.my-avatar-section { position:relative; flex-shrink:0; }
+.my-avatar {
+    width:80px; height:80px; border-radius:50%; object-fit:cover;
+    border:3px solid rgba(99,102,241,0.4); box-shadow:0 6px 20px rgba(0,0,0,0.4); display:block;
 }
-
-.profile-wrapper {
-    display: grid; grid-template-columns: 280px 1fr;
-    gap: 24px; max-width: 960px; margin: 0 auto;
+.my-avatar-letter {
+    width:80px; height:80px; border-radius:50%;
+    background:linear-gradient(135deg,#6366f1,#7c3aed);
+    color:white; display:flex; align-items:center; justify-content:center;
+    font-size:30px; font-weight:900; border:3px solid rgba(99,102,241,0.4);
+    box-shadow:0 6px 20px rgba(0,0,0,0.4);
 }
-
-@@media (max-width: 768px) {
-    .profile-wrapper { grid-template-columns: 1fr; }
-    .profile-left { position: static !important; }
-    .fields-grid { grid-template-columns: 1fr !important; }
-    .full-width { grid-column: 1 !important; }
-    .cover-wrap { border-radius: 14px; height: 150px; }
+.my-avatar-edit-btn {
+    position:absolute; bottom:-2px; right:-2px;
+    width:28px; height:28px; border-radius:50%;
+    background:linear-gradient(135deg,#6366f1,#4f46e5);
+    display:flex; align-items:center; justify-content:center;
+    font-size:12px; cursor:pointer; border:2px solid #111827;
+    transition:0.2s; box-shadow:0 2px 8px rgba(99,102,241,0.4);
 }
+.my-avatar-edit-btn:hover { transform:scale(1.1); }
+.my-user-info { flex:1; min-width:0; }
+.my-username { font-size:17px; font-weight:900; color:white; display:flex; align-items:center; gap:6px; flex-wrap:wrap; margin-bottom:3px; }
+.my-premium-icon { font-size:14px; }
+.my-private-badge { font-size:10px; font-weight:700; padding:2px 8px; border-radius:20px; background:rgba(255,255,255,0.08); color:rgba(255,255,255,0.4); border:1px solid rgba(255,255,255,0.1); }
+.my-fullname { font-size:13px; color:rgba(255,255,255,0.4); margin-bottom:4px; }
+.my-bio-preview { font-size:12px; color:rgba(255,255,255,0.3); line-height:1.5; font-style:italic; }
 
-@@media (min-width: 769px) {
-    .profile-left { position: sticky; top: 20px; }
+/* ══ BADGES ══ */
+.my-badges-row { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:16px; }
+.my-badge { display:inline-flex; align-items:center; gap:4px; font-size:11px; font-weight:700; padding:4px 10px; border-radius:20px; }
+.my-badge.google { background:rgba(59,130,246,0.1); color:#60a5fa; border:1px solid rgba(59,130,246,0.2); }
+.my-badge.premium { background:rgba(234,179,8,0.1); color:#fbbf24; border:1px solid rgba(234,179,8,0.2); }
+.my-badge.private { background:rgba(100,116,139,0.1); color:#94a3b8; border:1px solid rgba(100,116,139,0.2); }
+.my-badge.public { background:rgba(34,197,94,0.1); color:#4ade80; border:1px solid rgba(34,197,94,0.2); }
+
+/* ══ STATS ══ */
+.my-stats-row { display:flex; align-items:center; background:rgba(255,255,255,0.04); border-radius:14px; border:1px solid rgba(255,255,255,0.06); overflow:hidden; margin-bottom:14px; }
+.my-stat { flex:1; text-align:center; padding:12px 8px; cursor:pointer; transition:0.2s; }
+.my-stat:hover { background:rgba(255,255,255,0.04); }
+.my-stat-num { font-size:18px; font-weight:900; color:white; }
+.my-stat-label { font-size:10px; color:rgba(255,255,255,0.3); font-weight:700; text-transform:uppercase; letter-spacing:0.5px; margin-top:2px; }
+.my-stat-sep { width:1px; height:36px; background:rgba(255,255,255,0.07); flex-shrink:0; }
+.my-meta-item { font-size:12px; color:rgba(255,255,255,0.3); font-weight:600; margin-bottom:14px; }
+.my-remove-photo-btn {
+    width:100%; padding:10px; border-radius:12px;
+    border:1px solid rgba(239,68,68,0.2); background:rgba(239,68,68,0.06);
+    color:#f87171; font-size:13px; font-weight:600; cursor:pointer; transition:0.2s;
+    font-family:inherit;
 }
+.my-remove-photo-btn:hover { background:rgba(239,68,68,0.12); }
 
-.profile-left {
-    background: white; border-radius: 24px; padding: 32px 24px;
-    text-align: center; box-shadow: 0 4px 20px rgba(0,0,0,0.07);
-    border: 1px solid rgba(0,0,0,0.05); height: fit-content;
+/* ══ FIELDS ══ */
+.my-fields-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+@@media(max-width:600px){ .my-fields-grid { grid-template-columns:1fr; } }
+.my-field { display:flex; flex-direction:column; gap:6px; }
+.my-full { grid-column:1/-1; }
+.my-label { font-size:11px; font-weight:700; color:rgba(255,255,255,0.3); text-transform:uppercase; letter-spacing:0.8px; }
+.my-input-wrap { position:relative; }
+.my-input {
+    width:100%; padding:11px 38px 11px 14px;
+    border:1.5px solid rgba(255,255,255,0.08);
+    border-radius:12px; font-size:14px; color:white;
+    background:rgba(255,255,255,0.04); transition:0.2s; box-sizing:border-box;
+    font-family:inherit;
 }
-
-.avatar-section { position: relative; width: 120px; height: 120px; margin: 0 auto 20px; }
-
-.profile-avatar {
-    width: 120px; height: 120px; border-radius: 50%; object-fit: cover;
-    border: 4px solid white; box-shadow: 0 4px 20px rgba(0,0,0,0.15); display: block;
+.my-input:focus { outline:none; border-color:#6366f1; background:rgba(99,102,241,0.06); box-shadow:0 0 0 3px rgba(99,102,241,0.12); }
+.my-input:disabled { background:rgba(255,255,255,0.02); color:rgba(255,255,255,0.25); cursor:not-allowed; }
+.my-input::placeholder { color:rgba(255,255,255,0.2); }
+.my-input-icon { position:absolute; right:12px; top:50%; transform:translateY(-50%); font-size:14px; opacity:0.3; }
+.my-textarea {
+    width:100%; padding:12px 14px; border:1.5px solid rgba(255,255,255,0.08);
+    border-radius:12px; font-size:14px; color:white; background:rgba(255,255,255,0.04);
+    resize:vertical; font-family:inherit; transition:0.2s; box-sizing:border-box;
 }
+.my-textarea:focus { outline:none; border-color:#6366f1; background:rgba(99,102,241,0.06); box-shadow:0 0 0 3px rgba(99,102,241,0.12); }
+.my-textarea::placeholder { color:rgba(255,255,255,0.2); }
+.my-hint { font-size:11px; color:rgba(255,255,255,0.2); }
 
-.profile-avatar-letter {
-    width: 120px; height: 120px; border-radius: 50%;
-    background: linear-gradient(135deg, #2563eb, #7c3aed); color: white;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 42px; font-weight: 800; border: 4px solid white;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+/* ══ CROP ══ */
+.my-crop-btn {
+    width:100%; margin-top:14px; padding:12px;
+    background:linear-gradient(135deg,#16a34a,#15803d);
+    color:white; border:none; border-radius:12px;
+    font-weight:700; cursor:pointer; font-size:14px; font-family:inherit; transition:0.2s;
 }
+.my-crop-btn:hover { transform:translateY(-1px); box-shadow:0 6px 16px rgba(22,163,74,0.3); }
 
-.style-btn:hover { border-color: var(--primary) !important; color: var(--primary) !important; }
-.style-btn.active { border-color: var(--primary) !important; background: var(--primary) !important; color: white !important; }
-.avatar-option {
-    border-radius: 16px; overflow: hidden; cursor: pointer;
-    border: 3px solid transparent; transition: 0.2s; aspect-ratio: 1;
-    display: flex; align-items: center; justify-content: center;
-    background: #f9fafb; padding: 6px;
+/* ══ AVATARES ══ */
+.my-avatar-styles { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:14px; }
+.my-style-btn {
+    padding:6px 12px; border-radius:10px; border:1.5px solid rgba(255,255,255,0.1);
+    background:rgba(255,255,255,0.04); color:rgba(255,255,255,0.6);
+    font-size:12px; font-weight:600; cursor:pointer; transition:0.2s; font-family:inherit;
 }
-.avatar-option:hover { border-color: var(--primary); transform: scale(1.05); }
-.avatar-option.selected { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(37,99,235,0.2); }
-.avatar-option img { width: 100%; height: 100%; object-fit: cover; }
-
-body.bg-dark .style-btn { background: #2d2d3d !important; border-color: #3d3d4d !important; color: #f1f5f9 !important; }
-body.bg-dark .style-btn.active { background: var(--primary) !important; color: white !important; }
-body.bg-dark .avatar-option { background: #2d2d3d !important; }
-body.bg-dark #avatarSelected { background: #14532d !important; border-color: #16a34a !important; }
-
-.avatar-overlay {
-    position: absolute; bottom: 2px; right: 2px;
-    width: 34px; height: 34px; background: #2563eb; border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 15px; cursor: pointer; border: 3px solid white;
-    transition: 0.2s; box-shadow: 0 2px 8px rgba(37,99,235,0.4);
+.my-style-btn:hover { border-color:rgba(99,102,241,0.4); color:#818cf8; }
+.my-style-btn.active { border-color:#6366f1; background:rgba(99,102,241,0.15); color:#818cf8; }
+.my-avatar-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; max-height:260px; overflow-y:auto; padding:2px; }
+.my-avatar-grid::-webkit-scrollbar { width:4px; }
+.my-avatar-grid::-webkit-scrollbar-thumb { background:rgba(255,255,255,0.15); border-radius:10px; }
+.my-avatar-opt {
+    border-radius:14px; overflow:hidden; cursor:pointer;
+    border:2.5px solid transparent; transition:0.2s; aspect-ratio:1;
+    background:rgba(255,255,255,0.04); padding:6px;
 }
-.avatar-overlay:hover { background: #1d4ed8; transform: scale(1.1); }
+.my-avatar-opt:hover { border-color:rgba(99,102,241,0.5); transform:scale(1.04); }
+.my-avatar-opt.selected { border-color:#6366f1; box-shadow:0 0 0 3px rgba(99,102,241,0.25); }
+.my-avatar-opt img { width:100%; height:100%; object-fit:cover; border-radius:8px; }
 
-.profile-name { font-size: 20px; font-weight: 800; color: #111827; margin: 0 0 4px; }
-.profile-fullname { font-size: 14px; color: #6b7280; margin: 0 0 8px; font-weight: 500; }
-.profile-bio-preview { font-size: 13px; color: #9ca3af; margin-bottom: 16px; line-height: 1.6; font-style: italic; }
-
-.google-badge {
-    display: inline-flex; align-items: center; gap: 6px;
-    background: #eff6ff; color: #2563eb; padding: 5px 12px; border-radius: 20px;
-    font-size: 12px; font-weight: 600; margin-bottom: 10px;
+/* ══ PERSONALIZACIÓN ══ */
+.my-custom-section { margin-bottom:20px; }
+.my-custom-section:last-child { margin-bottom:0; }
+.my-color-row { display:flex; flex-wrap:wrap; gap:8px; margin-top:8px; }
+.my-color-swatch {
+    width:34px; height:34px; border-radius:50%; border:3px solid transparent;
+    cursor:pointer; transition:0.2s;
 }
-
-.premium-badge {
-    display: inline-flex; align-items: center; gap: 6px;
-    background: linear-gradient(135deg, #fef3c7, #fde68a);
-    color: #92400e; padding: 5px 14px; border-radius: 20px;
-    font-size: 12px; font-weight: 700; margin-bottom: 10px; border: 1px solid #fcd34d;
+.my-color-swatch:hover { transform:scale(1.15); }
+.my-color-swatch.active { border-color:white; box-shadow:0 0 0 2px var(--primary); }
+.my-color-custom {
+    width:34px; height:34px; border-radius:50%;
+    border:2px solid rgba(255,255,255,0.15); background:rgba(255,255,255,0.06);
+    display:flex; align-items:center; justify-content:center;
+    font-size:16px; cursor:pointer; transition:0.2s; position:relative;
 }
-
-.follow-stats {
-    display: flex; align-items: center; justify-content: center;
-    gap: 20px; margin: 16px 0; padding: 16px; background: #f9fafb; border-radius: 16px;
+.my-color-custom:hover { border-color:rgba(99,102,241,0.4); }
+.my-color-preview-row { display:flex; align-items:center; gap:8px; margin-top:10px; }
+.my-color-dot { width:18px; height:18px; border-radius:50%; border:2px solid rgba(255,255,255,0.1); }
+.my-font-row { display:flex; flex-wrap:wrap; gap:8px; margin-top:8px; }
+.my-font-btn {
+    padding:8px 16px; border-radius:10px; border:1.5px solid rgba(255,255,255,0.1);
+    background:rgba(255,255,255,0.04); color:rgba(255,255,255,0.6);
+    font-size:13px; font-weight:600; cursor:pointer; transition:0.2s; font-family:inherit;
 }
-.follow-stat {
-    display: flex; flex-direction: column; align-items: center;
-    cursor: pointer; transition: 0.2s; padding: 4px 8px; border-radius: 10px;
+.my-font-btn:hover { border-color:rgba(99,102,241,0.4); color:#818cf8; }
+.my-font-btn.active { border-color:#6366f1; background:rgba(99,102,241,0.15); color:#818cf8; }
+.my-size-row { display:flex; gap:8px; margin-top:8px; }
+.my-size-btn {
+    flex:1; padding:10px; border-radius:10px; border:1.5px solid rgba(255,255,255,0.1);
+    background:rgba(255,255,255,0.04); color:rgba(255,255,255,0.6);
+    font-weight:600; cursor:pointer; transition:0.2s; font-family:inherit;
 }
-.follow-stat:hover { background: #f3f4f6; }
-.follow-stat:hover .stat-num { color: #2563eb; }
-.stat-num { font-size: 22px; font-weight: 800; color: #111827; }
-.stat-label { font-size: 11px; color: #9ca3af; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
-.follow-divider { width: 1px; height: 30px; background: #e5e7eb; }
-
-.member-since {
-    font-size: 12px; color: #9ca3af; margin: 12px 0;
-    padding: 8px 14px; background: #f9fafb; border-radius: 10px;
+.my-size-btn:hover { border-color:rgba(99,102,241,0.4); color:#818cf8; }
+.my-size-btn.active { border-color:#6366f1; background:rgba(99,102,241,0.15); color:#818cf8; }
+.my-reset-btn {
+    margin-top:16px; padding:9px 18px; border-radius:10px;
+    border:1px solid rgba(255,255,255,0.1); background:rgba(255,255,255,0.04);
+    color:rgba(255,255,255,0.4); font-size:12px; font-weight:600;
+    cursor:pointer; transition:0.2s; font-family:inherit;
 }
+.my-reset-btn:hover { background:rgba(255,255,255,0.08); color:rgba(255,255,255,0.7); }
 
-.remove-photo-btn {
-    width: 100%; padding: 10px; border: 1px solid #fecaca; background: #fef2f2;
-    color: #dc2626; border-radius: 12px; font-size: 13px; font-weight: 600;
-    cursor: pointer; transition: 0.2s; margin-top: 8px;
+/* ══ PRIVACIDAD ══ */
+.my-privacy-options { display:flex; flex-direction:column; gap:10px; }
+.my-privacy-option {
+    display:flex; align-items:center; gap:14px;
+    padding:16px; border-radius:16px;
+    border:1.5px solid rgba(255,255,255,0.08);
+    background:rgba(255,255,255,0.03);
+    cursor:pointer; transition:0.2s;
 }
-.remove-photo-btn:hover { background: #fee2e2; border-color: #fca5a5; }
-
-.profile-right { display: flex; flex-direction: column; gap: 20px; }
-
-.form-section {
-    background: white; border-radius: 24px; padding: 28px 32px;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.07); border: 1px solid rgba(0,0,0,0.05);
+.my-privacy-option:hover { border-color:rgba(99,102,241,0.3); background:rgba(99,102,241,0.05); }
+.my-privacy-option.active { border-color:#6366f1; background:rgba(99,102,241,0.1); }
+.my-privacy-icon { font-size:24px; flex-shrink:0; }
+.my-privacy-info { flex:1; min-width:0; }
+.my-privacy-title { font-size:14px; font-weight:700; color:white; margin-bottom:3px; }
+.my-privacy-desc { font-size:12px; color:rgba(255,255,255,0.4); line-height:1.5; }
+.my-privacy-check {
+    width:24px; height:24px; border-radius:50%; flex-shrink:0;
+    border:2px solid rgba(255,255,255,0.15);
+    display:flex; align-items:center; justify-content:center;
+    font-size:13px; font-weight:800; color:#6366f1;
+    background:rgba(99,102,241,0.1);
+    transition:0.2s;
 }
+.my-privacy-option.active .my-privacy-check { border-color:#6366f1; background:rgba(99,102,241,0.2); }
 
-.section-header { margin-bottom: 22px; }
-.section-title { font-size: 16px; font-weight: 700; color: #111827; margin: 0 0 4px; }
-.section-subtitle { font-size: 13px; color: #9ca3af; }
-
-.fields-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-.field-group { margin: 0; }
-.full-width { grid-column: 1 / -1; }
-
-.field-label {
-    display: block; font-size: 12px; font-weight: 700; color: #6b7280;
-    text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;
+/* ══ SAVE BTN ══ */
+.my-save-btn {
+    width:100%; padding:16px;
+    background:linear-gradient(135deg,#6366f1,#4f46e5);
+    color:white; border:none; border-radius:16px;
+    font-size:15px; font-weight:800; cursor:pointer; transition:0.2s;
+    box-shadow:0 6px 20px rgba(99,102,241,0.4); font-family:inherit;
+    letter-spacing:-0.2px;
 }
+.my-save-btn:hover { transform:translateY(-2px); box-shadow:0 10px 28px rgba(99,102,241,0.55); }
 
-.field-input-wrapper { position: relative; }
-
-.field-input {
-    width: 100%; padding: 11px 38px 11px 14px; border: 1.5px solid #e5e7eb;
-    border-radius: 12px; font-size: 14px; color: #111827; background: white;
-    transition: 0.2s; box-sizing: border-box;
+/* ══ FOLLOW MODAL ══ */
+.my-follow-modal {
+    position:fixed; inset:0; background:rgba(0,0,0,0.7); backdrop-filter:blur(8px);
+    display:flex; justify-content:center; align-items:center; z-index:9999;
 }
-.field-input:focus { outline: none; border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37,99,235,0.1); }
-.field-input:disabled { background: #f9fafb; color: #9ca3af; cursor: not-allowed; }
-.field-icon { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); font-size: 15px; opacity: 0.5; }
-
-.field-textarea {
-    width: 100%; padding: 11px 14px; border: 1.5px solid #e5e7eb; border-radius: 12px;
-    font-size: 14px; color: #111827; background: white; transition: 0.2s; resize: vertical;
-    box-sizing: border-box; font-family: inherit;
+.my-follow-content {
+    background:linear-gradient(135deg,#1a1f35,#111827);
+    border-radius:24px; padding:24px; width:380px; max-height:520px; overflow-y:auto;
+    box-shadow:0 30px 70px rgba(0,0,0,0.5); border:1px solid rgba(255,255,255,0.08);
 }
-.field-textarea:focus { outline: none; border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37,99,235,0.1); }
-.field-hint { font-size: 11px; color: #9ca3af; margin-top: 4px; display: block; }
-
-.crop-btn {
-    margin-top: 12px; padding: 10px 24px;
-    background: linear-gradient(135deg, #16a34a, #15803d);
-    color: white; border: none; border-radius: 12px;
-    font-weight: 600; cursor: pointer; transition: 0.2s; font-size: 14px; display: block; width: 100%;
+.my-follow-header {
+    display:flex; justify-content:space-between; align-items:center;
+    font-weight:800; font-size:16px; color:white; margin-bottom:16px;
+    padding-bottom:14px; border-bottom:1px solid rgba(255,255,255,0.07);
 }
-.crop-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(22,163,74,0.3); }
-
-.save-btn {
-    width: 100%; padding: 15px; background: linear-gradient(135deg, #2563eb, #7c3aed);
-    color: white; border: none; border-radius: 16px; font-size: 15px; font-weight: 700;
-    cursor: pointer; transition: 0.2s; box-shadow: 0 4px 15px rgba(37,99,235,0.3); margin-top: 4px;
-}
-.save-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(37,99,235,0.4); }
-
-.follow-modal {
-    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(0,0,0,0.5); backdrop-filter: blur(4px);
-    display: flex; justify-content: center; align-items: center; z-index: 9999;
-}
-
-.follow-content {
-    background: white; border-radius: 24px; padding: 28px;
-    width: 380px; max-height: 520px; overflow-y: auto;
-    box-shadow: 0 20px 60px rgba(0,0,0,0.2);
-}
-
-.follow-header {
-    display: flex; justify-content: space-between; align-items: center;
-    font-weight: 700; font-size: 17px; margin-bottom: 18px;
-    color: #111827; padding-bottom: 14px; border-bottom: 1px solid #f3f4f6;
-}
-
-.close-btn {
-    cursor: pointer; font-size: 16px; color: #9ca3af;
-    width: 30px; height: 30px; display: flex; align-items: center; justify-content: center;
-    border-radius: 50%; transition: 0.2s;
-}
-.close-btn:hover { background: #f3f4f6; color: #111827; }
-
-/* DARK MODE */
-body.bg-dark .profile-left,
-body.bg-dark .form-section { background: #1e1e2e !important; border-color: #2d2d3d !important; }
-body.bg-dark .profile-name { color: #f1f5f9 !important; }
-body.bg-dark .profile-fullname { color: #94a3b8 !important; }
-body.bg-dark .section-title { color: #f1f5f9 !important; }
-body.bg-dark .field-label { color: #64748b !important; }
-body.bg-dark .field-input,
-body.bg-dark .field-textarea { background: #2d2d3d !important; border-color: #3d3d4d !important; color: #f1f5f9 !important; }
-body.bg-dark .field-input:disabled { background: #252535 !important; color: #64748b !important; }
-body.bg-dark .follow-stats { background: #2d2d3d !important; }
-body.bg-dark .member-since { background: #2d2d3d !important; color: #64748b !important; }
-body.bg-dark .stat-num { color: #f1f5f9 !important; }
-body.bg-dark .follow-content { background: #1e1e2e !important; }
-body.bg-dark .follow-header { color: #f1f5f9 !important; border-color: #2d2d3d !important; }
-body.bg-dark .profile-alert { background: #14532d !important; color: #86efac !important; border-color: #16a34a !important; }
-body.bg-dark .profile-bio-preview { color: #64748b !important; }
-body.bg-dark .cover-placeholder { background: linear-gradient(135deg, #0f172a, #1e293b) !important; }
 </style>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.js"></script>
@@ -573,7 +611,6 @@ const input = document.getElementById("imageInput");
 const image = document.getElementById("cropImage");
 let preview = document.getElementById("previewImage");
 const hiddenInput = document.getElementById("croppedImageInput");
-const cropButton = document.getElementById("cropButton");
 const cropperSection = document.getElementById("cropperSection");
 
 input.addEventListener("change", function(e) {
@@ -583,23 +620,23 @@ input.addEventListener("change", function(e) {
     reader.onload = function(event) {
         image.src = event.target.result;
         cropperSection.style.display = "block";
-        cropperSection.scrollIntoView({ behavior: "smooth", block: "start" });
+        cropperSection.scrollIntoView({ behavior:"smooth", block:"start" });
         if (cropper) cropper.destroy();
-        cropper = new Cropper(image, { aspectRatio: 1, viewMode: 1, autoCropArea: 1, zoomable: true });
+        cropper = new Cropper(image, { aspectRatio:1, viewMode:1, autoCropArea:1, zoomable:true });
     };
     reader.readAsDataURL(file);
 });
 
-cropButton.addEventListener("click", function() {
+document.getElementById("cropButton").addEventListener("click", function() {
     if (!cropper) return;
-    const canvas = cropper.getCroppedCanvas({ width: 300, height: 300 });
+    const canvas = cropper.getCroppedCanvas({ width:300, height:300 });
     const base64 = canvas.toDataURL("image/png");
     if (!preview) {
         const letter = document.getElementById("previewLetter");
         if (letter) letter.remove();
         const img = document.createElement("img");
-        img.id = "previewImage"; img.className = "profile-avatar";
-        document.querySelector(".avatar-section").prepend(img);
+        img.id = "previewImage"; img.className = "my-avatar";
+        document.querySelector(".my-avatar-section").prepend(img);
         preview = img;
     }
     preview.src = base64;
@@ -612,45 +649,50 @@ document.getElementById("removePhotoBtn").addEventListener("click", function() {
     hiddenInput.value = "REMOVE";
     if (preview) preview.style.display = "none";
     const oldLetter = document.getElementById("previewLetter");
-    if (oldLetter) return;
+    if (oldLetter) { oldLetter.style.display = "flex"; return; }
     const letter = document.createElement("div");
-    letter.id = "previewLetter"; letter.className = "profile-avatar-letter";
+    letter.id = "previewLetter"; letter.className = "my-avatar-letter";
     letter.innerText = "@Model.Username.Substring(0, 1).ToUpper()";
-    document.querySelector(".avatar-section").prepend(letter);
+    document.querySelector(".my-avatar-section").prepend(letter);
 });
-// ══ PERSONALIZACIÓN ══════════════════════
+
+// ══ PRIVACIDAD ══
+function setPrivacy(isPrivate) {
+    document.getElementById('isPrivateInput').value = isPrivate ? 'true' : 'false';
+    document.getElementById('opt-public').classList.toggle('active', !isPrivate);
+    document.getElementById('opt-private').classList.toggle('active', isPrivate);
+    document.getElementById('check-public').textContent = !isPrivate ? '✓' : '';
+    document.getElementById('check-private').textContent = isPrivate ? '✓' : '';
+}
+
+// ══ PERSONALIZACIÓN ══
 function setAccentColor(color) {
     document.documentElement.style.setProperty('--primary', color);
     document.documentElement.style.setProperty('--accent', color);
     localStorage.setItem('ht_color', color);
     document.getElementById('colorPreview').style.background = color;
     document.getElementById('colorLabel').textContent = color;
-    document.querySelectorAll('.color-swatch').forEach(s => {
+    document.querySelectorAll('.my-color-swatch').forEach(s => {
         s.classList.toggle('active', s.dataset.color === color);
         s.style.borderColor = s.dataset.color === color ? 'white' : 'transparent';
     });
 }
 
 function setFont(font) {
-    document.body.style.fontFamily = `'${font}', sans-serif`;
+    document.body.style.fontFamily = "'" + font + "', sans-serif";
     localStorage.setItem('ht_font', font);
-    // Cargar fuente si no está cargada
     const link = document.createElement('link');
     link.rel = 'stylesheet';
-    link.href = `https://fonts.googleapis.com/css2?family=${font.replace(/ /g,'+')}:wght@400;500;600;700;800&display=swap`;
+    link.href = 'https://fonts.googleapis.com/css2?family=' + font.replace(/ /g,'+') + ':wght@400;500;600;700;800&display=swap';
     document.head.appendChild(link);
-    document.querySelectorAll('.font-btn').forEach(b => {
-        b.classList.toggle('active', b.dataset.font === font);
-    });
+    document.querySelectorAll('.my-font-btn').forEach(b => b.classList.toggle('active', b.dataset.font === font));
 }
 
 function setFontSize(size, px) {
     document.documentElement.style.fontSize = px;
     localStorage.setItem('ht_size', size);
     localStorage.setItem('ht_size_px', px);
-    document.querySelectorAll('.size-btn').forEach(b => {
-        b.classList.toggle('active', b.dataset.size === size);
-    });
+    document.querySelectorAll('.my-size-btn').forEach(b => b.classList.toggle('active', b.dataset.size === size));
 }
 
 function resetCustomization() {
@@ -662,150 +704,121 @@ function resetCustomization() {
     document.documentElement.style.setProperty('--accent', '#7c3aed');
     document.body.style.fontFamily = "'Plus Jakarta Sans', sans-serif";
     document.documentElement.style.fontSize = '15px';
-    document.querySelectorAll('.color-swatch,.font-btn,.size-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.my-color-swatch,.my-font-btn,.my-size-btn').forEach(b => b.classList.remove('active'));
     setAccentColor('#2563eb');
 }
 
-// ══ AVATARES ══════════════════════════
-const avatarSeeds = [
-    'Felix','Luna','Max','Sofia','Alex','Mia','Jake','Zoe',
-    'Leo','Emma','Sam','Lily','Tom','Nora','Ben','Eva',
-    'Rio','Aria','Kai','Maya','Ash','Iris','Rey','Nova'
-];
-
+// ══ AVATARES ══
+const avatarSeeds = ['Felix','Luna','Max','Sofia','Alex','Mia','Jake','Zoe','Leo','Emma','Sam','Lily','Tom','Nora','Ben','Eva','Rio','Aria','Kai','Maya','Ash','Iris','Rey','Nova'];
 let currentStyle = 'adventurer';
-let selectedAvatarUrl = null;
 
 function loadAvatarStyle(style) {
     currentStyle = style;
-    document.querySelectorAll('.style-btn').forEach(b => b.classList.toggle('active', b.dataset.style === style));
-
+    document.querySelectorAll('.my-style-btn').forEach(b => b.classList.toggle('active', b.dataset.style === style));
     const grid = document.getElementById('avatarGrid');
     const loading = document.getElementById('avatarLoading');
     grid.innerHTML = '';
     loading.style.display = 'block';
-
     let loaded = 0;
     avatarSeeds.forEach(seed => {
-     const url = `https://api.dicebear.com/7.x/${style}/png?seed=${seed}&size=200&backgroundColor=b6e3f4,c0aede,d1d4f9,ffd5dc,ffdfbf`;
+        const url = 'https://api.dicebear.com/7.x/' + style + '/png?seed=' + seed + '&size=200&backgroundColor=b6e3f4,c0aede,d1d4f9,ffd5dc,ffdfbf';
         const div = document.createElement('div');
-        div.className = 'avatar-option';
+        div.className = 'my-avatar-opt';
         div.onclick = () => selectAvatar(url, div);
-
         const img = document.createElement('img');
         img.src = url;
-        img.alt = seed;
         img.onload = () => { loaded++; if (loaded >= avatarSeeds.length) loading.style.display = 'none'; };
-       img.onerror = () => {
-    loaded++;
-    div.style.display = 'none'; // ocultar los que no cargan
-    if (loaded >= avatarSeeds.length) loading.style.display = 'none';
-};
-
+        img.onerror = () => { loaded++; div.style.display = 'none'; if (loaded >= avatarSeeds.length) loading.style.display = 'none'; };
         div.appendChild(img);
         grid.appendChild(div);
     });
-
     setTimeout(() => loading.style.display = 'none', 3000);
 }
+
 function selectAvatar(url, el) {
-    selectedAvatarUrl = url;
     document.getElementById('selectedAvatarUrl').value = url;
-    document.getElementById('selectedAvatarImg').src = url;
+    document.getElementById('avatarSelectedImg').src = url;
     document.getElementById('avatarSelected').style.display = 'flex';
-
-    document.querySelectorAll('.avatar-option').forEach(a => a.classList.remove('selected'));
+    document.querySelectorAll('.my-avatar-opt').forEach(a => a.classList.remove('selected'));
     el.classList.add('selected');
-
-    // Preview en avatar del perfil — maneja ambos casos
     const letter = document.getElementById('previewLetter');
     if (letter) letter.style.display = 'none';
-
-    let preview = document.getElementById('previewImage');
-    if (preview) {
-        preview.src = url;
-        preview.style.display = 'block';
-    } else {
+    let prev = document.getElementById('previewImage');
+    if (prev) { prev.src = url; prev.style.display = 'block'; }
+    else {
         const img = document.createElement('img');
-        img.id = 'previewImage';
-        img.className = 'profile-avatar';
-        img.src = url;
-        document.querySelector('.avatar-section').prepend(img);
+        img.id = 'previewImage'; img.className = 'my-avatar'; img.src = url;
+        document.querySelector('.my-avatar-section').prepend(img);
     }
 }
+
 function cancelAvatar() {
-    selectedAvatarUrl = null;
     document.getElementById('selectedAvatarUrl').value = '';
     document.getElementById('avatarSelected').style.display = 'none';
-    document.querySelectorAll('.avatar-option').forEach(a => a.classList.remove('selected'));
+    document.querySelectorAll('.my-avatar-opt').forEach(a => a.classList.remove('selected'));
 }
 
-// Cargar estilo por defecto
-document.addEventListener('DOMContentLoaded', () => {
-    loadAvatarStyle('adventurer');
-});
-
-// Aplicar preferencias guardadas al cargar
-document.addEventListener('DOMContentLoaded', () => {
-    const color = localStorage.getItem('ht_color');
-    const font = localStorage.getItem('ht_font');
-    const sizePx = localStorage.getItem('ht_size_px');
-    const size = localStorage.getItem('ht_size');
-
-    if (color) setAccentColor(color);
-    if (font) setFont(font);
-    if (sizePx) {
-        document.documentElement.style.fontSize = sizePx;
-        document.querySelectorAll('.size-btn').forEach(b => b.classList.toggle('active', b.dataset.size === size));
-    }
-});
-
+// ══ COVER ══
 async function uploadCover(input) {
     const file = input.files[0];
     if (!file) return;
     const formData = new FormData();
     formData.append('coverPhoto', file);
     formData.append('__RequestVerificationToken', document.querySelector('input[name="__RequestVerificationToken"]').value);
-
-    const btn = document.querySelector('.cover-edit-btn');
-    if (btn) btn.textContent = '⏳ Subiendo...';
-
+    const btn = document.querySelector('.my-cover-edit-btn');
+    if (btn) btn.innerHTML = '<span>⏳</span> Subiendo...';
     try {
-        const res = await fetch('/Account/UpdateCover', { method: 'POST', body: formData });
+        const res = await fetch('/Account/UpdateCover', { method:'POST', body:formData });
         const data = await res.json();
         if (data.success) {
             const wrap = document.getElementById('coverImg');
-            if (wrap.tagName === 'IMG') {
-                wrap.src = data.coverUrl;
-            } else {
+            if (wrap.tagName === 'IMG') { wrap.src = data.coverUrl; }
+            else {
                 const img = document.createElement('img');
-                img.src = data.coverUrl; img.className = 'cover-img'; img.id = 'coverImg';
+                img.src = data.coverUrl; img.className = 'my-cover-img'; img.id = 'coverImg';
                 wrap.replaceWith(img);
             }
-            if (btn) btn.textContent = '📷 Cambiar portada';
+            if (btn) btn.innerHTML = '<span>📷</span> Cambiar portada';
         } else {
-            alert(data.error ?? 'Error al subir la portada');
-            if (btn) btn.textContent = '📷 Cambiar portada';
+            alert(data.error ?? 'Error al subir');
+            if (btn) btn.innerHTML = '<span>📷</span> Cambiar portada';
         }
-    } catch (err) {
-        console.error(err);
-        if (btn) btn.textContent = '📷 Cambiar portada';
+    } catch(e) {
+        if (btn) btn.innerHTML = '<span>📷</span> Cambiar portada';
     }
 }
 
-function openModal(type) {
+// ══ FOLLOW MODAL ══
+function openFollowModal(type) {
     const modal = document.getElementById("followModal");
     const list = document.getElementById("followList");
-    const title = document.getElementById("modalTitle");
+    document.getElementById("modalTitle").innerText = type === "followers" ? "Seguidores" : "Siguiendo";
     modal.style.display = "flex";
-    list.innerHTML = "<div style='text-align:center;padding:20px;color:#9ca3af;'>Cargando...</div>";
-    title.innerText = type === "followers" ? "Seguidores" : "Siguiendo";
-    fetch(`/User/${type === "followers" ? "GetFollowers" : "GetFollowing"}?userId=@Model.Id`)
-        .then(r => r.text())
-        .then(data => list.innerHTML = data);
+    list.innerHTML = "<div style='text-align:center;padding:20px;color:rgba(255,255,255,0.3);'>Cargando...</div>";
+    fetch('/User/' + (type === "followers" ? "GetFollowers" : "GetFollowing") + '?userId=@Model.Id')
+        .then(r => r.text()).then(data => list.innerHTML = data);
 }
 
-function closeModal() {
+function closeFollowModal() {
     document.getElementById("followModal").style.display = "none";
 }
+
+document.getElementById("followModal").addEventListener("click", function(e) {
+    if (e.target === this) closeFollowModal();
+});
+
+// ══ INIT ══
+document.addEventListener('DOMContentLoaded', () => {
+    loadAvatarStyle('adventurer');
+    const color = localStorage.getItem('ht_color');
+    const font = localStorage.getItem('ht_font');
+    const sizePx = localStorage.getItem('ht_size_px');
+    const size = localStorage.getItem('ht_size');
+    if (color) setAccentColor(color);
+    if (font) setFont(font);
+    if (sizePx) {
+        document.documentElement.style.fontSize = sizePx;
+        document.querySelectorAll('.my-size-btn').forEach(b => b.classList.toggle('active', b.dataset.size === size));
+    }
+});
 </script>
