@@ -38,19 +38,17 @@ namespace HabitTrackerApp.Controllers
             if (userIdClaim == null) return Json(new List<object>());
             var myId = int.Parse(userIdClaim.Value);
 
-            var cutoff = DateTime.UtcNow.AddMinutes(-30);
-
             var notifs = _context.Notifications
-                .Where(n => n.UserId == myId && !n.IsRead && n.CreatedAt >= cutoff)
+                .Where(n => n.UserId == myId && !n.IsRead)
                 .OrderByDescending(n => n.CreatedAt)
-                .Take(3)
-             .Select(n => new {
-                 n.Id,
-                 message = n.Message,
-                 fromUsername = n.FromUsername,
-                 fromUserImage = n.FromUserImage,
-                 link = n.FromUserId != null ? "/Message/Chat?userId=" + n.FromUserId : "/Message/Inbox"
-             })
+                .Take(5)
+                .Select(n => new {
+                    n.Id,
+                    message = n.Message,
+                    fromUsername = n.FromUsername ?? "HabitTracker",
+                    fromUserImage = n.FromUserImage ?? "",
+                    link = n.FromUserId != null ? "/Message/Chat?userId=" + n.FromUserId : "/Message/Inbox"
+                })
                 .ToList();
 
             return Json(notifs);
