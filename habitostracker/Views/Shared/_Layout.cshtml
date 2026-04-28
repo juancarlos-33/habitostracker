@@ -735,7 +735,11 @@ connectionGlobal.start().then(() => {
         setTimeout(() => cargarNotificacionesPendientes(), 1000);
     }
 }).catch(e => console.error("SignalR global:", e));
+let notifPendientesMostradas = false;
+
 async function cargarNotificacionesPendientes() {
+    if (notifPendientesMostradas) return;
+    notifPendientesMostradas = true;
     try {
         const res = await fetch("/Notification/GetLatestUnread");
         if (!res.ok) return;
@@ -749,6 +753,8 @@ async function cargarNotificacionesPendientes() {
                     n.link ?? '/Message/Inbox'
                 );
             });
+            // marcar como leídas para no volver a mostrarlas
+            await fetch("/Notification/MarkSystemRead", { method: "POST" });
         }
     } catch(e) { console.error("notif pendientes:", e); }
 }

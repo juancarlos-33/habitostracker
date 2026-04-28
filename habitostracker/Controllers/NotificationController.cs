@@ -15,6 +15,22 @@ namespace HabitTrackerApp.Controllers
             _context = context;
         }
 
+        [HttpPost]
+        public IActionResult MarkSystemRead()
+        {
+            var userIdClaim = User.FindFirst("UserId");
+            if (userIdClaim == null) return Ok();
+            var myId = int.Parse(userIdClaim.Value);
+            var cutoff = DateTime.UtcNow.AddMinutes(-30);
+            var notifs = _context.Notifications
+                .Where(n => n.UserId == myId && !n.IsRead && n.CreatedAt >= cutoff)
+                .ToList();
+            foreach (var n in notifs)
+                n.IsRead = true;
+            _context.SaveChanges();
+            return Ok();
+        }
+
         [HttpGet]
         public IActionResult GetLatestUnread()
         {

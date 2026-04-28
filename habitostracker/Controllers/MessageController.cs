@@ -156,16 +156,19 @@ namespace HabitTrackerApp.Controllers
         // 🔥 verificar si pueden chatear libremente
         private bool CanChat(int myId, int otherId)
         {
-            // amigos siempre pueden chatear
             if (IsFriend(myId, otherId)) return true;
 
-            // si ya tienen mensajes previos (conversación existente)
             var hasMessages = _context.Messages
                 .Any(m => (m.SenderId == myId && m.ReceiverId == otherId) ||
                            (m.SenderId == otherId && m.ReceiverId == myId));
             if (hasMessages) return true;
 
-            // si ya hay solicitud aceptada
+            // 🔥 permitir ver el chat si hay solicitud pendiente (en cualquier dirección)
+            var hasPendingRequest = _context.MessageRequests
+                .Any(r => (r.SenderId == myId && r.ReceiverId == otherId) ||
+                          (r.SenderId == otherId && r.ReceiverId == myId));
+            if (hasPendingRequest) return true;
+
             var accepted = _context.MessageRequests
                 .Any(r => ((r.SenderId == myId && r.ReceiverId == otherId) ||
                            (r.SenderId == otherId && r.ReceiverId == myId)) &&
