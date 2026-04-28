@@ -729,9 +729,24 @@ if (!isSuperAdmin) {
 
 connectionGlobal.start().then(() => {
     const userId = '@(User.Identity.IsAuthenticated ? User.FindFirst("UserId")?.Value : "")';
-    if (userId) connectionGlobal.invoke("JoinUserGroup", userId);
+    if (userId) {
+        connectionGlobal.invoke("JoinUserGroup", userId);
+        // 🔥 verificar notificaciones pendientes al conectar
+        setTimeout(() => cargarNotificacionesPendientes(), 1500);
+    }
 }).catch(e => console.error("SignalR global:", e));
-
+async function cargarNotificacionesPendientes() {
+    try {
+        const res = await fetch("/Notification/GetLatestUnread");
+        if (!res.ok) return;
+        const data = await res.json();
+        if (data && data.length > 0) {
+            data.forEach(n => {
+                showToastNotif(n.fromUsername, n.message, n.fromUserImage, n.link);
+            });
+        }
+    } catch(e) {}
+}
 function showToastNotif(username, message, userImage, link) {
     const letter = username ? username.charAt(0).toUpperCase() : "?";
     const avatarHTML = (userImage && userImage.trim())

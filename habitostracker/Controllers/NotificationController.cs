@@ -15,6 +15,30 @@ namespace HabitTrackerApp.Controllers
             _context = context;
         }
 
+        [HttpGet]
+        public IActionResult GetLatestUnread()
+        {
+            var userIdClaim = User.FindFirst("UserId");
+            if (userIdClaim == null) return Json(new List<object>());
+            var myId = int.Parse(userIdClaim.Value);
+
+            var notifs = _context.Notifications
+                .Where(n => n.UserId == myId && !n.IsRead)
+                .OrderByDescending(n => n.CreatedAt)
+                .Take(3)
+                .Select(n => new {
+                    n.Id,
+                    message = n.Message,
+                    fromUsername = n.FromUsername,
+                    fromUserImage = n.FromUserImage,
+                    link = "/Message/Inbox",
+                    n.CreatedAt
+                })
+                .ToList();
+
+            return Json(notifs);
+        }
+
         [HttpPost]
         [ValidateAntiForgeryToken]
         public IActionResult MarkAllRead()
