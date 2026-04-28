@@ -75,6 +75,17 @@ namespace HabitTrackerApp.Controllers
             return Json(new { count });
         }
 
+
+        [HttpGet]
+        public IActionResult GetUnreadMessageCount()
+        {
+            var userIdClaim = User.FindFirst("UserId");
+            if (userIdClaim == null) return Json(new { count = 0 });
+            var myId = int.Parse(userIdClaim.Value);
+            var count = _context.Messages
+                .Count(m => m.ReceiverId == myId && !m.IsRead && !m.DeletedByReceiver);
+            return Json(new { count });
+        }
         public async Task<IActionResult> Chat(int userId)
         {
             var myId = int.Parse(User.FindFirst("UserId").Value);

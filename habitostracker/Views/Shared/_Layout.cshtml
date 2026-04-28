@@ -903,29 +903,36 @@ document.addEventListener("click", e => {
         if (communityBtn) communityBtn.style.display = "flex";
     });
 
-    function cargarSolicitudesMensaje() {
-        fetch("/Message/GetPendingRequestCount")
-            .then(r => r.json())
-            .then(data => {
-                const count = data.count ?? 0;
-                const navBtn = document.getElementById("msgReqNavBtn");
-                const menuItem = document.getElementById("msgReqMenuItem");
-                const menuBadge = document.getElementById("msgReqMenuBadge");
-                const sidebarBadge = document.getElementById("sidebar-msg-badge");
-                const bnBadge = document.getElementById("bnMsgBadge");
+   function cargarSolicitudesMensaje() {
+    Promise.all([
+        fetch("/Message/GetPendingRequestCount").then(r => r.json()),
+        fetch("/Message/GetUnreadMessageCount").then(r => r.json())
+    ]).then(([requests, unread]) => {
+        const reqCount = requests.count ?? 0;
+        const unreadCount = unread.count ?? 0;
+        const total = reqCount + unreadCount;
 
-                if (navBtn) navBtn.style.display = "flex";
+        const navBtn = document.getElementById("msgReqNavBtn");
+        const menuItem = document.getElementById("msgReqMenuItem");
+        const menuBadge = document.getElementById("msgReqMenuBadge");
+        const sidebarBadge = document.getElementById("sidebar-msg-badge");
+        const bnBadge = document.getElementById("bnMsgBadge");
+        const dot = document.getElementById("msgReqDot");
 
-              if (count > 0) {
-    if (menuItem) menuItem.style.display = "flex";
-    if (menuBadge) menuBadge.textContent = count;
-    if (sidebarBadge) { sidebarBadge.style.display = "inline"; sidebarBadge.textContent = count; }
-    if (bnBadge) { bnBadge.style.display = "inline"; bnBadge.textContent = count; }
-    const dot = document.getElementById("msgReqDot");
-    if (dot) dot.style.display = "block";
+        if (navBtn) navBtn.style.display = "flex";
+
+        if (reqCount > 0) {
+            if (menuItem) menuItem.style.display = "flex";
+            if (menuBadge) menuBadge.textContent = reqCount;
+        }
+
+        if (total > 0) {
+            if (sidebarBadge) { sidebarBadge.style.display = "inline"; sidebarBadge.textContent = total; }
+            if (bnBadge) { bnBadge.style.display = "inline"; bnBadge.textContent = total; }
+            if (dot) dot.style.display = "block";
+        }
+    }).catch(() => {});
 }
-            }).catch(() => {});
-    }
     </text>
 }
 </script>
