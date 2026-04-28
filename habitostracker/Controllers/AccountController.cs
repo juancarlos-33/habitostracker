@@ -805,9 +805,12 @@ namespace HabitTrackerApp.Controllers
             ModelState.Remove("profilePhoto");
             if (!ModelState.IsValid) return View(model);
 
-            if (_context.Users.Any(u => u.Username == model.Username))
+            if (_context.Users.Any(u => u.Username == model.Username) ||
+     model.Username.ToLower() == "habittracker")
             {
-                ModelState.AddModelError("", "El usuario ya existe.");
+                ModelState.AddModelError("", model.Username.ToLower() == "habittracker"
+                    ? "Este nombre de usuario está reservado y no puede usarse."
+                    : "El usuario ya existe.");
                 return View(model);
             }
 
@@ -1594,10 +1597,13 @@ namespace HabitTrackerApp.Controllers
 
                 if (user == null)
                 {
+                    var googleUsername = (name ?? email);
+                    if (googleUsername.ToLower() == "habittracker")
+                        googleUsername = "HabitTracker_" + Guid.NewGuid().ToString().Substring(0, 6);
+
                     user = new User
                     {
-                        Email = email,
-                        Username = name ?? email,
+                        Username = googleUsername,
                         ProfilePicture = picture,
                         EmailConfirmed = true,
                         IsActive = true,
@@ -1726,9 +1732,12 @@ namespace HabitTrackerApp.Controllers
                 return View();
             }
 
-            if (_context.Users.Any(u => u.Username == username))
+            if (_context.Users.Any(u => u.Username == username) ||
+      username.ToLower() == "habittracker")
             {
-                ModelState.AddModelError("", "Ese usuario ya existe.");
+                ModelState.AddModelError("", username.ToLower() == "habittracker"
+                    ? "Este nombre de usuario está reservado y no puede usarse."
+                    : "Ese usuario ya existe.");
                 return View();
             }
 
@@ -1889,9 +1898,13 @@ namespace HabitTrackerApp.Controllers
             if (user == null)
             {
                 isNewUser = true;
+                var googleUsername = (name ?? email);
+                if (googleUsername.ToLower() == "habittracker")
+                    googleUsername = "HabitTracker_" + Guid.NewGuid().ToString().Substring(0, 6);
+
                 user = new User
                 {
-                    Username = name ?? email,
+                    Username = googleUsername,
                     Email = email,
                     EmailConfirmed = true,
                     Role = "User",

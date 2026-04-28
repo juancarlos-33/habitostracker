@@ -372,16 +372,16 @@
 </div>
 </div>
 
-            @if (canSeeProfile && totalHabits > 0)
-            {
-                <div class="prof-habit-strip">
-                    <div class="prof-habit-chip habit">📋 @totalHabits hábitos</div>
-                    @if (bestStreak > 0)
-                    { <div class="prof-habit-chip fire">🔥 @bestStreak días de racha</div> }
-                    @if (isFriend)
-                    { <div class="prof-habit-chip trophy">🤝 Amigos</div> }
-                </div>
-            }
+         @if (canSeeProfile && totalHabits > 0 && isMe)
+{
+    <div class="prof-habit-strip">
+        <div class="prof-habit-chip habit">📋 @totalHabits hábitos</div>
+        @if (bestStreak > 0)
+        { <div class="prof-habit-chip fire">🔥 @bestStreak días de racha</div> }
+        @if (isFriend)
+        { <div class="prof-habit-chip trophy">🤝 Amigos</div> }
+    </div>
+}
         }
         else
         {
@@ -393,9 +393,12 @@
 
     @if (canSeeProfile)
     {
-        <div class="prof-tabs">
-            <button class="prof-tab active" onclick="switchTab(this)">📸 Publicaciones</button>
-        </div>
+       @if (!isSystemAccount)
+{
+    <div class="prof-tabs">
+        <button class="prof-tab active" onclick="switchTab(this)">📸 Publicaciones</button>
+    </div>
+}
 
         <div class="prof-content" id="tab-posts">
             @if (!userPosts.Any())
