@@ -22,8 +22,10 @@ namespace HabitTrackerApp.Controllers
             if (userIdClaim == null) return Json(new List<object>());
             var myId = int.Parse(userIdClaim.Value);
 
+            var cutoff = DateTime.UtcNow.AddMinutes(-5);
+
             var notifs = _context.Notifications
-                .Where(n => n.UserId == myId && !n.IsRead)
+                .Where(n => n.UserId == myId && !n.IsRead && n.CreatedAt >= cutoff)
                 .OrderByDescending(n => n.CreatedAt)
                 .Take(3)
                 .Select(n => new {
@@ -31,14 +33,12 @@ namespace HabitTrackerApp.Controllers
                     message = n.Message,
                     fromUsername = n.FromUsername,
                     fromUserImage = n.FromUserImage,
-                    link = "/Message/Inbox",
-                    n.CreatedAt
+                    link = "/Message/Inbox"
                 })
                 .ToList();
 
             return Json(notifs);
         }
-
         [HttpPost]
         [ValidateAntiForgeryToken]
         public IActionResult MarkAllRead()

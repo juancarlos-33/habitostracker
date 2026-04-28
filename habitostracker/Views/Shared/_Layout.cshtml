@@ -732,7 +732,7 @@ connectionGlobal.start().then(() => {
     if (userId) {
         connectionGlobal.invoke("JoinUserGroup", userId);
         // 🔥 verificar notificaciones pendientes al conectar
-        setTimeout(() => cargarNotificacionesPendientes(), 1500);
+        setTimeout(() => cargarNotificacionesPendientes(), 2500);
     }
 }).catch(e => console.error("SignalR global:", e));
 async function cargarNotificacionesPendientes() {
@@ -742,10 +742,15 @@ async function cargarNotificacionesPendientes() {
         const data = await res.json();
         if (data && data.length > 0) {
             data.forEach(n => {
-                showToastNotif(n.fromUsername, n.message, n.fromUserImage, n.link);
+                showToastNotif(
+                    n.fromUsername ?? 'HabitTracker',
+                    n.message ?? '',
+                    n.fromUserImage ?? '',
+                    n.link ?? '/Message/Inbox'
+                );
             });
         }
-    } catch(e) {}
+    } catch(e) { console.error("notif pendientes:", e); }
 }
 function showToastNotif(username, message, userImage, link) {
     const letter = username ? username.charAt(0).toUpperCase() : "?";
