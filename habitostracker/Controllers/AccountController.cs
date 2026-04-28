@@ -899,8 +899,10 @@ namespace HabitTrackerApp.Controllers
             var userIdClaim = User.FindFirst("UserId");
             if (userIdClaim == null) return Forbid();
             var user = _context.Users.FirstOrDefault(u => u.Id == int.Parse(userIdClaim.Value));
-            if (user == null || user.IsIpBlocked) return StatusCode(403);
+            if (user == null) return Ok(); // usuario eliminado — no bloquear
+            if (user.IsIpBlocked) return StatusCode(403);
             return Ok();
+           
         }
         private async Task SendGoodbyeEmail(User user)
         {
@@ -1607,6 +1609,10 @@ namespace HabitTrackerApp.Controllers
                 if (!result.Succeeded)
                 {
                     await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+                    await HttpContext.SignOutAsync("Cookies");
+                    foreach (var cookie in HttpContext.Request.Cookies.Keys)
+                        HttpContext.Response.Cookies.Delete(cookie);
+                    TempData["Success"] = "Tu cuenta fue eliminada correctamente.";
                     return RedirectToAction("Login");
                 }
 
