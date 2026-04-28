@@ -318,7 +318,7 @@
             { <span class="prof-premium-icon" title="Premium">👑</span> }
             @if (isSystemAccount)
 {
-    <span class="prof-verified-system" title="Cuenta oficial verificada de HabitTracker">꩜</span>
+   <span class="prof-verified-system" title="Cuenta oficial verificada de HabitTracker">✦</span>
 }
         </div>
 
@@ -366,10 +366,10 @@
             <span class="prof-stat-label">Siguiendo</span>
         </div>
     }
-    <div class="prof-stat">
-        <span class="prof-stat-num">@userPosts.Count</span>
-        <span class="prof-stat-label">Posts</span>
-    </div>
+ <div class="prof-stat">
+    <span class="prof-stat-num">@(isSystemAccount ? "—" : userPosts.Count.ToString())</span>
+    <span class="prof-stat-label">Posts</span>
+</div>
 </div>
 
             @if (canSeeProfile && totalHabits > 0)
@@ -401,9 +401,18 @@
             @if (!userPosts.Any())
             {
                 <div class="prof-empty">
-                    <div class="prof-empty-icon">📭</div>
-                    <div class="prof-empty-title">Sin publicaciones</div>
-                    <div class="prof-empty-sub">@Model.Username aún no ha compartido nada.</div>
+                    @if (isSystemAccount)
+{
+    <div class="prof-empty-icon">🤖</div>
+    <div class="prof-empty-title">Cuenta oficial</div>
+    <div class="prof-empty-sub">Esta es la cuenta oficial de HabitTracker. Aquí no publicamos, estamos en todas partes. ✦</div>
+}
+else
+{
+    <div class="prof-empty-icon">📭</div>
+    <div class="prof-empty-title">Sin publicaciones</div>
+    <div class="prof-empty-sub">@Model.Username aún no ha compartido nada.</div>
+}
                 </div>
             }
             else
