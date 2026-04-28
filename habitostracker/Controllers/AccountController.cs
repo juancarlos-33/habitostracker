@@ -354,10 +354,43 @@ namespace HabitTrackerApp.Controllers
     .ToList();
             foreach (var gm in groupMessages)
                 gm.SenderId = null;
+
+            // 🔥 eliminar notificaciones
+            // Solo eliminar notificaciones propias, no las de otros
+            var notifs = _context.Notifications.Where(n => n.UserId == userId);
+            _context.Notifications.RemoveRange(notifs);
+
+            // Las notificaciones de otros que vienen de este usuario — solo limpiar referencia
+            var notifsFromMe = _context.Notifications.Where(n => n.FromUserId == userId).ToList();
+            foreach (var n in notifsFromMe)
+            {
+                n.FromUserId = null;
+                n.FromUsername = "Usuario eliminado";
+                n.FromUserImage = "";
+            }
+
+            // 🔥 eliminar sesiones
+            var sessions = _context.UserSessions.Where(s => s.UserId == userId);
+            _context.UserSessions.RemoveRange(sessions);
+
+            // 🔥 eliminar solicitudes de amistad
+            var friendReqs = _context.FriendRequests.Where(f => f.SenderId == userId || f.ReceiverId == userId);
+            _context.FriendRequests.RemoveRange(friendReqs);
+
+            // 🔥 eliminar solicitudes de mensaje
+            var msgReqs = _context.MessageRequests.Where(r => r.SenderId == userId || r.ReceiverId == userId);
+            _context.MessageRequests.RemoveRange(msgReqs);
+
+            // 🔥 eliminar historias
+            var stories = _context.Stories.Where(s => s.UserId == userId);
+            _context.Stories.RemoveRange(stories);
             _context.Users.Remove(user);
             await _context.SaveChangesAsync();
 
             await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+            await HttpContext.SignOutAsync("Google");
+            foreach (var cookie in HttpContext.Request.Cookies.Keys)
+                HttpContext.Response.Cookies.Delete(cookie);
             return RedirectToAction("Login");
         }
 
