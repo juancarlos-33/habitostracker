@@ -732,7 +732,7 @@ connectionGlobal.start().then(() => {
     if (userId) {
         connectionGlobal.invoke("JoinUserGroup", userId);
         // 🔥 verificar notificaciones pendientes al conectar
-        setTimeout(() => cargarNotificacionesPendientes(), 2500);
+        setTimeout(() => cargarNotificacionesPendientes(), 1000);
     }
 }).catch(e => console.error("SignalR global:", e));
 async function cargarNotificacionesPendientes() {
