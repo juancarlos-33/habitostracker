@@ -388,7 +388,6 @@ namespace HabitTrackerApp.Controllers
             await _context.SaveChangesAsync();
 
             await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-            await HttpContext.SignOutAsync("Google");
             foreach (var cookie in HttpContext.Request.Cookies.Keys)
                 HttpContext.Response.Cookies.Delete(cookie);
             return RedirectToAction("Login");
@@ -1609,10 +1608,8 @@ namespace HabitTrackerApp.Controllers
                 if (!result.Succeeded)
                 {
                     await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-                    await HttpContext.SignOutAsync("Cookies");
                     foreach (var cookie in HttpContext.Request.Cookies.Keys)
                         HttpContext.Response.Cookies.Delete(cookie);
-                    TempData["Success"] = "Tu cuenta fue eliminada correctamente.";
                     return RedirectToAction("Login");
                 }
 
