@@ -270,7 +270,7 @@ body.bg-dark .disc-divider-line { background: #2d3748 !important; }
         </div>
 
         @{
-            var friends = Model.Where(u => friendList.Contains(u.Id)).ToList();
+           var friends = Model.Where(u => friendList.Contains(u.Id) && u.Role != "System").ToList();
             var friendBanners = new[]
             {
                 "linear-gradient(135deg,#6366f1,#2563eb)",
@@ -339,7 +339,7 @@ body.bg-dark .disc-divider-line { background: #2d3748 !important; }
     <!-- GRID DESCUBRIR -->
     <div class="disc-grid" id="userGrid">
         @{
-            var nonFriends = Model.Where(u => u.Id != myId && !friendList.Contains(u.Id)).ToList();
+          var nonFriends = Model.Where(u => u.Id != myId && !friendList.Contains(u.Id) && u.Role != "System").ToList();
             var banners = new[]
             {
                 "linear-gradient(135deg,#6366f1,#2563eb)",

@@ -13,7 +13,8 @@
     var profilePic = !string.IsNullOrEmpty(Model.ProfileImage) ? Model.ProfileImage : Model.ProfilePicture;
     bool isMe = Model.Id == myId;
     bool isFriend = friendStatus == "Accepted";
-    bool canSeeProfile = !Model.IsPrivate || isFriend || isMe;
+ bool isSystemAccount = Model.Role == "System";
+ bool canSeeProfile = !Model.IsPrivate || isFriend || isMe;
     var msgRequest = db.MessageRequests.FirstOrDefault(r =>
         (r.SenderId == myId && r.ReceiverId == Model.Id) ||
         (r.SenderId == Model.Id && r.ReceiverId == myId));
@@ -37,6 +38,11 @@
     position: relative; height: 240px; border-radius: 24px; overflow: hidden;
     background: linear-gradient(135deg, #1e1b4b 0%, #312e81 30%, #4c1d95 60%, #6d28d9 100%);
     box-shadow: 0 24px 64px rgba(0,0,0,0.5);
+}
+.prof-verified-system {
+    font-size:18px; color:#6366f1;
+    filter:drop-shadow(0 0 6px rgba(99,102,241,0.8));
+    cursor:default; user-select:none; font-weight:900;
 }
 .prof-cover img { width:100%; height:100%; object-fit:cover; display:block; }
 .prof-cover-overlay { position:absolute; inset:0; background:linear-gradient(to bottom, transparent 30%, rgba(0,0,0,0.6) 100%); }
@@ -262,9 +268,9 @@
                 { <div class="prof-avatar-letter">@Model.Username.Substring(0,1).ToUpper()</div> }
             </div>
 
-            @if (!isMe)
-            {
-                <div class="prof-actions">
+           @if (!isMe && !isSystemAccount)
+{
+    <div class="prof-actions" style="padding-top:16px;">
                     @if (isFollowing)
                     {
                         <form asp-controller="User" asp-action="Unfollow" method="post">
@@ -310,6 +316,10 @@
             <h1 class="prof-username">@Model.Username</h1>
             @if (Model.IsPremium)
             { <span class="prof-premium-icon" title="Premium">👑</span> }
+            @if (isSystemAccount)
+{
+    <span class="prof-verified-system" title="Cuenta oficial verificada de HabitTracker">꩜</span>
+}
         </div>
 
         @if (!string.IsNullOrEmpty(Model.FullName))
@@ -333,32 +343,44 @@
     </div>
 }
 
-            <div class="prof-stats-row">
-                <div class="prof-stat" onclick="openModal('followers')">
-                    <span class="prof-stat-num">@followersCount</span>
-                    <span class="prof-stat-label">Seguidores</span>
-                </div>
-                <div class="prof-stat" onclick="openModal('following')">
-                    <span class="prof-stat-num">@followingCount</span>
-                    <span class="prof-stat-label">Siguiendo</span>
-                </div>
-                <div class="prof-stat">
-                    <span class="prof-stat-num">@userPosts.Count</span>
-                    <span class="prof-stat-label">Posts</span>
-                </div>
-            </div>
+           <div class="prof-stats-row">
+    @if (isSystemAccount)
+    {
+        <div class="prof-stat">
+            <span class="prof-stat-num" style="color:rgba(255,255,255,0.3);">—</span>
+            <span class="prof-stat-label">Seguidores</span>
+        </div>
+        <div class="prof-stat">
+            <span class="prof-stat-num" style="color:rgba(255,255,255,0.3);">—</span>
+            <span class="prof-stat-label">Siguiendo</span>
+        </div>
+    }
+    else
+    {
+        <div class="prof-stat" onclick="openModal('followers')">
+            <span class="prof-stat-num">@followersCount</span>
+            <span class="prof-stat-label">Seguidores</span>
+        </div>
+        <div class="prof-stat" onclick="openModal('following')">
+            <span class="prof-stat-num">@followingCount</span>
+            <span class="prof-stat-label">Siguiendo</span>
+        </div>
+    }
+    <div class="prof-stat">
+        <span class="prof-stat-num">@userPosts.Count</span>
+        <span class="prof-stat-label">Posts</span>
+    </div>
+</div>
 
             @if (canSeeProfile && totalHabits > 0)
             {
-               @if (bestStreak > 0 || isFriend)
-{
-    <div class="prof-habit-strip">
-        @if (bestStreak > 0)
-        { <div class="prof-habit-chip fire">🔥 @bestStreak días de racha</div> }
-        @if (isFriend)
-        { <div class="prof-habit-chip trophy">🤝 Amigos</div> }
-    </div>
-}
+                <div class="prof-habit-strip">
+                    <div class="prof-habit-chip habit">📋 @totalHabits hábitos</div>
+                    @if (bestStreak > 0)
+                    { <div class="prof-habit-chip fire">🔥 @bestStreak días de racha</div> }
+                    @if (isFriend)
+                    { <div class="prof-habit-chip trophy">🤝 Amigos</div> }
+                </div>
             }
         }
         else

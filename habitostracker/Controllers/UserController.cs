@@ -29,7 +29,7 @@ namespace HabitTrackerApp.Controllers
             var myId = int.Parse(User.FindFirst("UserId").Value);
 
             var users = _context.Users
-                .Where(u => u.Role != "SuperAdmin" && u.Role != "Guest")
+               .Where(u => u.Role != "SuperAdmin" && u.Role != "Guest" && u.Role != "System")
                 .OrderByDescending(u => u.Role == "Admin")
                 .ThenBy(u => u.Username)
                 .ToList();

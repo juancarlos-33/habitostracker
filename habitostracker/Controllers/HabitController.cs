@@ -694,6 +694,7 @@ namespace HabitTrackerApp.Controllers
                 .Include(p => p.Habit)
                 .Include(p => p.Reactions).ThenInclude(r => r.User)
                 .Include(p => p.Comments).ThenInclude(c => c.User)
+                .Where(p => p.User.Role != "System" && p.User.Role != "Guest")
                 .OrderByDescending(p => p.SharedAt)
                 .Take(50)
                 .ToList();

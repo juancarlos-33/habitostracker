@@ -2295,6 +2295,18 @@ namespace HabitTrackerApp.Controllers
                 _context.Messages.Add(message);
                 await _context.SaveChangesAsync();
                 Console.WriteLine($"✅ Mensaje guardado en DB con Id={message.Id}");
+                _context.Notifications.Add(new Notification
+                {
+                    UserId = newUserId,
+                    FromUserId = systemUser.Id,
+                    Message = "👋 ¡Bienvenido/a a HabitTracker!",
+                    CreatedAt = DateTime.UtcNow,
+                    IsRead = false,
+                    FromUserImage = SYSTEM_IMAGE,
+                    FromUsername = SYSTEM_USERNAME
+                });
+                await _context.SaveChangesAsync();
+                Console.WriteLine($"✅ Notificación guardada para userId={newUserId}");
             }
             catch (Exception ex)
             {
