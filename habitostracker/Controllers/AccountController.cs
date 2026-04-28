@@ -1616,7 +1616,6 @@ namespace HabitTrackerApp.Controllers
                 var email = result.Principal.FindFirst(ClaimTypes.Email)?.Value;
                 if (email == null) return RedirectToAction("Login");
 
-                // 🔌 Verificar bloqueo de conexión — mostrar página de bloqueo
                 var userCheck = _context.Users.FirstOrDefault(u => u.Email == email);
                 if (userCheck != null && userCheck.IsIpBlocked)
                 {
@@ -1630,16 +1629,19 @@ namespace HabitTrackerApp.Controllers
                 var picture = result.Principal.FindFirst("picture")?.Value;
 
                 var user = _context.Users.FirstOrDefault(u => u.Email == email);
+                bool isNewUser = false;
 
                 if (user == null)
                 {
-                    var googleUsername = (name ?? email);
-                    if (googleUsername.ToLower() == "habittracker")
-                        googleUsername = "HabitTracker_" + Guid.NewGuid().ToString().Substring(0, 6);
+                    isNewUser = true;
+                    var extUsername = (name ?? email);
+                    if (extUsername.ToLower() == "habittracker")
+                        extUsername = "HabitTracker_" + Guid.NewGuid().ToString().Substring(0, 6);
 
                     user = new User
                     {
-                        Username = googleUsername,
+                        Email = email,
+                        Username = extUsername,
                         ProfilePicture = picture,
                         EmailConfirmed = true,
                         IsActive = true,
@@ -1689,15 +1691,15 @@ namespace HabitTrackerApp.Controllers
 
                 var sessionToken = Guid.NewGuid().ToString();
                 var claims = new List<Claim>
-{
-    new Claim("UserId", user.Id.ToString()),
-    new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-    new Claim(ClaimTypes.Name, user.Username ?? "Usuario"),
-    new Claim(ClaimTypes.Email, user.Email ?? ""),
-    new Claim(ClaimTypes.Role, user.Role ?? "User"),
-    new Claim("ProfileImage", user.ProfileImage ?? user.ProfilePicture ?? ""),
-    new Claim("SessionToken", sessionToken)
-};
+        {
+            new Claim("UserId", user.Id.ToString()),
+            new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+            new Claim(ClaimTypes.Name, user.Username ?? "Usuario"),
+            new Claim(ClaimTypes.Email, user.Email ?? ""),
+            new Claim(ClaimTypes.Role, user.Role ?? "User"),
+            new Claim("ProfileImage", user.ProfileImage ?? user.ProfilePicture ?? ""),
+            new Claim("SessionToken", sessionToken)
+        };
                 var identity = new ClaimsIdentity(claims, "Cookies");
                 var principal = new ClaimsPrincipal(identity);
                 await HttpContext.SignInAsync("Cookies", principal);
@@ -1722,12 +1724,8 @@ namespace HabitTrackerApp.Controllers
                     Console.WriteLine($"❌ Error guardando sesión: {ex.Message}");
                 }
 
-                bool perfilIncompleto = string.IsNullOrEmpty(user.Gender)
-                    || user.Gender == "No especificado"
-                    || string.IsNullOrEmpty(user.Bio)
-                    || user.Bio == "Registrado con Google";
-
-                if (perfilIncompleto)
+                // 🔥 solo mandar a CompleteProfile si es nuevo usuario
+                if (isNewUser)
                     return RedirectToAction("CompleteProfile", "Account");
 
                 return RedirectToAction("Index", "Habit");
@@ -1875,7 +1873,6 @@ namespace HabitTrackerApp.Controllers
                 ip = ip.Split(',').First().Trim();
             else
                 ip = HttpContext.Connection.RemoteIpAddress?.ToString();
-       
 
             var result = await HttpContext.AuthenticateAsync("Cookies");
             if (!result.Succeeded)
@@ -1892,7 +1889,6 @@ namespace HabitTrackerApp.Controllers
 
             if (email == null) return RedirectToAction("Login");
 
-            // Verificar bloqueo de conexión por email
             var userCheck = _context.Users.FirstOrDefault(u => u.Email == email);
             if (userCheck != null && userCheck.IsIpBlocked)
             {
@@ -1909,7 +1905,13 @@ namespace HabitTrackerApp.Controllers
                 int currentUserId = int.Parse(userIdClaim.Value);
                 var currentUser = _context.Users.FirstOrDefault(u => u.Id == currentUserId);
 
-                if (currentUser != null && currentUser.Role == "Guest")
+                if (currentUser == null)
+                {
+                    await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+                    foreach (var cookie in HttpContext.Request.Cookies.Keys)
+                        HttpContext.Response.Cookies.Delete(cookie);
+                }
+                else if (currentUser.Role == "Guest")
                 {
                     currentUser.Email = email;
                     currentUser.Username = name ?? email;
@@ -1921,13 +1923,11 @@ namespace HabitTrackerApp.Controllers
                     currentUser.Bio = "Registrado con Google";
                     currentUser.IsActive = true;
                     _context.SaveChanges();
-
                     await SignInUser(currentUser);
                     return RedirectToAction("CompleteProfile", "Account");
                 }
             }
 
-            // 🔥 Flujo normal
             var user = _context.Users.FirstOrDefault(u => u.Email == email);
             bool isNewUser = false;
 
@@ -1957,18 +1957,15 @@ namespace HabitTrackerApp.Controllers
                 await SendSystemWelcomeMessage(user.Id);
             }
 
-            // 🔥 Foto de Google
             if (string.IsNullOrEmpty(user.ProfileImage) && !string.IsNullOrEmpty(picture))
             {
                 user.ProfilePicture = picture;
                 _context.SaveChanges();
             }
 
-            // 🔥 generar token de sesión
             var sessionToken = Guid.NewGuid().ToString();
             var userAgent = HttpContext.Request.Headers["User-Agent"].ToString();
 
-            // 🔥 SignIn con token incluido
             var sessionClaims = new List<Claim>
     {
         new Claim("UserId", user.Id.ToString()),
@@ -1981,7 +1978,6 @@ namespace HabitTrackerApp.Controllers
             var sessionIdentity = new ClaimsIdentity(sessionClaims, CookieAuthenticationDefaults.AuthenticationScheme);
             await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(sessionIdentity));
 
-            // 🔥 guardar sesión en BD
             try
             {
                 _context.UserSessions.Add(new UserSession
@@ -1996,22 +1992,15 @@ namespace HabitTrackerApp.Controllers
                 });
                 await _context.SaveChangesAsync();
                 Console.WriteLine($"✅ Sesión GoogleResponse guardada userId={user.Id}");
-
-                // 🔥 notificar en tiempo real a otras sesiones
-                await _hubContext.Clients.Group(user.Id.ToString())
-                    .SendAsync("NewSessionDetected");
+                await _hubContext.Clients.Group(user.Id.ToString()).SendAsync("NewSessionDetected");
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"❌ Error sesión GoogleResponse: {ex.Message}");
             }
 
-            bool perfilIncompleto = string.IsNullOrEmpty(user.Gender)
-                || user.Gender == "No especificado"
-                || string.IsNullOrEmpty(user.Bio)
-                || user.Bio == "Registrado con Google";
-
-            if (isNewUser || perfilIncompleto)
+            // 🔥 solo mandar a CompleteProfile si es nuevo usuario
+            if (isNewUser)
                 return RedirectToAction("CompleteProfile", "Account");
 
             return RedirectToAction("Index", "Habit");
