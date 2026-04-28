@@ -768,6 +768,7 @@ namespace HabitTrackerApp.Controllers
                 user.PendingEmail = null;
                 user.ResetCode = null;
                 _context.SaveChanges();
+
             }
 
             TempData["Success"] = "Cuenta confirmada correctamente.";
@@ -1607,7 +1608,7 @@ namespace HabitTrackerApp.Controllers
                     };
                     _context.Users.Add(user);
                     _context.SaveChanges();
-                    _ = SendSystemWelcomeMessage(user.Id);
+                    await SendSystemWelcomeMessage(user.Id);
                 }
                 else
                 {
@@ -1904,7 +1905,7 @@ namespace HabitTrackerApp.Controllers
                 };
                 _context.Users.Add(user);
                 _context.SaveChanges();
-                _ = SendSystemWelcomeMessage(user.Id);
+                await SendSystemWelcomeMessage(user.Id);
             }
 
             // 🔥 Foto de Google
