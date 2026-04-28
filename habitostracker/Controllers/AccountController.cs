@@ -1692,15 +1692,15 @@ namespace HabitTrackerApp.Controllers
 
                 var sessionToken = Guid.NewGuid().ToString();
                 var claims = new List<Claim>
-        {
-            new Claim("UserId", user.Id.ToString()),
-            new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-            new Claim(ClaimTypes.Name, user.Username),
-            new Claim(ClaimTypes.Email, user.Email),
-            new Claim(ClaimTypes.Role, user.Role ?? "User"),
-            new Claim("ProfileImage", user.ProfileImage ?? user.ProfilePicture ?? ""),
-            new Claim("SessionToken", sessionToken)
-        };
+{
+    new Claim("UserId", user.Id.ToString()),
+    new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+    new Claim(ClaimTypes.Name, user.Username ?? "Usuario"),
+    new Claim(ClaimTypes.Email, user.Email ?? ""),
+    new Claim(ClaimTypes.Role, user.Role ?? "User"),
+    new Claim("ProfileImage", user.ProfileImage ?? user.ProfilePicture ?? ""),
+    new Claim("SessionToken", sessionToken)
+};
                 var identity = new ClaimsIdentity(claims, "Cookies");
                 var principal = new ClaimsPrincipal(identity);
                 await HttpContext.SignInAsync("Cookies", principal);
