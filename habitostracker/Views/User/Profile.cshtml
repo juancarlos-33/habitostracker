@@ -318,19 +318,19 @@
             { <span class="prof-premium-icon" title="Premium">👑</span> }
             @if (isSystemAccount)
 {
-   
+   <span class="prof-verified-system" title="Cuenta oficial verificada de HabitTracker">✦</span>
 }
         </div>
 
-        @if (!string.IsNullOrEmpty(Model.FullName))
-        { <p class="prof-fullname">@Model.FullName</p> }
+     @if (!string.IsNullOrEmpty(Model.FullName) && !isSystemAccount)
+{ <p class="prof-fullname">@Model.FullName</p> }
 
         @if (canSeeProfile)
         {
             @if (!string.IsNullOrEmpty(Model.Bio))
             { <p class="prof-bio">@Model.Bio</p> }
 
-       <div class="prof-meta">
+        <div class="prof-meta">
     @if (Model.CreatedAt.HasValue && !isSystemAccount)
     { <span class="prof-meta-item">📅 Se unió en @Model.CreatedAt.Value.ToString("MMM yyyy", culture)</span> }
     @if (Model.IsPremium)
