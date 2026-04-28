@@ -742,11 +742,15 @@ async function cargarNotificacionesPendientes() {
     if (notifPendientesMostradas) return;
     notifPendientesMostradas = true;
     try {
+        console.log("🔔 Cargando notificaciones pendientes...");
         const res = await fetch("/Notification/GetLatestUnread");
+        console.log("📡 Status:", res.status);
         if (!res.ok) return;
         const data = await res.json();
+        console.log("📦 Notificaciones:", data);
         if (data && data.length > 0) {
             data.forEach(n => {
+                console.log("🚀 Mostrando toast:", n);
                 showToastNotif(
                     n.fromUsername,
                     n.message,
@@ -755,10 +759,11 @@ async function cargarNotificacionesPendientes() {
                 );
             });
             await fetch("/Notification/MarkSystemRead", { method: "POST" });
+        } else {
+            console.log("⚠️ No hay notificaciones pendientes");
         }
-    } catch(e) { console.error("notif:", e); }
-}
-function showToastNotif(username, message, userImage, link) {
+    } catch(e) { console.error("❌ Error notif:", e); }
+}function showToastNotif(username, message, userImage, link) {
     const letter = username ? username.charAt(0).toUpperCase() : "?";
     const avatarHTML = (userImage && userImage.trim())
         ? `<img src="${userImage}" style="width:40px;height:40px;border-radius:50%;object-fit:cover;flex-shrink:0;" />`
