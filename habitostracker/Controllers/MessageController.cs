@@ -131,13 +131,7 @@ namespace HabitTrackerApp.Controllers
             ViewBag.ReceiverIsOnline = _onlineUsers.IsOnline(userId.ToString());
 
             // 🔥 estado de solicitud
-            var request = _context.MessageRequests
-                .FirstOrDefault(r => (r.SenderId == myId && r.ReceiverId == userId) ||
-                                     (r.SenderId == userId && r.ReceiverId == myId));
-            ViewBag.MessageRequestStatus = request?.Status ?? "None";
-            ViewBag.IsFriend = IsFriend(myId, userId);
-            var otherUserRole2 = _context.Users.Where(u => u.Id == userId).Select(u => u.Role).FirstOrDefault();
-            ViewBag.IsSystemChat = otherUserRole2 == "System";
+      
 
             // 🔥 solicitud de mensaje entre estos dos
             var msgReqChat = _context.MessageRequests
