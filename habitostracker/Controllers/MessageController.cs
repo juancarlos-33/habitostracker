@@ -44,10 +44,39 @@ namespace HabitTrackerApp.Controllers
                 msg.Receiver = _context.Users.FirstOrDefault(u => u.Id == msg.ReceiverId);
             }
 
+            // 🔥 agregar solicitudes enviadas pendientes que no tienen mensajes aún
+            var sentPendingRequests = _context.MessageRequests
+                .Where(r => r.SenderId == myId && r.Status == "Pending")
+                .ToList();
+
+            var existingUserIds = conversations
+                .Select(m => m.SenderId == myId ? m.ReceiverId : m.SenderId)
+                .ToList();
+
+            foreach (var req in sentPendingRequests)
+            {
+                if (!existingUserIds.Contains(req.ReceiverId))
+                {
+                    var fakeMsg = new Message
+                    {
+                        SenderId = myId,
+                        ReceiverId = req.ReceiverId,
+                        Content = "⏳ " + req.FirstMessage,
+                        SentAt = req.CreatedAt,
+                        IsRead = false
+                    };
+                    fakeMsg.Receiver = _context.Users.FirstOrDefault(u => u.Id == req.ReceiverId);
+                    fakeMsg.Sender = _context.Users.FirstOrDefault(u => u.Id == myId);
+                    conversations.Add(fakeMsg);
+                }
+            }
+
+            conversations = conversations.OrderByDescending(m => m.SentAt).ToList();
+
             var me = _context.Users.FirstOrDefault(u => u.Id == myId);
             ViewBag.MyUser = me;
 
-            // 🔥 cargar solicitudes con Sender incluido
+            // 🔥 cargar solicitudes recibidas con Sender incluido
             var pendingRequests = _context.MessageRequests
                 .Where(r => r.ReceiverId == myId && r.Status == "Pending")
                 .ToList();
