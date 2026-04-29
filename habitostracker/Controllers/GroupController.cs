@@ -253,6 +253,54 @@ namespace HabitTrackerApp.Controllers
 
             return RedirectToAction("Chat", new { id = group.Id });
         }
+
+        [HttpGet]
+        public IActionResult GetUsersForGroup(string type)
+        {
+            var userId = int.Parse(User.FindFirst("UserId").Value);
+
+            var friendIds = _context.FriendRequests
+                .Where(f => (f.SenderId == userId || f.ReceiverId == userId) && f.Status == "Accepted")
+                .Select(f => f.SenderId == userId ? f.ReceiverId : f.SenderId)
+                .ToList();
+
+            List<object> users;
+
+            if (type == "public" || type == "channel")
+            {
+                users = _context.Users
+                    .Where(u => u.Id != userId && u.Role != "Guest"
+                        && u.Role != "SuperAdmin" && u.Role != "System")
+                    .OrderBy(u => u.Username)
+                    .Select(u => (object)new
+                    {
+                        id = u.Id,
+                        username = u.Username,
+                        img = u.ProfileImage ?? u.ProfilePicture ?? "",
+                        letter = u.Username.Substring(0, 1).ToUpper(),
+                        isPrivate = u.IsPrivate,
+                        isFriend = friendIds.Contains(u.Id)
+                    })
+                    .ToList();
+            }
+            else
+            {
+                users = _context.Users
+                    .Where(u => friendIds.Contains(u.Id))
+                    .Select(u => (object)new
+                    {
+                        id = u.Id,
+                        username = u.Username,
+                        img = u.ProfileImage ?? u.ProfilePicture ?? "",
+                        letter = u.Username.Substring(0, 1).ToUpper(),
+                        isPrivate = u.IsPrivate,
+                        isFriend = true
+                    })
+                    .ToList();
+            }
+
+            return Json(users);
+        }
         [HttpGet]
         public IActionResult DiscoverPartial(string type)
         {
@@ -387,6 +435,7 @@ namespace HabitTrackerApp.Controllers
         }
 
         [HttpPost]
+        [IgnoreAntiforgeryToken]
         public async Task<IActionResult> RequestJoin([FromBody] int groupId)
         {
             var userId = int.Parse(User.FindFirst("UserId").Value);
