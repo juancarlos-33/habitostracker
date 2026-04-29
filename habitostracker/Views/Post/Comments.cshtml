@@ -3,14 +3,14 @@
         if (string.IsNullOrEmpty(text)) return text;
         return System.Text.RegularExpressions.Regex.Replace(
             System.Net.WebUtility.HtmlEncode(text),
-            @"@@(\w+)",
+            @"@(\w+)",
             m => {
                 var username = m.Groups[1].Value;
                 var db2 = Context.RequestServices.GetService<HabitTrackerApp.Data.HabitDbContext>();
                 var user = db2?.Users.FirstOrDefault(u => u.Username == username);
                 if (user != null)
                     return "<a href='/User/Profile/" + user.Id + "' style='color:#818cf8;font-weight:700;text-decoration:none;'>@" + username + "</a>";
-                return m.Value;
+                return System.Net.WebUtility.HtmlEncode(m.Value);
             }
         );
     }
@@ -340,7 +340,7 @@ body.bg-dark .cmt-empty-text { color: #64748b !important; }
                                             <form asp-controller="Post" asp-action="ReplyComment" method="post" data-no-loader="true">
                                                 <input type="hidden" name="commentId" value="@c.Id" />
                                                 <input type="hidden" name="parentReplyId" value="@parent.Id" />
-                                                <input type="text" name="text" placeholder="Responder a @parent.Username..."
+                                             <input type="text" name="text" placeholder="Responder a @(parent.Username)..."
                                                        class="cmt-reply-input" required
                                                        oninput="handleMentionInput(event, this)" />
                                                 <button type="submit" class="cmt-reply-submit">Enviar</button>
