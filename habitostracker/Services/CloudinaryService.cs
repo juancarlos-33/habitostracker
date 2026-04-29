@@ -80,9 +80,11 @@ public class CloudinaryService
             using var http = new HttpClient();
             http.Timeout = TimeSpan.FromSeconds(15);
 
+            // nudity-2.0 detecta anime/hentai, nudity detecta real
+            // gore detecta sangre/violencia
             var requestUrl = "https://api.sightengine.com/1.0/check.json" +
                              $"?url={Uri.EscapeDataString(imageUrl)}" +
-                             "&models=nudity-2.0" +
+                             "&models=nudity,nudity-2.0,gore" +
                              $"&api_user={apiUser}&api_secret={apiSecret}";
 
             var response = await http.GetAsync(requestUrl);
@@ -92,21 +94,37 @@ public class CloudinaryService
             using var doc = JsonDocument.Parse(json);
             var root = doc.RootElement;
 
-            if (!root.TryGetProperty("nudity", out var nudity)) return "safe";
+            // ── SANGRE / VIOLENCIA → bloquear ──
+            if (root.TryGetProperty("gore", out var gore))
+            {
+                double goreScore = TryGetDouble(gore, "prob");
+                if (goreScore > 0.5) return "explicit";
+            }
 
-            // nudity-2.0 keys
-            double sexual = TryGetDouble(nudity, "sexual_activity");
-            double display = TryGetDouble(nudity, "sexual_display");
-            double erotica = TryGetDouble(nudity, "erotica");
-            double verySuggestive = TryGetDouble(nudity, "very_suggestive");
-            double suggestive = TryGetDouble(nudity, "suggestive");
+            // ── DESNUDEZ REAL (nudity v1) ──
+            double raw = 0, partial = 0;
+            if (root.TryGetProperty("nudity", out var nudityV1))
+            {
+                raw = TryGetDouble(nudityV1, "raw");
+                partial = TryGetDouble(nudityV1, "partial");
+            }
 
-            // Also try legacy v1 keys as fallback
-            double raw = TryGetDouble(nudity, "raw");
-            double partial = TryGetDouble(nudity, "partial");
+            // ── DESNUDEZ ANIME / DIBUJADA (nudity-2.0) ──
+            double sexual = 0, display = 0, erotica = 0, verySuggestive = 0, suggestive = 0;
+            if (root.TryGetProperty("nudity", out var nudityV2))
+            {
+                sexual = TryGetDouble(nudityV2, "sexual_activity");
+                display = TryGetDouble(nudityV2, "sexual_display");
+                erotica = TryGetDouble(nudityV2, "erotica");
+                verySuggestive = TryGetDouble(nudityV2, "very_suggestive");
+                suggestive = TryGetDouble(nudityV2, "suggestive");
+            }
 
-            bool isExplicit = sexual > 0.5 || display > 0.5 || raw > 0.5;
-            bool isSensitive = erotica > 0.4 || verySuggestive > 0.5 || partial > 0.5;
+            // partes íntimas expuestas → bloquear
+            bool isExplicit = raw > 0.4 || sexual > 0.4 || display > 0.4;
+
+            // contenido sugestivo / semidesnudo → marcar sensible
+            bool isSensitive = partial > 0.35 || erotica > 0.35 || verySuggestive > 0.4 || suggestive > 0.6;
 
             if (isExplicit) return "explicit";
             if (isSensitive) return "sensitive";

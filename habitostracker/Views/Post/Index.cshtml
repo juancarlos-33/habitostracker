@@ -82,16 +82,16 @@
                                 <a href="/User/Profile/@post.UserId" style="text-decoration:none;color:inherit;">@post.DisplayUsername</a>
                             }
                         </div>
-                  <div class="post-time">
-    @post.CreatedAt.ToString("dd MMM yyyy · hh:mm tt")
+               <div class="post-time-wrap">
+    <span class="post-time">@post.CreatedAt.ToString("dd MMM yyyy · hh:mm tt")</span>
     @if (post.UserId == currentUserId)
     {
         if (post.Privacy == "Friends")
-        { <span style="background:#dbeafe;color:#1d4ed8;font-size:10px;font-weight:700;padding:2px 7px;border-radius:20px;margin-left:4px;">👥 Amigos</span> }
+        { <span class="post-privacy-badge friends">👥 Amigos</span> }
         else if (post.Privacy == "Private")
-        { <span style="background:#fce7f3;color:#9d174d;font-size:10px;font-weight:700;padding:2px 7px;border-radius:20px;margin-left:4px;">🔒 Solo yo</span> }
+        { <span class="post-privacy-badge private">🔒 Solo yo</span> }
         else
-        { <span style="background:#dcfce7;color:#15803d;font-size:10px;font-weight:700;padding:2px 7px;border-radius:20px;margin-left:4px;">🌐 Público</span> }
+        { <span class="post-privacy-badge public">🌐 Público</span> }
     }
 </div>
                     </div>
@@ -328,6 +328,21 @@ body.bg-dark .story-avatar-wrap.viewed{background:#334155!important;}
     border-radius: 22px; box-shadow: 0 2px 12px rgba(0,0,0,0.06);
     border: 1px solid rgba(0,0,0,0.04); max-width: 620px; margin: 0 auto 24px;
 }
+.post-time-wrap {
+    display: flex; align-items: center; gap: 6px;
+    flex-wrap: wrap; margin-top: 2px;
+}
+.post-time { font-size: 12px; color: #9ca3af; }
+.post-privacy-badge {
+    font-size: 10px; font-weight: 700; padding: 2px 7px;
+    border-radius: 20px; white-space: nowrap; line-height: 1.4;
+}
+.post-privacy-badge.friends { background:#dbeafe; color:#1d4ed8; }
+.post-privacy-badge.private { background:#fce7f3; color:#9d174d; }
+.post-privacy-badge.public { background:#dcfce7; color:#15803d; }
+body.bg-dark .post-privacy-badge.friends { background:rgba(37,99,235,0.2); color:#93c5fd; }
+body.bg-dark .post-privacy-badge.private { background:rgba(157,23,77,0.2); color:#f9a8d4; }
+body.bg-dark .post-privacy-badge.public { background:rgba(21,128,61,0.2); color:#86efac; }
 
 .feed-empty-icon { font-size: 52px; margin-bottom: 16px; }
 .feed-empty h5 { font-size: 18px; font-weight: 700; color: #111827; margin-bottom: 8px; }
@@ -371,7 +386,6 @@ body.bg-dark .story-avatar-wrap.viewed{background:#334155!important;}
     display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
 }
 
-.post-time { font-size: 12px; color: #9ca3af; margin-top: 2px; }
 
 .owner-badge {
     background: linear-gradient(135deg, #fbbf24, #f59e0b);
@@ -549,7 +563,7 @@ body.bg-dark .feed-empty h5 { color: #f1f5f9 !important; }
 body.bg-dark .post-card { background: #1e1e2e !important; border-color: #2d2d3d !important; box-shadow: 0 2px 12px rgba(0,0,0,0.3) !important; }
 body.bg-dark .post-username { color: #f1f5f9 !important; }
 body.bg-dark .post-description { color: #cbd5e1 !important; }
-body.bg-dark .post-time { color: #64748b !important; }
+
 body.bg-dark .post-divider { background: #2d2d3d !important; }
 body.bg-dark .post-stats { color: #64748b !important; }
 body.bg-dark .action-btn { color: #94a3b8 !important; }
