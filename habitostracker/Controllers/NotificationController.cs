@@ -30,6 +30,18 @@ namespace HabitTrackerApp.Controllers
             _context.SaveChanges();
             return Ok();
         }
+        [HttpPost]
+        public IActionResult MarkAsRead([FromBody] List<int> ids)
+        {
+            var myId = int.Parse(User.FindFirst("UserId").Value);
+            var notifs = _context.Notifications
+                .Where(n => ids.Contains(n.Id) && n.UserId == myId)
+                .ToList();
+            foreach (var n in notifs)
+                n.IsRead = true;
+            _context.SaveChanges();
+            return Ok();
+        }
 
         [HttpGet]
         public IActionResult GetLatestUnread()

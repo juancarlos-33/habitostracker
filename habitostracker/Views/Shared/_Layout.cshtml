@@ -758,7 +758,13 @@ async function cargarNotificacionesPendientes() {
                     n.link
                 );
             });
-            await fetch("/Notification/MarkSystemRead", { method: "POST" });
+          // marcar solo las que se mostraron
+const ids = data.map(n => n.id);
+await fetch("/Notification/MarkAsRead", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(ids)
+});
         } else {
             console.log("⚠️ No hay notificaciones pendientes");
         }
