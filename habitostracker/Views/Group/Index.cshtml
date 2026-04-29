@@ -428,4 +428,30 @@ function switchTab(tab, btn) {
         }
     }
 }
+async function solicitarUnirse(groupId, btn) {
+    btn.disabled = true;
+    btn.textContent = '⏳';
+    try {
+        const res = await fetch('/Group/RequestJoin', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(groupId)
+        });
+        const data = await res.json();
+        if (data.success) {
+            if (data.joined) {
+                btn.outerHTML = '<a href="/Group/Chat/' + groupId + '" style="display:inline-flex;align-items:center;gap:5px;padding:9px 16px;border-radius:12px;background:rgba(99,102,241,0.15);color:#818cf8;font-size:12px;font-weight:700;text-decoration:none;border:1px solid rgba(99,102,241,0.2);">💬 Abrir</a>';
+            } else {
+                btn.outerHTML = '<button disabled style="padding:9px 16px;border-radius:12px;background:rgba(251,191,36,0.1);color:#fbbf24;font-size:12px;font-weight:700;border:1px solid rgba(251,191,36,0.2);cursor:not-allowed;">⏳ Pendiente</button>';
+            }
+        } else {
+            alert(data.error ?? 'Error al enviar solicitud');
+            btn.disabled = false;
+            btn.textContent = '✋ Solicitar';
+        }
+    } catch(e) {
+        btn.disabled = false;
+        btn.textContent = '✋ Solicitar';
+    }
+}
 </script>

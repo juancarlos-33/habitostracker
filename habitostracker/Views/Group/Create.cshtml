@@ -1,6 +1,5 @@
 ﻿@{
     ViewData["Title"] = "Crear grupo";
-    var amigos = ViewBag.Amigos as List<HabitTrackerApp.Models.User> ?? new List<HabitTrackerApp.Models.User>();
     var nombreInicial = (string)(ViewBag.NombreInicial ?? "");
     var preselect = (int)(ViewBag.Preselect ?? 0);
 }
@@ -14,7 +13,6 @@
     padding-bottom: 40px;
 }
 
-/* HERO */
 .grp-create-hero {
     background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
     border-radius: 24px; padding: 28px; margin-bottom: 16px;
@@ -26,12 +24,6 @@
     content:""; position:absolute; top:-40px; right:-40px;
     width:160px; height:160px;
     background: radial-gradient(circle, rgba(99,102,241,0.25), transparent 70%);
-    border-radius:50%;
-}
-.grp-create-hero::after {
-    content:""; position:absolute; bottom:-30px; left:60px;
-    width:100px; height:100px;
-    background: radial-gradient(circle, rgba(37,99,235,0.15), transparent 70%);
     border-radius:50%;
 }
 .grp-create-hero-icon {
@@ -46,7 +38,7 @@
 .grp-create-hero-title { font-size:20px; font-weight:800; color:white; margin:0 0 5px; }
 .grp-create-hero-sub { font-size:13px; color:rgba(255,255,255,0.4); margin:0; }
 
-/* STEP INDICATOR */
+/* STEPS */
 .grp-steps {
     display: flex; gap: 8px; margin-bottom: 16px; align-items: center;
 }
@@ -54,8 +46,7 @@
     display: flex; align-items: center; gap: 6px;
     font-size: 12px; font-weight: 700; color: #9ca3af;
     padding: 6px 14px; border-radius: 20px;
-    border: 1.5px solid #e5e7eb; background: white;
-    transition: 0.2s;
+    border: 1.5px solid #e5e7eb; background: white; transition: 0.2s;
 }
 .grp-step.active { color: #6366f1; border-color: #6366f1; background: rgba(99,102,241,0.06); }
 .grp-step.done { color: #16a34a; border-color: #86efac; background: #f0fdf4; }
@@ -73,22 +64,15 @@
 .grp-form-card {
     background: white; border-radius: 20px; padding: 22px 24px;
     margin-bottom: 12px; border: 1px solid rgba(0,0,0,0.05);
-    box-shadow: 0 2px 12px rgba(0,0,0,0.05);
-    transition: 0.2s;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.05); transition: 0.2s;
 }
-.grp-form-card:focus-within { box-shadow: 0 4px 20px rgba(99,102,241,0.1); border-color: rgba(99,102,241,0.2); }
 .grp-form-card-title {
     font-size: 11px; font-weight: 700; color: #6b7280;
     text-transform: uppercase; letter-spacing: 0.7px; margin-bottom: 16px;
-    display: flex; align-items: center; gap: 6px;
 }
-
 .grp-field { margin-bottom: 14px; }
 .grp-field:last-child { margin-bottom: 0; }
-.grp-field label {
-    display: block; font-size: 12px; font-weight: 700; color: #374151;
-    margin-bottom: 7px;
-}
+.grp-field label { display: block; font-size: 12px; font-weight: 700; color: #374151; margin-bottom: 7px; }
 .grp-input {
     width: 100%; padding: 12px 16px; border: 1.5px solid #e5e7eb;
     border-radius: 13px; font-size: 14px; font-family: inherit;
@@ -99,7 +83,7 @@
 .grp-input::placeholder { color: #9ca3af; }
 .grp-char-count { font-size: 11px; color: #9ca3af; text-align: right; margin-top: 4px; }
 
-/* ── TIPO DE GRUPO ── */
+/* TIPO */
 .grp-type-options { display: flex; flex-direction: column; gap: 10px; }
 .grp-type-option {
     display: flex; align-items: center; gap: 14px;
@@ -111,8 +95,7 @@
 .grp-type-option.active { border-color: #6366f1; background: rgba(99,102,241,0.07); }
 .grp-type-icon {
     width: 42px; height: 42px; border-radius: 12px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 20px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0;
 }
 .grp-type-icon.private { background: rgba(100,116,139,0.1); }
 .grp-type-icon.public { background: rgba(34,197,94,0.1); }
@@ -126,18 +109,15 @@
     display: flex; align-items: center; justify-content: center;
     transition: 0.15s; font-size: 11px; color: transparent;
 }
-.grp-type-option.active .grp-type-check {
-    background: #6366f1; border-color: #6366f1; color: white;
-}
+.grp-type-option.active .grp-type-check { background: #6366f1; border-color: #6366f1; color: white; }
 
-/* MEMBERS HEADER */
-.grp-members-header {
-    display: flex; align-items: center; margin-bottom: 14px; gap: 10px;
-}
+/* MEMBERS */
+.grp-members-header { display: flex; align-items: center; margin-bottom: 14px; gap: 10px; }
 .grp-members-search {
-    flex: 1; padding: 8px 14px; border: 1.5px solid #e5e7eb;
+    width: 100%; padding: 10px 14px; border: 1.5px solid #e5e7eb;
     border-radius: 24px; font-size: 13px; font-family: inherit;
     outline: none; transition: 0.2s; background: #f9fafb; color: #111827;
+    margin-bottom: 10px; box-sizing: border-box;
 }
 .grp-members-search:focus { border-color: #6366f1; background: white; }
 .selected-count {
@@ -146,11 +126,8 @@
     border-radius: 20px; padding: 5px 14px; white-space: nowrap; flex-shrink: 0;
 }
 
-/* SELECTED CHIPS */
-.grp-selected-chips {
-    display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px;
-    min-height: 0; transition: 0.2s;
-}
+/* CHIPS */
+.grp-selected-chips { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
 .grp-chip {
     display: flex; align-items: center; gap: 5px;
     padding: 4px 10px 4px 6px; border-radius: 20px;
@@ -170,15 +147,13 @@
     width: 14px; height: 14px; border-radius: 50%;
     background: #6366f1; color: white; border: none;
     font-size: 8px; cursor: pointer; display: flex;
-    align-items: center; justify-content: center;
-    font-family: inherit; padding: 0; line-height: 1;
+    align-items: center; justify-content: center; font-family: inherit; padding: 0;
 }
 
 /* FRIEND LIST */
-.friend-grid { display: flex; flex-direction: column; gap: 6px; max-height: 320px; overflow-y: auto; }
+.friend-grid { display: flex; flex-direction: column; gap: 6px; max-height: 360px; overflow-y: auto; }
 .friend-grid::-webkit-scrollbar { width: 4px; }
 .friend-grid::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
-
 .friend-item {
     display: flex; align-items: center; gap: 12px;
     padding: 11px 14px; border-radius: 14px;
@@ -197,42 +172,41 @@
 }
 .friend-avatar img { width: 100%; height: 100%; object-fit: cover; }
 .friend-info { flex: 1; min-width: 0; }
-.friend-name { font-size: 14px; font-weight: 700; color: #111827; }
+.friend-name { font-size: 14px; font-weight: 700; color: #111827; display: flex; align-items: center; gap: 5px; flex-wrap: wrap; }
 .friend-check {
     width: 22px; height: 22px; border-radius: 7px;
     border: 2px solid #e5e7eb; flex-shrink: 0;
     display: flex; align-items: center; justify-content: center;
-    transition: 0.15s; font-size: 12px; color: transparent;
-    background: white;
+    transition: 0.15s; font-size: 12px; color: transparent; background: white;
 }
 .friend-item.selected .friend-check { background: #6366f1; border-color: #6366f1; color: white; }
 
-.grp-empty-friends {
-    text-align: center; padding: 30px 24px; color: #9ca3af;
-    font-size: 13px; background: #f9fafb; border-radius: 14px;
-}
-.grp-empty-friends-icon { font-size: 36px; margin-bottom: 10px; }
-
 /* CANAL NOTICE */
 .grp-channel-notice {
-    display: none; background: rgba(99,102,241,0.08);
-    border: 1px solid rgba(99,102,241,0.2); border-radius: 14px;
-    padding: 14px 16px; font-size: 13px; color: #6366f1;
-    font-weight: 600; line-height: 1.6; margin-bottom: 0;
+    background: rgba(99,102,241,0.08); border: 1px solid rgba(99,102,241,0.2);
+    border-radius: 14px; padding: 14px 16px; font-size: 13px; color: #6366f1;
+    font-weight: 600; line-height: 1.6; margin-bottom: 12px;
 }
 
-/* ERROR */
-.grp-error {
-    background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.25);
-    color: #dc2626; padding: 12px 16px; border-radius: 14px;
-    font-size: 13px; font-weight: 600; margin-bottom: 12px;
-    display: flex; align-items: center; gap: 8px;
-    animation: errIn 0.3s ease;
+/* NAV BTNS */
+.grp-nav-btns { display: flex; gap: 10px; margin-top: 4px; }
+.grp-btn-back {
+    flex: 1; padding: 14px; border: 1.5px solid #e5e7eb; border-radius: 16px;
+    background: white; color: #6b7280; font-size: 15px; font-weight: 700;
+    font-family: inherit; cursor: pointer; transition: 0.2s;
 }
-@@keyframes errIn { from{opacity:0;transform:translateY(-6px);} to{opacity:1;transform:translateY(0);} }
+.grp-btn-back:hover { background: #f3f4f6; }
+.grp-btn-next {
+    flex: 2; padding: 14px; border: none; border-radius: 16px;
+    background: linear-gradient(135deg, #6366f1, #2563eb);
+    color: white; font-size: 15px; font-weight: 800;
+    font-family: inherit; cursor: pointer; transition: 0.2s;
+    box-shadow: 0 8px 24px rgba(99,102,241,0.4);
+}
+.grp-btn-next:hover { transform: translateY(-2px); }
+.grp-btn-next:disabled { background: linear-gradient(135deg, #cbd5e1, #94a3b8); cursor: not-allowed; transform: none; box-shadow: none; }
 
 /* SUBMIT */
-.grp-submit-wrap { position: sticky; bottom: 16px; z-index: 10; }
 .grp-submit-btn {
     width: 100%; padding: 14px; border: none; border-radius: 16px;
     background: linear-gradient(135deg, #6366f1, #2563eb);
@@ -241,209 +215,160 @@
     display: flex; align-items: center; justify-content: center; gap: 10px;
     box-shadow: 0 8px 24px rgba(99,102,241,0.4);
 }
-.grp-submit-btn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 12px 28px rgba(99,102,241,0.5); }
-.grp-submit-btn:disabled {
-    background: linear-gradient(135deg, #cbd5e1, #94a3b8);
-    cursor: not-allowed; transform: none; box-shadow: none;
-}
-.grp-submit-count {
-    background: rgba(255,255,255,0.2); padding: 2px 10px;
-    border-radius: 20px; font-size: 12px; font-weight: 700;
+.grp-submit-btn:hover:not(:disabled) { transform: translateY(-2px); }
+.grp-submit-btn:disabled { background: linear-gradient(135deg, #cbd5e1, #94a3b8); cursor: not-allowed; transform: none; box-shadow: none; }
+.grp-submit-count { background: rgba(255,255,255,0.2); padding: 2px 10px; border-radius: 20px; font-size: 12px; font-weight: 700; }
+
+/* ERROR */
+.grp-error {
+    background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.25);
+    color: #dc2626; padding: 12px 16px; border-radius: 14px;
+    font-size: 13px; font-weight: 600; margin-bottom: 12px;
+    display: flex; align-items: center; gap: 8px;
 }
 
 /* DARK */
 body.bg-dark .grp-form-card { background: #1e293b !important; border-color: #2d3748 !important; }
-body.bg-dark .grp-form-card:focus-within { border-color: rgba(99,102,241,0.3) !important; }
 body.bg-dark .grp-form-card-title { color: #64748b !important; }
 body.bg-dark .grp-field label { color: #94a3b8 !important; }
 body.bg-dark .grp-input { background: #2d3748 !important; border-color: #3d4d60 !important; color: #f1f5f9 !important; }
-body.bg-dark .grp-input:focus { background: #334155 !important; }
 body.bg-dark .grp-members-search { background: #2d3748 !important; border-color: #3d4d60 !important; color: #f1f5f9 !important; }
 body.bg-dark .friend-item { border-color: #2d3748 !important; background: #2d3748 !important; }
 body.bg-dark .friend-item:hover { background: rgba(99,102,241,0.1) !important; border-color: #6366f1 !important; }
 body.bg-dark .friend-item.selected { background: rgba(99,102,241,0.15) !important; }
 body.bg-dark .friend-name { color: #f1f5f9 !important; }
 body.bg-dark .friend-check { background: #334155 !important; border-color: #475569 !important; }
-body.bg-dark .grp-empty-friends { background: #2d3748 !important; }
 body.bg-dark .grp-step { background: #1e293b !important; border-color: #2d3748 !important; }
 body.bg-dark .grp-step.active { background: rgba(99,102,241,0.1) !important; }
 body.bg-dark .grp-step-divider { background: #2d3748 !important; }
 body.bg-dark .grp-type-option { background: #2d3748 !important; border-color: #3d4d60 !important; }
-body.bg-dark .grp-type-option:hover { background: rgba(99,102,241,0.1) !important; border-color: #6366f1 !important; }
 body.bg-dark .grp-type-option.active { background: rgba(99,102,241,0.15) !important; }
 body.bg-dark .grp-type-name { color: #f1f5f9 !important; }
+body.bg-dark .grp-btn-back { background: #2d3748 !important; border-color: #3d4d60 !important; color: #94a3b8 !important; }
 </style>
 
 <div class="grp-create-page">
 
-    <!-- HERO -->
     <div class="grp-create-hero">
         <div class="grp-create-hero-icon" id="heroIcon">👥</div>
         <div class="grp-hero-text">
             <div class="grp-create-hero-title" id="heroTitle">Crear nuevo grupo</div>
-            <div class="grp-create-hero-sub" id="heroSub">Ponle nombre, agrega amigos y empieza a chatear</div>
+            <div class="grp-create-hero-sub" id="heroSub">Elige el tipo y configura tu grupo</div>
         </div>
     </div>
 
-    <!-- STEPS -->
     <div class="grp-steps">
         <div class="grp-step active" id="step1">
             <div class="grp-step-num">1</div>
-            Tipo
+            Tipo e info
         </div>
         <div class="grp-step-divider"></div>
         <div class="grp-step" id="step2">
             <div class="grp-step-num">2</div>
-            Info
-        </div>
-        <div class="grp-step-divider"></div>
-        <div class="grp-step" id="step3">
-            <div class="grp-step-num">3</div>
             Miembros
         </div>
     </div>
 
     <div id="errorBox"></div>
-
     @if (TempData["Error"] != null)
-    {
-        <div class="grp-error">❌ @TempData["Error"]</div>
-    }
+    { <div class="grp-error">❌ @TempData["Error"]</div> }
 
     <form asp-controller="Group" asp-action="Create" method="post" id="createForm">
         @Html.AntiForgeryToken()
         <input type="hidden" name="type" id="groupType" value="private" />
 
-        <!-- TIPO DE GRUPO -->
-        <div class="grp-form-card">
-            <div class="grp-form-card-title">🏷️ Tipo de grupo</div>
-            <div class="grp-type-options">
-
-                <div class="grp-type-option active" onclick="setType('private', this)">
-                    <div class="grp-type-icon private">🔒</div>
-                    <div class="grp-type-info">
-                        <div class="grp-type-name">Privado</div>
-                        <div class="grp-type-desc">Solo para tus amigos. No aparece en búsquedas. Todos pueden escribir.</div>
-                    </div>
-                    <div class="grp-type-check">✓</div>
-                </div>
-
-                <div class="grp-type-option" onclick="setType('public', this)">
-                    <div class="grp-type-icon public">🌍</div>
-                    <div class="grp-type-info">
-                        <div class="grp-type-name">Público</div>
-                        <div class="grp-type-desc">Visible para todos. Cualquiera puede solicitar unirse. Todos los miembros pueden escribir.</div>
-                    </div>
-                    <div class="grp-type-check">✓</div>
-                </div>
-
-                <div class="grp-type-option" onclick="setType('channel', this)">
-                    <div class="grp-type-icon channel">📢</div>
-                    <div class="grp-type-info">
-                        <div class="grp-type-name">Canal</div>
-                        <div class="grp-type-desc">Visible para todos. Entrada automática al unirse. Solo los admins pueden escribir.</div>
-                    </div>
-                    <div class="grp-type-check">✓</div>
-                </div>
-
-            </div>
-        </div>
-
-        <!-- INFO -->
-        <div class="grp-form-card">
-            <div class="grp-form-card-title">📝 Información</div>
-            <div class="grp-field">
-                <label>Nombre *</label>
-                <input name="name" id="groupName" type="text" class="grp-input"
-                       placeholder="Ej: Los del gym, Familia, Proyecto..." required
-                       value="@nombreInicial" maxlength="50"
-                       oninput="updateNameCount(this)" />
-                <div class="grp-char-count"><span id="nameCount">@nombreInicial.Length</span>/50</div>
-            </div>
-            <div class="grp-field">
-                <label>Descripción <span style="color:#9ca3af;font-weight:400;">(opcional)</span></label>
-                <input name="description" type="text" class="grp-input"
-                       placeholder="¿De qué va el grupo?" maxlength="100"
-                       oninput="updateDescCount(this)" />
-                <div class="grp-char-count"><span id="descCount">0</span>/100</div>
-            </div>
-        </div>
-
-        <!-- MIEMBROS -->
-        <div class="grp-form-card" id="membersCard">
-            <div class="grp-members-header">
-                <div class="grp-form-card-title" style="margin:0;">👥 Agregar amigos</div>
-                <span class="selected-count" id="selectedCount">0 seleccionados</span>
-            </div>
-
-            <!-- Aviso canal -->
-            <div class="grp-channel-notice" id="channelNotice">
-                📢 En los canales no necesitas agregar miembros al crear. Cualquiera podrá unirse desde el apartado de canales. Puedes añadir amigos directamente si quieres.
-            </div>
-
-            <div class="grp-selected-chips" id="chipsContainer"></div>
-
-            @if (!amigos.Any())
-            {
-                <div class="grp-empty-friends">
-                    <div class="grp-empty-friends-icon">👤</div>
-                    <div>No tienes amigos para agregar todavía.</div>
-                </div>
-            }
-            else
-            {
-                <input type="text" class="grp-members-search" id="friendSearch"
-                       placeholder="🔍 Buscar amigos..." oninput="filtrarAmigos(this.value)" />
-                <div style="height:10px;"></div>
-
-                <div class="friend-grid" id="friendGrid">
-                    @foreach (var amigo in amigos)
-                    {
-                        var img = amigo.ProfileImage ?? amigo.ProfilePicture ?? "";
-                        var letter = (amigo.Username ?? "?").Substring(0, 1).ToUpper();
-                        var isPreselected = amigo.Id == preselect;
-                        <div class="friend-item @(isPreselected ? "selected" : "")"
-                             onclick="toggleFriend(this)"
-                             data-username="@amigo.Username.ToLower()"
-                             data-id="@amigo.Id"
-                             data-name="@amigo.Username"
-                             data-img="@img"
-                             data-letter="@letter">
-                            <div class="friend-avatar">
-                                @if (!string.IsNullOrEmpty(img))
-                                { <img src="@img" /> }
-                                else { @letter }
-                            </div>
-                            <div class="friend-info">
-                               <div class="friend-name">
-    @amigo.Username
-    @if (amigo.IsPrivate)
-    { <span style="font-size:10px;background:rgba(251,191,36,0.15);color:#fbbf24;padding:2px 7px;border-radius:20px;margin-left:4px;">🔒 Privado</span> }
-    else
-    { <span style="font-size:10px;background:rgba(34,197,94,0.1);color:#4ade80;padding:2px 7px;border-radius:20px;margin-left:4px;">🌍 Público</span> }
-</div>
-                            </div>
-                            <div class="friend-check">✓</div>
-                            <input type="checkbox" name="memberIds" value="@amigo.Id"
-                                   style="display:none;" @(isPreselected ? "checked" : "") />
+        <!-- PASO 1 -->
+        <div id="paso1">
+            <div class="grp-form-card">
+                <div class="grp-form-card-title">🏷️ Tipo de grupo</div>
+                <div class="grp-type-options">
+                    <div class="grp-type-option active" onclick="setType('private', this)">
+                        <div class="grp-type-icon private">🔒</div>
+                        <div class="grp-type-info">
+                            <div class="grp-type-name">Privado</div>
+                            <div class="grp-type-desc">Solo para tus amigos. No aparece en búsquedas.</div>
                         </div>
-                    }
+                        <div class="grp-type-check">✓</div>
+                    </div>
+                    <div class="grp-type-option" onclick="setType('public', this)">
+                        <div class="grp-type-icon public">🌍</div>
+                        <div class="grp-type-info">
+                            <div class="grp-type-name">Público</div>
+                            <div class="grp-type-desc">Visible para todos. Puedes invitar a cualquier usuario.</div>
+                        </div>
+                        <div class="grp-type-check">✓</div>
+                    </div>
+                    <div class="grp-type-option" onclick="setType('channel', this)">
+                        <div class="grp-type-icon channel">📢</div>
+                        <div class="grp-type-info">
+                            <div class="grp-type-name">Canal</div>
+                            <div class="grp-type-desc">Solo los admins escriben. Todos pueden unirse.</div>
+                        </div>
+                        <div class="grp-type-check">✓</div>
+                    </div>
                 </div>
-            }
-        </div>
+            </div>
 
-        <!-- SUBMIT -->
-        <div class="grp-submit-wrap">
-            <button type="submit" class="grp-submit-btn" id="submitBtn" disabled>
-                <span id="submitLabel">🚀 Crear grupo</span>
-                <span class="grp-submit-count" id="submitCount" style="display:none;">0 miembros</span>
+            <div class="grp-form-card">
+                <div class="grp-form-card-title">📝 Información</div>
+                <div class="grp-field">
+                    <label>Nombre *</label>
+                    <input name="name" id="groupName" type="text" class="grp-input"
+                           placeholder="Ej: Los del gym, Familia, Proyecto..."
+                           value="@nombreInicial" maxlength="50"
+                           oninput="updateNameCount(this)" />
+                    <div class="grp-char-count"><span id="nameCount">@nombreInicial.Length</span>/50</div>
+                </div>
+                <div class="grp-field">
+                    <label>Descripción <span style="color:#9ca3af;font-weight:400;">(opcional)</span></label>
+                    <input name="description" type="text" class="grp-input"
+                           placeholder="¿De qué va el grupo?" maxlength="100"
+                           oninput="updateDescCount(this)" />
+                    <div class="grp-char-count"><span id="descCount">0</span>/100</div>
+                </div>
+            </div>
+
+            <button type="button" class="grp-btn-next" id="btnSiguiente" onclick="irPaso2()" disabled>
+                Siguiente → Agregar miembros
             </button>
         </div>
+
+        <!-- PASO 2 -->
+        <div id="paso2" style="display:none;">
+            <div class="grp-form-card">
+                <div class="grp-members-header">
+                    <div class="grp-form-card-title" style="margin:0;" id="membersTitle">👥 Agregar miembros</div>
+                    <span class="selected-count" id="selectedCount">0 seleccionados</span>
+                </div>
+
+                <div class="grp-channel-notice" id="channelNotice" style="display:none;">
+                    📢 En los canales no es obligatorio agregar miembros. Cualquiera podrá unirse desde Canales.
+                </div>
+
+                <div class="grp-selected-chips" id="chipsContainer"></div>
+
+                <input type="text" class="grp-members-search" id="friendSearch"
+                       placeholder="🔍 Buscar..." oninput="filtrarAmigos(this.value)" />
+
+                <div class="friend-grid" id="friendGrid">
+                    <div style="text-align:center;padding:20px;color:#9ca3af;">⏳ Cargando...</div>
+                </div>
+            </div>
+
+            <div class="grp-nav-btns">
+                <button type="button" class="grp-btn-back" onclick="irPaso1()">← Volver</button>
+                <button type="submit" class="grp-btn-next" id="submitBtn" disabled>
+                    <span id="submitLabel">🚀 Crear grupo</span>
+                </button>
+            </div>
+        </div>
+
     </form>
 </div>
 
 <script>
 let currentType = 'private';
+let selectedIds = new Set();
 
 function setType(type, el) {
     currentType = type;
@@ -451,65 +376,140 @@ function setType(type, el) {
     document.querySelectorAll('.grp-type-option').forEach(o => o.classList.remove('active'));
     el.classList.add('active');
 
-    // actualizar hero
     const heroData = {
-        private: { icon: '👥', title: 'Crear grupo privado', sub: 'Solo para tus amigos' },
-        public:  { icon: '🌍', title: 'Crear grupo público', sub: 'Visible para toda la comunidad de HabitTracker' },
-        channel: { icon: '📢', title: 'Crear canal', sub: 'Difunde contenido a todos' }
+        private: { icon: '👥', title: 'Grupo privado', sub: 'Solo para tus amigos' },
+        public:  { icon: '🌍', title: 'Grupo público', sub: 'Visible para toda la comunidad' },
+        channel: { icon: '📢', title: 'Canal', sub: 'Difunde contenido a todos' }
     };
     document.getElementById('heroIcon').textContent = heroData[type].icon;
     document.getElementById('heroTitle').textContent = heroData[type].title;
     document.getElementById('heroSub').textContent = heroData[type].sub;
 
-    // mostrar/ocultar aviso canal
-    document.getElementById('channelNotice').style.display = type === 'channel' ? 'block' : 'none';
-
-    // actualizar label botón
-    const labels = { private: '🚀 Crear grupo', public: '🌍 Crear grupo público', channel: '📢 Crear canal' };
+    const labels = { private: '🚀 Crear grupo privado', public: '🌍 Crear grupo público', channel: '📢 Crear canal' };
     document.getElementById('submitLabel').textContent = labels[type];
 
-    updateCount();
-    updateSteps();
+    checkPaso1();
 }
-
-document.addEventListener("DOMContentLoaded", () => {
-    updateCount();
-    updateSteps();
-    document.querySelectorAll(".friend-item.selected").forEach(el => addChip(el));
-});
 
 function updateNameCount(el) {
     document.getElementById("nameCount").textContent = el.value.length;
-    updateSteps();
+    checkPaso1();
 }
 
 function updateDescCount(el) {
     document.getElementById("descCount").textContent = el.value.length;
 }
 
-function updateSteps() {
+function checkPaso1() {
     const name = document.getElementById("groupName").value.trim();
-    const count = document.querySelectorAll(".friend-item.selected").length;
+    document.getElementById("btnSiguiente").disabled = name.length === 0;
+    if (name.length > 0) {
+        document.getElementById("step1").className = "grp-step done";
+    } else {
+        document.getElementById("step1").className = "grp-step active";
+    }
+}
 
+async function irPaso2() {
+    const name = document.getElementById("groupName").value.trim();
+    if (!name) return;
+
+    document.getElementById("paso1").style.display = "none";
+    document.getElementById("paso2").style.display = "block";
     document.getElementById("step1").className = "grp-step done";
+    document.getElementById("step2").className = "grp-step active";
 
-    if (name.length > 0) document.getElementById("step2").className = "grp-step done";
-    else document.getElementById("step2").className = "grp-step active";
+    // aviso canal
+    document.getElementById("channelNotice").style.display = currentType === 'channel' ? 'block' : 'none';
 
-    if (count > 0) document.getElementById("step3").className = "grp-step done";
-    else if (name.length > 0) document.getElementById("step3").className = "grp-step active";
-    else document.getElementById("step3").className = "grp-step";
+    // título según tipo
+    const titles = {
+        private: '👥 Agregar amigos',
+        public: '🌍 Agregar miembros',
+        channel: '📢 Agregar miembros (opcional)'
+    };
+    document.getElementById("membersTitle").textContent = titles[currentType];
+
+    // cargar usuarios según tipo
+    await cargarUsuarios();
+    checkSubmit();
+}
+
+function irPaso1() {
+    document.getElementById("paso2").style.display = "none";
+    document.getElementById("paso1").style.display = "block";
+    document.getElementById("step2").className = "grp-step";
+    document.getElementById("step1").className = "grp-step active";
+}
+
+async function cargarUsuarios() {
+    const grid = document.getElementById('friendGrid');
+    grid.innerHTML = '<div style="text-align:center;padding:20px;color:#9ca3af;">⏳ Cargando...</div>';
+
+    try {
+        const res = await fetch(`/Group/GetUsersForGroup?type=${currentType}`);
+        const users = await res.json();
+
+        if (!users.length) {
+            grid.innerHTML = '<div style="text-align:center;padding:20px;color:#9ca3af;">No hay usuarios disponibles</div>';
+            return;
+        }
+
+        grid.innerHTML = users.map(u => {
+            const avatarHTML = u.img
+                ? `<img src="${u.img}" style="width:100%;height:100%;object-fit:cover;" />`
+                : u.letter;
+
+            const badge = u.isPrivate
+                ? `<span style="font-size:10px;background:rgba(251,191,36,0.15);color:#fbbf24;padding:2px 7px;border-radius:20px;">🔒 Privado</span>`
+                : u.isFriend
+                    ? `<span style="font-size:10px;background:rgba(34,197,94,0.1);color:#4ade80;padding:2px 7px;border-radius:20px;">✅ Amigo</span>`
+                    : `<span style="font-size:10px;background:rgba(99,102,241,0.1);color:#818cf8;padding:2px 7px;border-radius:20px;">🌍 Público</span>`;
+
+            const isSelected = selectedIds.has(u.id);
+
+            return `<div class="friend-item ${isSelected ? 'selected' : ''}"
+                onclick="toggleFriend(this)"
+                data-username="${u.username.toLowerCase()}"
+                data-id="${u.id}"
+                data-name="${u.username}"
+                data-img="${u.img}"
+                data-letter="${u.letter}">
+                <div class="friend-avatar">${avatarHTML}</div>
+                <div class="friend-info">
+                    <div class="friend-name">${u.username} ${badge}</div>
+                </div>
+                <div class="friend-check">✓</div>
+                <input type="checkbox" name="memberIds" value="${u.id}" style="display:none;" ${isSelected ? 'checked' : ''} />
+            </div>`;
+        }).join('');
+
+    } catch(e) {
+        grid.innerHTML = '<div style="text-align:center;padding:20px;color:#ef4444;">❌ Error al cargar usuarios</div>';
+    }
+}
+
+function filtrarAmigos(query) {
+    const q = query.toLowerCase().trim();
+    document.querySelectorAll(".friend-item").forEach(item => {
+        item.classList.toggle("hidden", q !== "" && !item.dataset.username.includes(q));
+    });
 }
 
 function toggleFriend(el) {
     el.classList.toggle("selected");
     const cb = el.querySelector('input[type="checkbox"]');
     if (cb) cb.checked = el.classList.contains("selected");
-    if (el.classList.contains("selected")) addChip(el);
-    else removeChip(el.dataset.id);
-    updateCount();
-    updateSteps();
-    document.getElementById("errorBox").innerHTML = "";
+
+    const id = parseInt(el.dataset.id);
+    if (el.classList.contains("selected")) {
+        selectedIds.add(id);
+        addChip(el);
+    } else {
+        selectedIds.delete(id);
+        removeChip(el.dataset.id);
+    }
+    checkSubmit();
 }
 
 function addChip(el) {
@@ -531,65 +531,41 @@ function removeChip(id) {
 
 function removeByChip(id) {
     removeChip(id);
+    selectedIds.delete(parseInt(id));
     const item = document.querySelector(`.friend-item[data-id="${id}"]`);
     if (item) {
         item.classList.remove("selected");
         const cb = item.querySelector('input[type="checkbox"]');
         if (cb) cb.checked = false;
     }
-    updateCount();
-    updateSteps();
+    checkSubmit();
 }
 
-function updateCount() {
-    const count = document.querySelectorAll(".friend-item.selected").length;
+function checkSubmit() {
+    const count = selectedIds.size;
     document.getElementById("selectedCount").textContent =
         count === 0 ? "0 seleccionados" : `${count} seleccionado${count !== 1 ? "s" : ""}`;
 
-    const name = document.getElementById("groupName")?.value.trim() ?? "";
     // canales pueden crearse sin miembros
-    const canSubmit = name.length > 0 && (count > 0 || currentType === 'channel');
+    const canSubmit = count > 0 || currentType === 'channel';
     document.getElementById("submitBtn").disabled = !canSubmit;
 
-    const submitCount = document.getElementById("submitCount");
     if (count > 0) {
-        submitCount.style.display = "inline";
-        submitCount.textContent = `${count + 1} miembro${count + 1 !== 1 ? "s" : ""}`;
+        document.getElementById("step2").className = "grp-step done";
     } else {
-        submitCount.style.display = "none";
+        document.getElementById("step2").className = "grp-step active";
     }
-}
-
-function filtrarAmigos(query) {
-    const q = query.toLowerCase().trim();
-    document.querySelectorAll(".friend-item").forEach(item => {
-        item.classList.toggle("hidden", q !== "" && !item.dataset.username.includes(q));
-    });
 }
 
 document.getElementById("createForm").addEventListener("submit", function(e) {
     const name = document.getElementById("groupName").value.trim();
-    const count = document.querySelectorAll(".friend-item.selected").length;
-    const errorBox = document.getElementById("errorBox");
-
-    if (!name) {
-        e.preventDefault();
-        errorBox.innerHTML = `<div class="grp-error">❌ El nombre es requerido.</div>`;
-        document.getElementById("groupName").focus();
-        return;
-    }
-
-    if (count === 0 && currentType !== 'channel') {
-        e.preventDefault();
-        errorBox.innerHTML = `<div class="grp-error">❌ Debes agregar al menos un miembro.</div>`;
-        errorBox.scrollIntoView({ behavior: "smooth", block: "center" });
-        return;
-    }
-
+    if (!name) { e.preventDefault(); return; }
+    if (selectedIds.size === 0 && currentType !== 'channel') { e.preventDefault(); return; }
     const btn = document.getElementById("submitBtn");
-    btn.innerHTML = `<span>⏳ Creando...</span>`;
+    btn.innerHTML = `⏳ Creando...`;
     btn.disabled = true;
 });
 
-document.getElementById("groupName")?.addEventListener("input", updateCount);
+document.getElementById("groupName")?.addEventListener("input", checkPaso1);
+document.addEventListener("DOMContentLoaded", checkPaso1);
 </script>
