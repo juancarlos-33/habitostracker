@@ -1,4 +1,22 @@
-﻿@if (TempData["Error"] != null)
+﻿@functions {
+    string ResaltarMenciones(string text) {
+        if (string.IsNullOrEmpty(text)) return text;
+        return System.Text.RegularExpressions.Regex.Replace(
+            System.Net.WebUtility.HtmlEncode(text),
+            @"@@(\w+)",
+            m => {
+                var username = m.Groups[1].Value;
+                var db2 = Context.RequestServices.GetService<HabitTrackerApp.Data.HabitDbContext>();
+                var user = db2?.Users.FirstOrDefault(u => u.Username == username);
+                if (user != null)
+                    return "<a href='/User/Profile/" + user.Id + "' style='color:#818cf8;font-weight:700;text-decoration:none;'>@" + username + "</a>";
+                return m.Value;
+            }
+        );
+    }
+}
+
+@if (TempData["Error"] != null)
 {
     <div class="cmt-alert">⚠️ @TempData["Error"]</div>
 }
@@ -241,12 +259,12 @@ body.bg-dark .cmt-empty-text { color: #64748b !important; }
                             { <a href="/User" class="cmt-username">@c.Username</a> }
                             else
                             { <a href="/User/Profile/@c.UserId" class="cmt-username">@c.Username</a> }
-                            <div class="cmt-time">@c.CreatedAt.ToString("dd MMM yyyy · HH:mm")</div>
+                        <div class="cmt-time" data-utc="@c.CreatedAt.ToString("o")" data-format="datetime"></div>
                         </div>
                     </div>
 
                     <div class="cmt-body">
-                        <p class="cmt-text">@c.Comment</p>
+                    <p class="cmt-text">@Html.Raw(ResaltarMenciones(c.Comment))</p>
                         @if (!string.IsNullOrEmpty(c.ImagePath))
                         {
                             <img src="@c.ImagePath" class="cmt-img"
@@ -305,7 +323,7 @@ body.bg-dark .cmt-empty-text { color: #64748b !important; }
                                             { <a href="/User" class="reply-username">@parent.Username</a> }
                                             else
                                             { <a href="/User/Profile/@parent.UserId" class="reply-username">@parent.Username</a> }
-                                            <span class="reply-time">@parent.CreatedAt.ToString("dd MMM · HH:mm")</span>
+                                          <span class="reply-time" data-utc="@parent.CreatedAt.ToString("o")" data-format="datetime"></span>
                                         </div>
                                         <p class="reply-text">@parent.Text</p>
                                         <div class="reply-actions">
