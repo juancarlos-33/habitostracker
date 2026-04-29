@@ -169,7 +169,7 @@
     var reqId = (int)(ViewBag.MsgRequestId ?? 0);
     bool yoEnvie = reqSenderId == myId;
 }
-
+<!-- DEBUG: reqStatus=@reqStatus | reqSenderId=@reqSenderId | myId=@myId | reqFirstMsg=@reqFirstMsg | reqId=@reqId -->
 @if (reqStatus == "Pending")
 {
     <div id="msgRequestBanner" style="display:flex;flex-direction:column;align-items:center;padding:24px 16px;margin:12px;background:rgba(99,102,241,0.06);border:1px solid rgba(99,102,241,0.15);border-radius:20px;text-align:center;">
