@@ -97,7 +97,6 @@
 .cmt-btn.delete { color: #ef4444; text-decoration: none; }
 .cmt-btn.delete:hover { background: #fef2f2; color: #dc2626; }
 
-/* LIKE ANIMATION */
 @@keyframes heartPop {
     0% { transform: scale(1); }
     30% { transform: scale(1.5); }
@@ -150,7 +149,6 @@
     display: flex; align-items: center; gap: 4px; font-family: inherit;
 }
 .view-replies-btn:hover { opacity: 0.75; }
-
 .replies-container { margin-top: 8px; display: none; flex-direction: column; gap: 8px; }
 
 /* EMPTY */
@@ -195,7 +193,9 @@ body.bg-dark .cmt-empty-text { color: #64748b !important; }
     <div class="cmt-form-card">
         <form asp-action="AddComment" method="post" enctype="multipart/form-data" data-no-loader="true">
             <input type="hidden" name="postId" value="@ViewBag.PostId" />
-            <textarea name="comment" class="cmt-textarea" placeholder="Escribe un comentario..." required></textarea>
+            <textarea name="comment" class="cmt-textarea"
+                      placeholder="Escribe un comentario... usa arroba para mencionar"
+                      required oninput="handleMentionInput(event, this)"></textarea>
             <div class="cmt-form-bottom">
                 <label class="cmt-file-label">
                     📎 Adjuntar imagen
@@ -275,8 +275,9 @@ body.bg-dark .cmt-empty-text { color: #64748b !important; }
                     <div class="cmt-reply-form" id="replyBox-@c.Id">
                         <form asp-controller="Post" asp-action="ReplyComment" method="post" data-no-loader="true">
                             <input type="hidden" name="commentId" value="@c.Id" />
-                            <input type="text" name="text" placeholder="Escribe tu respuesta..."
-                                   class="cmt-reply-input" required />
+                            <input type="text" name="text" placeholder="Escribe tu respuesta... usa arroba"
+                                   class="cmt-reply-input" required
+                                   oninput="handleMentionInput(event, this)" />
                             <button type="submit" class="cmt-reply-submit">Enviar</button>
                         </form>
                     </div>
@@ -322,7 +323,8 @@ body.bg-dark .cmt-empty-text { color: #64748b !important; }
                                                 <input type="hidden" name="commentId" value="@c.Id" />
                                                 <input type="hidden" name="parentReplyId" value="@parent.Id" />
                                                 <input type="text" name="text" placeholder="Responder a @parent.Username..."
-                                                       class="cmt-reply-input" required />
+                                                       class="cmt-reply-input" required
+                                                       oninput="handleMentionInput(event, this)" />
                                                 <button type="submit" class="cmt-reply-submit">Enviar</button>
                                             </form>
                                         </div>
@@ -380,7 +382,7 @@ function animateHeart(btn) {
     const icon = btn.querySelector(".heart-icon");
     if (!icon) return;
     icon.classList.remove("heart-pop");
-    void icon.offsetWidth; // reflow
+    void icon.offsetWidth;
     icon.classList.add("heart-pop");
     setTimeout(() => icon.classList.remove("heart-pop"), 400);
 }
@@ -398,7 +400,7 @@ function toggleCommentLike(el) {
 
 async function toggleReplyLike(el) {
     const id = el.getAttribute("data-id");
-    const res = await fetch(`/Post/ToggleReplyLike?id=${id}`, { method: "POST" });
+    const res = await fetch('/Post/ToggleReplyLike?id=' + id, { method: "POST" });
     const data = await res.json();
     el.querySelector(".heart-icon").textContent = data.liked ? "❤️" : "🤍";
     document.getElementById("reply-like-count-" + id).textContent = data.count;
@@ -424,10 +426,88 @@ function toggleReplies(id, btn) {
     const isOpen = el.style.display === "flex";
     if (isOpen) {
         el.style.display = "none";
-        btn.textContent = `▾ Ver respuestas`;
+        btn.textContent = "Ver respuestas";
     } else {
         el.style.display = "flex";
-        btn.textContent = "▴ Ocultar respuestas";
+        btn.textContent = "Ocultar respuestas";
     }
 }
+
+// MENCIONES
+var friendsCache = null;
+var _currentMentionInput = null;
+var AT = String.fromCharCode(64);
+
+async function getFriends() {
+    if (friendsCache) return friendsCache;
+    const res = await fetch('/User/GetFriendsForMention');
+    friendsCache = await res.json();
+    return friendsCache;
+}
+
+function createMentionDropdown() {
+    var dropdown = document.getElementById('mention-dropdown');
+    if (!dropdown) {
+        dropdown = document.createElement('div');
+        dropdown.id = 'mention-dropdown';
+        dropdown.style.cssText = 'position:fixed;background:#1e293b;border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:6px;z-index:99999;min-width:200px;box-shadow:0 8px 32px rgba(0,0,0,0.4);display:none;max-height:200px;overflow-y:auto;';
+        document.body.appendChild(dropdown);
+    }
+    return dropdown;
+}
+
+async function handleMentionInput(e, input) {
+    _currentMentionInput = input;
+    var val = input.value;
+    var cursor = input.selectionStart;
+    var textBeforeCursor = val.substring(0, cursor);
+    var atIndex = textBeforeCursor.lastIndexOf(AT);
+    var dropdown = createMentionDropdown();
+
+    if (atIndex === -1) { dropdown.style.display = 'none'; return; }
+
+    var afterAt = textBeforeCursor.substring(atIndex + 1);
+    if (/\s/.test(afterAt)) { dropdown.style.display = 'none'; return; }
+
+    var query = afterAt.toLowerCase();
+    var friends = await getFriends();
+    var filtered = friends.filter(function(f) { return f.username.toLowerCase().indexOf(query) !== -1; });
+
+    if (!filtered.length) { dropdown.style.display = 'none'; return; }
+
+    var rect = input.getBoundingClientRect();
+    dropdown.style.left = rect.left + 'px';
+    dropdown.style.top = (rect.bottom + 4) + 'px';
+    dropdown.style.display = 'block';
+
+    dropdown.innerHTML = filtered.map(function(f) {
+        var avatar = f.profileImage
+            ? '<img src="' + f.profileImage + '" style="width:30px;height:30px;border-radius:50%;object-fit:cover;"/>'
+            : '<div style="width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#4f46e5);color:white;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:12px;">' + f.username.charAt(0).toUpperCase() + '</div>';
+        return '<div onclick="insertMention(\'' + f.username + '\')" style="display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:10px;cursor:pointer;" onmouseover="this.style.background=\'rgba(99,102,241,0.15)\'" onmouseout="this.style.background=\'transparent\'">'
+            + avatar
+            + '<span style="color:#f1f5f9;font-size:13px;font-weight:600;">' + AT + f.username + '</span>'
+            + '</div>';
+    }).join('');
+}
+
+function insertMention(username) {
+    var input = _currentMentionInput;
+    if (!input) return;
+    var val = input.value;
+    var cursor = input.selectionStart;
+    var textBeforeCursor = val.substring(0, cursor);
+    var atIndex = textBeforeCursor.lastIndexOf(AT);
+    var newText = textBeforeCursor.substring(0, atIndex) + AT + username + ' ' + val.substring(cursor);
+    input.value = newText;
+    input.focus();
+    var newCursor = atIndex + username.length + 2;
+    input.setSelectionRange(newCursor, newCursor);
+    document.getElementById('mention-dropdown').style.display = 'none';
+}
+
+document.addEventListener('click', function(e) {
+    var dd = document.getElementById('mention-dropdown');
+    if (dd && !dd.contains(e.target)) dd.style.display = 'none';
+});
 </script>

@@ -23,7 +23,27 @@ namespace HabitTrackerApp.Controllers
             _hubContext = hubContext;
             _onlineUsers = onlineUsers;
         }
+        [HttpGet]
+        public IActionResult GetFriendsForMention()
+        {
+            var myId = int.Parse(User.FindFirst("UserId").Value);
 
+            var friendIds = _context.FriendRequests
+                .Where(f => (f.SenderId == myId || f.ReceiverId == myId) && f.Status == "Accepted")
+                .Select(f => f.SenderId == myId ? f.ReceiverId : f.SenderId)
+                .ToList();
+
+            var friends = _context.Users
+                .Where(u => friendIds.Contains(u.Id))
+                .Select(u => new {
+                    id = u.Id,
+                    username = u.Username,
+                    profileImage = u.ProfileImage ?? u.ProfilePicture
+                })
+                .ToList();
+
+            return Json(friends);
+        }
         public IActionResult Index()
         {
             var myId = int.Parse(User.FindFirst("UserId").Value);
