@@ -104,11 +104,26 @@ namespace HabitTrackerApp.Controllers
         {
             var userId = int.Parse(User.FindFirst("UserId").Value);
             var friendIds = _context.FriendRequests
-                .Where(f => (f.SenderId == userId || f.ReceiverId == userId) && f.Status == "Accepted")
-                .Select(f => f.SenderId == userId ? f.ReceiverId : f.SenderId)
-                .ToList();
-            var amigos = _context.Users.Where(u => friendIds.Contains(u.Id)).ToList();
+      .Where(f => (f.SenderId == userId || f.ReceiverId == userId) && f.Status == "Accepted")
+      .Select(f => f.SenderId == userId ? f.ReceiverId : f.SenderId)
+      .ToList();
+
+            // para grupos públicos mostrar todos los usuarios, para privados solo amigos
+            var type = Request.Query["type"].ToString();
+            List<HabitTrackerApp.Models.User> amigos;
+            if (type == "public" || type == "channel")
+            {
+                amigos = _context.Users
+                    .Where(u => u.Id != userId && u.Role != "Guest" && u.Role != "SuperAdmin" && u.Role != "System")
+                    .OrderBy(u => u.Username)
+                    .ToList();
+            }
+            else
+            {
+                amigos = _context.Users.Where(u => friendIds.Contains(u.Id)).ToList();
+            }
             ViewBag.Amigos = amigos;
+            ViewBag.FriendIds = friendIds;
             ViewBag.NombreInicial = nombre ?? "";
             ViewBag.Preselect = preselect ?? 0;
             return View();
@@ -118,6 +133,11 @@ namespace HabitTrackerApp.Controllers
         public async Task<IActionResult> Create(string name, string? description, List<int> memberIds)
         {
             var userId = int.Parse(User.FindFirst("UserId").Value);
+
+            var friendIds = _context.FriendRequests
+                .Where(f => (f.SenderId == userId || f.ReceiverId == userId) && f.Status == "Accepted")
+                .Select(f => f.SenderId == userId ? f.ReceiverId : f.SenderId)
+                .ToList();
 
             if (string.IsNullOrWhiteSpace(name))
             {
@@ -137,16 +157,16 @@ namespace HabitTrackerApp.Controllers
                 }
             }
 
-            // 🔥 mínimo un miembro además del creador
+            var type = Request.Form["type"].ToString();
+            if (type != "public" && type != "channel") type = "private";
+
+            // 🔥 para canales no se requiere mínimo un miembro
             var validMembers = memberIds.Distinct().Where(id => id != userId).ToList();
-            if (!validMembers.Any())
+            if (!validMembers.Any() && type != "channel")
             {
                 TempData["Error"] = "Debes agregar al menos un miembro al grupo.";
                 return RedirectToAction("Create");
             }
-
-            var type = Request.Form["type"].ToString();
-            if (type != "public" && type != "channel") type = "private";
 
             var group = new Group
             {
@@ -172,29 +192,60 @@ namespace HabitTrackerApp.Controllers
             });
 
             var creator = _context.Users.FirstOrDefault(u => u.Id == userId);
+            var invitedViaRequest = new List<int>();
 
             foreach (var memberId in validMembers)
             {
-                _context.GroupMembers.Add(new GroupMember
+                var memberUser = _context.Users.FirstOrDefault(u => u.Id == memberId);
+                var isFriend = friendIds.Contains(memberId);
+
+                // si tiene perfil privado y no es amigo → solicitud de unión
+                if (memberUser != null && memberUser.IsPrivate && !isFriend && type == "public")
                 {
-                    GroupId = group.Id,
-                    UserId = memberId,
-                    Role = "Member",
-                    JoinedAt = DateTime.UtcNow,
-                    IsActive = true
-                });
+                    _context.GroupJoinRequests.Add(new GroupJoinRequest
+                    {
+                        GroupId = group.Id,
+                        UserId = memberId,
+                        Status = "Pending",
+                        CreatedAt = DateTime.UtcNow
+                    });
+                    invitedViaRequest.Add(memberId);
+                }
+                else
+                {
+                    _context.GroupMembers.Add(new GroupMember
+                    {
+                        GroupId = group.Id,
+                        UserId = memberId,
+                        Role = "Member",
+                        JoinedAt = DateTime.UtcNow,
+                        IsActive = true
+                    });
+                }
             }
             await _context.SaveChangesAsync();
 
             // 🔥 notificar a cada miembro añadido
             foreach (var memberId in validMembers)
             {
-                await SendNotification(
-                    memberId,
-                    $"{creator?.Username} te añadió al grupo \"{group.Name}\"",
-                    $"/Group/Chat/{group.Id}",
-                    userId
-                );
+                if (invitedViaRequest.Contains(memberId))
+                {
+                    await SendNotification(
+                        memberId,
+                        $"{creator?.Username} te invitó al grupo \"{group.Name}\" — acepta desde Grupos",
+                        $"/Group/Join/{group.InviteCode}",
+                        userId
+                    );
+                }
+                else
+                {
+                    await SendNotification(
+                        memberId,
+                        $"{creator?.Username} te añadió al grupo \"{group.Name}\"",
+                        $"/Group/Chat/{group.Id}",
+                        userId
+                    );
+                }
             }
 
             // 🔥 mensaje de sistema: grupo creado
@@ -202,7 +253,6 @@ namespace HabitTrackerApp.Controllers
 
             return RedirectToAction("Chat", new { id = group.Id });
         }
-
         [HttpGet]
         public IActionResult DiscoverPartial(string type)
         {

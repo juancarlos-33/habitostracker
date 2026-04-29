@@ -415,7 +415,13 @@ body.bg-dark .grp-type-name { color: #f1f5f9 !important; }
                                 else { @letter }
                             </div>
                             <div class="friend-info">
-                                <div class="friend-name">@amigo.Username</div>
+                               <div class="friend-name">
+    @amigo.Username
+    @if (amigo.IsPrivate)
+    { <span style="font-size:10px;background:rgba(251,191,36,0.15);color:#fbbf24;padding:2px 7px;border-radius:20px;margin-left:4px;">🔒 Privado</span> }
+    else
+    { <span style="font-size:10px;background:rgba(34,197,94,0.1);color:#4ade80;padding:2px 7px;border-radius:20px;margin-left:4px;">🌍 Público</span> }
+</div>
                             </div>
                             <div class="friend-check">✓</div>
                             <input type="checkbox" name="memberIds" value="@amigo.Id"
@@ -448,7 +454,7 @@ function setType(type, el) {
     // actualizar hero
     const heroData = {
         private: { icon: '👥', title: 'Crear grupo privado', sub: 'Solo para tus amigos' },
-        public:  { icon: '🌍', title: 'Crear grupo público', sub: 'Visible para toda la comunidad' },
+        public:  { icon: '🌍', title: 'Crear grupo público', sub: 'Visible para toda la comunidad de HabitTracker' },
         channel: { icon: '📢', title: 'Crear canal', sub: 'Difunde contenido a todos' }
     };
     document.getElementById('heroIcon').textContent = heroData[type].icon;
