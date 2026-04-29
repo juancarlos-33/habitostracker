@@ -613,7 +613,7 @@
 let cropper;
 const input = document.getElementById("imageInput");
 const image = document.getElementById("cropImage");
-let preview = document.getElementById("previewImage");
+
 const hiddenInput = document.getElementById("croppedImageInput");
 const cropperSection = document.getElementById("cropperSection");
 
@@ -684,23 +684,35 @@ document.getElementById("cropButton").addEventListener("click", function() {
     if (!cropper) return;
     const canvas = cropper.getCroppedCanvas({ width:300, height:300 });
     const base64 = canvas.toDataURL("image/png");
-    if (!preview) {
-        const letter = document.getElementById("previewLetter");
-        if (letter) letter.remove();
-        const img = document.createElement("img");
-        img.id = "previewImage"; img.className = "my-avatar";
-        document.querySelector(".my-avatar-section").prepend(img);
-        preview = img;
+
+    // actualizar preview
+    let previewEl = document.getElementById("previewImage");
+    if (!previewEl) {
+        previewEl = document.createElement("img");
+        previewEl.id = "previewImage";
+        previewEl.className = "my-avatar";
+        previewEl.style.cursor = "pointer";
+        previewEl.onclick = function() { abrirFotoPerfil(this.src); };
+        document.querySelector(".my-avatar-section").prepend(previewEl);
     }
-    preview.src = base64;
+    previewEl.src = base64;
+    previewEl.style.display = "block";
+
+    const letter = document.getElementById("previewLetter");
+    if (letter) letter.style.display = "none";
+
+    // guardar en hidden input
     hiddenInput.value = base64;
+
     cropperSection.style.display = "none";
-    cropper.destroy(); cropper = null;
+    cropper.destroy();
+    cropper = null;
 });
 
 document.getElementById("removePhotoBtn").addEventListener("click", function() {
     hiddenInput.value = "REMOVE";
-    if (preview) preview.style.display = "none";
+    const previewEl = document.getElementById("previewImage");
+    if (previewEl) previewEl.style.display = "none";
     const oldLetter = document.getElementById("previewLetter");
     if (oldLetter) { oldLetter.style.display = "flex"; return; }
     const letter = document.createElement("div");

@@ -258,7 +258,7 @@ namespace HabitTrackerApp.Controllers
 
             var coverUrl = await _cloudinaryService.UploadImageAsync(coverPhoto, "covers");
             var coverMod = await _cloudinaryService.CheckImageModeration(coverUrl);
-            if (coverMod == "explicit" || coverMod == "sensitive")
+            if (coverMod == "explicit")
             {
                 await _cloudinaryService.DeleteImageAsync(coverUrl);
                 return Json(new { success = false, error = "La imagen de portada contiene contenido inapropiado." });
