@@ -3,18 +3,19 @@
         if (string.IsNullOrEmpty(text)) return text;
         var db2 = Context.RequestServices.GetService<HabitTrackerApp.Data.HabitDbContext>();
         var encoded = System.Net.WebUtility.HtmlEncode(text);
-        // buscar @palabra(s) hasta doble espacio o fin
-        return System.Text.RegularExpressions.Regex.Replace(
-            encoded,
-            @"@([A-Za-z0-9_]+(?: [A-Za-z0-9_]+)*)",
-            m => {
-                var username = m.Groups[1].Value;
-                var user = db2?.Users.FirstOrDefault(u => u.Username == username);
-                if (user != null)
-                    return "<a href='/User/Profile/" + user.Id + "' style='color:#818cf8;font-weight:700;text-decoration:none;'>@" + username + "</a>";
-                return m.Value;
+        
+        // Obtener todos los usuarios mencionados ordenados por longitud descendente
+        var users = db2?.Users.ToList() ?? new List<HabitTrackerApp.Models.User>();
+        var ordered = users.OrderByDescending(u => u.Username.Length).ToList();
+        
+        foreach (var user in ordered) {
+            var mention = "@" + user.Username;
+            if (encoded.Contains(mention)) {
+                var link = "<a href='/User/Profile/" + user.Id + "' style='color:#818cf8;font-weight:700;text-decoration:none;'>" + mention + "</a>";
+                encoded = encoded.Replace(mention, link);
             }
-        );
+        }
+        return encoded;
     }
 }
 
