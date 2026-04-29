@@ -421,7 +421,15 @@ if (navigator.geolocation) {
 .guest-stories-cta:hover{transform:translateY(-1px);color:white;}
 
 /* ══ STORIES BAR ══ */
-.stories-bar{display:flex;gap:14px;overflow-x:auto;padding:4px 2px 16px;scrollbar-width:none;-webkit-overflow-scrolling:touch;margin-bottom:8px;}
+.stories-bar{display:flex;gap:12px;overflow-x:auto;padding:8px 4px 16px;scrollbar-width:none;-webkit-overflow-scrolling:touch;margin-bottom:8px;-webkit-overflow-scrolling:touch;}
+.stories-bar::-webkit-scrollbar{display:none;}
+
+@@media(max-width:768px){
+    .stories-bar{gap:10px;padding:6px 2px 14px;}
+    .story-item{width:64px;}
+    .story-avatar-wrap{width:58px;height:58px;}
+    .story-name{font-size:10px;max-width:64px;}
+}
 .stories-bar::-webkit-scrollbar{display:none;}
 .story-item{display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;flex-shrink:0;width:74px;}
 .story-avatar-wrap{width:66px;height:66px;border-radius:50%;position:relative;padding:3px;background:linear-gradient(135deg,#f97316,#ec4899,#6366f1);}
@@ -743,10 +751,11 @@ function showStory(index) {
     viewsBar.style.display = isOwner ? 'block' : 'none';
     if (isOwner) document.getElementById('svViews').textContent = '👁 ' + (story.views || 0) + ' vistas';
 
-    const likeBtn = document.getElementById('svLikeBtn');
-    likeBtn.textContent = story.liked ? '❤️' : '🤍';
-    likeBtn.style.filter = story.liked ? 'drop-shadow(0 0 8px rgba(239,68,68,0.9))' : 'none';
-    document.getElementById('svLikesCount').textContent = story.likes > 0 ? story.likes + ' ❤️' : '';
+  const likeBtn = document.getElementById('svLikeBtn');
+likeBtn.textContent = story.liked ? '❤️' : '🤍';
+likeBtn.style.filter = story.liked ? 'drop-shadow(0 0 8px rgba(239,68,68,0.9))' : 'none';
+// Solo el dueño ve el contador
+document.getElementById('svLikesCount').textContent = isOwner && story.likes > 0 ? story.likes + ' ❤️' : '';
 
     currentUserStories.forEach((_, i) => {
         const fill = document.getElementById('progress-' + i);
@@ -784,6 +793,7 @@ async function toggleStoryLike() {
     const anim = document.getElementById('svHeartAnim');
     const icon = document.getElementById('svHeartAnimIcon');
 
+    // animación inmediata
     anim.style.opacity = '1';
     icon.style.animation = 'none';
     icon.offsetHeight;
@@ -791,7 +801,7 @@ async function toggleStoryLike() {
     setTimeout(() => { anim.style.opacity = '0'; }, 800);
 
     btn.style.transform = 'scale(1.6)';
-    setTimeout(() => btn.style.transform = 'scale(1)', 300);
+    setTimeout(() => { btn.style.transform = 'scale(1)'; }, 300);
 
     try {
         const res = await fetch('/Story/ToggleLike', {
@@ -800,9 +810,13 @@ async function toggleStoryLike() {
         const data = await res.json();
         story.liked = data.liked;
         story.likes = data.liked ? (story.likes || 0) + 1 : Math.max(0, (story.likes || 0) - 1);
+
+        // actualizar botón DESPUÉS de respuesta del servidor
         btn.textContent = data.liked ? '❤️' : '🤍';
         btn.style.filter = data.liked ? 'drop-shadow(0 0 8px rgba(239,68,68,0.9))' : 'none';
-        document.getElementById('svLikesCount').textContent = story.likes > 0 ? story.likes + ' ❤️' : '';
+
+        const isOwner = currentStoryOwnerId === myUserId;
+        document.getElementById('svLikesCount').textContent = isOwner && story.likes > 0 ? story.likes + ' ❤️' : '';
     } catch(e) { console.error(e); }
 }
 
