@@ -475,76 +475,97 @@ namespace HabitTrackerApp.Controllers
             return View(comments);
         }
 
-       
         [HttpPost]
         public async Task<IActionResult> AddComment(int postId, string comment, IFormFile image)
         {
             var userId = int.Parse(User.FindFirst("UserId").Value);
             var username = User.Identity.Name;
-
-            // 🔥 TRAER USUARIO COMPLETO
             var user = await _context.Users.FindAsync(userId);
 
             string imagePath = null;
 
-            // ❌ VALIDACIÓN
             if (string.IsNullOrWhiteSpace(comment) && (image == null || image.Length == 0))
             {
                 TempData["Error"] = "Debes escribir algo o subir una imagen.";
                 return RedirectToAction("Comments", new { postId = postId });
             }
 
-            // 📷 GUARDAR IMAGEN
             if (image != null && image.Length > 0)
-            {
                 imagePath = await _cloudinaryService.UploadImageAsync(image);
-            }
 
-            // 🔥 CREAR COMENTARIO (AQUÍ ESTÁ EL FIX)
             var newComment = new PostComment
             {
                 PostId = postId,
                 UserId = userId,
-                Username = user.Username, // 🔥 mejor que User.Identity.Name
-                ProfileImage = user.ProfileImage ?? "", // 🔥 ESTA ES LA CLAVE
+                Username = user.Username,
+                ProfileImage = user.ProfileImage ?? "",
                 Comment = comment,
                 ImagePath = imagePath,
                 CreatedAt = DateTime.Now
             };
 
             _context.PostComments.Add(newComment);
+            await _context.SaveChangesAsync();
 
-            // 🔔 NOTIFICACIÓN
             var post = _context.Posts.FirstOrDefault(p => p.Id == postId);
 
+            // 🔔 Notificación al dueño del post
             if (post != null && post.UserId != userId)
             {
-                var notification = new Notification
+                _context.Notifications.Add(new Notification
                 {
                     UserId = post.UserId,
                     FromUserId = userId,
                     FromUsername = user.Username,
                     FromUserImage = user?.ProfileImage ?? "",
                     Message = user.Username + " comentó tu publicación",
-                    Link = "/Post/Comments?postId=" + postId,
+                    Link = "/Post/Comments?postId=" + postId + "&highlight=" + newComment.Id,
                     IsRead = false,
                     CreatedAt = DateTime.Now
-                };
+                });
 
-                _context.Notifications.Add(notification);
-
-                // 🔥 TIEMPO REAL
                 await _hubContext.Clients.Group(post.UserId.ToString())
-                    .SendAsync(
-                        "ReceiveNotification",
-                        userId,
+                    .SendAsync("ReceiveNotification", userId,
                         user.Username + " comentó tu publicación",
-                        user.Username,
-                        user?.ProfileImage ?? "",
-                        "/Post/Comments?postId=" + postId
-                    );
+                        user.Username, user?.ProfileImage ?? "",
+                       "/Post/Comments?postId=" + postId + "&highlight=" + newComment.Id);
             }
 
+            // 🔔 Notificaciones de menciones
+            if (!string.IsNullOrEmpty(comment))
+            {
+                var mentionMatches = System.Text.RegularExpressions.Regex.Matches(
+                    comment, @"@([A-Za-z0-9_]+(?: [A-Za-z0-9_]+)*)");
+
+                var mentioned = new HashSet<int>();
+                foreach (System.Text.RegularExpressions.Match m in mentionMatches)
+                {
+                    var mentionedUsername = m.Groups[1].Value;
+                    var mentionedUser = _context.Users.FirstOrDefault(u => u.Username == mentionedUsername);
+                    if (mentionedUser == null) continue;
+                    if (mentionedUser.Id == userId) continue;
+                    if (mentioned.Contains(mentionedUser.Id)) continue;
+                    mentioned.Add(mentionedUser.Id);
+
+                    _context.Notifications.Add(new Notification
+                    {
+                        UserId = mentionedUser.Id,
+                        FromUserId = userId,
+                        FromUsername = user.Username,
+                        FromUserImage = user?.ProfileImage ?? "",
+                        Message = user.Username + " te mencionó en un comentario",
+                        Link = "/Post/Comments?postId=" + postId + "&highlight=" + newComment.Id,
+                        IsRead = false,
+                        CreatedAt = DateTime.Now
+                    });
+
+                    await _hubContext.Clients.Group(mentionedUser.Id.ToString())
+                        .SendAsync("ReceiveNotification", userId,
+                            user.Username + " te mencionó en un comentario",
+                            user.Username, user?.ProfileImage ?? "",
+                            "/Post/Comments?postId=" + postId);
+                }
+            }
             await _context.SaveChangesAsync();
 
             return RedirectToAction("Comments", new { postId = postId });

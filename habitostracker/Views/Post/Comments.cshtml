@@ -531,4 +531,22 @@ document.addEventListener('click', function(e) {
     var dd = document.getElementById('mention-dropdown');
     if (dd && !dd.contains(e.target)) dd.style.display = 'none';
 });
+// resaltar comentario mencionado
+document.addEventListener('DOMContentLoaded', function() {
+    var params = new URLSearchParams(window.location.search);
+    var highlight = params.get('highlight');
+    if (highlight) {
+        var el = document.getElementById('cmt-' + highlight);
+        if (el) {
+            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            el.style.transition = '0.5s';
+            el.style.border = '2px solid #6366f1';
+            el.style.boxShadow = '0 0 0 4px rgba(99,102,241,0.2)';
+            setTimeout(() => {
+                el.style.border = '';
+                el.style.boxShadow = '';
+            }, 3000);
+        }
+    }
+});
 </script>
