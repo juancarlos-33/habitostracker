@@ -143,10 +143,22 @@ namespace HabitTrackerApp.Controllers
                 return RedirectToAction("Login", "Account");
 
             // 🔥 Posts con usuario incluido
+            var friendIds = _context.FriendRequests
+       .Where(f => (f.SenderId == userId || f.ReceiverId == userId) && f.Status == "Accepted")
+       .Select(f => f.SenderId == userId ? f.ReceiverId : f.SenderId)
+       .ToList();
+
+            var isAdmin = currentUser.Role == "Admin" || currentUser.Role == "SuperAdmin";
+
             var posts = _context.Posts
                 .Include(p => p.User)
-                .Where(p => currentUser.Role == "Admin" || currentUser.Role == "SuperAdmin" ||
-                       !_context.PostReports.Any(r => r.PostId == p.Id && _context.PostReports.Count(r2 => r2.PostId == p.Id) >= 5))
+                .Where(p =>
+                    isAdmin ||
+                    p.UserId == userId ||
+                    (p.Privacy == "Public" && !_context.PostReports.Any(r => r.PostId == p.Id && _context.PostReports.Count(r2 => r2.PostId == p.Id) >= 5)) ||
+                    (p.Privacy == "Friends" && friendIds.Contains(p.UserId)) ||
+                    (p.Privacy == "Private" && p.UserId == userId)
+                )
                 .OrderByDescending(p => p.CreatedAt)
                 .ToList();
 
@@ -318,6 +330,9 @@ namespace HabitTrackerApp.Controllers
                 return RedirectToAction("Create");
             }
 
+            var privacy = Request.Form["privacy"].ToString();
+            if (privacy != "Friends" && privacy != "Private") privacy = "Public";
+
             var post = new Post
             {
                 UserId = userId,
@@ -325,7 +340,8 @@ namespace HabitTrackerApp.Controllers
                 Description = description,
                 ImagePath = mediaPath,
                 CreatedAt = DateTime.Now,
-                IsSensitive = isSensitive
+                IsSensitive = isSensitive,
+                Privacy = privacy
             };
 
             _context.Posts.Add(post);

@@ -460,6 +460,11 @@ namespace HabitTrackerApp.Controllers
             var msg = _context.Messages.FirstOrDefault(m => m.Id == messageId);
             if (msg == null) return NotFound();
 
+            // 🔒 proteger mensajes del bot (System)
+            var senderUser = _context.Users.FirstOrDefault(u => u.Id == msg.SenderId);
+            if (senderUser?.Role == "System")
+                return Json(new { success = false, error = "No puedes eliminar mensajes del sistema." });
+
             if (scope == "all" && msg.SenderId == myId)
             {
                 _context.Messages.Remove(msg);
@@ -473,6 +478,7 @@ namespace HabitTrackerApp.Controllers
                 else msg.DeletedByReceiver = true;
                 await _context.SaveChangesAsync();
             }
+            return Ok();
             return Ok();
         }
 

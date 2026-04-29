@@ -59,10 +59,13 @@ namespace HabitTrackerApp.Controllers
                 .Select(f => f.ReceiverId)
                 .ToList();
 
-            var friends = _context.FriendRequests
-                .Where(f => (f.SenderId == myId || f.ReceiverId == myId) && f.Status == "Accepted")
-                .Select(f => f.SenderId == myId ? f.ReceiverId : f.SenderId)
-                .ToList();
+            var friendIds = _context.FriendRequests
+      .Where(f => (f.SenderId == myId || f.ReceiverId == myId) && f.Status == "Accepted")
+      .Select(f => f.SenderId == myId ? f.ReceiverId : f.SenderId)
+      .ToList();
+
+            var validUserIds = _context.Users.Select(u => u.Id).ToHashSet();
+            var friends = friendIds.Where(id => validUserIds.Contains(id)).Distinct().ToList();
 
             ViewBag.SentRequests = sentRequests;
             ViewBag.Friends = friends;

@@ -43,6 +43,37 @@
                 <div class="char-counter"><span id="charCount">0</span>/500</div>
             </div>
 
+            <!-- PRIVACIDAD -->
+<div class="privacy-field">
+    <label class="field-label">👁 ¿Quién puede ver esta publicación?</label>
+    <div class="privacy-options">
+        <label class="privacy-option active" id="opt-public">
+            <input type="radio" name="privacy" value="Public" checked style="display:none;" />
+            <span class="privacy-icon">🌐</span>
+            <div>
+                <div class="privacy-name">Público</div>
+                <div class="privacy-desc">Todos pueden verlo</div>
+            </div>
+        </label>
+        <label class="privacy-option" id="opt-friends">
+            <input type="radio" name="privacy" value="Friends" style="display:none;" />
+            <span class="privacy-icon">👥</span>
+            <div>
+                <div class="privacy-name">Amigos</div>
+                <div class="privacy-desc">Solo tus amigos</div>
+            </div>
+        </label>
+        <label class="privacy-option" id="opt-private">
+            <input type="radio" name="privacy" value="Private" style="display:none;" />
+            <span class="privacy-icon">🔒</span>
+            <div>
+                <div class="privacy-name">Solo yo</div>
+                <div class="privacy-desc">Privado</div>
+            </div>
+        </label>
+    </div>
+</div>
+
             <!-- BOTONES -->
             <div class="create-actions">
                 <a asp-action="Index" class="btn-cancel">Cancelar</a>
@@ -214,6 +245,25 @@
 
 .btn-cancel:hover { background: #f3f4f6; color: #374151; }
 
+/* PRIVACIDAD */
+.privacy-options { display: flex; flex-direction: column; gap: 8px; }
+.privacy-option {
+    display: flex; align-items: center; gap: 14px;
+    padding: 14px 16px; border-radius: 14px;
+    border: 2px solid #e5e7eb; cursor: pointer;
+    transition: 0.2s; background: #f9fafb;
+}
+.privacy-option:hover { border-color: #6366f1; background: #f5f3ff; }
+.privacy-option.active { border-color: #6366f1; background: #ede9fe; }
+.privacy-icon { font-size: 22px; flex-shrink: 0; }
+.privacy-name { font-size: 14px; font-weight: 700; color: #111827; }
+.privacy-desc { font-size: 12px; color: #9ca3af; margin-top: 1px; }
+
+body.bg-dark .privacy-option { background: #2d2d3d !important; border-color: #3d3d4d !important; }
+body.bg-dark .privacy-option:hover { border-color: #6366f1 !important; background: #1e1a3d !important; }
+body.bg-dark .privacy-option.active { border-color: #6366f1 !important; background: #1e1a3d !important; }
+body.bg-dark .privacy-name { color: #f1f5f9 !important; }
+
 .btn-publish {
     padding: 11px 28px;
     border-radius: 10px;
@@ -349,5 +399,13 @@ document.getElementById("createForm").addEventListener("submit", function(e) {
         document.getElementById("btnPublish").disabled = true;
         document.getElementById("btnPublish").textContent = "⏳ Publicando...";
     }, 100);
+});
+// Privacidad
+document.querySelectorAll('.privacy-option').forEach(opt => {
+    opt.addEventListener('click', function() {
+        document.querySelectorAll('.privacy-option').forEach(o => o.classList.remove('active'));
+        this.classList.add('active');
+        this.querySelector('input[type=radio]').checked = true;
+    });
 });
 </script>

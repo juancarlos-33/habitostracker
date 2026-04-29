@@ -12,6 +12,7 @@ namespace HabitTrackerApp.Models
         public string Username { get; set; }
 
         public string DisplayUsername => Username ?? "Cuenta eliminada";
+        public string Privacy { get; set; } = "Public"; // "Public", "Friends", "Private"
 
 
         public string? ImagePath { get; set; }

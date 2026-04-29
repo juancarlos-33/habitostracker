@@ -40,14 +40,30 @@
                 <span class="online-dot" id="onlineDot" style="@(isOnline ? "" : "display:none;")"></span>
             </div>
             <div>
-                <div class="chat-header-name">@otherName</div>
+            <div class="chat-header-name">
+    @otherName
+    @if (ViewBag.IsSystemChat == true)
+    {
+        <span title="Cuenta oficial verificada" style="
+            display:inline-flex;align-items:center;justify-content:center;
+            width:18px;height:18px;border-radius:50%;
+            background:linear-gradient(135deg,#2563eb,#6366f1);
+            margin-left:5px;vertical-align:middle;flex-shrink:0;
+        ">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="white">
+                <path d="M20.285 2l-11.285 11.567-5.286-5.011-3.714 3.716 9 8.728 15-15.285z"/>
+            </svg>
+        </span>
+    }
+</div>
                 <div class="chat-header-status @(isOnline ? "online" : "offline")" id="onlineStatus">
                     @(isOnline ? "● En línea" : "○ " + lastOnlineText)
                 </div>
             </div>
         </a>
         <div class="header-menu-wrap">
-            <button class="header-menu-btn" onclick="toggleHeaderMenu()" data-no-loader title="Opciones">
+        <button class="header-menu-btn" onclick="toggleHeaderMenu()" data-no-loader title="Opciones"
+        @(ViewBag.IsSystemChat == true ? "disabled style=opacity:0.3;cursor:not-allowed;" : "")>
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
                     <circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/>
                 </svg>

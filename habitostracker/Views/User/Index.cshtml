@@ -270,7 +270,7 @@ body.bg-dark .disc-divider-line { background: #2d3748 !important; }
         </div>
 
         @{
-           var friends = Model.Where(u => friendList.Contains(u.Id) && u.Role != "System").ToList();
+          var friends = Model.Where(u => friendList.Contains(u.Id) && u.Role != "System" && u.Role != "Guest").ToList();
             var friendBanners = new[]
             {
                 "linear-gradient(135deg,#6366f1,#2563eb)",

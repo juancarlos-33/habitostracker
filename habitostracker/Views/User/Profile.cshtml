@@ -179,6 +179,10 @@
     background:linear-gradient(135deg,rgba(99,102,241,0.04),rgba(124,58,237,0.04));
     border-radius:24px; border:1px solid rgba(99,102,241,0.1);
 }
+
+@@keyframes fadeInPhoto { from{opacity:0;} to{opacity:1;} }
+@@keyframes scaleInPhoto { from{transform:scale(0.7);opacity:0;} to{transform:scale(1);opacity:1;} }
+
 .private-wall-lock { font-size:80px; margin-bottom:22px; filter:drop-shadow(0 8px 28px rgba(99,102,241,0.35)); animation:floatLock 3s ease-in-out infinite; }
 @@keyframes floatLock { 0%,100%{transform:translateY(0);} 50%{transform:translateY(-10px);} }
 .private-wall-title { font-size:24px; font-weight:900; color:white; margin-bottom:10px; }
@@ -257,16 +261,17 @@
     <!-- PROFILE CARD -->
     <div class="prof-card">
         <div class="prof-avatar-zone">
-            <div class="prof-avatar-wrap">
-                @if (!string.IsNullOrEmpty(profilePic))
-                {
-                    <img src="@profilePic" class="prof-avatar"
-                         onerror="this.style.display='none';this.nextElementSibling.style.display='flex';" />
-                    <div class="prof-avatar-letter" style="display:none;">@Model.Username.Substring(0,1).ToUpper()</div>
-                }
-                else
-                { <div class="prof-avatar-letter">@Model.Username.Substring(0,1).ToUpper()</div> }
-            </div>
+         <div class="prof-avatar-wrap">
+    @if (!string.IsNullOrEmpty(profilePic))
+    {
+        <img src="@profilePic" class="prof-avatar" style="cursor:pointer;"
+             onclick="abrirFotoPerfil('@profilePic')"
+             onerror="this.style.display='none';this.nextElementSibling.style.display='flex';" />
+        <div class="prof-avatar-letter" style="display:none;">@Model.Username.Substring(0,1).ToUpper()</div>
+    }
+    else
+    { <div class="prof-avatar-letter">@Model.Username.Substring(0,1).ToUpper()</div> }
+</div>
 
            @if (!isMe && !isSystemAccount)
 {
@@ -507,6 +512,54 @@ function updateReqChars() {
     const len = document.getElementById("msgReqText").value.length;
     document.getElementById("reqCharsCount").textContent = len;
     document.getElementById("msgReqSendBtn").disabled = len === 0;
+}
+// ══ FOTO PERFIL EXPANDIBLE ══
+function abrirFotoPerfil(src) {
+    const overlay = document.createElement('div');
+    overlay.id = 'photoOverlay';
+    overlay.style.cssText = `
+        position:fixed;inset:0;z-index:999999;
+        background:rgba(0,0,0,0.85);backdrop-filter:blur(12px);
+        display:flex;align-items:center;justify-content:center;
+        animation:fadeInPhoto 0.25s ease;cursor:pointer;
+    `;
+
+    overlay.innerHTML = `
+        <div style="position:relative;display:flex;flex-direction:column;align-items:center;gap:16px;">
+            <img src="${src}" style="
+                width:280px;height:280px;border-radius:50%;object-fit:cover;
+                border:4px solid rgba(255,255,255,0.15);
+                box-shadow:0 20px 60px rgba(0,0,0,0.6);
+                animation:scaleInPhoto 0.3s cubic-bezier(0.34,1.56,0.64,1);
+            "/>
+            <button onclick="cerrarFotoPerfil()" style="
+                background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);
+                color:white;padding:8px 24px;border-radius:20px;
+                font-size:13px;font-weight:700;cursor:pointer;
+                font-family:inherit;transition:0.2s;
+            " onmouseover="this.style.background='rgba(255,255,255,0.2)'"
+               onmouseout="this.style.background='rgba(255,255,255,0.1)'">
+                ✕ Cerrar
+            </button>
+        </div>
+    `;
+
+    // cerrar al click fuera
+    overlay.addEventListener('click', function(e) {
+        if (e.target === this) cerrarFotoPerfil();
+    });
+
+    document.body.appendChild(overlay);
+    document.body.style.overflow = 'hidden';
+}
+
+function cerrarFotoPerfil() {
+    const overlay = document.getElementById('photoOverlay');
+    if (overlay) {
+        overlay.style.opacity = '0';
+        overlay.style.transition = 'opacity 0.2s';
+        setTimeout(() => { overlay.remove(); document.body.style.overflow = ''; }, 200);
+    }
 }
 
 async function sendMsgReq() {
