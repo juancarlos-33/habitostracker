@@ -40,6 +40,8 @@ namespace HabitTrackerApp.Models
         public DateTime ExpiresAt { get; set; } = DateTime.Now.AddHours(24);
 
 
+        public bool IsSensitive { get; set; } = false;
+
         // Destacada — visible para todos aunque perfil privado
         public bool IsHighlight { get; set; } = false;
 

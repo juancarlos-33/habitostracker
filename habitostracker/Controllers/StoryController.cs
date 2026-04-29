@@ -177,6 +177,15 @@ namespace HabitTrackerApp.Controllers
                 {
                     url = await _cloudinary.UploadImageAsync(media, "habitostracker/stories/images");
                     story.Duration = 7;
+
+                    var modResult = await _cloudinary.CheckImageModeration(url);
+                    if (modResult == "explicit")
+                    {
+                        await _cloudinary.DeleteImageAsync(url);
+                        TempData["Error"] = "La imagen contiene contenido explícito y no puede publicarse.";
+                        return RedirectToAction("Index", "Habit");
+                    }
+                    story.IsSensitive = modResult == "sensitive";
                 }
                 story.MediaUrl = url;
             }

@@ -418,7 +418,24 @@ body.bg-dark .grp-search-input { background: #2d3748 !important; border-color: #
         </div>
     </div>
 </div>
-
+<!-- MODAL ENLACE -->
+<div class="grp-modal" id="inviteModal">
+    <div class="grp-modal-card">
+        <div style="text-align:center;font-size:36px;margin-bottom:12px;">🔗</div>
+        <div class="grp-modal-title" style="text-align:center;">Enlace de invitación</div>
+        <div class="grp-modal-sub" style="text-align:center;margin-bottom:16px;">
+            Comparte este enlace para que otros se unan al grupo
+        </div>
+        <div id="inviteLinkWrap" style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:14px 16px;margin-bottom:16px;word-break:break-all;font-size:13px;color:#818cf8;font-weight:600;min-height:44px;display:flex;align-items:center;">
+            ⏳ Generando enlace...
+        </div>
+        <div class="grp-modal-btns">
+            <button class="grp-modal-cancel" onclick="closeModal('inviteModal')">Cerrar</button>
+            <button class="grp-modal-confirm" onclick="copiarEnlace()">📋 Copiar</button>
+            <button class="grp-modal-confirm" style="background:rgba(255,255,255,0.1);box-shadow:none;" onclick="resetEnlace()">🔄 Nuevo</button>
+        </div>
+    </div>
+</div>
 <div class="grp-details-page">
 
     <!-- HERO -->
@@ -567,6 +584,29 @@ body.bg-dark .grp-search-input { background: #2d3748 !important; border-color: #
                 <span class="grp-action-chevron">›</span>
             </button>
 
+            @if (isAdmin)
+{
+    <button class="grp-action-item" onclick="generarEnlace()">
+        <div class="grp-action-icon green">🔗</div>
+        <div>
+            <div>Enlace de invitación</div>
+            <div class="grp-action-sub">Comparte para que otros se unan</div>
+        </div>
+        <span class="grp-action-chevron">›</span>
+    </button>
+
+    @if (Model.Type == "public")
+    {
+        <a href="/Group/JoinRequests/@Model.Id" class="grp-action-item" style="text-decoration:none;">
+            <div class="grp-action-icon purple">📩</div>
+            <div>
+                <div>Solicitudes de unión</div>
+                <div class="grp-action-sub">Aprobar o rechazar solicitudes pendientes</div>
+            </div>
+            <span class="grp-action-chevron">›</span>
+        </a>
+    }
+}
             <button class="grp-action-item" onclick="reportarGrupo()">
                 <div class="grp-action-icon purple">🚩</div>
                 <div>
@@ -687,7 +727,63 @@ async function removeMember(userId, username) {
         if (row) { row.style.opacity = "0"; row.style.transition = "0.3s"; setTimeout(() => row.remove(), 300); }
     } else showToast("❌ " + (data.message ?? "Error"));
 }
+// ── ENLACE DE INVITACIÓN ──
+let currentInviteLink = '';
 
+async function generarEnlace() {
+    openModal('inviteModal');
+    document.getElementById('inviteLinkWrap').textContent = '⏳ Generando...';
+    try {
+        const res = await fetch('/Group/GenerateInviteCode', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: `groupId=${groupId}&__RequestVerificationToken=${encodeURIComponent(token())}`
+        });
+        const data = await res.json();
+        if (data.success) {
+            currentInviteLink = data.link;
+            document.getElementById('inviteLinkWrap').textContent = data.link;
+        } else {
+            document.getElementById('inviteLinkWrap').textContent = '❌ Error al generar enlace';
+        }
+    } catch {
+        document.getElementById('inviteLinkWrap').textContent = '❌ Error de conexión';
+    }
+}
+
+async function resetEnlace() {
+    document.getElementById('inviteLinkWrap').textContent = '⏳ Generando nuevo enlace...';
+    try {
+        const res = await fetch('/Group/ResetInviteCode', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: `groupId=${groupId}&__RequestVerificationToken=${encodeURIComponent(token())}`
+        });
+        const data = await res.json();
+        if (data.success) {
+            currentInviteLink = data.link;
+            document.getElementById('inviteLinkWrap').textContent = data.link;
+            showToast('🔄 Enlace renovado');
+        }
+    } catch {
+        showToast('❌ Error al renovar');
+    }
+}
+
+function copiarEnlace() {
+    if (!currentInviteLink) return;
+    navigator.clipboard.writeText(currentInviteLink)
+        .then(() => showToast('✅ Enlace copiado'))
+        .catch(() => {
+            const input = document.createElement('input');
+            input.value = currentInviteLink;
+            document.body.appendChild(input);
+            input.select();
+            document.execCommand('copy');
+            input.remove();
+            showToast('✅ Enlace copiado');
+        });
+}
 // ── PROMOVER ──
 async function promoverAdmin(userId, username) {
     if (!confirm(`¿Dar permisos de admin a ${username}?`)) return;

@@ -120,13 +120,27 @@
             <!-- MEDIA -->
             @if (!string.IsNullOrEmpty(post.ImagePath))
             {
-                <div class="post-media-wrap @(isVideo ? "video-wrap" : "")">
+                <div class="post-media-wrap @(isVideo ? "video-wrap" : "") @(post.IsSensitive ? "sensitive-wrap" : "")">
                     @if (isVideo)
                     {
                         <video controls class="post-media" preload="metadata">
                             <source src="@post.ImagePath" />
                         </video>
                         <div class="video-badge">▶ Video</div>
+                    }
+                    else if (post.IsSensitive)
+                    {
+                        <img src="@post.ImagePath" class="post-media sensitive-blurred"
+                             id="img-@post.Id"
+                             onerror="this.parentElement.style.display='none'"
+                             loading="lazy" />
+                        <div class="sensitive-overlay" id="overlay-@post.Id">
+                            <div class="sensitive-overlay-content">
+                                <span class="sensitive-icon">⚠️</span>
+                                <p>Contenido sensible</p>
+                                <button class="reveal-btn" onclick="revealSensitive(@post.Id)">Ver imagen</button>
+                            </div>
+                        </div>
                     }
                     else
                     {
@@ -397,6 +411,25 @@ body.bg-dark .story-avatar-wrap.viewed{background:#334155!important;}
     backdrop-filter: blur(4px);
 }
 
+/* CONTENIDO SENSIBLE */
+.sensitive-blurred { filter: blur(28px); transform: scale(1.05); transition: filter 0.4s ease, transform 0.4s ease; }
+.sensitive-overlay {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(0,0,0,0.35);
+    backdrop-filter: blur(2px);
+    z-index: 2; transition: opacity 0.3s ease;
+}
+.sensitive-overlay-content { text-align: center; color: #fff; }
+.sensitive-overlay-content .sensitive-icon { font-size: 32px; display: block; margin-bottom: 6px; }
+.sensitive-overlay-content p { font-size: 14px; font-weight: 600; margin: 0 0 12px; }
+.reveal-btn {
+    background: rgba(255,255,255,0.2); color: #fff; border: 1.5px solid rgba(255,255,255,0.6);
+    padding: 7px 20px; border-radius: 20px; font-size: 13px; font-weight: 600;
+    cursor: pointer; backdrop-filter: blur(4px); transition: background 0.2s;
+}
+.reveal-btn:hover { background: rgba(255,255,255,0.35); }
+
 /* STATS */
 .post-stats {
     display: flex; align-items: center; justify-content: space-between;
@@ -530,6 +563,13 @@ body.bg-dark .share-option.cancel { background: #3a1a1a !important; }
 </style>
 
 <script>
+function revealSensitive(postId) {
+    const img = document.getElementById('img-' + postId);
+    const overlay = document.getElementById('overlay-' + postId);
+    if (img) img.classList.remove('sensitive-blurred');
+    if (overlay) { overlay.style.opacity = '0'; overlay.style.pointerEvents = 'none'; }
+}
+
 function toggleLike(postId, element) {
     const icon = document.getElementById('like-icon-' + postId);
     const isLiked = element.classList.contains('liked');

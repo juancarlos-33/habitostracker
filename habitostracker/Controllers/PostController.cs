@@ -301,17 +301,9 @@ namespace HabitTrackerApp.Controllers
 
             if (image != null && image.Length > 0)
             {
-                var fileNameLower = image.FileName.ToLower();
-                string[] suspiciousWords = { "porn", "sex", "xxx", "nude", "nsfw", "18+", "hentai" };
-                foreach (var word in suspiciousWords)
-                {
-                    if (fileNameLower.Contains(word)) { isSensitive = true; break; }
-                }
-
+                bool isVideo = image.ContentType.StartsWith("video");
                 try
                 {
-                    bool isVideo = image.ContentType.StartsWith("video");
-
                     if (isVideo)
                         mediaPath = await _cloudinaryService.UploadVideoAsync(image);
                     else
@@ -321,6 +313,18 @@ namespace HabitTrackerApp.Controllers
                 {
                     TempData["Error"] = "Error al subir: " + ex.Message;
                     return RedirectToAction("Create");
+                }
+
+                if (!isVideo && mediaPath != null)
+                {
+                    var modResult = await _cloudinaryService.CheckImageModeration(mediaPath);
+                    if (modResult == "explicit")
+                    {
+                        await _cloudinaryService.DeleteImageAsync(mediaPath);
+                        TempData["Error"] = "La imagen contiene contenido explícito y no puede publicarse.";
+                        return RedirectToAction("Create");
+                    }
+                    isSensitive = modResult == "sensitive";
                 }
             }
 

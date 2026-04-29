@@ -1,0 +1,189 @@
+﻿@model List<HabitTrackerApp.Models.GroupJoinRequest>
+@{
+    ViewData["Title"] = "Solicitudes de unión";
+    var group = ViewBag.Group as HabitTrackerApp.Models.Group;
+}
+
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+<style>
+.jr-page {
+    max-width: 580px; margin: 0 auto;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    padding-bottom: 40px;
+}
+.jr-hero {
+    background: linear-gradient(135deg, #1e293b, #0f172a);
+    border-radius: 24px; padding: 24px 28px; margin-bottom: 16px;
+    border: 1px solid rgba(255,255,255,0.06);
+    display: flex; align-items: center; justify-content: space-between; gap: 14px;
+}
+.jr-hero-left { display: flex; align-items: center; gap: 14px; }
+.jr-hero-icon {
+    width: 48px; height: 48px; border-radius: 14px;
+    background: linear-gradient(135deg, #6366f1, #2563eb);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px; flex-shrink: 0;
+    box-shadow: 0 6px 16px rgba(99,102,241,0.4);
+}
+.jr-hero-title { font-size: 18px; font-weight: 800; color: white; margin: 0 0 3px; }
+.jr-hero-sub { font-size: 12px; color: rgba(255,255,255,0.4); margin: 0; }
+.jr-back {
+    padding: 9px 16px; border-radius: 12px;
+    background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.6);
+    text-decoration: none; font-size: 13px; font-weight: 700;
+    transition: 0.2s; flex-shrink: 0;
+}
+.jr-back:hover { background: rgba(255,255,255,0.14); color: white; }
+
+.jr-empty {
+    text-align: center; padding: 60px 20px;
+    background: #1e293b; border-radius: 22px;
+    border: 1px solid rgba(255,255,255,0.07);
+}
+.jr-empty-icon { font-size: 48px; margin-bottom: 14px; }
+.jr-empty-title { font-size: 16px; font-weight: 800; color: #f1f5f9; margin-bottom: 6px; }
+.jr-empty-sub { font-size: 13px; color: rgba(255,255,255,0.3); }
+
+.jr-card {
+    background: #1e293b; border-radius: 18px; padding: 18px 20px;
+    margin-bottom: 10px; border: 1px solid rgba(255,255,255,0.07);
+    display: flex; align-items: center; gap: 14px;
+    transition: 0.2s;
+}
+.jr-card:hover { border-color: rgba(99,102,241,0.2); }
+.jr-avatar {
+    width: 48px; height: 48px; border-radius: 50%; flex-shrink: 0;
+    background: linear-gradient(135deg, #6366f1, #4f46e5);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px; font-weight: 800; color: white; overflow: hidden;
+    border: 2px solid rgba(255,255,255,0.1);
+}
+.jr-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.jr-info { flex: 1; min-width: 0; }
+.jr-username { font-size: 15px; font-weight: 800; color: #f1f5f9; margin-bottom: 3px; }
+.jr-time { font-size: 12px; color: rgba(255,255,255,0.3); font-weight: 600; }
+.jr-actions { display: flex; gap: 8px; flex-shrink: 0; }
+.jr-btn {
+    padding: 9px 16px; border-radius: 12px; border: none;
+    font-size: 13px; font-weight: 700; cursor: pointer;
+    font-family: inherit; transition: 0.2s;
+}
+.jr-btn.accept {
+    background: linear-gradient(135deg, #22c55e, #16a34a);
+    color: white; box-shadow: 0 4px 12px rgba(34,197,94,0.3);
+}
+.jr-btn.accept:hover { transform: translateY(-1px); }
+.jr-btn.reject {
+    background: rgba(239,68,68,0.1); color: #f87171;
+    border: 1px solid rgba(239,68,68,0.2);
+}
+.jr-btn.reject:hover { background: rgba(239,68,68,0.2); }
+.jr-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+.jr-badge {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-size: 11px; font-weight: 700; padding: 3px 10px;
+    border-radius: 20px; background: rgba(99,102,241,0.15);
+    color: #818cf8; border: 1px solid rgba(99,102,241,0.2);
+    margin-left: 8px;
+}
+</style>
+
+<div class="jr-page">
+
+    <div class="jr-hero">
+        <div class="jr-hero-left">
+            <div class="jr-hero-icon">📩</div>
+            <div>
+                <div class="jr-hero-title">
+                    Solicitudes
+                    @if (Model.Any())
+                    { <span class="jr-badge">@Model.Count</span> }
+                </div>
+                <div class="jr-hero-sub">@(group?.Name ?? "Grupo")</div>
+            </div>
+        </div>
+        <a href="/Group/Chat/@group?.Id" class="jr-back">← Volver</a>
+    </div>
+
+    @if (!Model.Any())
+    {
+        <div class="jr-empty">
+            <div class="jr-empty-icon">✅</div>
+            <div class="jr-empty-title">Sin solicitudes pendientes</div>
+            <div class="jr-empty-sub">Cuando alguien solicite unirse aparecerá aquí.</div>
+        </div>
+    }
+    else
+    {
+        @foreach (var req in Model)
+        {
+            var img = req.User?.ProfileImage ?? req.User?.ProfilePicture ?? "";
+            var letter = (req.User?.Username ?? "?").Substring(0, 1).ToUpper();
+            var diff = DateTime.UtcNow - req.CreatedAt;
+            string timeAgo = diff.TotalMinutes < 1 ? "ahora"
+                : diff.TotalMinutes < 60 ? $"hace {(int)diff.TotalMinutes} min"
+                : diff.TotalHours < 24 ? $"hace {(int)diff.TotalHours}h"
+                : $"hace {(int)diff.TotalDays}d";
+
+            <div class="jr-card" id="req-@req.Id">
+                <div class="jr-avatar">
+                    @if (!string.IsNullOrEmpty(img))
+                    { <img src="@img" /> }
+                    else { @letter }
+                </div>
+                <div class="jr-info">
+                    <div class="jr-username">@(req.User?.Username ?? "Usuario")</div>
+                    <div class="jr-time">Solicitó unirse · @timeAgo</div>
+                </div>
+                <div class="jr-actions">
+                    <button class="jr-btn reject" onclick="responder(@req.Id, false, this)">✕</button>
+                    <button class="jr-btn accept" onclick="responder(@req.Id, true, this)">✓ Aceptar</button>
+                </div>
+            </div>
+        }
+    }
+</div>
+
+<script>
+async function responder(requestId, accept, btn) {
+    const card = document.getElementById('req-' + requestId);
+    const btns = card.querySelectorAll('.jr-btn');
+    btns.forEach(b => b.disabled = true);
+
+    try {
+        const res = await fetch('/Group/RespondJoinRequest', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ requestId, accept })
+        });
+        const data = await res.json();
+
+        if (data.success) {
+            card.style.transition = 'opacity 0.3s, transform 0.3s';
+            card.style.opacity = '0';
+            card.style.transform = 'translateX(20px)';
+            setTimeout(() => {
+                card.remove();
+                // si no quedan cards mostrar empty
+                const remaining = document.querySelectorAll('.jr-card').length;
+                if (remaining === 0) {
+                    document.querySelector('.jr-page').innerHTML += `
+                        <div class="jr-empty">
+                            <div class="jr-empty-icon">✅</div>
+                            <div class="jr-empty-title">Sin solicitudes pendientes</div>
+                            <div class="jr-empty-sub">Todas las solicitudes han sido procesadas.</div>
+                        </div>`;
+                }
+            }, 300);
+        } else {
+            alert(data.error ?? 'Error al procesar la solicitud');
+            btns.forEach(b => b.disabled = false);
+        }
+    } catch(e) {
+        alert('Error de conexión');
+        btns.forEach(b => b.disabled = false);
+    }
+}
+</script>

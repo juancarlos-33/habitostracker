@@ -30,19 +30,32 @@
         <p style="font-size:16px;">@Model.Description</p>
     }
 
-    <!-- 🖼 IMAGEN -->
+    <!-- IMAGEN -->
     @if (!string.IsNullOrEmpty(Model.ImagePath))
     {
-        <img src="@Model.ImagePath"
-             style="max-width:100%;border-radius:10px;margin-top:10px;" />
-    }
-
-    <!-- ⚠️ CONTENIDO SENSIBLE -->
-    @if (Model.IsSensitive)
-    {
-        <div class="mt-2 text-warning">
-            ⚠️ Contenido sensible
-        </div>
+        @if (Model.IsSensitive)
+        {
+            <div style="position:relative;border-radius:14px;overflow:hidden;margin-top:10px;max-width:100%;">
+                <img src="@Model.ImagePath" id="detail-img"
+                     style="max-width:100%;border-radius:14px;display:block;filter:blur(26px);transform:scale(1.04);transition:filter 0.4s ease;" />
+                <div id="detail-overlay"
+                     style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.35);backdrop-filter:blur(2px);">
+                    <div style="text-align:center;color:#fff;">
+                        <div style="font-size:32px;margin-bottom:6px;">⚠️</div>
+                        <p style="font-size:14px;font-weight:600;margin:0 0 12px;">Contenido sensible</p>
+                        <button onclick="document.getElementById('detail-img').style.filter='none';document.getElementById('detail-img').style.transform='none';document.getElementById('detail-overlay').style.display='none';"
+                                style="background:rgba(255,255,255,0.2);color:#fff;border:1.5px solid rgba(255,255,255,0.6);padding:7px 20px;border-radius:20px;font-size:13px;font-weight:600;cursor:pointer;">
+                            Ver imagen
+                        </button>
+                    </div>
+                </div>
+            </div>
+        }
+        else
+        {
+            <img src="@Model.ImagePath"
+                 style="max-width:100%;border-radius:14px;margin-top:10px;" />
+        }
     }
 
 </div>

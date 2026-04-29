@@ -257,6 +257,12 @@ namespace HabitTrackerApp.Controllers
                 return Json(new { success = false });
 
             var coverUrl = await _cloudinaryService.UploadImageAsync(coverPhoto, "covers");
+            var coverMod = await _cloudinaryService.CheckImageModeration(coverUrl);
+            if (coverMod == "explicit" || coverMod == "sensitive")
+            {
+                await _cloudinaryService.DeleteImageAsync(coverUrl);
+                return Json(new { success = false, error = "La imagen de portada contiene contenido inapropiado." });
+            }
             user.CoverImage = coverUrl;
             await _context.SaveChangesAsync();
 
@@ -1260,11 +1266,25 @@ namespace HabitTrackerApp.Controllers
                 };
 
                 var imageUrl = await _cloudinaryService.UploadImageAsync(formFile, "habitostracker/profiles");
+                var mod = await _cloudinaryService.CheckImageModeration(imageUrl);
+                if (mod == "explicit" || mod == "sensitive")
+                {
+                    await _cloudinaryService.DeleteImageAsync(imageUrl);
+                    TempData["Error"] = "La foto de perfil contiene contenido inapropiado y no puede usarse.";
+                    return RedirectToAction("Profile", "Account");
+                }
                 user.ProfileImage = imageUrl;
             }
             else if (profilePhoto != null && profilePhoto.Length > 0)
             {
                 var imageUrl = await _cloudinaryService.UploadImageAsync(profilePhoto, "habitostracker/profiles");
+                var mod = await _cloudinaryService.CheckImageModeration(imageUrl);
+                if (mod == "explicit" || mod == "sensitive")
+                {
+                    await _cloudinaryService.DeleteImageAsync(imageUrl);
+                    TempData["Error"] = "La foto de perfil contiene contenido inapropiado y no puede usarse.";
+                    return RedirectToAction("Profile", "Account");
+                }
                 user.ProfileImage = imageUrl;
             }
 
