@@ -438,6 +438,16 @@ body.bg-dark .grp-search-input { background: #2d3748 !important; border-color: #
 </div>
 <div class="grp-details-page">
 
+    <!-- MODAL FOTO GRUPO -->
+<div id="photoGroupOverlay" onclick="cerrarFotoGrupo()" style="display:none;position:fixed;inset:0;z-index:999999;background:rgba(0,0,0,0.85);backdrop-filter:blur(12px);display:none;align-items:center;justify-content:center;padding:20px;">
+    <div style="position:relative;display:flex;flex-direction:column;align-items:center;gap:16px;">
+        <img id="photoGroupImg" src="" style="width:260px;height:260px;border-radius:32px;object-fit:cover;border:4px solid rgba(255,255,255,0.15);box-shadow:0 20px 60px rgba(0,0,0,0.6);"/>
+        <button onclick="cerrarFotoGrupo()" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);color:white;padding:8px 24px;border-radius:20px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;">
+            ✕ Cerrar
+        </button>
+    </div>
+</div>
+
     <!-- HERO -->
     <div class="grp-hero">
         <a asp-controller="Group" asp-action="Chat" asp-route-id="@Model.Id" class="grp-back-btn">← Chat</a>
@@ -445,8 +455,8 @@ body.bg-dark .grp-search-input { background: #2d3748 !important; border-color: #
         <div class="grp-hero-bg"></div>
         <div class="grp-hero-body">
             <div class="grp-hero-avatar-wrap">
-                <div class="grp-hero-avatar" id="groupAvatarEl"
-                     onclick="@(isAdmin ? "document.getElementById('groupImageInput').click()" : "")">
+              <div class="grp-hero-avatar" id="groupAvatarEl"
+     onclick="abrirFotoGrupo()">
                     @if (!string.IsNullOrEmpty(Model.ImageUrl))
                     { <img src="@Model.ImageUrl" id="groupAvatarImg" /> }
                     else
@@ -795,6 +805,20 @@ async function promoverAdmin(userId, username) {
     const data = await res.json();
     if (data.success) { showToast(`⭐ ${username} ahora es admin`); setTimeout(() => location.reload(), 1200); }
     else showToast("❌ " + (data.message ?? "Error"));
+}
+// ── VER FOTO GRUPO ──
+function abrirFotoGrupo() {
+    const img = document.getElementById('groupAvatarImg');
+    if (!img) return; // si no tiene foto, no hacer nada
+    const overlay = document.getElementById('photoGroupOverlay');
+    document.getElementById('photoGroupImg').src = img.src;
+    overlay.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+}
+
+function cerrarFotoGrupo() {
+    document.getElementById('photoGroupOverlay').style.display = 'none';
+    document.body.style.overflow = '';
 }
 
 // ── QUITAR ADMIN ──
