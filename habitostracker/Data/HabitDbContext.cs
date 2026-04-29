@@ -28,6 +28,7 @@ namespace HabitTrackerApp.Data
         public DbSet<GroupMessage> GroupMessages { get; set; }
 
         public DbSet<HabitComment> HabitComments { get; set; }
+        public DbSet<GroupJoinRequest> GroupJoinRequests { get; set; }
         public DbSet<Feedback> Feedbacks { get; set; }
         public DbSet<Post> Posts { get; set; }
         public DbSet<Follow> Follows { get; set; }

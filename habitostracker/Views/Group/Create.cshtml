@@ -99,6 +99,37 @@
 .grp-input::placeholder { color: #9ca3af; }
 .grp-char-count { font-size: 11px; color: #9ca3af; text-align: right; margin-top: 4px; }
 
+/* ── TIPO DE GRUPO ── */
+.grp-type-options { display: flex; flex-direction: column; gap: 10px; }
+.grp-type-option {
+    display: flex; align-items: center; gap: 14px;
+    padding: 14px 16px; border-radius: 14px;
+    border: 2px solid #e5e7eb; cursor: pointer;
+    transition: 0.2s; background: #f9fafb;
+}
+.grp-type-option:hover { border-color: #6366f1; background: rgba(99,102,241,0.04); }
+.grp-type-option.active { border-color: #6366f1; background: rgba(99,102,241,0.07); }
+.grp-type-icon {
+    width: 42px; height: 42px; border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px; flex-shrink: 0;
+}
+.grp-type-icon.private { background: rgba(100,116,139,0.1); }
+.grp-type-icon.public { background: rgba(34,197,94,0.1); }
+.grp-type-icon.channel { background: rgba(99,102,241,0.1); }
+.grp-type-info { flex: 1; min-width: 0; }
+.grp-type-name { font-size: 14px; font-weight: 700; color: #111827; margin-bottom: 2px; }
+.grp-type-desc { font-size: 12px; color: #9ca3af; line-height: 1.5; }
+.grp-type-check {
+    width: 22px; height: 22px; border-radius: 50%;
+    border: 2px solid #e5e7eb; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    transition: 0.15s; font-size: 11px; color: transparent;
+}
+.grp-type-option.active .grp-type-check {
+    background: #6366f1; border-color: #6366f1; color: white;
+}
+
 /* MEMBERS HEADER */
 .grp-members-header {
     display: flex; align-items: center; margin-bottom: 14px; gap: 10px;
@@ -174,15 +205,21 @@
     transition: 0.15s; font-size: 12px; color: transparent;
     background: white;
 }
-.friend-item.selected .friend-check {
-    background: #6366f1; border-color: #6366f1; color: white;
-}
+.friend-item.selected .friend-check { background: #6366f1; border-color: #6366f1; color: white; }
 
 .grp-empty-friends {
     text-align: center; padding: 30px 24px; color: #9ca3af;
     font-size: 13px; background: #f9fafb; border-radius: 14px;
 }
 .grp-empty-friends-icon { font-size: 36px; margin-bottom: 10px; }
+
+/* CANAL NOTICE */
+.grp-channel-notice {
+    display: none; background: rgba(99,102,241,0.08);
+    border: 1px solid rgba(99,102,241,0.2); border-radius: 14px;
+    padding: 14px 16px; font-size: 13px; color: #6366f1;
+    font-weight: 600; line-height: 1.6; margin-bottom: 0;
+}
 
 /* ERROR */
 .grp-error {
@@ -231,16 +268,20 @@ body.bg-dark .grp-empty-friends { background: #2d3748 !important; }
 body.bg-dark .grp-step { background: #1e293b !important; border-color: #2d3748 !important; }
 body.bg-dark .grp-step.active { background: rgba(99,102,241,0.1) !important; }
 body.bg-dark .grp-step-divider { background: #2d3748 !important; }
+body.bg-dark .grp-type-option { background: #2d3748 !important; border-color: #3d4d60 !important; }
+body.bg-dark .grp-type-option:hover { background: rgba(99,102,241,0.1) !important; border-color: #6366f1 !important; }
+body.bg-dark .grp-type-option.active { background: rgba(99,102,241,0.15) !important; }
+body.bg-dark .grp-type-name { color: #f1f5f9 !important; }
 </style>
 
 <div class="grp-create-page">
 
     <!-- HERO -->
     <div class="grp-create-hero">
-        <div class="grp-create-hero-icon">👥</div>
+        <div class="grp-create-hero-icon" id="heroIcon">👥</div>
         <div class="grp-hero-text">
-            <div class="grp-create-hero-title">Crear nuevo grupo</div>
-            <div class="grp-create-hero-sub">Ponle nombre, agrega amigos y empieza a chatear</div>
+            <div class="grp-create-hero-title" id="heroTitle">Crear nuevo grupo</div>
+            <div class="grp-create-hero-sub" id="heroSub">Ponle nombre, agrega amigos y empieza a chatear</div>
         </div>
     </div>
 
@@ -248,17 +289,17 @@ body.bg-dark .grp-step-divider { background: #2d3748 !important; }
     <div class="grp-steps">
         <div class="grp-step active" id="step1">
             <div class="grp-step-num">1</div>
-            Información
+            Tipo
         </div>
         <div class="grp-step-divider"></div>
         <div class="grp-step" id="step2">
             <div class="grp-step-num">2</div>
-            Miembros
+            Info
         </div>
         <div class="grp-step-divider"></div>
         <div class="grp-step" id="step3">
             <div class="grp-step-num">3</div>
-            Listo
+            Miembros
         </div>
     </div>
 
@@ -271,12 +312,48 @@ body.bg-dark .grp-step-divider { background: #2d3748 !important; }
 
     <form asp-controller="Group" asp-action="Create" method="post" id="createForm">
         @Html.AntiForgeryToken()
+        <input type="hidden" name="type" id="groupType" value="private" />
 
-        <!-- PASO 1: INFO -->
+        <!-- TIPO DE GRUPO -->
         <div class="grp-form-card">
-            <div class="grp-form-card-title">📝 Información del grupo</div>
+            <div class="grp-form-card-title">🏷️ Tipo de grupo</div>
+            <div class="grp-type-options">
+
+                <div class="grp-type-option active" onclick="setType('private', this)">
+                    <div class="grp-type-icon private">🔒</div>
+                    <div class="grp-type-info">
+                        <div class="grp-type-name">Privado</div>
+                        <div class="grp-type-desc">Solo para tus amigos. No aparece en búsquedas. Todos pueden escribir.</div>
+                    </div>
+                    <div class="grp-type-check">✓</div>
+                </div>
+
+                <div class="grp-type-option" onclick="setType('public', this)">
+                    <div class="grp-type-icon public">🌍</div>
+                    <div class="grp-type-info">
+                        <div class="grp-type-name">Público</div>
+                        <div class="grp-type-desc">Visible para todos. Cualquiera puede solicitar unirse. Todos los miembros pueden escribir.</div>
+                    </div>
+                    <div class="grp-type-check">✓</div>
+                </div>
+
+                <div class="grp-type-option" onclick="setType('channel', this)">
+                    <div class="grp-type-icon channel">📢</div>
+                    <div class="grp-type-info">
+                        <div class="grp-type-name">Canal</div>
+                        <div class="grp-type-desc">Visible para todos. Entrada automática al unirse. Solo los admins pueden escribir.</div>
+                    </div>
+                    <div class="grp-type-check">✓</div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- INFO -->
+        <div class="grp-form-card">
+            <div class="grp-form-card-title">📝 Información</div>
             <div class="grp-field">
-                <label>Nombre del grupo *</label>
+                <label>Nombre *</label>
                 <input name="name" id="groupName" type="text" class="grp-input"
                        placeholder="Ej: Los del gym, Familia, Proyecto..." required
                        value="@nombreInicial" maxlength="50"
@@ -292,14 +369,18 @@ body.bg-dark .grp-step-divider { background: #2d3748 !important; }
             </div>
         </div>
 
-        <!-- PASO 2: MIEMBROS -->
-        <div class="grp-form-card">
+        <!-- MIEMBROS -->
+        <div class="grp-form-card" id="membersCard">
             <div class="grp-members-header">
                 <div class="grp-form-card-title" style="margin:0;">👥 Agregar amigos</div>
                 <span class="selected-count" id="selectedCount">0 seleccionados</span>
             </div>
 
-            <!-- CHIPS de seleccionados -->
+            <!-- Aviso canal -->
+            <div class="grp-channel-notice" id="channelNotice">
+                📢 En los canales no necesitas agregar miembros al crear. Cualquiera podrá unirse desde el apartado de canales. Puedes añadir amigos directamente si quieres.
+            </div>
+
             <div class="grp-selected-chips" id="chipsContainer"></div>
 
             @if (!amigos.Any())
@@ -307,12 +388,10 @@ body.bg-dark .grp-step-divider { background: #2d3748 !important; }
                 <div class="grp-empty-friends">
                     <div class="grp-empty-friends-icon">👤</div>
                     <div>No tienes amigos para agregar todavía.</div>
-                    <div style="font-size:12px;margin-top:4px;">Agrega amigos primero para crear un grupo.</div>
                 </div>
             }
             else
             {
-                <!-- BÚSQUEDA -->
                 <input type="text" class="grp-members-search" id="friendSearch"
                        placeholder="🔍 Buscar amigos..." oninput="filtrarAmigos(this.value)" />
                 <div style="height:10px;"></div>
@@ -350,7 +429,7 @@ body.bg-dark .grp-step-divider { background: #2d3748 !important; }
         <!-- SUBMIT -->
         <div class="grp-submit-wrap">
             <button type="submit" class="grp-submit-btn" id="submitBtn" disabled>
-                <span>🚀 Crear grupo</span>
+                <span id="submitLabel">🚀 Crear grupo</span>
                 <span class="grp-submit-count" id="submitCount" style="display:none;">0 miembros</span>
             </button>
         </div>
@@ -358,13 +437,39 @@ body.bg-dark .grp-step-divider { background: #2d3748 !important; }
 </div>
 
 <script>
+let currentType = 'private';
+
+function setType(type, el) {
+    currentType = type;
+    document.getElementById('groupType').value = type;
+    document.querySelectorAll('.grp-type-option').forEach(o => o.classList.remove('active'));
+    el.classList.add('active');
+
+    // actualizar hero
+    const heroData = {
+        private: { icon: '👥', title: 'Crear grupo privado', sub: 'Solo para tus amigos' },
+        public:  { icon: '🌍', title: 'Crear grupo público', sub: 'Visible para toda la comunidad' },
+        channel: { icon: '📢', title: 'Crear canal', sub: 'Difunde contenido a todos' }
+    };
+    document.getElementById('heroIcon').textContent = heroData[type].icon;
+    document.getElementById('heroTitle').textContent = heroData[type].title;
+    document.getElementById('heroSub').textContent = heroData[type].sub;
+
+    // mostrar/ocultar aviso canal
+    document.getElementById('channelNotice').style.display = type === 'channel' ? 'block' : 'none';
+
+    // actualizar label botón
+    const labels = { private: '🚀 Crear grupo', public: '🌍 Crear grupo público', channel: '📢 Crear canal' };
+    document.getElementById('submitLabel').textContent = labels[type];
+
+    updateCount();
+    updateSteps();
+}
+
 document.addEventListener("DOMContentLoaded", () => {
     updateCount();
     updateSteps();
-    // preseleccionados al cargar
-    document.querySelectorAll(".friend-item.selected").forEach(el => {
-        addChip(el);
-    });
+    document.querySelectorAll(".friend-item.selected").forEach(el => addChip(el));
 });
 
 function updateNameCount(el) {
@@ -380,67 +485,42 @@ function updateSteps() {
     const name = document.getElementById("groupName").value.trim();
     const count = document.querySelectorAll(".friend-item.selected").length;
 
-    const s1 = document.getElementById("step1");
-    const s2 = document.getElementById("step2");
-    const s3 = document.getElementById("step3");
+    document.getElementById("step1").className = "grp-step done";
 
-    if (name.length > 0) { s1.className = "grp-step done"; } 
-    else { s1.className = "grp-step active"; }
+    if (name.length > 0) document.getElementById("step2").className = "grp-step done";
+    else document.getElementById("step2").className = "grp-step active";
 
-    if (count > 0) { s2.className = "grp-step done"; }
-    else if (name.length > 0) { s2.className = "grp-step active"; }
-    else { s2.className = "grp-step"; }
-
-    if (name.length > 0 && count > 0) { s3.className = "grp-step done"; }
-    else if (count > 0) { s3.className = "grp-step active"; }
-    else { s3.className = "grp-step"; }
+    if (count > 0) document.getElementById("step3").className = "grp-step done";
+    else if (name.length > 0) document.getElementById("step3").className = "grp-step active";
+    else document.getElementById("step3").className = "grp-step";
 }
 
 function toggleFriend(el) {
     el.classList.toggle("selected");
     const cb = el.querySelector('input[type="checkbox"]');
     if (cb) cb.checked = el.classList.contains("selected");
-
-    if (el.classList.contains("selected")) {
-        addChip(el);
-    } else {
-        removeChip(el.dataset.id);
-    }
-
+    if (el.classList.contains("selected")) addChip(el);
+    else removeChip(el.dataset.id);
     updateCount();
     updateSteps();
-    // limpiar error si hay
-    const err = document.getElementById("errorBox");
-    if (err) err.innerHTML = "";
+    document.getElementById("errorBox").innerHTML = "";
 }
 
 function addChip(el) {
     const id = el.dataset.id;
-    const name = el.dataset.name;
-    const img = el.dataset.img;
-    const letter = el.dataset.letter;
-
     if (document.getElementById("chip-" + id)) return;
-
     const chip = document.createElement("div");
     chip.className = "grp-chip";
     chip.id = "chip-" + id;
-
-    const avatarHTML = img
-        ? `<img src="${img}" style="width:100%;height:100%;object-fit:cover;" />`
-        : letter;
-
-    chip.innerHTML = `
-        <div class="grp-chip-avatar">${avatarHTML}</div>
-        <span>${name}</span>
-        <button type="button" class="grp-chip-remove" onclick="removeByChip('${id}')">✕</button>`;
-
+    const avatarHTML = el.dataset.img
+        ? `<img src="${el.dataset.img}" style="width:100%;height:100%;object-fit:cover;" />`
+        : el.dataset.letter;
+    chip.innerHTML = `<div class="grp-chip-avatar">${avatarHTML}</div><span>${el.dataset.name}</span><button type="button" class="grp-chip-remove" onclick="removeByChip('${id}')">✕</button>`;
     document.getElementById("chipsContainer").appendChild(chip);
 }
 
 function removeChip(id) {
-    const chip = document.getElementById("chip-" + id);
-    if (chip) chip.remove();
+    document.getElementById("chip-" + id)?.remove();
 }
 
 function removeByChip(id) {
@@ -457,16 +537,15 @@ function removeByChip(id) {
 
 function updateCount() {
     const count = document.querySelectorAll(".friend-item.selected").length;
-    const countEl = document.getElementById("selectedCount");
-    const btn = document.getElementById("submitBtn");
-    const submitCount = document.getElementById("submitCount");
-
-    countEl.textContent = count === 0 ? "0 seleccionados" : `${count} seleccionado${count !== 1 ? "s" : ""}`;
+    document.getElementById("selectedCount").textContent =
+        count === 0 ? "0 seleccionados" : `${count} seleccionado${count !== 1 ? "s" : ""}`;
 
     const name = document.getElementById("groupName")?.value.trim() ?? "";
-    const canSubmit = count > 0 && name.length > 0;
-    btn.disabled = !canSubmit;
+    // canales pueden crearse sin miembros
+    const canSubmit = name.length > 0 && (count > 0 || currentType === 'channel');
+    document.getElementById("submitBtn").disabled = !canSubmit;
 
+    const submitCount = document.getElementById("submitCount");
     if (count > 0) {
         submitCount.style.display = "inline";
         submitCount.textContent = `${count + 1} miembro${count + 1 !== 1 ? "s" : ""}`;
@@ -478,37 +557,33 @@ function updateCount() {
 function filtrarAmigos(query) {
     const q = query.toLowerCase().trim();
     document.querySelectorAll(".friend-item").forEach(item => {
-        const username = item.dataset.username ?? "";
-        item.classList.toggle("hidden", q !== "" && !username.includes(q));
+        item.classList.toggle("hidden", q !== "" && !item.dataset.username.includes(q));
     });
 }
 
-// validar antes de enviar
 document.getElementById("createForm").addEventListener("submit", function(e) {
-    const count = document.querySelectorAll(".friend-item.selected").length;
     const name = document.getElementById("groupName").value.trim();
+    const count = document.querySelectorAll(".friend-item.selected").length;
     const errorBox = document.getElementById("errorBox");
 
     if (!name) {
         e.preventDefault();
-        errorBox.innerHTML = `<div class="grp-error">❌ El nombre del grupo es requerido.</div>`;
+        errorBox.innerHTML = `<div class="grp-error">❌ El nombre es requerido.</div>`;
         document.getElementById("groupName").focus();
         return;
     }
 
-    if (count === 0) {
+    if (count === 0 && currentType !== 'channel') {
         e.preventDefault();
-        errorBox.innerHTML = `<div class="grp-error">❌ Debes agregar al menos un miembro al grupo.</div>`;
+        errorBox.innerHTML = `<div class="grp-error">❌ Debes agregar al menos un miembro.</div>`;
         errorBox.scrollIntoView({ behavior: "smooth", block: "center" });
         return;
     }
 
-    // animación de carga en botón
     const btn = document.getElementById("submitBtn");
-    btn.innerHTML = `<span>⏳ Creando grupo...</span>`;
+    btn.innerHTML = `<span>⏳ Creando...</span>`;
     btn.disabled = true;
 });
 
-// actualizar botón cuando cambia el nombre
 document.getElementById("groupName")?.addEventListener("input", updateCount);
 </script>

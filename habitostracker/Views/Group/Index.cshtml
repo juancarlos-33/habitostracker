@@ -1,7 +1,7 @@
 ﻿@model List<HabitTrackerApp.Models.Group>
 
 @{
-    ViewData["Title"] = "Mis Grupos";
+    ViewData["Title"] = "Grupos";
     var db = Context.RequestServices.GetService<HabitTrackerApp.Data.HabitDbContext>();
     var myId = int.Parse(User.FindFirst("UserId").Value);
     var totalGroups = Model?.Count ?? 0;
@@ -49,7 +49,6 @@
     background: radial-gradient(circle, rgba(37,99,235,0.14), transparent 70%);
     border-radius:50%; pointer-events:none;
 }
-
 .grp-hero-top {
     display: flex; align-items: center; justify-content: space-between;
     gap: 14px; position: relative; z-index: 1;
@@ -77,7 +76,24 @@
 }
 .grp-create-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 24px rgba(99,102,241,0.5); color: white; }
 
-/* CONTADOR SIMPLE */
+/* ── TABS ── */
+.grp-tabs {
+    display: flex; gap: 6px; margin-top: 16px;
+    background: rgba(255,255,255,0.05);
+    border-radius: 14px; padding: 5px;
+    position: relative; z-index: 1;
+}
+.grp-tab {
+    flex: 1; padding: 9px 10px; border-radius: 10px;
+    border: none; background: transparent;
+    color: rgba(255,255,255,0.45); font-size: 12px;
+    font-weight: 700; cursor: pointer; transition: 0.2s;
+    font-family: inherit; white-space: nowrap;
+}
+.grp-tab.active { background: rgba(99,102,241,0.25); color: #818cf8; }
+.grp-tab:hover:not(.active) { color: rgba(255,255,255,0.7); }
+
+/* CONTADOR */
 .grp-hero-counter {
     display: flex; align-items: center; gap: 8px;
     position: relative; z-index: 1; margin-top: 18px;
@@ -86,12 +102,8 @@
     border: 1px solid rgba(255,255,255,0.07);
     border-radius: 14px; width: fit-content;
 }
-.grp-hero-counter-num {
-    font-size: 22px; font-weight: 800; color: white; line-height: 1;
-}
-.grp-hero-counter-text {
-    font-size: 13px; color: rgba(255,255,255,0.45); font-weight: 600;
-}
+.grp-hero-counter-num { font-size: 22px; font-weight: 800; color: white; line-height: 1; }
+.grp-hero-counter-text { font-size: 13px; color: rgba(255,255,255,0.45); font-weight: 600; }
 .grp-hero-counter-dot {
     width: 6px; height: 6px; border-radius: 50%;
     background: #6366f1; box-shadow: 0 0 6px rgba(99,102,241,0.6);
@@ -134,14 +146,11 @@
     border-color: rgba(99,102,241,0.15);
 }
 .grp-card:active { transform: translateY(0); }
-
 .grp-card-banner { width: 5px; flex-shrink: 0; }
-
 .grp-card-inner {
     display: flex; align-items: center; gap: 14px;
     flex: 1; padding: 15px 16px 15px 14px;
 }
-
 .grp-avatar {
     width: 50px; height: 50px; border-radius: 15px; flex-shrink: 0;
     display: flex; align-items: center; justify-content: center;
@@ -149,7 +158,6 @@
     box-shadow: 0 3px 10px rgba(0,0,0,0.15);
 }
 .grp-avatar img { width: 100%; height: 100%; object-fit: cover; }
-
 .grp-info { flex: 1; min-width: 0; }
 .grp-name {
     font-size: 15px; font-weight: 800; color: #111827;
@@ -161,7 +169,6 @@
     max-width: 260px;
 }
 .grp-last-msg.unread { color: #374151; font-weight: 600; }
-
 .grp-card-right {
     display: flex; flex-direction: column; align-items: flex-end;
     gap: 5px; flex-shrink: 0;
@@ -175,12 +182,9 @@
 .grp-role-badge.member { background: rgba(99,102,241,0.08); color: #6366f1; border: 1px solid rgba(99,102,241,0.15); }
 .grp-card-chevron { color: #d1d5db; font-size: 16px; margin-top: 2px; }
 
-/* UNREAD BADGE */
-.grp-unread-dot {
-    width: 8px; height: 8px; border-radius: 50%;
-    background: #6366f1; flex-shrink: 0; align-self: center;
-    box-shadow: 0 0 6px rgba(99,102,241,0.5);
-}
+/* ── DISCOVER FRAMES ── */
+.grp-discover-frame { display: none; margin-top: 8px; }
+.grp-discover-frame.active { display: block; }
 
 /* ── EMPTY ── */
 .grp-empty {
@@ -219,6 +223,7 @@ body.bg-dark .grp-last-msg.unread { color: #94a3b8 !important; }
     .grp-hero { padding: 20px 18px; }
     .grp-hero-counter { width: 100%; }
     .grp-create-btn span { display: none; }
+    .grp-tab { font-size: 11px; padding: 8px 6px; }
 }
 </style>
 
@@ -230,13 +235,19 @@ body.bg-dark .grp-last-msg.unread { color: #94a3b8 !important; }
             <div class="grp-hero-left">
                 <div class="grp-hero-icon">👥</div>
                 <div>
-                    <div class="grp-hero-title">Mis Grupos</div>
-                    <div class="grp-hero-sub">Chatea con varios amigos a la vez</div>
+                    <div class="grp-hero-title">Grupos</div>
+                    <div class="grp-hero-sub">Grupos, canales y comunidades</div>
                 </div>
             </div>
             <a asp-controller="Group" asp-action="Create" class="grp-create-btn">
-                ➕ <span>Nuevo grupo</span>
+                ➕ <span>Crear</span>
             </a>
+        </div>
+
+        <div class="grp-tabs">
+            <button class="grp-tab active" onclick="switchTab('mis', this)">💬 Mis grupos</button>
+            <button class="grp-tab" onclick="switchTab('descubrir', this)">🌍 Descubrir</button>
+            <button class="grp-tab" onclick="switchTab('canales', this)">📢 Canales</button>
         </div>
 
         <div class="grp-hero-counter">
@@ -246,101 +257,116 @@ body.bg-dark .grp-last-msg.unread { color: #94a3b8 !important; }
         </div>
     </div>
 
-    @if (Model == null || !Model.Any())
-    {
-        <div class="grp-empty">
-            <div class="grp-empty-icon">👥</div>
-            <div class="grp-empty-title">No tienes grupos todavía</div>
-            <div class="grp-empty-sub">Crea un grupo para chatear con varios amigos a la vez.<br>¡Invita a tus amigos y empieza la conversación!</div>
-            <a asp-controller="Group" asp-action="Create" class="grp-empty-btn">➕ Crear primer grupo</a>
-        </div>
-    }
-    else
-    {
-        <div class="grp-search-wrap">
-            <span class="grp-search-icon">🔍</span>
-            <input type="text" class="grp-search" placeholder="Buscar grupos..."
-                   oninput="filtrarGrupos(this.value)" />
-        </div>
+    <!-- MIS GRUPOS -->
+    <div id="section-mis">
+        @if (Model == null || !Model.Any())
+        {
+            <div class="grp-empty">
+                <div class="grp-empty-icon">👥</div>
+                <div class="grp-empty-title">No tienes grupos todavía</div>
+                <div class="grp-empty-sub">Crea un grupo para chatear con varios amigos a la vez.<br>¡Invita a tus amigos y empieza la conversación!</div>
+                <a asp-controller="Group" asp-action="Create" class="grp-empty-btn">➕ Crear primer grupo</a>
+            </div>
+        }
+        else
+        {
+            <div class="grp-search-wrap">
+                <span class="grp-search-icon">🔍</span>
+                <input type="text" class="grp-search" placeholder="Buscar grupos..."
+                       oninput="filtrarGrupos(this.value)" />
+            </div>
 
-        <div class="grp-section-label">@totalGroups grupo@(totalGroups != 1 ? "s" : "")</div>
+            <div class="grp-section-label">@totalGroups grupo@(totalGroups != 1 ? "s" : "")</div>
 
-        <div id="gruposList">
-            @foreach (var g in Model)
-            {
-                var memberCount = g.Members?.Count(m => m.IsActive) ?? 0;
-                var firstLetter = g.Name.Substring(0, 1).ToUpper();
-                var isAdmin = g.CreatorId == myId || (g.Members?.Any(m => m.UserId == myId && m.Role == "Admin" && m.IsActive) ?? false);
-                var bannerColor = bannerColors[idx % bannerColors.Length];
-                var avatarGrad = avatarGradients[idx % avatarGradients.Length];
-
-                var lastMsg = db.GroupMessages
-                    .Where(m => m.GroupId == g.Id && !m.IsDeleted)
-                    .OrderByDescending(m => m.SentAt)
-                    .Select(m => new { m.Content, m.SentAt, m.IsSystem, m.SenderId, m.FileUrl })
-                    .FirstOrDefault();
-
-                string lastMsgText = "Toca para abrir el chat";
-                if (lastMsg != null)
+            <div id="gruposList">
+                @foreach (var g in Model)
                 {
-                    if (lastMsg.IsSystem)
-                        lastMsgText = lastMsg.Content ?? "";
-                    else if (!string.IsNullOrEmpty(lastMsg.Content) &&
-                             (lastMsg.Content.Contains("cloudinary") || lastMsg.Content.EndsWith(".webm")))
-                        lastMsgText = "🎤 Mensaje de voz";
-                    else if (!string.IsNullOrEmpty(lastMsg.FileUrl) && lastMsg.FileUrl.Contains("/image/upload/"))
-                        lastMsgText = "📷 Imagen";
-                    else if (!string.IsNullOrEmpty(lastMsg.FileUrl) && lastMsg.FileUrl.Contains("/video/upload/"))
-                        lastMsgText = "🎥 Video";
-                    else
-                        lastMsgText = lastMsg.Content?.Length > 45
-                            ? lastMsg.Content.Substring(0, 45) + "..." : lastMsg.Content ?? "";
-                }
+                    var memberCount = g.Members?.Count(m => m.IsActive) ?? 0;
+                    var firstLetter = g.Name.Substring(0, 1).ToUpper();
+                    var isAdmin = g.CreatorId == myId || (g.Members?.Any(m => m.UserId == myId && m.Role == "Admin" && m.IsActive) ?? false);
+                    var bannerColor = bannerColors[idx % bannerColors.Length];
+                    var avatarGrad = avatarGradients[idx % avatarGradients.Length];
 
-                string timeLabel = "";
-                if (lastMsg != null)
-                {
-                    var diff = DateTime.UtcNow - lastMsg.SentAt;
-                    if (diff.TotalMinutes < 1) timeLabel = "ahora";
-                    else if (diff.TotalMinutes < 60) timeLabel = $"{(int)diff.TotalMinutes}m";
-                    else if (diff.TotalHours < 24) timeLabel = $"{(int)diff.TotalHours}h";
-                    else if (diff.TotalDays < 7) timeLabel = lastMsg.SentAt.ToLocalTime().ToString("ddd");
-                    else timeLabel = lastMsg.SentAt.ToLocalTime().ToString("dd MMM");
-                }
+                    var lastMsg = db.GroupMessages
+                        .Where(m => m.GroupId == g.Id && !m.IsDeleted)
+                        .OrderByDescending(m => m.SentAt)
+                        .Select(m => new { m.Content, m.SentAt, m.IsSystem, m.SenderId, m.FileUrl })
+                        .FirstOrDefault();
 
-                bool isMine = lastMsg?.SenderId == myId;
-                idx++;
+                    string lastMsgText = "Toca para abrir el chat";
+                    if (lastMsg != null)
+                    {
+                        if (lastMsg.IsSystem)
+                            lastMsgText = lastMsg.Content ?? "";
+                        else if (!string.IsNullOrEmpty(lastMsg.Content) &&
+                                 (lastMsg.Content.Contains("cloudinary") || lastMsg.Content.EndsWith(".webm")))
+                            lastMsgText = "🎤 Mensaje de voz";
+                        else if (!string.IsNullOrEmpty(lastMsg.FileUrl) && lastMsg.FileUrl.Contains("/image/upload/"))
+                            lastMsgText = "📷 Imagen";
+                        else if (!string.IsNullOrEmpty(lastMsg.FileUrl) && lastMsg.FileUrl.Contains("/video/upload/"))
+                            lastMsgText = "🎥 Video";
+                        else
+                            lastMsgText = lastMsg.Content?.Length > 45
+                                ? lastMsg.Content.Substring(0, 45) + "..." : lastMsg.Content ?? "";
+                    }
 
-                <a asp-controller="Group" asp-action="Chat" asp-route-id="@g.Id"
-                   class="grp-card" data-name="@g.Name.ToLower()">
-                    <div class="grp-card-banner" style="background:@bannerColor;"></div>
-                    <div class="grp-card-inner">
-                        <div class="grp-avatar" style="background:@avatarGrad;">
-                            @if (!string.IsNullOrEmpty(g.ImageUrl))
-                            { <img src="@g.ImageUrl" /> }
-                            else { @firstLetter }
-                        </div>
-                        <div class="grp-info">
-                            <div class="grp-name">@g.Name</div>
-                            <div class="grp-last-msg">
-                                @if (isMine && lastMsg != null && !lastMsg.IsSystem) { <text>Tú: </text> }
-                                @lastMsgText
+                    string timeLabel = "";
+                    if (lastMsg != null)
+                    {
+                        var diff = DateTime.UtcNow - lastMsg.SentAt;
+                        if (diff.TotalMinutes < 1) timeLabel = "ahora";
+                        else if (diff.TotalMinutes < 60) timeLabel = $"{(int)diff.TotalMinutes}m";
+                        else if (diff.TotalHours < 24) timeLabel = $"{(int)diff.TotalHours}h";
+                        else if (diff.TotalDays < 7) timeLabel = lastMsg.SentAt.ToLocalTime().ToString("ddd");
+                        else timeLabel = lastMsg.SentAt.ToLocalTime().ToString("dd MMM");
+                    }
+
+                    bool isMine = lastMsg?.SenderId == myId;
+                    string typeBadge = g.Type == "channel" ? "📢" : g.Type == "public" ? "🌍" : "";
+                    idx++;
+
+                    <a asp-controller="Group" asp-action="Chat" asp-route-id="@g.Id"
+                       class="grp-card" data-name="@g.Name.ToLower()">
+                        <div class="grp-card-banner" style="background:@bannerColor;"></div>
+                        <div class="grp-card-inner">
+                            <div class="grp-avatar" style="background:@avatarGrad;">
+                                @if (!string.IsNullOrEmpty(g.ImageUrl))
+                                { <img src="@g.ImageUrl" /> }
+                                else { @firstLetter }
+                            </div>
+                            <div class="grp-info">
+                                <div class="grp-name">
+                                    @if (!string.IsNullOrEmpty(typeBadge))
+                                    { <span style="margin-right:4px;">@typeBadge</span> }
+                                    @g.Name
+                                </div>
+                                <div class="grp-last-msg">
+                                    @if (isMine && lastMsg != null && !lastMsg.IsSystem) { <text>Tú: </text> }
+                                    @lastMsgText
+                                </div>
+                            </div>
+                            <div class="grp-card-right">
+                                @if (!string.IsNullOrEmpty(timeLabel))
+                                { <span class="grp-time">@timeLabel</span> }
+                                @if (isAdmin)
+                                { <span class="grp-role-badge admin">👑 Admin</span> }
+                                else
+                                { <span class="grp-role-badge member">💬 Miembro</span> }
+                                <span class="grp-card-chevron">›</span>
                             </div>
                         </div>
-                        <div class="grp-card-right">
-                            @if (!string.IsNullOrEmpty(timeLabel))
-                            { <span class="grp-time">@timeLabel</span> }
-                            @if (isAdmin)
-                            { <span class="grp-role-badge admin">👑 Admin</span> }
-                            else
-                            { <span class="grp-role-badge member">💬 Miembro</span> }
-                            <span class="grp-card-chevron">›</span>
-                        </div>
-                    </div>
-                </a>
-            }
-        </div>
-    }
+                    </a>
+                }
+            </div>
+        }
+    </div>
+
+    <!-- DESCUBRIR -->
+    <div class="grp-discover-frame" id="tab-descubrir"></div>
+
+    <!-- CANALES -->
+    <div class="grp-discover-frame" id="tab-canales"></div>
+
 </div>
 
 <script>
@@ -360,8 +386,46 @@ function filtrarGrupos(q) {
             empty.id = "grpSearchEmpty";
             empty.style.cssText = "text-align:center;padding:40px 20px;color:#9ca3af;font-family:'Plus Jakarta Sans',sans-serif;";
             empty.innerHTML = `<div style="font-size:36px;margin-bottom:10px;">🔍</div><div style="font-weight:700;color:#374151;font-size:15px;">Sin resultados para "${q}"</div>`;
-            document.getElementById("gruposList").appendChild(empty);
+            document.getElementById("gruposList")?.appendChild(empty);
         }
     } else { empty?.remove(); }
+}
+
+let discoverLoaded = false;
+let canalesLoaded = false;
+
+function switchTab(tab, btn) {
+    document.querySelectorAll('.grp-tab').forEach(t => t.classList.remove('active'));
+    btn.classList.add('active');
+
+    const sectionMis = document.getElementById('section-mis');
+    const tabDescubrir = document.getElementById('tab-descubrir');
+    const tabCanales = document.getElementById('tab-canales');
+
+    sectionMis.style.display = 'none';
+    tabDescubrir.classList.remove('active');
+    tabCanales.classList.remove('active');
+
+    if (tab === 'mis') {
+        sectionMis.style.display = 'block';
+    } else if (tab === 'descubrir') {
+        tabDescubrir.classList.add('active');
+        if (!discoverLoaded) {
+            discoverLoaded = true;
+            tabDescubrir.innerHTML = '<div style="text-align:center;padding:40px;color:#9ca3af;font-size:14px;">⏳ Cargando...</div>';
+            fetch('/Group/DiscoverPartial?type=public')
+                .then(r => r.text())
+                .then(html => { tabDescubrir.innerHTML = html; });
+        }
+    } else if (tab === 'canales') {
+        tabCanales.classList.add('active');
+        if (!canalesLoaded) {
+            canalesLoaded = true;
+            tabCanales.innerHTML = '<div style="text-align:center;padding:40px;color:#9ca3af;font-size:14px;">⏳ Cargando...</div>';
+            fetch('/Group/DiscoverPartial?type=channel')
+                .then(r => r.text())
+                .then(html => { tabCanales.innerHTML = html; });
+        }
+    }
 }
 </script>

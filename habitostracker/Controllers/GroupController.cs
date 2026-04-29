@@ -145,13 +145,19 @@ namespace HabitTrackerApp.Controllers
                 return RedirectToAction("Create");
             }
 
+            var type = Request.Form["type"].ToString();
+            if (type != "public" && type != "channel") type = "private";
+
             var group = new Group
             {
                 Name = name.Trim(),
                 Description = description?.Trim(),
                 CreatorId = userId,
                 CreatedAt = DateTime.UtcNow,
-                IsActive = true
+                IsActive = true,
+                Type = type,
+                IsPublic = type == "public" || type == "channel",
+                InviteCode = Guid.NewGuid().ToString("N").Substring(0, 10)
             };
             _context.Groups.Add(group);
             await _context.SaveChangesAsync();
@@ -195,6 +201,32 @@ namespace HabitTrackerApp.Controllers
             await CreateSystemMessage(group.Id, $"🎉 Grupo creado por {creator?.Username}");
 
             return RedirectToAction("Chat", new { id = group.Id });
+        }
+
+        [HttpGet]
+        public IActionResult DiscoverPartial(string type)
+        {
+            var userId = int.Parse(User.FindFirst("UserId").Value);
+            var groups = _context.Groups
+                .Include(g => g.Creator)
+                .Include(g => g.Members.Where(m => m.IsActive))
+                .Where(g => g.IsActive && g.Type == type)
+                .OrderByDescending(g => g.CreatedAt)
+                .ToList();
+
+            var myGroupIds = _context.GroupMembers
+                .Where(m => m.UserId == userId && m.IsActive)
+                .Select(m => m.GroupId).ToList();
+
+            var myRequests = _context.GroupJoinRequests
+                .Where(r => r.UserId == userId)
+                .ToDictionary(r => r.GroupId, r => r.Status);
+
+            ViewBag.MyGroupIds = myGroupIds;
+            ViewBag.MyRequests = myRequests;
+            ViewBag.UserId = userId;
+            ViewBag.Type = type;
+            return PartialView("_DiscoverPartial", groups);
         }
         [HttpGet]
         public IActionResult Chat(int id)
@@ -273,6 +305,324 @@ namespace HabitTrackerApp.Controllers
             ViewBag.CurrentUserId = userId;
             ViewBag.IsMuted = member.IsMuted;
             return View(group);
+        }
+
+        // ══ GRUPOS PÚBLICOS Y CANALES ══
+
+        [HttpGet]
+        public IActionResult Discover()
+        {
+            var userId = int.Parse(User.FindFirst("UserId").Value);
+            var groups = _context.Groups
+                .Include(g => g.Creator)
+                .Include(g => g.Members.Where(m => m.IsActive))
+                .Where(g => g.IsActive && (g.Type == "public" || g.Type == "channel"))
+                .OrderByDescending(g => g.CreatedAt)
+                .ToList();
+
+            var myGroupIds = _context.GroupMembers
+                .Where(m => m.UserId == userId && m.IsActive)
+                .Select(m => m.GroupId)
+                .ToList();
+
+            var myRequests = _context.GroupJoinRequests
+                .Where(r => r.UserId == userId)
+                .Select(r => new { r.GroupId, r.Status })
+                .ToList();
+
+            ViewBag.MyGroupIds = myGroupIds;
+            ViewBag.MyRequests = myRequests.ToDictionary(r => r.GroupId, r => r.Status);
+            ViewBag.UserId = userId;
+            return View(groups);
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> RequestJoin([FromBody] int groupId)
+        {
+            var userId = int.Parse(User.FindFirst("UserId").Value);
+            var group = _context.Groups.FirstOrDefault(g => g.Id == groupId && g.IsActive);
+            if (group == null) return Json(new { success = false, error = "Grupo no encontrado." });
+
+            // canal — unirse directo sin aprobación
+            if (group.Type == "channel")
+            {
+                var alreadyMember = _context.GroupMembers
+                    .Any(m => m.GroupId == groupId && m.UserId == userId && m.IsActive);
+                if (alreadyMember) return Json(new { success = false, error = "Ya eres miembro." });
+
+                var exMember = _context.GroupMembers
+                    .FirstOrDefault(m => m.GroupId == groupId && m.UserId == userId);
+                if (exMember != null) { exMember.IsActive = true; exMember.JoinedAt = DateTime.UtcNow; }
+                else _context.GroupMembers.Add(new GroupMember
+                {
+                    GroupId = groupId,
+                    UserId = userId,
+                    Role = "Member",
+                    JoinedAt = DateTime.UtcNow,
+                    IsActive = true
+                });
+                await _context.SaveChangesAsync();
+                await CreateSystemMessage(groupId, $"👋 {_context.Users.FirstOrDefault(u => u.Id == userId)?.Username} se unió al canal");
+                return Json(new { success = true, joined = true });
+            }
+
+            // grupo público — verificar límite
+            var currentUser = _context.Users.FirstOrDefault(u => u.Id == userId);
+            if (currentUser != null && !currentUser.IsPremium)
+            {
+                var groupCount = _context.GroupMembers.Count(m => m.UserId == userId && m.IsActive);
+                if (groupCount >= 10)
+                    return Json(new { success = false, error = "Alcanzaste el límite de 10 grupos del plan gratuito. ¡Hazte Premium!" });
+            }
+
+            var existingRequest = _context.GroupJoinRequests
+                .FirstOrDefault(r => r.GroupId == groupId && r.UserId == userId);
+            if (existingRequest != null)
+            {
+                if (existingRequest.Status == "Pending")
+                    return Json(new { success = false, error = "Ya enviaste una solicitud, espera aprobación." });
+                if (existingRequest.Status == "Accepted")
+                    return Json(new { success = false, error = "Ya eres miembro de este grupo." });
+                // si fue rechazada, permitir reintentar
+                existingRequest.Status = "Pending";
+                existingRequest.CreatedAt = DateTime.UtcNow;
+                await _context.SaveChangesAsync();
+                return Json(new { success = true, joined = false });
+            }
+
+            _context.GroupJoinRequests.Add(new GroupJoinRequest
+            {
+                GroupId = groupId,
+                UserId = userId,
+                Status = "Pending",
+                CreatedAt = DateTime.UtcNow
+            });
+            await _context.SaveChangesAsync();
+
+            // notificar al admin/creador
+            var admins = _context.GroupMembers
+                .Where(m => m.GroupId == groupId && m.IsActive && m.Role == "Admin")
+                .Select(m => m.UserId).ToList();
+
+            var requester = _context.Users.FirstOrDefault(u => u.Id == userId);
+            foreach (var adminId in admins)
+                await SendNotification(adminId,
+                    $"📩 {requester?.Username} quiere unirse a \"{group.Name}\"",
+                    $"/Group/JoinRequests/{groupId}", userId);
+
+            return Json(new { success = true, joined = false });
+        }
+
+        [HttpGet]
+        public IActionResult JoinRequests(int id)
+        {
+            var userId = int.Parse(User.FindFirst("UserId").Value);
+            var isAdmin = _context.GroupMembers
+                .Any(m => m.GroupId == id && m.UserId == userId && m.Role == "Admin" && m.IsActive);
+            if (!isAdmin) return RedirectToAction("Index");
+
+            var group = _context.Groups.FirstOrDefault(g => g.Id == id && g.IsActive);
+            if (group == null) return RedirectToAction("Index");
+
+            var requests = _context.GroupJoinRequests
+                .Include(r => r.User)
+                .Where(r => r.GroupId == id && r.Status == "Pending")
+                .OrderByDescending(r => r.CreatedAt)
+                .ToList();
+
+            ViewBag.Group = group;
+            return View(requests);
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> RespondJoinRequest([FromBody] RespondJoinDto dto)
+        {
+            var userId = int.Parse(User.FindFirst("UserId").Value);
+            var request = _context.GroupJoinRequests
+                .Include(r => r.User)
+                .FirstOrDefault(r => r.Id == dto.RequestId);
+            if (request == null) return Json(new { success = false });
+
+            var isAdmin = _context.GroupMembers
+                .Any(m => m.GroupId == request.GroupId && m.UserId == userId && m.Role == "Admin" && m.IsActive);
+            if (!isAdmin) return Json(new { success = false });
+
+            request.Status = dto.Accept ? "Accepted" : "Rejected";
+            await _context.SaveChangesAsync();
+
+            var group = _context.Groups.FirstOrDefault(g => g.Id == request.GroupId);
+
+            if (dto.Accept)
+            {
+                // verificar límite del solicitante
+                var requesterUser = _context.Users.FirstOrDefault(u => u.Id == request.UserId);
+                if (requesterUser != null && !requesterUser.IsPremium)
+                {
+                    var groupCount = _context.GroupMembers.Count(m => m.UserId == request.UserId && m.IsActive);
+                    if (groupCount >= 10)
+                        return Json(new { success = false, error = $"{requesterUser.Username} alcanzó el límite de grupos." });
+                }
+
+                var exMember = _context.GroupMembers
+                    .FirstOrDefault(m => m.GroupId == request.GroupId && m.UserId == request.UserId);
+                if (exMember != null) { exMember.IsActive = true; exMember.JoinedAt = DateTime.UtcNow; }
+                else _context.GroupMembers.Add(new GroupMember
+                {
+                    GroupId = request.GroupId,
+                    UserId = request.UserId,
+                    Role = "Member",
+                    JoinedAt = DateTime.UtcNow,
+                    IsActive = true
+                });
+                await _context.SaveChangesAsync();
+
+                await CreateSystemMessage(request.GroupId, $"✅ {request.User?.Username} se unió al grupo");
+                await SendNotification(request.UserId,
+                    $"✅ Tu solicitud para unirte a \"{group?.Name}\" fue aceptada",
+                    $"/Group/Chat/{request.GroupId}", userId);
+            }
+            else
+            {
+                await SendNotification(request.UserId,
+                    $"❌ Tu solicitud para unirte a \"{group?.Name}\" fue rechazada",
+                    $"/Group/Index", userId);
+            }
+
+            return Json(new { success = true });
+        }
+
+        [HttpGet]
+        public IActionResult Join(string code)
+        {
+            var userId = int.Parse(User.FindFirst("UserId").Value);
+            var group = _context.Groups
+                .Include(g => g.Members.Where(m => m.IsActive))
+                .Include(g => g.Creator)
+                .FirstOrDefault(g => g.InviteCode == code && g.IsActive);
+
+            if (group == null)
+            {
+                TempData["Error"] = "El enlace de invitación no es válido o expiró.";
+                return RedirectToAction("Index");
+            }
+
+            var isMember = group.Members.Any(m => m.UserId == userId);
+            ViewBag.IsMember = isMember;
+            ViewBag.UserId = userId;
+            return View(group);
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> JoinViaCode(string code)
+        {
+            var userId = int.Parse(User.FindFirst("UserId").Value);
+            var group = _context.Groups
+                .Include(g => g.Members)
+                .FirstOrDefault(g => g.InviteCode == code && g.IsActive);
+
+            if (group == null)
+            {
+                TempData["Error"] = "Enlace inválido.";
+                return RedirectToAction("Index");
+            }
+
+            var alreadyMember = group.Members.Any(m => m.UserId == userId && m.IsActive);
+            if (alreadyMember) return RedirectToAction("Chat", new { id = group.Id });
+
+            // canales — entrada directa
+            if (group.Type == "channel")
+            {
+                var exMember = group.Members.FirstOrDefault(m => m.UserId == userId);
+                if (exMember != null) { exMember.IsActive = true; exMember.JoinedAt = DateTime.UtcNow; }
+                else _context.GroupMembers.Add(new GroupMember
+                {
+                    GroupId = group.Id,
+                    UserId = userId,
+                    Role = "Member",
+                    JoinedAt = DateTime.UtcNow,
+                    IsActive = true
+                });
+                await _context.SaveChangesAsync();
+                var user = _context.Users.FirstOrDefault(u => u.Id == userId);
+                await CreateSystemMessage(group.Id, $"👋 {user?.Username} se unió por enlace de invitación");
+                return RedirectToAction("Chat", new { id = group.Id });
+            }
+
+            // grupos públicos/privados — verificar límite y crear solicitud
+            var currentUser = _context.Users.FirstOrDefault(u => u.Id == userId);
+            if (currentUser != null && !currentUser.IsPremium)
+            {
+                var groupCount = _context.GroupMembers.Count(m => m.UserId == userId && m.IsActive);
+                if (groupCount >= 10)
+                {
+                    TempData["Error"] = "Alcanzaste el límite de 10 grupos del plan gratuito.";
+                    return RedirectToAction("Index");
+                }
+            }
+
+            var existingRequest = _context.GroupJoinRequests
+                .FirstOrDefault(r => r.GroupId == group.Id && r.UserId == userId);
+            if (existingRequest == null)
+            {
+                _context.GroupJoinRequests.Add(new GroupJoinRequest
+                {
+                    GroupId = group.Id,
+                    UserId = userId,
+                    Status = "Pending",
+                    CreatedAt = DateTime.UtcNow
+                });
+                await _context.SaveChangesAsync();
+
+                var admins = _context.GroupMembers
+                    .Where(m => m.GroupId == group.Id && m.IsActive && m.Role == "Admin")
+                    .Select(m => m.UserId).ToList();
+                foreach (var adminId in admins)
+                    await SendNotification(adminId,
+                        $"📩 {currentUser?.Username} quiere unirse a \"{group.Name}\" (por enlace)",
+                        $"/Group/JoinRequests/{group.Id}", userId);
+            }
+
+            TempData["Success"] = "Solicitud enviada. Espera a que un admin la apruebe.";
+            return RedirectToAction("Index");
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> GenerateInviteCode(int groupId)
+        {
+            var userId = int.Parse(User.FindFirst("UserId").Value);
+            var isAdmin = _context.GroupMembers
+                .Any(m => m.GroupId == groupId && m.UserId == userId && m.Role == "Admin" && m.IsActive);
+            if (!isAdmin) return Json(new { success = false });
+
+            var group = _context.Groups.FirstOrDefault(g => g.Id == groupId);
+            if (group == null) return Json(new { success = false });
+
+            if (string.IsNullOrEmpty(group.InviteCode))
+            {
+                group.InviteCode = Guid.NewGuid().ToString("N").Substring(0, 10);
+                await _context.SaveChangesAsync();
+            }
+
+            var link = $"{Request.Scheme}://{Request.Host}/Group/Join/{group.InviteCode}";
+            return Json(new { success = true, code = group.InviteCode, link });
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> ResetInviteCode(int groupId)
+        {
+            var userId = int.Parse(User.FindFirst("UserId").Value);
+            var isAdmin = _context.GroupMembers
+                .Any(m => m.GroupId == groupId && m.UserId == userId && m.Role == "Admin" && m.IsActive);
+            if (!isAdmin) return Json(new { success = false });
+
+            var group = _context.Groups.FirstOrDefault(g => g.Id == groupId);
+            if (group == null) return Json(new { success = false });
+
+            group.InviteCode = Guid.NewGuid().ToString("N").Substring(0, 10);
+            await _context.SaveChangesAsync();
+
+            var link = $"{Request.Scheme}://{Request.Host}/Group/Join/{group.InviteCode}";
+            return Json(new { success = true, link });
         }
 
         [HttpPost]
@@ -765,7 +1115,15 @@ namespace HabitTrackerApp.Controllers
     {
         public int GroupId { get; set; }
         public string Reason { get; set; }
+
+
     }
+    public class RespondJoinDto
+    {
+        public int RequestId { get; set; }
+        public bool Accept { get; set; }
+    }
+
 
 
 }
