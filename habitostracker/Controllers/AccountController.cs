@@ -1267,7 +1267,7 @@ namespace HabitTrackerApp.Controllers
 
                 var imageUrl = await _cloudinaryService.UploadImageAsync(formFile, "habitostracker/profiles");
                 var mod = await _cloudinaryService.CheckImageModeration(imageUrl);
-                if (mod == "explicit" || mod == "sensitive")
+                if (mod == "explicit")
                 {
                     await _cloudinaryService.DeleteImageAsync(imageUrl);
                     TempData["Error"] = "La foto de perfil contiene contenido inapropiado y no puede usarse.";
@@ -1279,7 +1279,7 @@ namespace HabitTrackerApp.Controllers
             {
                 var imageUrl = await _cloudinaryService.UploadImageAsync(profilePhoto, "habitostracker/profiles");
                 var mod = await _cloudinaryService.CheckImageModeration(imageUrl);
-                if (mod == "explicit" || mod == "sensitive")
+                if (mod == "explicit")
                 {
                     await _cloudinaryService.DeleteImageAsync(imageUrl);
                     TempData["Error"] = "La foto de perfil contiene contenido inapropiado y no puede usarse.";
