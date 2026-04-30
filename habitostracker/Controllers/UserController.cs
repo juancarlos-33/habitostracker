@@ -49,9 +49,11 @@ namespace HabitTrackerApp.Controllers
             var myId = int.Parse(User.FindFirst("UserId").Value);
 
             var users = _context.Users
-               .Where(u => u.Role != "SuperAdmin" && u.Role != "Guest" && u.Role != "System")
+                .Where(u => u.Role != "SuperAdmin" && u.Role != "Guest" && u.Role != "System" && u.IsActive)
                 .OrderByDescending(u => u.Role == "Admin")
                 .ThenBy(u => u.Username)
+                .ToList()
+                .DistinctBy(u => u.Id)
                 .ToList();
 
             var sentRequests = _context.FriendRequests
@@ -60,9 +62,9 @@ namespace HabitTrackerApp.Controllers
                 .ToList();
 
             var friendIds = _context.FriendRequests
-      .Where(f => (f.SenderId == myId || f.ReceiverId == myId) && f.Status == "Accepted")
-      .Select(f => f.SenderId == myId ? f.ReceiverId : f.SenderId)
-      .ToList();
+                .Where(f => (f.SenderId == myId || f.ReceiverId == myId) && f.Status == "Accepted")
+                .Select(f => f.SenderId == myId ? f.ReceiverId : f.SenderId)
+                .ToList();
 
             var validUserIds = _context.Users.Select(u => u.Id).ToHashSet();
             var friends = friendIds.Where(id => validUserIds.Contains(id)).Distinct().ToList();
@@ -72,7 +74,6 @@ namespace HabitTrackerApp.Controllers
 
             return View(users);
         }
-
         public IActionResult Profile(int id)
         {
             if (id == 0) return View("UserDeleted");
