@@ -83,7 +83,7 @@
                             }
                         </div>
                <div class="post-time-wrap">
-    <span class="post-time">@post.CreatedAt.ToString("dd MMM yyyy · hh:mm tt")</span>
+ <span class="post-time">@post.CreatedAt.ToString("dd MMM yyyy · hh:mm tt", new System.Globalization.CultureInfo("es-CO"))</span>
     @if (post.UserId == currentUserId)
     {
         if (post.Privacy == "Friends")

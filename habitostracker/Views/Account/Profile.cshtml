@@ -328,10 +328,9 @@
 
                     <input type="hidden" id="isPrivateInput" name="IsPrivate" value="@(Model.IsPrivate ? "true" : "false")" />
                 </div>
-
-                <button type="submit" class="my-save-btn">
-                    💾 Guardar cambios
-                </button>
+<button type="button" class="my-save-btn" onclick="guardarPerfil()">
+    💾 Guardar cambios
+</button>
             </form>
         </div>
     </div>
@@ -611,11 +610,68 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.js"></script>
 <script>
 let cropper;
-const input = document.getElementById("imageInput");
-const image = document.getElementById("cropImage");
+let input, image, hiddenInput, cropperSection;
 
-const hiddenInput = document.getElementById("croppedImageInput");
-const cropperSection = document.getElementById("cropperSection");
+document.addEventListener("DOMContentLoaded", function() {
+    input = document.getElementById("imageInput");
+    image = document.getElementById("cropImage");
+    hiddenInput = document.getElementById("croppedImageInput");
+    cropperSection = document.getElementById("cropperSection");
+
+    input.addEventListener("change", function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            image.src = event.target.result;
+            cropperSection.style.display = "block";
+            cropperSection.scrollIntoView({ behavior:"smooth", block:"start" });
+            if (cropper) cropper.destroy();
+            cropper = new Cropper(image, { aspectRatio:1, viewMode:1, autoCropArea:1, zoomable:true });
+        };
+        reader.readAsDataURL(file);
+    });
+
+    document.getElementById("cropButton").addEventListener("click", function() {
+        if (!cropper) return;
+        const canvas = cropper.getCroppedCanvas({ width:300, height:300 });
+        const base64 = canvas.toDataURL("image/png");
+
+        let previewEl = document.getElementById("previewImage");
+        if (!previewEl) {
+            previewEl = document.createElement("img");
+            previewEl.id = "previewImage";
+            previewEl.className = "my-avatar";
+            previewEl.style.cursor = "pointer";
+            previewEl.onclick = function() { abrirFotoPerfil(this.src); };
+            document.querySelector(".my-avatar-section").prepend(previewEl);
+        }
+        previewEl.src = base64;
+        previewEl.style.display = "block";
+
+        const letter = document.getElementById("previewLetter");
+        if (letter) letter.style.display = "none";
+
+        hiddenInput.value = base64;
+        console.log("✅ croppedImage seteado, longitud:", hiddenInput.value.length);
+
+        cropperSection.style.display = "none";
+        cropper.destroy();
+        cropper = null;
+    });
+
+    document.getElementById("removePhotoBtn").addEventListener("click", function() {
+        hiddenInput.value = "REMOVE";
+        const previewEl = document.getElementById("previewImage");
+        if (previewEl) previewEl.style.display = "none";
+        const oldLetter = document.getElementById("previewLetter");
+        if (oldLetter) { oldLetter.style.display = "flex"; return; }
+        const letter = document.createElement("div");
+        letter.id = "previewLetter"; letter.className = "my-avatar-letter";
+        letter.innerText = "@Model.Username.Substring(0, 1).ToUpper()";
+        document.querySelector(".my-avatar-section").prepend(letter);
+    });
+});
 
 input.addEventListener("change", function(e) {
     const file = e.target.files[0];
@@ -862,6 +918,13 @@ function openFollowModal(type) {
     list.innerHTML = "<div style='text-align:center;padding:20px;color:rgba(255,255,255,0.3);'>Cargando...</div>";
     fetch('/User/' + (type === "followers" ? "GetFollowers" : "GetFollowing") + '?userId=@Model.Id')
         .then(r => r.text()).then(data => list.innerHTML = data);
+}
+
+function guardarPerfil() {
+    const hidden = document.getElementById('croppedImageInput');
+    console.log('croppedImage value:', hidden.value ? hidden.value.substring(0, 50) : 'VACÍO');
+    document.getElementById('createForm') // esto va a fallar, necesito el id del form
+    document.querySelector('form[action*="Profile"]').submit();
 }
 
 function closeFollowModal() {
