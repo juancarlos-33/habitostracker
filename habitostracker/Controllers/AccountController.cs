@@ -886,7 +886,24 @@ namespace HabitTrackerApp.Controllers
             };
 
             _context.Users.Add(newUser);
+
             _context.SaveChanges();
+
+            // 🔥 Crear publicación de bienvenida automática
+            var welcomePost = new Post
+            {
+                UserId = newUser.Id,
+                Username = newUser.Username,
+                Description = $"🎉 ¡Bienvenido/a {newUser.Username}! La comunidad de HabitTracker está feliz de tenerte. Cuéntanos, ¿qué hábito quieres construir hoy? 💪",
+                ImagePath = null, // o puedes poner una imagen por defecto
+                CreatedAt = DateTime.Now,
+                IsSensitive = false,
+                Privacy = "Public", // o "Friends" si prefieres
+                IsWelcomePost = true,
+                IsOfficialAnnouncement = false
+            };
+            _context.Posts.Add(welcomePost);
+            await _context.SaveChangesAsync();
 
             await SendConfirmationCode(newUser);
             _context.SaveChanges();
@@ -1672,6 +1689,22 @@ namespace HabitTrackerApp.Controllers
                     };
                     _context.Users.Add(user);
                     _context.SaveChanges();
+
+                    // 🔥 PUBLICACIÓN DE BIENVENIDA PARA CUENTA NUEVA
+                    var welcomePost = new Post
+                    {
+                        UserId = user.Id,
+                        Username = user.Username,
+                        Description = $"🎉 ¡Bienvenido/a {user.Username}! La comunidad de HabitTracker está feliz de tenerte. Cuéntanos, ¿qué hábito quieres construir hoy? 💪",
+                        ImagePath = null,
+                        CreatedAt = DateTime.Now,
+                        IsSensitive = false,
+                        Privacy = "Public",
+                        IsWelcomePost = true
+                    };
+                    _context.Posts.Add(welcomePost);
+                    await _context.SaveChangesAsync();
+
                     await SendSystemWelcomeMessage(user.Id);
                 }
                 else
@@ -1924,7 +1957,6 @@ namespace HabitTrackerApp.Controllers
             {
                 int currentUserId = int.Parse(userIdClaim.Value);
                 var currentUser = _context.Users.FirstOrDefault(u => u.Id == currentUserId);
-
                 if (currentUser == null)
                 {
                     await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
@@ -1943,6 +1975,22 @@ namespace HabitTrackerApp.Controllers
                     currentUser.Bio = "Registrado con Google";
                     currentUser.IsActive = true;
                     _context.SaveChanges();
+
+                    // 🔥 PUBLICACIÓN DE BIENVENIDA PARA INVITADO QUE CONVIERTE
+                    var welcomePost = new Post
+                    {
+                        UserId = currentUser.Id,
+                        Username = currentUser.Username,
+                        Description = $"🎉 ¡Bienvenido/a {currentUser.Username}! La comunidad de HabitTracker está feliz de tenerte. Cuéntanos, ¿qué hábito quieres construir hoy? 💪",
+                        ImagePath = null,
+                        CreatedAt = DateTime.Now,
+                        IsSensitive = false,
+                        Privacy = "Public",
+                        IsWelcomePost = true
+                    };
+                    _context.Posts.Add(welcomePost);
+                    await _context.SaveChangesAsync();
+
                     await SignInUser(currentUser);
                     return RedirectToAction("CompleteProfile", "Account");
                 }
@@ -1974,6 +2022,22 @@ namespace HabitTrackerApp.Controllers
                 };
                 _context.Users.Add(user);
                 _context.SaveChanges();
+
+                // 🔥 PUBLICACIÓN DE BIENVENIDA PARA CUENTA NUEVA
+                var welcomePost = new Post
+                {
+                    UserId = user.Id,
+                    Username = user.Username,
+                    Description = $"🎉 ¡Bienvenido/a {user.Username}! La comunidad de HabitTracker está feliz de tenerte. Cuéntanos, ¿qué hábito quieres construir hoy? 💪",
+                    ImagePath = null,
+                    CreatedAt = DateTime.Now,
+                    IsSensitive = false,
+                    Privacy = "Public",
+                    IsWelcomePost = true
+                };
+                _context.Posts.Add(welcomePost);
+                await _context.SaveChangesAsync();
+
                 await SendSystemWelcomeMessage(user.Id);
             }
 
@@ -2025,7 +2089,6 @@ namespace HabitTrackerApp.Controllers
 
             return RedirectToAction("Index", "Habit");
         }
-
         [HttpPost]
         public async Task<IActionResult> CloseSession([FromBody] CloseSessionDto dto)
         {

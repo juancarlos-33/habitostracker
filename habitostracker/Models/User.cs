@@ -92,6 +92,20 @@ namespace HabitTrackerApp.Models
         public string? SecurityQuestion2 { get; set; }
         public string? SecurityAnswer2 { get; set; }
         public string? SecurityQuestion3 { get; set; }
+        // En User.cs agregar:
+        public bool HasWelcomePost { get; set; } = false;
+        public int RiskLevel { get; set; } = 0; // 0=normal, 1=riesgo, 2=advertencia, 3=bloqueado
+        public DateTime? LastWarningAt { get; set; }
+        public string? WarningMessage { get; set; }
+
+        // En Post.cs agregar:
+        public bool CommentsDisabled { get; set; } = false;
+        public bool IsOfficialAnnouncement { get; set; } = false;
+        public bool IsWarningPost { get; set; } = false;
+
+        // En Group.cs agregar:
+        public bool ShowHealthWarning { get; set; } = false;
+        public string? HealthWarningMessage { get; set; }
         public string? SecurityAnswer3 { get; set; }
 
         // 📌 chats anclados (IDs separados por coma)

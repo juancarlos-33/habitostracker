@@ -11,6 +11,8 @@ namespace HabitTrackerApp.Models
         public bool IsPublic { get; set; } = false;
         public string? InviteCode { get; set; }
         public ICollection<GroupJoinRequest> JoinRequests { get; set; }
+        public bool ShowHealthWarning { get; set; } = false;  // si el grupo es de salud mental
+        public string? HealthWarningMessage { get; set; }
         public string? Description { get; set; }
         public string? ImageUrl { get; set; }
         public int CreatorId { get; set; }

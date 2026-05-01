@@ -16,8 +16,12 @@ namespace HabitTrackerApp.Models
 
 
         public string? ImagePath { get; set; }
+        public bool CommentsDisabled { get; set; } = false;
+        public bool IsOfficialAnnouncement { get; set; } = false;
+        public bool IsWarningPost { get; set; } = false;
+        public bool IsWelcomePost { get; set; } = false; // para la publicación de bienvenida
 
-       
+
 
         public string? Description { get; set; }
         public bool IsSensitive { get; set; }
