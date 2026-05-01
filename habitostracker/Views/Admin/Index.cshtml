@@ -8,351 +8,627 @@
     bool isBlocked = block != null && block.IsBlocked;
     var recentUsers = ViewBag.RecentUsers as List<HabitTrackerApp.Models.User> ?? new List<HabitTrackerApp.Models.User>();
     var adminName = User.Identity?.Name ?? "Admin";
+    var totalUsers = _context.Users.Count(u => u.Role != "Guest" && u.Role != "System");
+    var totalHabits = _context.Habits.Count();
+    var totalMessages = _context.Messages.Count();
+    var totalPremium = _context.Users.Count(u => u.IsPremium);
+    var totalPosts = _context.Posts.Count();
+    var totalGroups = _context.Groups.Count(g => g.IsActive);
+    var completedToday = _context.HabitHistories.Count(h => h.Date == DateTime.Today && h.Completed);
+    var newUsersToday = _context.Users.Count(u => u.CreatedAt.HasValue && u.CreatedAt.Value.Date == DateTime.Today);
 }
 
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet">
 
 <style>
-.admin-page { max-width: 1060px; margin: 0 auto; font-family: 'Plus Jakarta Sans', sans-serif; padding-bottom: 60px; }
+*, *::before, *::after { box-sizing: border-box; }
+
+.ap { 
+    max-width: 1100px; margin: 0 auto; 
+    font-family: 'Plus Jakarta Sans', sans-serif; 
+    padding-bottom: 80px;
+}
+
+/* ══ CANVAS 3D BG ══ */
+#adminCanvas {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    pointer-events: none; z-index: 0; opacity: 0.35;
+}
+
+.ap > * { position: relative; z-index: 1; }
 
 /* ══ HERO ══ */
-.admin-hero {
-    background: linear-gradient(135deg, #0f172a, #1e293b);
-    border-radius: 28px; padding: 28px 32px;
-    margin-bottom: 20px; position: relative; overflow: hidden;
-    border: 1px solid rgba(255,255,255,0.06);
-    display: flex; align-items: center; gap: 20px;
+.ap-hero {
+    background: linear-gradient(135deg, #020617 0%, #0f172a 40%, #1e1b4b 100%);
+    border-radius: 32px; padding: 36px 40px;
+    margin-bottom: 24px; position: relative; overflow: hidden;
+    border: 1px solid rgba(99,102,241,0.2);
+    box-shadow: 0 0 60px rgba(99,102,241,0.15), 0 32px 64px rgba(0,0,0,0.4);
 }
-.admin-hero::before {
-    content:''; position:absolute; top:-60px; right:-60px;
+.ap-hero::before {
+    content:''; position:absolute; top:-80px; right:-80px;
+    width:320px; height:320px;
+    background: radial-gradient(circle, rgba(99,102,241,0.25), transparent 70%);
+    border-radius:50%; animation: rotateGlow 8s linear infinite;
+}
+.ap-hero::after {
+    content:''; position:absolute; bottom:-60px; left:60px;
     width:240px; height:240px;
-    background: radial-gradient(circle, rgba(99,102,241,0.18), transparent 70%);
-    border-radius:50%; pointer-events:none;
+    background: radial-gradient(circle, rgba(234,179,8,0.15), transparent 70%);
+    border-radius:50%;
 }
-.admin-hero::after {
-    content:''; position:absolute; bottom:-40px; left:80px;
-    width:160px; height:160px;
-    background: radial-gradient(circle, rgba(234,179,8,0.12), transparent 70%);
-    border-radius:50%; pointer-events:none;
+@@keyframes rotateGlow {
+    0% { transform: rotate(0deg) scale(1); }
+    50% { transform: rotate(180deg) scale(1.2); }
+    100% { transform: rotate(360deg) scale(1); }
 }
-.admin-hero-mascot {
-    width: 80px; height: 80px; border-radius: 20px; object-fit: cover;
-    border: 2px solid rgba(99,102,241,0.4);
-    box-shadow: 0 0 0 6px rgba(99,102,241,0.08), 0 8px 24px rgba(0,0,0,0.4);
-    flex-shrink: 0; position: relative; z-index: 1;
-    animation: floatMascot 3s ease-in-out infinite;
-}
-@@keyframes floatMascot { 0%,100%{transform:translateY(0);} 50%{transform:translateY(-6px);} }
-.admin-hero-info { flex: 1; position: relative; z-index: 1; }
-.admin-hero-badge {
-    display: inline-flex; align-items: center; gap: 6px;
-    background: rgba(234,179,8,0.12); border: 1px solid rgba(234,179,8,0.25);
-    border-radius: 20px; padding: 4px 12px;
-    font-size: 11px; font-weight: 700; color: #fbbf24;
-    margin-bottom: 8px;
-}
-.admin-hero-title { font-size: 22px; font-weight: 800; color: white; margin: 0 0 4px; }
-.admin-hero-sub { font-size: 13px; color: rgba(255,255,255,0.4); margin: 0; }
-.admin-hero-clock {
-    position: relative; z-index: 1; flex-shrink: 0;
-    background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08);
-    border-radius: 16px; padding: 12px 20px; text-align: center;
-}
-.admin-clock-time { font-size: 22px; font-weight: 800; color: white; font-variant-numeric: tabular-nums; }
-.admin-clock-date { font-size: 10px; color: rgba(255,255,255,0.3); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px; }
 
-/* ══ KPI ROW ══ */
-.admin-kpis {
+.ap-hero-inner { display: flex; align-items: center; gap: 24px; position: relative; z-index: 1; }
+
+.ap-hero-avatar {
+    width: 90px; height: 90px; border-radius: 24px; object-fit: cover;
+    border: 2px solid rgba(99,102,241,0.5);
+    box-shadow: 0 0 0 6px rgba(99,102,241,0.1), 0 0 30px rgba(99,102,241,0.4);
+    flex-shrink: 0; animation: floatAvatar 4s ease-in-out infinite;
+}
+@@keyframes floatAvatar {
+    0%,100% { transform: translateY(0) rotate(0deg); }
+    33% { transform: translateY(-8px) rotate(1deg); }
+    66% { transform: translateY(-4px) rotate(-1deg); }
+}
+
+.ap-hero-info { flex: 1; }
+.ap-hero-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: linear-gradient(135deg, rgba(234,179,8,0.15), rgba(251,191,36,0.08));
+    border: 1px solid rgba(234,179,8,0.3);
+    border-radius: 20px; padding: 5px 14px;
+    font-size: 11px; font-weight: 700; color: #fbbf24;
+    margin-bottom: 10px; letter-spacing: 0.5px;
+}
+.ap-hero-title { 
+    font-size: 28px; font-weight: 900; color: white; 
+    margin: 0 0 6px; letter-spacing: -0.5px;
+    background: linear-gradient(135deg, #fff, #c7d2fe);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+}
+.ap-hero-sub { font-size: 14px; color: rgba(255,255,255,0.45); margin: 0; }
+.ap-hero-sub strong { color: #818cf8; -webkit-text-fill-color: #818cf8; }
+
+.ap-hero-stats {
+    display: flex; gap: 16px; margin-top: 20px; flex-wrap: wrap;
+}
+.ap-hero-stat {
+    background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 14px; padding: 10px 18px; text-align: center;
+    transition: 0.2s;
+}
+.ap-hero-stat:hover { background: rgba(99,102,241,0.15); border-color: rgba(99,102,241,0.3); }
+.ap-hero-stat-num { font-size: 20px; font-weight: 800; color: white; }
+.ap-hero-stat-lbl { font-size: 10px; color: rgba(255,255,255,0.35); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px; }
+
+.ap-clock {
+    flex-shrink: 0; text-align: center;
+    background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 20px; padding: 16px 24px;
+    position: relative; z-index: 1;
+}
+.ap-clock-time { 
+    font-size: 32px; font-weight: 900; color: white; 
+    font-variant-numeric: tabular-nums; letter-spacing: -1px;
+    text-shadow: 0 0 20px rgba(99,102,241,0.6);
+}
+.ap-clock-date { font-size: 11px; color: rgba(255,255,255,0.3); font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin-top: 4px; }
+.ap-clock-dot { 
+    width: 8px; height: 8px; border-radius: 50%; background: #22c55e;
+    display: inline-block; margin-right: 6px;
+    box-shadow: 0 0 8px rgba(34,197,94,0.8);
+    animation: livePulse 2s infinite;
+}
+@@keyframes livePulse { 0%,100%{opacity:1;} 50%{opacity:0.3;} }
+
+/* ══ KPI GRID ══ */
+.ap-kpis {
     display: grid; grid-template-columns: repeat(4, 1fr);
-    gap: 12px; margin-bottom: 20px;
+    gap: 14px; margin-bottom: 24px;
 }
-.admin-kpi {
-    background: white; border-radius: 18px; padding: 18px 16px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.05); border: 1px solid rgba(0,0,0,0.04);
-    display: flex; align-items: center; gap: 12px; transition: 0.2s;
+.ap-kpi {
+    background: linear-gradient(135deg, #0f172a, #1e293b);
+    border-radius: 20px; padding: 20px;
+    border: 1px solid rgba(255,255,255,0.07);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+    transition: all 0.3s cubic-bezier(0.34,1.56,0.64,1);
+    cursor: default; overflow: hidden; position: relative;
 }
-.admin-kpi:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.1); }
-.admin-kpi-icon {
-    width: 42px; height: 42px; border-radius: 13px; flex-shrink: 0;
-    display: flex; align-items: center; justify-content: center; font-size: 20px;
+.ap-kpi::before {
+    content:''; position:absolute; top:0; left:0; right:0; height:2px;
+    border-radius:20px 20px 0 0;
 }
-.admin-kpi-icon.blue { background: rgba(37,99,235,0.1); }
-.admin-kpi-icon.green { background: rgba(22,163,74,0.1); }
-.admin-kpi-icon.purple { background: rgba(99,102,241,0.1); }
-.admin-kpi-icon.gold { background: rgba(217,119,6,0.1); }
-.admin-kpi-val { font-size: 24px; font-weight: 800; color: #111827; line-height: 1; }
-.admin-kpi-lbl { font-size: 11px; color: #9ca3af; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px; }
+.ap-kpi.blue::before { background: linear-gradient(90deg, #2563eb, #3b82f6); }
+.ap-kpi.green::before { background: linear-gradient(90deg, #16a34a, #22c55e); }
+.ap-kpi.purple::before { background: linear-gradient(90deg, #6366f1, #8b5cf6); }
+.ap-kpi.gold::before { background: linear-gradient(90deg, #d97706, #fbbf24); }
+.ap-kpi.rose::before { background: linear-gradient(90deg, #e11d48, #f43f5e); }
+.ap-kpi.cyan::before { background: linear-gradient(90deg, #0891b2, #06b6d4); }
+.ap-kpi.orange::before { background: linear-gradient(90deg, #ea580c, #f97316); }
+.ap-kpi.emerald::before { background: linear-gradient(90deg, #059669, #10b981); }
+
+.ap-kpi:hover { 
+    transform: translateY(-4px) scale(1.02); 
+    box-shadow: 0 16px 40px rgba(0,0,0,0.3);
+    border-color: rgba(255,255,255,0.15);
+}
+.ap-kpi-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.ap-kpi-icon {
+    width: 44px; height: 44px; border-radius: 14px;
+    display: flex; align-items: center; justify-content: center; font-size: 22px;
+}
+.ap-kpi.blue .ap-kpi-icon { background: rgba(37,99,235,0.15); }
+.ap-kpi.green .ap-kpi-icon { background: rgba(22,163,74,0.15); }
+.ap-kpi.purple .ap-kpi-icon { background: rgba(99,102,241,0.15); }
+.ap-kpi.gold .ap-kpi-icon { background: rgba(217,119,6,0.15); }
+.ap-kpi.rose .ap-kpi-icon { background: rgba(225,29,72,0.15); }
+.ap-kpi.cyan .ap-kpi-icon { background: rgba(8,145,178,0.15); }
+.ap-kpi.orange .ap-kpi-icon { background: rgba(234,88,12,0.15); }
+.ap-kpi.emerald .ap-kpi-icon { background: rgba(5,150,105,0.15); }
+
+.ap-kpi-trend {
+    font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 20px;
+}
+.ap-kpi-trend.up { background: rgba(34,197,94,0.15); color: #4ade80; }
+.ap-kpi-trend.neutral { background: rgba(148,163,184,0.15); color: #94a3b8; }
+
+.ap-kpi-val { font-size: 32px; font-weight: 900; color: white; line-height: 1; margin-bottom: 4px; }
+.ap-kpi-lbl { font-size: 11px; color: rgba(255,255,255,0.35); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+
+/* ══ SECTION HEADER ══ */
+.ap-section-hdr {
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 14px;
+}
+.ap-section-title { font-size: 16px; font-weight: 800; color: #f1f5f9; }
+.ap-section-line { flex: 1; height: 1px; background: rgba(255,255,255,0.06); }
+.ap-section-badge {
+    font-size: 11px; font-weight: 700; padding: 3px 10px;
+    border-radius: 20px; background: rgba(99,102,241,0.15);
+    color: #818cf8; border: 1px solid rgba(99,102,241,0.2);
+}
 
 /* ══ MODULES ══ */
-.admin-section-title {
-    font-size: 14px; font-weight: 800; color: #111827;
-    margin-bottom: 12px; display: flex; align-items: center; gap: 8px;
+.ap-modules {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 12px; margin-bottom: 24px;
 }
-.modules-grid {
-    display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 10px; margin-bottom: 20px;
-}
-.module-card {
-    display: flex; align-items: center; gap: 14px;
-    padding: 16px 18px; border-radius: 16px; text-decoration: none;
-    transition: 0.2s; border: 1px solid rgba(0,0,0,0.04);
-    background: white; box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+.ap-module {
+    display: flex; align-items: center; gap: 16px;
+    padding: 18px 20px; border-radius: 18px; text-decoration: none;
+    background: linear-gradient(135deg, #0f172a, #1e293b);
+    border: 1px solid rgba(255,255,255,0.06);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+    transition: all 0.3s cubic-bezier(0.34,1.56,0.64,1);
     position: relative; overflow: hidden;
 }
-.module-card::before {
-    content: ''; position: absolute; left: 0; top: 0; bottom: 0;
-    width: 4px; border-radius: 4px 0 0 4px;
+.ap-module::after {
+    content:''; position:absolute; inset:0;
+    background: linear-gradient(135deg, transparent, rgba(99,102,241,0.05));
+    opacity: 0; transition: 0.3s;
 }
-.module-card.users::before { background: #2563eb; }
-.module-card.habits::before { background: #f97316; }
-.module-card.messages::before { background: #8b5cf6; }
-.module-card.stats::before { background: #16a34a; }
-.module-card.feedback::before { background: #dc2626; }
-.module-card.logs::before { background: #d97706; }
-.module-card.reports::before { background: #ef4444; }
-.module-card.payments::before { background: #22c55e; }
-.module-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.1); }
-.module-icon { font-size: 26px; flex-shrink: 0; }
-.module-info { flex: 1; }
-.module-name { font-size: 14px; font-weight: 700; color: #111827; display: flex; align-items: center; gap: 8px; }
-.module-desc { font-size: 11px; color: #9ca3af; margin-top: 2px; }
-.module-badge { background: #dc2626; color: white; font-size: 10px; font-weight: 800; padding: 2px 7px; border-radius: 20px; }
-.module-arrow { font-size: 16px; color: #d1d5db; transition: 0.2s; }
-.module-card:hover .module-arrow { color: #6b7280; transform: translateX(3px); }
+.ap-module:hover { 
+    transform: translateY(-3px) scale(1.02); 
+    box-shadow: 0 16px 40px rgba(0,0,0,0.3);
+    border-color: rgba(99,102,241,0.3);
+}
+.ap-module:hover::after { opacity: 1; }
 
-/* ══ RECENT USERS ══ */
-.recent-section {
-    background: white; border-radius: 22px; padding: 24px;
-    box-shadow: 0 2px 12px rgba(0,0,0,0.06); border: 1px solid rgba(0,0,0,0.04);
+.ap-module-stripe {
+    position: absolute; left: 0; top: 0; bottom: 0; width: 3px; border-radius: 18px 0 0 18px;
 }
-.recent-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; }
-.recent-title { font-size: 16px; font-weight: 800; color: #111827; margin: 0 0 3px; }
-.recent-subtitle { font-size: 12px; color: #9ca3af; margin: 0; }
-.recent-count-badge {
-    background: rgba(99,102,241,0.08); border: 1px solid rgba(99,102,241,0.15);
-    color: #6366f1; font-size: 12px; font-weight: 700;
-    padding: 4px 12px; border-radius: 20px;
+.ap-module.m-users .ap-module-stripe { background: linear-gradient(180deg, #2563eb, #3b82f6); }
+.ap-module.m-habits .ap-module-stripe { background: linear-gradient(180deg, #ea580c, #f97316); }
+.ap-module.m-stats .ap-module-stripe { background: linear-gradient(180deg, #16a34a, #22c55e); }
+.ap-module.m-feedback .ap-module-stripe { background: linear-gradient(180deg, #dc2626, #ef4444); }
+.ap-module.m-logs .ap-module-stripe { background: linear-gradient(180deg, #d97706, #fbbf24); }
+.ap-module.m-reports .ap-module-stripe { background: linear-gradient(180deg, #9333ea, #a855f7); }
+.ap-module.m-payments .ap-module-stripe { background: linear-gradient(180deg, #059669, #10b981); }
+.ap-module.m-security .ap-module-stripe { background: linear-gradient(180deg, #0891b2, #06b6d4); }
+
+.ap-module-icon {
+    width: 46px; height: 46px; border-radius: 14px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px; background: rgba(255,255,255,0.06);
+    transition: 0.3s;
 }
-.recent-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px; }
-.recent-card {
+.ap-module:hover .ap-module-icon { transform: scale(1.1) rotate(5deg); }
+
+.ap-module-info { flex: 1; min-width: 0; }
+.ap-module-name { 
+    font-size: 14px; font-weight: 800; color: #f1f5f9; 
+    display: flex; align-items: center; gap: 8px; margin-bottom: 3px;
+}
+.ap-module-desc { font-size: 11px; color: rgba(255,255,255,0.3); }
+.ap-module-badge { 
+    background: #ef4444; color: white; font-size: 10px; 
+    font-weight: 800; padding: 2px 7px; border-radius: 20px;
+    animation: badgePulse 2s infinite;
+}
+@@keyframes badgePulse { 0%,100%{transform:scale(1);} 50%{transform:scale(1.1);} }
+.ap-module-arrow { 
+    font-size: 18px; color: rgba(255,255,255,0.2); transition: 0.3s; flex-shrink: 0;
+}
+.ap-module:hover .ap-module-arrow { color: #818cf8; transform: translateX(4px); }
+
+/* ══ ACTIVITY FEED ══ */
+.ap-activity {
+    background: linear-gradient(135deg, #0f172a, #1e293b);
+    border-radius: 24px; padding: 24px;
+    border: 1px solid rgba(255,255,255,0.07);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+    margin-bottom: 24px;
+}
+.ap-activity-item {
+    display: flex; align-items: center; gap: 14px;
+    padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,0.05);
+    transition: 0.2s;
+}
+.ap-activity-item:last-child { border-bottom: none; padding-bottom: 0; }
+.ap-activity-item:hover { padding-left: 6px; }
+.ap-activity-dot {
+    width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+}
+.ap-activity-dot.blue { background: #3b82f6; box-shadow: 0 0 8px rgba(59,130,246,0.6); }
+.ap-activity-dot.green { background: #22c55e; box-shadow: 0 0 8px rgba(34,197,94,0.6); }
+.ap-activity-dot.purple { background: #8b5cf6; box-shadow: 0 0 8px rgba(139,92,246,0.6); }
+.ap-activity-dot.gold { background: #fbbf24; box-shadow: 0 0 8px rgba(251,191,36,0.6); }
+.ap-activity-dot.rose { background: #f43f5e; box-shadow: 0 0 8px rgba(244,63,94,0.6); }
+.ap-activity-text { flex: 1; font-size: 13px; color: rgba(255,255,255,0.7); font-weight: 500; }
+.ap-activity-text strong { color: white; font-weight: 700; }
+.ap-activity-time { font-size: 11px; color: rgba(255,255,255,0.25); font-weight: 600; white-space: nowrap; }
+
+/* ══ USERS GRID ══ */
+.ap-users {
+    background: linear-gradient(135deg, #0f172a, #1e293b);
+    border-radius: 24px; padding: 24px;
+    border: 1px solid rgba(255,255,255,0.07);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+}
+.ap-users-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; }
+.ap-user-card {
     display: flex; align-items: center; gap: 10px;
-    padding: 12px; border-radius: 14px;
-    border: 1px solid #f3f4f6; text-decoration: none;
-    transition: 0.2s; background: #f9fafb; position: relative;
+    padding: 12px 14px; border-radius: 14px;
+    border: 1px solid rgba(255,255,255,0.06); text-decoration: none;
+    transition: all 0.25s cubic-bezier(0.34,1.56,0.64,1);
+    background: rgba(255,255,255,0.03); position: relative; overflow: hidden;
 }
-.recent-card:hover { background: #eff6ff; border-color: #bfdbfe; transform: translateY(-1px); }
-.recent-avatar-wrap { position: relative; flex-shrink: 0; }
-.recent-avatar { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid #e5e7eb; }
-.recent-avatar-letter {
-    width: 40px; height: 40px; border-radius: 50%;
-    background: linear-gradient(135deg, #2563eb, #7c3aed);
+.ap-user-card::before {
+    content:''; position:absolute; inset:0;
+    background: linear-gradient(135deg, rgba(99,102,241,0.08), transparent);
+    opacity:0; transition:0.3s;
+}
+.ap-user-card:hover { 
+    transform: translateY(-2px) scale(1.02);
+    border-color: rgba(99,102,241,0.3);
+    box-shadow: 0 8px 24px rgba(99,102,241,0.15);
+}
+.ap-user-card:hover::before { opacity: 1; }
+.ap-user-avatar-wrap { position: relative; flex-shrink: 0; }
+.ap-user-avatar { 
+    width: 42px; height: 42px; border-radius: 50%; object-fit: cover; 
+    border: 2px solid rgba(255,255,255,0.1);
+}
+.ap-user-letter {
+    width: 42px; height: 42px; border-radius: 50%;
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
     color: white; display: flex; align-items: center; justify-content: center;
-    font-weight: 800; font-size: 15px;
+    font-weight: 800; font-size: 16px;
 }
-.google-dot {
+.ap-google-dot {
     position: absolute; bottom: -2px; right: -2px;
     background: #4285f4; color: white; font-size: 8px; font-weight: 800;
     width: 16px; height: 16px; border-radius: 50%;
-    display: flex; align-items: center; justify-content: center; border: 2px solid white;
+    display: flex; align-items: center; justify-content: center;
+    border: 2px solid #0f172a;
 }
-.recent-info { flex: 1; min-width: 0; }
-.recent-name { display: block; font-size: 13px; font-weight: 700; color: #111827; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.recent-date { display: block; font-size: 10px; color: #9ca3af; margin-top: 2px; }
-.recent-role { font-size: 9px; font-weight: 700; padding: 2px 6px; border-radius: 20px; position: absolute; top: 8px; right: 8px; }
-.recent-role.admin { background: #dbeafe; color: #1d4ed8; }
+.ap-user-info { flex: 1; min-width: 0; }
+.ap-user-name { 
+    display: block; font-size: 13px; font-weight: 700; color: #f1f5f9; 
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.ap-user-date { display: block; font-size: 10px; color: rgba(255,255,255,0.25); margin-top: 2px; }
+.ap-user-role { 
+    font-size: 9px; font-weight: 700; padding: 2px 6px; border-radius: 20px; 
+    position: absolute; top: 8px; right: 8px; flex-shrink: 0;
+}
+.ap-user-role.premium { background: rgba(217,119,6,0.2); color: #fbbf24; }
+.ap-user-role.admin { background: rgba(37,99,235,0.2); color: #60a5fa; }
 
-/* ══ ONLINE INDICATOR ══ */
-.online-dot { width: 8px; height: 8px; border-radius: 50%; background: #22c55e; display: inline-block; box-shadow: 0 0 0 3px rgba(34,197,94,0.2); animation: pulseDot 2s infinite; }
-@@keyframes pulseDot { 0%,100%{box-shadow:0 0 0 3px rgba(34,197,94,0.2);} 50%{box-shadow:0 0 0 6px rgba(34,197,94,0.05);} }
-
-/* ══ DARK MODE ══ */
-body.bg-dark .admin-kpi,
-body.bg-dark .module-card,
-body.bg-dark .recent-section,
-body.bg-dark .recent-card { background: #1e293b !important; border-color: #2d3748 !important; }
-body.bg-dark .admin-kpi-val,
-body.bg-dark .module-name,
-body.bg-dark .recent-title,
-body.bg-dark .admin-section-title,
-body.bg-dark .recent-name { color: #f1f5f9 !important; }
-body.bg-dark .admin-kpi-lbl,
-body.bg-dark .module-desc,
-body.bg-dark .recent-subtitle,
-body.bg-dark .recent-date { color: #64748b !important; }
-body.bg-dark .recent-card { background: #2d3748 !important; }
-body.bg-dark .recent-card:hover { background: #1e3a5f !important; border-color: #2563eb !important; }
-body.bg-dark .google-dot { border-color: #1e293b !important; }
-body.bg-dark .module-card:hover { box-shadow: 0 8px 24px rgba(0,0,0,0.3) !important; }
+/* ══ DARK ALWAYS ══ */
+.ap-hero, .ap-kpi, .ap-module, .ap-activity, .ap-users { 
+    color: white; 
+}
 
 @@media (max-width: 768px) {
-    .admin-hero { flex-direction: column; align-items: flex-start; padding: 20px; }
-    .admin-hero-clock { width: 100%; }
-    .admin-kpis { grid-template-columns: repeat(2, 1fr); }
-    .admin-hero-mascot { width: 60px; height: 60px; }
+    .ap-hero-inner { flex-direction: column; align-items: flex-start; }
+    .ap-clock { width: 100%; }
+    .ap-kpis { grid-template-columns: repeat(2, 1fr); }
+    .ap-hero-avatar { width: 70px; height: 70px; }
+    .ap-hero-title { font-size: 22px; }
+    .ap-modules { grid-template-columns: 1fr; }
 }
 </style>
 
-<div class="admin-page">
+<!-- CANVAS 3D -->
+<canvas id="adminCanvas"></canvas>
+
+<div class="ap">
 
     <!-- HERO -->
-    <div class="admin-hero">
-        <img src="https://res.cloudinary.com/dzrjag7ia/image/upload/v1776560628/NE_lmertz.jpg"
-             class="admin-hero-mascot" alt="mascota" />
-        <div class="admin-hero-info">
-            <div class="admin-hero-badge">Centro de Control</div>
-            <div class="admin-hero-title">⚙️ Panel de Administración</div>
-            <div class="admin-hero-sub">Bienvenido, <strong style="color:white;">@adminName</strong> · Todo bajo control 🚀</div>
-        </div>
-        <div class="admin-hero-clock">
-            <div class="admin-clock-time" id="aiClock">--:--:--</div>
-            <div class="admin-clock-date" id="aiDate">--</div>
+    <div class="ap-hero">
+        <div class="ap-hero-inner">
+            <img src="https://res.cloudinary.com/dzrjag7ia/image/upload/v1776560628/NE_lmertz.jpg"
+                 class="ap-hero-avatar" alt="mascota" />
+            <div class="ap-hero-info">
+                <div class="ap-hero-badge">⚡ Centro de Control · HabitTracker Pro</div>
+                <div class="ap-hero-title">Panel de Administración</div>
+                <div class="ap-hero-sub">
+                    Bienvenido, <strong>@adminName</strong> · 
+                    <span class="ap-clock-dot"></span>Sistema operativo
+                </div>
+                <div class="ap-hero-stats">
+                    <div class="ap-hero-stat">
+                        <div class="ap-hero-stat-num">@totalUsers</div>
+                        <div class="ap-hero-stat-lbl">Usuarios</div>
+                    </div>
+                    <div class="ap-hero-stat">
+                        <div class="ap-hero-stat-num">@totalPremium</div>
+                        <div class="ap-hero-stat-lbl">Premium</div>
+                    </div>
+                    <div class="ap-hero-stat">
+                        <div class="ap-hero-stat-num">@completedToday</div>
+                        <div class="ap-hero-stat-lbl">Hábitos hoy</div>
+                    </div>
+                    <div class="ap-hero-stat">
+                        <div class="ap-hero-stat-num">@newUsersToday</div>
+                        <div class="ap-hero-stat-lbl">Nuevos hoy</div>
+                    </div>
+                </div>
+            </div>
+            <div class="ap-clock">
+                <div class="ap-clock-time" id="apClock">--:--:--</div>
+                <div class="ap-clock-date" id="apDate">--</div>
+            </div>
         </div>
     </div>
 
     <!-- KPIs -->
-    <div class="admin-kpis">
-        <div class="admin-kpi">
-            <div class="admin-kpi-icon blue">👥</div>
-            <div>
-                <div class="admin-kpi-val">@recentUsers.Count</div>
-                <div class="admin-kpi-lbl">Usuarios</div>
+    <div class="ap-kpis">
+        <div class="ap-kpi blue">
+            <div class="ap-kpi-top">
+                <div class="ap-kpi-icon">👥</div>
+                <span class="ap-kpi-trend up">+@newUsersToday hoy</span>
             </div>
+            <div class="ap-kpi-val" id="kpiUsers">@totalUsers</div>
+            <div class="ap-kpi-lbl">Usuarios totales</div>
         </div>
-        <div class="admin-kpi">
-            <div class="admin-kpi-icon green">✅</div>
-            <div>
-                <div class="admin-kpi-val">@(_context.HabitHistories.Count(h => h.Date == DateTime.Today && h.Completed))</div>
-                <div class="admin-kpi-lbl">Completados hoy</div>
+        <div class="ap-kpi green">
+            <div class="ap-kpi-top">
+                <div class="ap-kpi-icon">🔥</div>
+                <span class="ap-kpi-trend up">Activos</span>
             </div>
+            <div class="ap-kpi-val">@completedToday</div>
+            <div class="ap-kpi-lbl">Hábitos completados hoy</div>
         </div>
-        <div class="admin-kpi">
-            <div class="admin-kpi-icon purple">💬</div>
-            <div>
-                <div class="admin-kpi-val">@(_context.Messages.Count())</div>
-                <div class="admin-kpi-lbl">Mensajes</div>
+        <div class="ap-kpi purple">
+            <div class="ap-kpi-top">
+                <div class="ap-kpi-icon">💬</div>
+                <span class="ap-kpi-trend neutral">Total</span>
             </div>
+            <div class="ap-kpi-val">@totalMessages</div>
+            <div class="ap-kpi-lbl">Mensajes enviados</div>
         </div>
-        <div class="admin-kpi">
-            <div class="admin-kpi-icon gold">👑</div>
-            <div>
-                <div class="admin-kpi-val">@(_context.Users.Count(u => u.IsPremium))</div>
-                <div class="admin-kpi-lbl">Premium</div>
+        <div class="ap-kpi gold">
+            <div class="ap-kpi-top">
+                <div class="ap-kpi-icon">👑</div>
+                <span class="ap-kpi-trend up">VIP</span>
             </div>
+            <div class="ap-kpi-val">@totalPremium</div>
+            <div class="ap-kpi-lbl">Usuarios Premium</div>
+        </div>
+        <div class="ap-kpi rose">
+            <div class="ap-kpi-top">
+                <div class="ap-kpi-icon">📸</div>
+                <span class="ap-kpi-trend neutral">Posts</span>
+            </div>
+            <div class="ap-kpi-val">@totalPosts</div>
+            <div class="ap-kpi-lbl">Publicaciones</div>
+        </div>
+        <div class="ap-kpi cyan">
+            <div class="ap-kpi-top">
+                <div class="ap-kpi-icon">👥</div>
+                <span class="ap-kpi-trend neutral">Activos</span>
+            </div>
+            <div class="ap-kpi-val">@totalGroups</div>
+            <div class="ap-kpi-lbl">Grupos activos</div>
+        </div>
+        <div class="ap-kpi orange">
+            <div class="ap-kpi-top">
+                <div class="ap-kpi-icon">📋</div>
+                <span class="ap-kpi-trend neutral">Total</span>
+            </div>
+            <div class="ap-kpi-val">@totalHabits</div>
+            <div class="ap-kpi-lbl">Hábitos creados</div>
+        </div>
+        <div class="ap-kpi emerald">
+            <div class="ap-kpi-top">
+                <div class="ap-kpi-icon">🌐</div>
+                <span class="ap-kpi-trend up">Online</span>
+            </div>
+            <div class="ap-kpi-val" id="kpiOnline">0</div>
+            <div class="ap-kpi-lbl">Usuarios en línea</div>
         </div>
     </div>
 
     <!-- MÓDULOS -->
-    <div class="admin-section-title">🧩 Módulos del sistema</div>
-    <div class="modules-grid">
-        <a asp-controller="Admin" asp-action="Users" class="module-card users">
-            <div class="module-icon">👥</div>
-            <div class="module-info">
-                <div class="module-name">Usuarios</div>
-                <div class="module-desc">Gestionar usuarios registrados</div>
+    <div class="ap-section-hdr">
+        <div class="ap-section-title">🧩 Módulos del sistema</div>
+        <div class="ap-section-line"></div>
+        <div class="ap-section-badge">8 módulos</div>
+    </div>
+    <div class="ap-modules">
+        <a asp-controller="Admin" asp-action="Users" class="ap-module m-users">
+            <div class="ap-module-stripe"></div>
+            <div class="ap-module-icon">👥</div>
+            <div class="ap-module-info">
+                <div class="ap-module-name">Usuarios</div>
+                <div class="ap-module-desc">Gestionar, banear y ver perfiles</div>
             </div>
-            <div class="module-arrow">→</div>
+            <div class="ap-module-arrow">›</div>
         </a>
-        <a asp-controller="Admin" asp-action="Habits" class="module-card habits">
-            <div class="module-icon">🔥</div>
-            <div class="module-info">
-                <div class="module-name">Hábitos</div>
-                <div class="module-desc">Ver hábitos creados</div>
+        <a asp-controller="Admin" asp-action="Habits" class="ap-module m-habits">
+            <div class="ap-module-stripe"></div>
+            <div class="ap-module-icon">🔥</div>
+            <div class="ap-module-info">
+                <div class="ap-module-name">Hábitos</div>
+                <div class="ap-module-desc">Ver todos los hábitos creados</div>
             </div>
-            <div class="module-arrow">→</div>
+            <div class="ap-module-arrow">›</div>
         </a>
-        <a asp-controller="Admin" asp-action="Messages" class="module-card messages">
-            <div class="module-icon">💬</div>
-            <div class="module-info">
-                <div class="module-name">Mensajes</div>
-                <div class="module-desc">Actividad del chat</div>
+        <a asp-controller="Admin" asp-action="Statistics" class="ap-module m-stats">
+            <div class="ap-module-stripe"></div>
+            <div class="ap-module-icon">📊</div>
+            <div class="ap-module-info">
+                <div class="ap-module-name">Estadísticas</div>
+                <div class="ap-module-desc">Métricas y analíticas de la plataforma</div>
             </div>
-            <div class="module-arrow">→</div>
+            <div class="ap-module-arrow">›</div>
         </a>
-        <a asp-controller="Admin" asp-action="Statistics" class="module-card stats">
-            <div class="module-icon">📊</div>
-            <div class="module-info">
-                <div class="module-name">Estadísticas</div>
-                <div class="module-desc">Información general de la plataforma</div>
-            </div>
-            <div class="module-arrow">→</div>
-        </a>
-        <a asp-controller="Admin" asp-action="Feedbacks" class="module-card feedback">
-            <div class="module-icon">📩</div>
-            <div class="module-info">
-                <div class="module-name">
+        <a asp-controller="Admin" asp-action="Feedbacks" class="ap-module m-feedback">
+            <div class="ap-module-stripe"></div>
+            <div class="ap-module-icon">📩</div>
+            <div class="ap-module-info">
+                <div class="ap-module-name">
                     Comentarios
                     @if (ViewBag.TotalFeedbacks != null && (int)ViewBag.TotalFeedbacks > 0)
-                    { <span class="module-badge">@ViewBag.TotalFeedbacks</span> }
+                    { <span class="ap-module-badge">@ViewBag.TotalFeedbacks</span> }
                 </div>
-                <div class="module-desc">Opiniones de los usuarios</div>
+                <div class="ap-module-desc">Opiniones y sugerencias de usuarios</div>
             </div>
-            <div class="module-arrow">→</div>
+            <div class="ap-module-arrow">›</div>
         </a>
-        <a asp-controller="Admin" asp-action="AdminLogs" class="module-card logs">
-            <div class="module-icon">📜</div>
-            <div class="module-info">
-                <div class="module-name">Historial</div>
-                <div class="module-desc">Acciones de administradores</div>
+        <a asp-controller="Admin" asp-action="AdminLogs" class="ap-module m-logs">
+            <div class="ap-module-stripe"></div>
+            <div class="ap-module-icon">📜</div>
+            <div class="ap-module-info">
+                <div class="ap-module-name">Historial</div>
+                <div class="ap-module-desc">Acciones de administradores</div>
             </div>
-            <div class="module-arrow">→</div>
+            <div class="ap-module-arrow">›</div>
         </a>
-        <a asp-controller="Admin" asp-action="Reports" class="module-card reports">
-            <div class="module-icon">🚩</div>
-            <div class="module-info">
-                <div class="module-name">Reportes</div>
-                <div class="module-desc">Publicaciones reportadas</div>
+        <a asp-controller="Admin" asp-action="Reports" class="ap-module m-reports">
+            <div class="ap-module-stripe"></div>
+            <div class="ap-module-icon">🚩</div>
+            <div class="ap-module-info">
+                <div class="ap-module-name">Reportes</div>
+                <div class="ap-module-desc">Contenido reportado por usuarios</div>
             </div>
-            <div class="module-arrow">→</div>
+            <div class="ap-module-arrow">›</div>
         </a>
-        <a asp-controller="Admin" asp-action="Payments" class="module-card payments">
-            <div class="module-icon">💰</div>
-            <div class="module-info">
-                <div class="module-name">Pagos Premium</div>
-                <div class="module-desc">Verificar comprobantes</div>
+        <a asp-controller="Admin" asp-action="Payments" class="ap-module m-payments">
+            <div class="ap-module-stripe"></div>
+            <div class="ap-module-icon">💰</div>
+            <div class="ap-module-info">
+                <div class="ap-module-name">Pagos Premium</div>
+                <div class="ap-module-desc">Verificar y aprobar comprobantes</div>
             </div>
-            <div class="module-arrow">→</div>
+            <div class="ap-module-arrow">›</div>
+        </a>
+        <a asp-controller="Admin" asp-action="Index" class="ap-module m-security">
+            <div class="ap-module-stripe"></div>
+            <div class="ap-module-icon">🛡️</div>
+            <div class="ap-module-info">
+                <div class="ap-module-name">Seguridad</div>
+                <div class="ap-module-desc">Control de acceso y bloqueos</div>
+            </div>
+            <div class="ap-module-arrow">›</div>
         </a>
     </div>
 
-    <!-- USUARIOS RECIENTES -->
-    <div class="recent-section">
-        <div class="recent-header">
-            <div>
-                <div class="recent-title">🆕 Usuarios registrados</div>
-                <div class="recent-subtitle">Del más reciente al más antiguo · Los invitados no se muestran</div>
-            </div>
-            <div class="recent-count-badge">@recentUsers.Count usuarios</div>
+    <!-- ACTIVIDAD RECIENTE -->
+    <div class="ap-section-hdr">
+        <div class="ap-section-title">⚡ Actividad reciente</div>
+        <div class="ap-section-line"></div>
+    </div>
+    <div class="ap-activity" style="margin-bottom:24px;">
+        <div class="ap-activity-item">
+            <div class="ap-activity-dot blue"></div>
+            <div class="ap-activity-text"><strong>@totalUsers</strong> usuarios registrados en la plataforma</div>
+            <div class="ap-activity-time">Total</div>
         </div>
+        <div class="ap-activity-item">
+            <div class="ap-activity-dot green"></div>
+            <div class="ap-activity-text"><strong>@completedToday</strong> hábitos completados hoy</div>
+            <div class="ap-activity-time">Hoy</div>
+        </div>
+        <div class="ap-activity-item">
+            <div class="ap-activity-dot gold"></div>
+            <div class="ap-activity-text"><strong>@totalPremium</strong> usuarios con plan Premium activo</div>
+            <div class="ap-activity-time">Activo</div>
+        </div>
+        <div class="ap-activity-item">
+            <div class="ap-activity-dot purple"></div>
+            <div class="ap-activity-text"><strong>@totalPosts</strong> publicaciones en el feed</div>
+            <div class="ap-activity-time">Total</div>
+        </div>
+        <div class="ap-activity-item">
+            <div class="ap-activity-dot rose"></div>
+            <div class="ap-activity-text"><strong>@totalGroups</strong> grupos activos en la plataforma</div>
+            <div class="ap-activity-time">Activo</div>
+        </div>
+        @if (newUsersToday > 0)
+        {
+            <div class="ap-activity-item">
+                <div class="ap-activity-dot green"></div>
+                <div class="ap-activity-text"><strong>@newUsersToday</strong> nuevo@(newUsersToday != 1 ? "s" : "") usuario@(newUsersToday != 1 ? "s" : "") registrado@(newUsersToday != 1 ? "s" : "") hoy</div>
+                <div class="ap-activity-time">Hoy</div>
+            </div>
+        }
+    </div>
 
+    <!-- USUARIOS RECIENTES -->
+    <div class="ap-section-hdr">
+        <div class="ap-section-title">🆕 Usuarios registrados</div>
+        <div class="ap-section-line"></div>
+        <div class="ap-section-badge">@recentUsers.Count usuarios</div>
+    </div>
+    <div class="ap-users">
         @if (!recentUsers.Any())
         {
-            <div style="text-align:center;padding:40px;color:#9ca3af;">
+            <div style="text-align:center;padding:40px;color:rgba(255,255,255,0.3);">
                 <div style="font-size:40px;margin-bottom:12px;">👤</div>
                 <p>No hay usuarios registrados aún.</p>
             </div>
         }
         else
         {
-            <div class="recent-grid">
+            <div class="ap-users-grid">
                 @foreach (var user in recentUsers)
                 {
-                    <a href="/User/Profile/@user.Id" class="recent-card">
-                        <div class="recent-avatar-wrap">
+                    <a href="/User/Profile/@user.Id" class="ap-user-card">
+                        <div class="ap-user-avatar-wrap">
                             @if (!string.IsNullOrEmpty(user.ProfileImage))
-                            { <img src="@user.ProfileImage" class="recent-avatar" /> }
+                            { <img src="@user.ProfileImage" class="ap-user-avatar" /> }
                             else
-                            { <div class="recent-avatar-letter">@user.Username.Substring(0, 1).ToUpper()</div> }
+                            { <div class="ap-user-letter">@user.Username.Substring(0, 1).ToUpper()</div> }
                             @if (user.IsGoogleAccount)
-                            { <span class="google-dot">G</span> }
+                            { <span class="ap-google-dot">G</span> }
                         </div>
-                        <div class="recent-info">
-                            <span class="recent-name">@user.Username</span>
-                            <span class="recent-date">@user.CreatedAt?.ToString("dd MMM yyyy")</span>
+                        <div class="ap-user-info">
+                            <span class="ap-user-name">@user.Username</span>
+                            <span class="ap-user-date">@user.CreatedAt?.ToString("dd MMM yyyy", new System.Globalization.CultureInfo("es-CO"))</span>
                         </div>
                         @if (user.IsPremium)
-                        { <span class="recent-role" style="background:#fef3c7;color:#d97706;">👑</span> }
+                        { <span class="ap-user-role premium">👑</span> }
                         else if (user.Role == "Admin")
-                        { <span class="recent-role admin">Admin</span> }
+                        { <span class="ap-user-role admin">Admin</span> }
                     </a>
                 }
             </div>
@@ -364,32 +640,152 @@ body.bg-dark .module-card:hover { box-shadow: 0 8px 24px rgba(0,0,0,0.3) !import
 @section Scripts {
 <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
 <script>
+// ══ RELOJ ══
 function updateClock() {
     const now = new Date();
-    const h = String(now.getHours()).padStart(2, '0');
-    const m = String(now.getMinutes()).padStart(2, '0');
-    const s = String(now.getSeconds()).padStart(2, '0');
-    const clock = document.getElementById('aiClock');
-    if (clock) clock.textContent = `${h}:${m}:${s}`;
+    const h = String(now.getHours()).padStart(2,'0');
+    const m = String(now.getMinutes()).padStart(2,'0');
+    const s = String(now.getSeconds()).padStart(2,'0');
+    const el = document.getElementById('apClock');
+    if (el) el.textContent = `${h}:${m}:${s}`;
     const days = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
     const months = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
-    const dateEl = document.getElementById('aiDate');
-    if (dateEl) dateEl.textContent = `${days[now.getDay()]} ${now.getDate()} ${months[now.getMonth()]}`;
+    const dateEl = document.getElementById('apDate');
+    if (dateEl) dateEl.textContent = `${days[now.getDay()]} ${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear()}`;
 }
 setInterval(updateClock, 1000);
 updateClock();
 
-const connection = new signalR.HubConnectionBuilder().withUrl("/chatHub").build();
-connection.start().catch(err => console.error(err));
+// ══ ANIMACIÓN NÚMEROS KPI ══
+function animateNumber(el, target, duration = 1200) {
+    const start = 0;
+    const startTime = performance.now();
+    function update(currentTime) {
+        const elapsed = currentTime - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        const eased = 1 - Math.pow(1 - progress, 3);
+        el.textContent = Math.round(start + (target - start) * eased);
+        if (progress < 1) requestAnimationFrame(update);
+    }
+    requestAnimationFrame(update);
+}
 
-connection.on("NewFeedback", function () {
-    const badge = document.querySelector(".module-badge");
-    if (badge) badge.textContent = parseInt(badge.textContent) + 1;
-    const toast = document.createElement("div");
-    toast.textContent = "💬 Nuevo comentario recibido";
-    toast.style.cssText = "position:fixed;bottom:20px;right:20px;background:#1e293b;color:white;padding:12px 20px;border-radius:14px;box-shadow:0 10px 30px rgba(0,0,0,0.3);z-index:9999;font-size:14px;font-weight:600;font-family:'Plus Jakarta Sans',sans-serif;border:1px solid rgba(255,255,255,0.08);";
-    document.body.appendChild(toast);
-    setTimeout(() => { toast.style.transition = 'opacity 0.3s'; toast.style.opacity = '0'; setTimeout(() => toast.remove(), 300); }, 4000);
+document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('.ap-kpi-val').forEach(el => {
+        const target = parseInt(el.textContent);
+        if (!isNaN(target) && target > 0) {
+            el.textContent = '0';
+            setTimeout(() => animateNumber(el, target), 300);
+        }
+    });
 });
+
+// ══ CANVAS 3D PARTÍCULAS ══
+const canvas = document.getElementById('adminCanvas');
+const ctx = canvas.getContext('2d');
+let particles = [];
+let animFrame;
+
+function resizeCanvas() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+}
+
+class Particle {
+    constructor() { this.reset(); }
+    reset() {
+        this.x = Math.random() * canvas.width;
+        this.y = Math.random() * canvas.height;
+        this.z = Math.random() * 3 + 0.5;
+        this.vx = (Math.random() - 0.5) * 0.4;
+        this.vy = (Math.random() - 0.5) * 0.4;
+        this.size = Math.random() * 2.5 + 0.5;
+        this.opacity = Math.random() * 0.6 + 0.1;
+        this.color = Math.random() > 0.5 ? '99,102,241' : '139,92,246';
+        this.pulse = Math.random() * Math.PI * 2;
+    }
+    update() {
+        this.x += this.vx * this.z;
+        this.y += this.vy * this.z;
+        this.pulse += 0.02;
+        if (this.x < 0 || this.x > canvas.width || this.y < 0 || this.y > canvas.height) this.reset();
+    }
+    draw() {
+        const pulse = Math.sin(this.pulse) * 0.3 + 0.7;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size * pulse, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(${this.color},${this.opacity * pulse})`;
+        ctx.fill();
+    }
+}
+
+function initParticles() {
+    particles = [];
+    for (let i = 0; i < 80; i++) particles.push(new Particle());
+}
+
+function drawConnections() {
+    for (let i = 0; i < particles.length; i++) {
+        for (let j = i + 1; j < particles.length; j++) {
+            const dx = particles[i].x - particles[j].x;
+            const dy = particles[i].y - particles[j].y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist < 120) {
+                const alpha = (1 - dist / 120) * 0.15;
+                ctx.beginPath();
+                ctx.moveTo(particles[i].x, particles[i].y);
+                ctx.lineTo(particles[j].x, particles[j].y);
+                ctx.strokeStyle = `rgba(99,102,241,${alpha})`;
+                ctx.lineWidth = 0.5;
+                ctx.stroke();
+            }
+        }
+    }
+}
+
+function animate() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    particles.forEach(p => { p.update(); p.draw(); });
+    drawConnections();
+    animFrame = requestAnimationFrame(animate);
+}
+
+resizeCanvas();
+initParticles();
+animate();
+window.addEventListener('resize', () => { resizeCanvas(); initParticles(); });
+
+// ══ SIGNALR ══
+const connection = new signalR.HubConnectionBuilder().withUrl("/chatHub").build();
+connection.start().then(() => {
+    // usuarios online
+    fetch('/Group/GetUsersForGroup?type=all').catch(() => {});
+}).catch(err => console.error(err));
+
+connection.on("UserOnline", () => {
+    const el = document.getElementById('kpiOnline');
+    if (el) el.textContent = parseInt(el.textContent || '0') + 1;
+});
+connection.on("UserOffline", () => {
+    const el = document.getElementById('kpiOnline');
+    if (el) el.textContent = Math.max(0, parseInt(el.textContent || '0') - 1);
+});
+
+connection.on("NewFeedback", function() {
+    const badge = document.querySelector(".ap-module-badge");
+    if (badge) badge.textContent = parseInt(badge.textContent) + 1;
+    showAdminToast("💬 Nuevo comentario recibido");
+});
+
+function showAdminToast(msg) {
+    const t = document.createElement("div");
+    t.textContent = msg;
+    t.style.cssText = "position:fixed;bottom:24px;right:24px;background:linear-gradient(135deg,#1e293b,#0f172a);color:white;padding:14px 22px;border-radius:16px;box-shadow:0 16px 40px rgba(0,0,0,0.4);z-index:9999;font-size:14px;font-weight:700;font-family:'Plus Jakarta Sans',sans-serif;border:1px solid rgba(99,102,241,0.3);animation:toastSlide 0.3s ease;";
+    document.body.appendChild(t);
+    setTimeout(() => { t.style.opacity = '0'; t.style.transition = '0.3s'; setTimeout(() => t.remove(), 300); }, 4000);
+}
 </script>
+<style>
+@@keyframes toastSlide { from{opacity:0;transform:translateY(20px);} to{opacity:1;transform:translateY(0);} }
+</style>
 }
