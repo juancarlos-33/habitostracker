@@ -1038,5 +1038,31 @@ if ("Notification" in window) Notification.requestPermission();
     </div>
 }
 
+
+
+
+
+
+
+<div id="cookieBanner" style="position:fixed; bottom:0; left:0; right:0; background:#1e293b; color:white; padding:16px; text-align:center; z-index:9999; display:none; box-shadow:0 -4px 20px rgba(0,0,0,0.3);">
+    <p style="margin:0 0 12px;">🍪 Usamos cookies para mejorar tu experiencia. <a href="/Home/Privacy" style="color:#818cf8;">Más info</a></p>
+    <button onclick="aceptarCookies()" style="background:#6366f1; border:none; padding:8px 24px; border-radius:30px; color:white; font-weight:bold; cursor:pointer;">Aceptar</button>
+    <button onclick="rechazarCookies()" style="background:transparent; border:1px solid #94a3b8; padding:8px 24px; border-radius:30px; color:#cbd5e1; margin-left:8px; cursor:pointer;">Rechazar</button>
+</div>
+<script>
+    function aceptarCookies() {
+        localStorage.setItem('cookiesAccepted', 'true');
+        document.getElementById('cookieBanner').style.display = 'none';
+    }
+    function rechazarCookies() {
+        localStorage.setItem('cookiesAccepted', 'false');
+        document.getElementById('cookieBanner').style.display = 'none';
+    }
+    if (localStorage.getItem('cookiesAccepted') === null) {
+        document.getElementById('cookieBanner').style.display = 'block';
+    }
+</script>
+
+
 </body>
 </html>

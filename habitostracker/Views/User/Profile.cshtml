@@ -91,6 +91,28 @@
 .prof-meta { display:flex; flex-wrap:wrap; gap:14px; margin-bottom:16px; }
 .prof-meta-item { display:flex; align-items:center; gap:5px; font-size:12px; color:rgba(255,255,255,0.35); font-weight:600; }
 
+/* Timeline de publicaciones vertical */
+.prof-posts-timeline { display: flex; flex-direction: column; gap: 20px; margin-top: 20px; }
+.prof-post-card {
+    background: rgba(255,255,255,0.05);
+    border-radius: 20px;
+    padding: 16px;
+    border: 1px solid rgba(255,255,255,0.08);
+    transition: 0.2s;
+}
+.prof-post-card:hover { background: rgba(255,255,255,0.08); }
+.prof-post-header { display: flex; gap: 10px; align-items: center; margin-bottom: 12px; }
+.prof-post-avatar img, .prof-post-letter { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; }
+.prof-post-letter { background: linear-gradient(135deg,#6366f1,#4f46e5); color: white; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 16px; }
+.prof-post-info { flex: 1; }
+.prof-post-username { font-weight: 800; color: white; font-size: 14px; }
+.prof-post-date { font-size: 11px; color: rgba(255,255,255,0.4); margin-top: 1px; }
+.prof-post-text { font-size: 14px; color: rgba(255,255,255,0.7); line-height: 1.5; margin-bottom: 10px; }
+.prof-post-img { width: 100%; border-radius: 16px; margin-top: 8px; max-height: 500px; object-fit: cover; cursor: pointer; }
+.prof-post-footer { margin-top: 12px; text-align: right; }
+.prof-post-link { font-size: 12px; color: #818cf8; text-decoration: none; font-weight: 600; }
+.prof-post-link:hover { text-decoration: underline; }
+
 /* ══ STATS ══ */
 .prof-stats-row {
     display:flex; gap:0; margin-bottom:0;
@@ -426,31 +448,50 @@ else
             }
             else
             {
-                <div class="posts-grid">
-                    @foreach (var post in userPosts)
-                    {
-                        var isVideo = !string.IsNullOrEmpty(post.ImagePath) &&
-                                      (post.ImagePath.Contains("/video/upload/") ||
-                                       post.ImagePath.EndsWith(".mp4") ||
-                                       post.ImagePath.EndsWith(".mov") ||
-                                       post.ImagePath.EndsWith(".webm"));
-                        <a href="/Post/Index" class="post-tile">
-                            @if (isVideo)
-                            {
-                                <video class="post-tile-video" muted preload="metadata"><source src="@post.ImagePath" /></video>
-                                <span class="post-tile-badge">▶</span>
-                            }
-                            else if (!string.IsNullOrEmpty(post.ImagePath))
-                            { <img src="@post.ImagePath" class="post-tile-img" loading="lazy" /> }
-                            else
-                            { <div class="post-tile-noimg">📝</div> }
-                            <div class="post-tile-overlay">
-                                <span class="post-tile-overlay-text">@(isVideo ? "▶ Video" : "👁 Ver")</span>
-                                <span class="post-tile-overlay-date">@post.CreatedAt.ToString("dd MMM", culture)</span>
-                            </div>
-                        </a>
-                    }
+              <div class="prof-posts-timeline">
+    @foreach (var post in userPosts)
+    {
+        var isVideo = !string.IsNullOrEmpty(post.ImagePath) &&
+                      (post.ImagePath.Contains("/video/upload/") ||
+                       post.ImagePath.EndsWith(".mp4") ||
+                       post.ImagePath.EndsWith(".mov") ||
+                       post.ImagePath.EndsWith(".webm"));
+        <div class="prof-post-card">
+            <div class="prof-post-header">
+                <div class="prof-post-avatar">
+                    @if (!string.IsNullOrEmpty(profilePic))
+                    { <img src="@profilePic" style="width:36px;height:36px;border-radius:50%;object-fit:cover;" /> }
+                    else
+                    { <div class="prof-post-letter">@Model.Username.Substring(0,1).ToUpper()</div> }
                 </div>
+                <div class="prof-post-info">
+                    <div class="prof-post-username">@Model.Username</div>
+                    <div class="prof-post-date">@post.CreatedAt.ToString("dd MMM yyyy, HH:mm")</div>
+                </div>
+            </div>
+            @if (!string.IsNullOrEmpty(post.Description))
+            {
+                <div class="prof-post-text">@post.Description</div>
+            }
+            @if (!string.IsNullOrEmpty(post.ImagePath))
+            {
+                if (isVideo)
+                {
+                    <video controls style="width:100%; border-radius:16px; margin-top:8px;">
+                        <source src="@post.ImagePath" />
+                    </video>
+                }
+                else
+                {
+                    <img src="@post.ImagePath" class="prof-post-img" onclick="abrirFotoPost(this.src)" style="cursor:pointer;" />
+                }
+            }
+            <div class="prof-post-footer">
+                <a href="/Post/Details/@post.Id" class="prof-post-link">Ver publicación →</a>
+            </div>
+        </div>
+    }
+</div>
             }
         </div>
     }
@@ -553,6 +594,16 @@ function abrirFotoPerfil(src) {
     document.body.style.overflow = 'hidden';
 }
 
+
+function abrirFotoPost(src) {
+    const overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;inset:0;z-index:999999;background:rgba(0,0,0,0.85);backdrop-filter:blur(12px);display:flex;align-items:center;justify-content:center;cursor:pointer;';
+    overlay.innerHTML = `<div><img src="${src}" style="max-width:90vw;max-height:90vh;border-radius:20px;box-shadow:0 20px 60px rgba(0,0,0,0.6);" /></div>`;
+    overlay.addEventListener('click', () => overlay.remove());
+    document.body.appendChild(overlay);
+    document.body.style.overflow = 'hidden';
+    overlay.addEventListener('click', () => { overlay.remove(); document.body.style.overflow = ''; });
+}
 function cerrarFotoPerfil() {
     const overlay = document.getElementById('photoOverlay');
     if (overlay) {

@@ -10,6 +10,7 @@ namespace HabitTrackerApp.Models
         public string Type { get; set; } = "private"; // "private", "public", "channel"
         public bool IsPublic { get; set; } = false;
         public string? InviteCode { get; set; }
+        public bool IsAdminOnly { get; set; } = false; // true = solo admins/creador pueden escribir
         public ICollection<GroupJoinRequest> JoinRequests { get; set; }
         public bool ShowHealthWarning { get; set; } = false;  // si el grupo es de salud mental
         public string? HealthWarningMessage { get; set; }

@@ -49,6 +49,19 @@ textarea {
     transition: color 0.2s ease;
 }
 
+@media (max-width: 768px) {
+    .grp-hero-name, .grp-hero-desc {
+        word-break: break-word;
+        white-space: normal;
+        overflow-wrap: break-word;
+    }
+
+    .grp-member-name {
+        white-space: normal;
+        word-break: break-word;
+    }
+}
+
     .reply-reply-btn:hover {
         color: #fff;
     }

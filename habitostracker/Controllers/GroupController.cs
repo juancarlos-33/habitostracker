@@ -782,6 +782,16 @@ namespace HabitTrackerApp.Controllers
             if (member == null) return Json(new { success = false });
             if (string.IsNullOrWhiteSpace(content)) return Json(new { success = false });
 
+            // 🔒 Verificar si el grupo es solo para administradores
+            var group = _context.Groups.FirstOrDefault(g => g.Id == groupId);
+            if (group != null && group.IsAdminOnly)
+            {
+                bool isAdminOrCreator = _context.GroupMembers
+                    .Any(m => m.GroupId == groupId && m.UserId == userId && m.IsActive && (m.Role == "Admin" || m.UserId == group.CreatorId));
+                if (!isAdminOrCreator)
+                    return Json(new { success = false, error = "Solo administradores pueden escribir aquí." });
+            }
+
             var sender = _context.Users.FirstOrDefault(u => u.Id == userId);
             var msg = new GroupMessage
             {
@@ -839,6 +849,15 @@ namespace HabitTrackerApp.Controllers
             var member = _context.GroupMembers
                 .FirstOrDefault(m => m.GroupId == groupId && m.UserId == userId && m.IsActive);
             if (member == null || file == null) return Json(new { success = false });
+            // 🔒 Verificar si el grupo es solo para administradores
+            var group = _context.Groups.FirstOrDefault(g => g.Id == groupId);
+            if (group != null && group.IsAdminOnly)
+            {
+                bool isAdminOrCreator = _context.GroupMembers
+                    .Any(m => m.GroupId == groupId && m.UserId == userId && m.IsActive && (m.Role == "Admin" || m.UserId == group.CreatorId));
+                if (!isAdminOrCreator)
+                    return Json(new { success = false, error = "Solo administradores pueden enviar archivos aquí." });
+            }
 
             var sender = _context.Users.FirstOrDefault(u => u.Id == userId);
             var cloudinary = GetCloudinary();
@@ -874,6 +893,15 @@ namespace HabitTrackerApp.Controllers
             var member = _context.GroupMembers
      .FirstOrDefault(m => m.GroupId == groupId && m.UserId == userId && m.IsActive);
             if (member == null || audio == null) return Json(new { success = false });
+            // 🔒 Verificar si el grupo es solo para administradores
+            var group = _context.Groups.FirstOrDefault(g => g.Id == groupId);
+            if (group != null && group.IsAdminOnly)
+            {
+                bool isAdminOrCreator = _context.GroupMembers
+                    .Any(m => m.GroupId == groupId && m.UserId == userId && m.IsActive && (m.Role == "Admin" || m.UserId == group.CreatorId));
+                if (!isAdminOrCreator)
+                    return Json(new { success = false, error = "Solo administradores pueden enviar audios aquí." });
+            }
 
             var sender = _context.Users.FirstOrDefault(u => u.Id == userId);
             var cloudinary = GetCloudinary();

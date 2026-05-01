@@ -1225,6 +1225,12 @@ namespace HabitTrackerApp.Controllers
                 ViewBag.Followers = _context.Follows.Count(f => f.FollowingId == myId);
                 ViewBag.Following = _context.Follows.Count(f => f.FollowerId == myId);
 
+                // Cargar publicaciones del usuario (mi perfil)
+                ViewBag.UserPosts = _context.Posts
+                    .Where(p => p.UserId == me.Id)
+                    .OrderByDescending(p => p.CreatedAt)
+                    .ToList();
+
                 return View("~/Views/Account/Profile.cshtml", me); // 🟢 editable
             }
 
@@ -1237,6 +1243,12 @@ namespace HabitTrackerApp.Controllers
 
             // 🔥 siguiendo
             ViewBag.FollowingCount = _context.Follows.Count(f => f.FollowerId == user.Id);
+
+            // Cargar publicaciones del otro usuario
+            ViewBag.UserPosts = _context.Posts
+                .Where(p => p.UserId == user.Id)
+                .OrderByDescending(p => p.CreatedAt)
+                .ToList();
 
             return View("~/Views/User/Profile.cshtml", user); // 🔵 SOLO VISUAL
         }
