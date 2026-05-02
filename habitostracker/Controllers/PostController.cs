@@ -668,9 +668,9 @@ namespace HabitTrackerApp.Controllers
             var post = await _context.Posts.FindAsync(postId);
             if (post == null) return NotFound("Publicación no encontrada");
 
-            // 2. Buscar la cuenta BOT (cambia el nombre exacto si es necesario)
-            var botUser = await _context.Users.FirstOrDefaultAsync(u => u.Username == "HabitTracker✅");
-            if (botUser == null) return NotFound("Cuenta BOT no encontrada. Crea un usuario con ese nombre o corrige el nombre.");
+            // 2. Buscar la cuenta BOT por ID (243)
+            var botUser = await _context.Users.FindAsync(243);
+            if (botUser == null) return NotFound("Cuenta BOT con ID 243 no encontrada.");
 
             // 3. Verificar si el BOT ya comentó (para no duplicar)
             bool yaComento = await _context.PostComments.AnyAsync(c => c.PostId == postId && c.UserId == botUser.Id);
@@ -680,7 +680,7 @@ namespace HabitTrackerApp.Controllers
                 {
                     PostId = postId,
                     UserId = botUser.Id,
-                    Username = botUser.Username,
+                    Username = botUser.Username + " ✅",   // Le agregas el chulo visualmente
                     ProfileImage = botUser.ProfileImage ?? "",
                     Comment = @"🚨 **AVISO OFICIAL – INCUMPLIMIENTO DE NORMAS**  
 
