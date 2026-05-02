@@ -1219,40 +1219,101 @@ namespace HabitTrackerApp.Controllers
                     _context.SaveChanges();
                 }
 
-
-
-                // 🔥 AGREGA ESTO (SEGUIDORES / SIGUIENDO)
                 ViewBag.Followers = _context.Follows.Count(f => f.FollowingId == myId);
                 ViewBag.Following = _context.Follows.Count(f => f.FollowerId == myId);
 
                 // Cargar publicaciones del usuario (mi perfil)
-                ViewBag.UserPosts = _context.Posts
+                var misPosts = _context.Posts
                     .Where(p => p.UserId == me.Id)
                     .OrderByDescending(p => p.CreatedAt)
                     .ToList();
+                ViewBag.UserPosts = misPosts;
 
-                return View("~/Views/Account/Profile.cshtml", me); // 🟢 editable
+                // ========== ESTADÍSTICAS DE LIKES Y COMENTARIOS ==========
+                var postIds = misPosts.Select(p => p.Id).ToList();
+
+                // Likes por post
+                var likesCount = _context.PostLikes
+                    .Where(l => postIds.Contains(l.PostId))
+                    .GroupBy(l => l.PostId)
+                    .ToDictionary(g => g.Key, g => g.Count());
+
+                // Comentarios directos
+                var commentCountsQuery = _context.PostComments
+                    .Where(c => postIds.Contains(c.PostId))
+                    .Select(c => new { c.PostId, c.Id })
+                    .ToList();
+
+                // Respuestas a comentarios
+                var replyCounts = _context.CommentReplies
+                    .Where(r => commentCountsQuery.Select(c => c.Id).Contains(r.CommentId))
+                    .GroupBy(r => r.CommentId)
+                    .ToDictionary(g => g.Key, g => g.Count());
+
+                var commentCounts = commentCountsQuery
+                    .GroupBy(c => c.PostId)
+                    .ToDictionary(g => g.Key, g => g.Count() + g.Sum(c => replyCounts.ContainsKey(c.Id) ? replyCounts[c.Id] : 0));
+
+                // Mis likes
+                var myLikes = _context.PostLikes
+                    .Where(l => l.UserId == myId && postIds.Contains(l.PostId))
+                    .Select(l => l.PostId)
+                    .ToHashSet();
+
+                ViewBag.PostLikes = likesCount;
+                ViewBag.CommentCounts = commentCounts;
+                ViewBag.MyLikes = myLikes;
+
+                return View("~/Views/Account/Profile.cshtml", me);
             }
 
             // 🔥 SI ES OTRO USUARIO
             var user = _context.Users.FirstOrDefault(u => u.Id == id);
             if (user == null) return NotFound();
 
-            // 🔥 seguidores
             ViewBag.FollowersCount = _context.Follows.Count(f => f.FollowingId == user.Id);
-
-            // 🔥 siguiendo
             ViewBag.FollowingCount = _context.Follows.Count(f => f.FollowerId == user.Id);
 
             // Cargar publicaciones del otro usuario
-            ViewBag.UserPosts = _context.Posts
+            var userPosts = _context.Posts
                 .Where(p => p.UserId == user.Id)
                 .OrderByDescending(p => p.CreatedAt)
                 .ToList();
+            ViewBag.UserPosts = userPosts;
 
-            return View("~/Views/User/Profile.cshtml", user); // 🔵 SOLO VISUAL
+            // ========== ESTADÍSTICAS DE LIKES Y COMENTARIOS ==========
+            var userPostIds = userPosts.Select(p => p.Id).ToList();
+
+            var userLikesCount = _context.PostLikes
+                .Where(l => userPostIds.Contains(l.PostId))
+                .GroupBy(l => l.PostId)
+                .ToDictionary(g => g.Key, g => g.Count());
+
+            var userCommentCountsQuery = _context.PostComments
+                .Where(c => userPostIds.Contains(c.PostId))
+                .Select(c => new { c.PostId, c.Id })
+                .ToList();
+
+            var userReplyCounts = _context.CommentReplies
+                .Where(r => userCommentCountsQuery.Select(c => c.Id).Contains(r.CommentId))
+                .GroupBy(r => r.CommentId)
+                .ToDictionary(g => g.Key, g => g.Count());
+
+            var userCommentCounts = userCommentCountsQuery
+                .GroupBy(c => c.PostId)
+                .ToDictionary(g => g.Key, g => g.Count() + g.Sum(c => userReplyCounts.ContainsKey(c.Id) ? userReplyCounts[c.Id] : 0));
+
+            var myLikesForUser = _context.PostLikes
+                .Where(l => l.UserId == myId && userPostIds.Contains(l.PostId))
+                .Select(l => l.PostId)
+                .ToHashSet();
+
+            ViewBag.PostLikes = userLikesCount;
+            ViewBag.CommentCounts = userCommentCounts;
+            ViewBag.MyLikes = myLikesForUser;
+
+            return View("~/Views/User/Profile.cshtml", user);
         }
-
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Profile(User updatedUser, IFormFile profilePhoto, string croppedImage, string selectedAvatarUrl)

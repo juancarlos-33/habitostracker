@@ -1,4 +1,5 @@
 ﻿@model HabitTrackerApp.Models.User
+@using HabitTrackerApp.Models
 @inject HabitTrackerApp.Data.HabitDbContext _context
 
 @{
@@ -335,12 +336,18 @@
             </form>
 
             <!-- ══ MIS PUBLICACIONES ══ -->
+<!-- ══ MIS PUBLICACIONES (estilo muro) ══ -->
 <div class="my-card" style="margin-top:16px;">
     <div class="my-card-header">
         <div class="my-card-title">📸 Mis publicaciones</div>
     </div>
     @{
-        var misPosts = _context.Posts.Where(p => p.UserId == Model.Id).OrderByDescending(p => p.CreatedAt).ToList();
+        // Usamos ViewBag.UserPosts que viene del controlador
+        var misPosts = ViewBag.UserPosts as List<Post> ?? new List<Post>();
+        var postLikes = ViewBag.PostLikes as Dictionary<int, int> ?? new Dictionary<int, int>();
+        var commentCounts = ViewBag.CommentCounts as Dictionary<int, int> ?? new Dictionary<int, int>();
+        var myLikes = ViewBag.MyLikes as HashSet<int> ?? new HashSet<int>();
+        var myId = int.Parse(User.FindFirst("UserId").Value);
     }
     @if (!misPosts.Any())
     {
@@ -352,35 +359,165 @@
     }
     else
     {
-        <div style="display:flex; flex-direction:column; gap:20px;">
+        <div class="feed-container" style="max-width:100%; margin:0;">
             @foreach (var post in misPosts)
             {
-                var isVideo = !string.IsNullOrEmpty(post.ImagePath) && (post.ImagePath.Contains("/video/upload/") || post.ImagePath.EndsWith(".mp4"));
-                <div style="background:rgba(255,255,255,0.04); border-radius:20px; padding:16px; border:1px solid rgba(255,255,255,0.08);">
-                    <div style="display:flex; gap:10px; margin-bottom:12px;">
-                        <div style="width:36px; height:36px; border-radius:50%; background:linear-gradient(135deg,#6366f1,#4f46e5); display:flex; align-items:center; justify-content:center; font-weight:800; color:white;">@Model.Username.Substring(0,1).ToUpper()</div>
-                        <div><div style="font-weight:800; color:white; font-size:14px;">@Model.Username</div><div style="font-size:11px; color:rgba(255,255,255,0.4);">@post.CreatedAt.ToString("dd MMM yyyy, HH:mm")</div></div>
+                var isVideo = !string.IsNullOrEmpty(post.ImagePath) &&
+                              (post.ImagePath.Contains("/video/upload/") ||
+                               post.ImagePath.EndsWith(".mp4") ||
+                               post.ImagePath.EndsWith(".mov") ||
+                               post.ImagePath.EndsWith(".webm"));
+                var likeCount = postLikes.ContainsKey(post.Id) ? postLikes[post.Id] : 0;
+                var isLiked = myLikes.Contains(post.Id);
+                var comentarios = commentCounts.ContainsKey(post.Id) ? commentCounts[post.Id] : 0;
+
+                <article class="post-card" id="post-@post.Id" style="background:rgba(255,255,255,0.05); border-radius:20px; padding:16px; margin-bottom:20px; border:1px solid rgba(255,255,255,0.08); transition:0.2s;">
+                    <!-- HEADER -->
+                    <div class="post-header" style="display:flex; justify-content:space-between; margin-bottom:12px;">
+                        <div style="display:flex; gap:10px;">
+                            <a asp-controller="User" asp-action="Profile" asp-route-id="@post.UserId" class="avatar-link">
+                                @{
+                                    var postPic = !string.IsNullOrEmpty(post.User?.ProfileImage) ? post.User.ProfileImage : post.User?.ProfilePicture;
+                                }
+                                @if (!string.IsNullOrEmpty(postPic))
+                                {
+                                    <img src="@postPic" style="width:44px; height:44px; border-radius:50%; object-fit:cover;" />
+                                }
+                                else
+                                {
+                                    <div style="width:44px; height:44px; border-radius:50%; background:linear-gradient(135deg,#2563eb,#7c3aed); color:white; display:flex; align-items:center; justify-content:center; font-weight:800;">@post.DisplayUsername.Substring(0,1).ToUpper()</div>
+                                }
+                            </a>
+                            <div>
+                                <div style="font-weight:700; color:white;">@post.DisplayUsername</div>
+                                <div style="font-size:12px; color:rgba(255,255,255,0.4);">@post.CreatedAt.ToString("dd MMM yyyy · hh:mm tt", new System.Globalization.CultureInfo("es-CO"))</div>
+                            </div>
+                        </div>
+                        <div>
+                            @if (post.IsSensitive)
+                            {
+                                <span style="background:#fef3c7; color:#d97706; font-size:10px; padding:3px 8px; border-radius:20px;">⚠️ Sensible</span>
+                            }
+                        </div>
                     </div>
+
+                    <!-- DESCRIPCIÓN -->
                     @if (!string.IsNullOrEmpty(post.Description))
                     {
-                        <div style="font-size:14px; color:rgba(255,255,255,0.7); margin-bottom:10px;">@post.Description</div>
+                        <p style="font-size:15px; color:rgba(255,255,255,0.7); line-height:1.65; margin:0 0 14px;">@post.Description</p>
                     }
+
+                    <!-- MEDIA -->
                     @if (!string.IsNullOrEmpty(post.ImagePath))
                     {
-                        if (isVideo)
-                        { <video controls style="width:100%; border-radius:16px;"><source src="@post.ImagePath" /></video> }
-                        else
-                        { <img src="@post.ImagePath" style="width:100%; border-radius:16px; margin-top:8px; max-height:400px; object-fit:cover; cursor:pointer;" onclick="abrirFotoPost(this.src)" /> }
+                        <div style="border-radius:16px; overflow:hidden; margin-bottom:12px; position:relative;">
+                            @if (isVideo)
+                            {
+                                <video controls style="width:100%; max-height:520px;">
+                                    <source src="@post.ImagePath" />
+                                </video>
+                                <div style="position:absolute; top:10px; left:10px; background:rgba(0,0,0,0.6); color:white; font-size:11px; padding:3px 10px; border-radius:20px;">▶ Video</div>
+                            }
+                            else if (post.IsSensitive)
+                            {
+                                <img src="@post.ImagePath" id="img-@post.Id" style="width:100%; filter:blur(28px); transform:scale(1.05); transition:filter 0.4s;" />
+                                <div id="overlay-@post.Id" style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,0.35); backdrop-filter:blur(2px);">
+                                    <div style="text-align:center; color:white;">
+                                        <span style="font-size:32px;">⚠️</span>
+                                        <p style="font-size:14px; font-weight:600; margin:6px 0;">Contenido sensible</p>
+                                        <button onclick="revealSensitive(@post.Id)" style="background:rgba(255,255,255,0.2); border:1px solid rgba(255,255,255,0.6); padding:7px 20px; border-radius:20px; color:white; cursor:pointer;">Ver imagen</button>
+                                    </div>
+                                </div>
+                            }
+                            else
+                            {
+                                <img src="@post.ImagePath" style="width:100%; max-height:520px; object-fit:cover; cursor:pointer;" onclick="abrirFotoPost(this.src)" />
+                            }
+                        </div>
                     }
-                    <div style="margin-top:12px; display:flex; gap:12px; justify-content:flex-end;">
-                        <a href="/Post/Details/@post.Id" style="font-size:12px; color:#818cf8; text-decoration:none;">Ver →</a>
+
+                    <!-- STATS (LIKES Y COMENTARIOS) -->
+                    <div style="display:flex; justify-content:space-between; font-size:13px; color:#6b7280; padding:4px 2px 8px;">
+                        <span id="like-summary-@post.Id">
+                            @if (likeCount > 0)
+                            {
+                                <span>❤️ @likeCount @(likeCount == 1 ? "like" : "likes")</span>
+                            }
+                        </span>
+                        <span>
+                            @if (comentarios > 0)
+                            {
+                                <span>@comentarios @(comentarios == 1 ? "comentario" : "comentarios")</span>
+                            }
+                        </span>
                     </div>
-                </div>
+
+                    <div style="height:1px; background:rgba(255,255,255,0.08); margin:0 0 8px;"></div>
+
+                    <!-- ACCIONES -->
+                    <div style="display:flex; align-items:center; gap:0; flex-wrap:nowrap; overflow-x:auto;">
+                        <button class="action-btn like-btn" data-post-id="@post.Id" data-no-loader="true" style="display:inline-flex; align-items:center; gap:5px; padding:8px 10px; background:transparent; border:none; cursor:pointer; color:#6b7280;">
+                            <span class="action-icon like-icon" id="like-icon-@post.Id" style="font-size:17px;">@(isLiked ? "❤️" : "🤍")</span>
+                            <span class="action-label" style="font-size:12px; font-weight:600;">Me gusta</span>
+                        </button>
+
+                        <a asp-controller="Post" asp-action="Comments" asp-route-postId="@post.Id" class="action-btn" style="display:inline-flex; align-items:center; gap:5px; padding:8px 10px; text-decoration:none; color:#6b7280;">
+                            <span style="font-size:17px;">💬</span>
+                            <span style="font-size:12px; font-weight:600;">Comentar</span>
+                        </a>
+
+                        <button class="action-btn" data-no-loader="true" onclick="openShare(@post.Id)" style="display:inline-flex; align-items:center; gap:5px; padding:8px 10px; background:transparent; border:none; cursor:pointer; color:#6b7280;">
+                            <span style="font-size:17px;">↪️</span>
+                            <span style="font-size:12px; font-weight:600;">Compartir</span>
+                        </button>
+
+                        <button class="action-btn save-btn" data-no-loader="true" onclick="savePost(@post.Id, this)" style="display:inline-flex; align-items:center; gap:5px; padding:8px 10px; background:transparent; border:none; cursor:pointer; color:#6b7280;">
+                            <span style="font-size:17px;">🔖</span>
+                            <span style="font-size:12px; font-weight:600;">Guardar</span>
+                        </button>
+
+                        <a asp-controller="Post" asp-action="Report" asp-route-postId="@post.Id" class="action-btn report-btn" style="display:inline-flex; align-items:center; gap:5px; padding:8px 10px; text-decoration:none; color:#6b7280;">
+                            <span style="font-size:17px;">🚩</span>
+                            <span style="font-size:12px; font-weight:600;">Reportar</span>
+                        </a>
+                    </div>
+                </article>
             }
         </div>
     }
-</div>
+
+    <!-- SHARE MENU -->
+<div id="shareOverlay" class="share-overlay" onclick="closeShare()"></div>
+<div id="shareMenu" class="share-menu">
+    <div class="share-handle"></div>
+    <div class="share-title">Compartir publicación</div>
+    <div class="share-options">
+        <div class="share-option" onclick="shareWhatsApp()">
+            <span class="share-option-icon">📱</span>
+            <span>WhatsApp</span>
         </div>
+        <div class="share-option" onclick="shareTelegram()">
+            <span class="share-option-icon">✈️</span>
+            <span>Telegram</span>
+        </div>
+        <div class="share-option" onclick="shareFacebook()">
+            <span class="share-option-icon">📘</span>
+            <span>Facebook</span>
+        </div>
+        <div class="share-option" onclick="copyLink()">
+            <span class="share-option-icon">📋</span>
+            <span>Copiar link</span>
+        </div>
+    </div>
+    <div class="share-option cancel" onclick="closeShare()">✕ Cancelar</div>
+</div>
+
+<!-- LIKE EXPLOSION -->
+<div id="likeExplosion" class="like-explosion" style="display:none;">❤️</div>
+
+<!-- COPY ALERT -->
+<div id="copyAlert" class="copy-alert">↪ Link copiado</div>
+</div>        </div>
     </div>
 </div>
 
@@ -467,6 +604,61 @@
     font-size:12px; cursor:pointer; border:2px solid #111827;
     transition:0.2s; box-shadow:0 2px 8px rgba(99,102,241,0.4);
 }
+/* Estilos menú compartir y like explosion */
+.share-overlay {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.5); display: none; z-index: 9998;
+    backdrop-filter: blur(2px);
+}
+.share-menu {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    background: white; border-radius: 24px 24px 0 0;
+    padding: 16px 20px 32px; display: none; z-index: 9999;
+    box-shadow: 0 -10px 40px rgba(0,0,0,0.15);
+}
+.share-handle {
+    width: 40px; height: 4px; background: #e5e7eb;
+    border-radius: 10px; margin: 0 auto 16px;
+}
+.share-title { font-weight: 700; font-size: 16px; margin-bottom: 16px; color: #111; text-align: center; }
+.share-options { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 16px; }
+.share-option {
+    display: flex; flex-direction: column; align-items: center; gap: 6px;
+    padding: 14px 10px; border-radius: 16px; cursor: pointer;
+    font-weight: 500; font-size: 12px; color: #374151;
+    transition: 0.15s; background: #f9fafb; text-align: center;
+}
+.share-option:hover { background: #f3f4f6; transform: scale(1.03); }
+.share-option-icon { font-size: 24px; }
+.share-option.cancel {
+    width: 100%; text-align: center; padding: 14px; color: #ef4444;
+    background: #fef2f2; border-radius: 12px; flex-direction: row;
+    justify-content: center; font-size: 14px;
+}
+.copy-alert {
+    position: fixed; bottom: 40px; left: 50%; transform: translateX(-50%);
+    background: #111; color: white; padding: 10px 22px; border-radius: 50px;
+    font-size: 14px; opacity: 0; transition: 0.3s; pointer-events: none;
+    z-index: 99999; white-space: nowrap;
+}
+.copy-alert.show { opacity: 1; }
+.like-explosion {
+    position: fixed; font-size: 36px; pointer-events: none;
+    z-index: 99999; transform: translate(-50%, -50%);
+}
+@@keyframes likeExplosionAnim {
+    0% { transform: translate(-50%, -50%) scale(0); opacity: 1; }
+    50% { transform: translate(-50%, -80%) scale(1.8); opacity: 1; }
+    100% { transform: translate(-50%, -120%) scale(2.5); opacity: 0; }
+}
+.like-explosion.animate { animation: likeExplosionAnim 0.6s ease forwards; }
+@@keyframes likePopIn {
+    0% { transform: scale(1); }
+    30% { transform: scale(1.5); }
+    60% { transform: scale(0.9); }
+    100% { transform: scale(1); }
+}
+.like-pop { animation: likePopIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); }
 .my-avatar-edit-btn:hover { transform:scale(1.1); }
 .my-user-info { flex:1; min-width:0; }
 .my-username { font-size:17px; font-weight:900; color:white; display:flex; align-items:center; gap:6px; flex-wrap:wrap; margin-bottom:3px; }
@@ -974,6 +1166,102 @@ function guardarPerfil() {
     document.getElementById('createForm') // esto va a fallar, necesito el id del form
     document.querySelector('form[action*="Profile"]').submit();
 }
+
+// ========== FUNCIONES PARA LIKES, SHARE, SAVE ==========
+function revealSensitive(postId) {
+    const img = document.getElementById('img-' + postId);
+    const overlay = document.getElementById('overlay-' + postId);
+    if (img) img.classList.remove('sensitive-blurred');
+    if (overlay) overlay.style.display = 'none';
+}
+
+function toggleLike(btnElement, postId) {
+    const icon = btnElement.querySelector('.like-icon');
+    const isLiked = icon.textContent === '❤️';
+    icon.classList.remove('like-pop');
+    void icon.offsetWidth;
+    icon.classList.add('like-pop');
+    if (!isLiked) {
+        const explosion = document.getElementById('likeExplosion');
+        const rect = icon.getBoundingClientRect();
+        explosion.style.left = (rect.left + rect.width / 2) + 'px';
+        explosion.style.top = (rect.top + rect.height / 2) + 'px';
+        explosion.style.display = 'block';
+        explosion.classList.remove('animate');
+        void explosion.offsetWidth;
+        explosion.classList.add('animate');
+        setTimeout(() => { explosion.style.display = 'none'; explosion.classList.remove('animate'); }, 700);
+    }
+    fetch('/Post/ToggleLike?postId=' + postId, { method: 'POST' })
+        .then(res => res.json())
+        .then(data => {
+            icon.textContent = data.liked ? '❤️' : '🤍';
+            const summary = document.getElementById('like-summary-' + postId);
+            if (summary) {
+                summary.innerHTML = data.count > 0 ? `<span>❤️ ${data.count} ${data.count === 1 ? 'like' : 'likes'}</span>` : '';
+            }
+        });
+}
+
+function savePost(postId, btn) {
+    fetch('/Post/SavePost', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(postId)
+    }).then(() => {
+        const icon = btn.querySelector('.action-icon');
+        icon.textContent = '🔖';
+        icon.style.filter = 'drop-shadow(0 0 4px rgba(99,102,241,0.6))';
+        showAlert('🔖 Publicación guardada');
+        setTimeout(() => icon.style.filter = '', 1000);
+    });
+}
+
+let currentPost = null;
+function openShare(postId) {
+    currentPost = postId;
+    document.getElementById('shareMenu').style.display = 'block';
+    document.getElementById('shareOverlay').style.display = 'block';
+}
+function closeShare() {
+    document.getElementById('shareMenu').style.display = 'none';
+    document.getElementById('shareOverlay').style.display = 'none';
+}
+function shareWhatsApp() {
+    window.open('https://wa.me/?text=' + encodeURIComponent(window.location.origin + '/Post/Comments?postId=' + currentPost));
+    closeShare();
+}
+function shareTelegram() {
+    window.open('https://t.me/share/url?url=' + encodeURIComponent(window.location.origin + '/Post/Comments?postId=' + currentPost));
+    closeShare();
+}
+function shareFacebook() {
+    window.open('https://www.facebook.com/sharer/sharer.php?u=' + encodeURIComponent(window.location.origin + '/Post/Comments?postId=' + currentPost));
+    closeShare();
+}
+function copyLink() {
+    navigator.clipboard.writeText(window.location.origin + '/Post/Comments?postId=' + currentPost);
+    closeShare();
+    showAlert('↪ Link copiado');
+}
+function showAlert(msg) {
+    const el = document.getElementById('copyAlert');
+    el.textContent = msg;
+    el.classList.add('show');
+    setTimeout(() => el.classList.remove('show'), 2500);
+}
+// Asignar eventos a botones de like
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.like-btn').forEach(btn => {
+        const postId = btn.getAttribute('data-post-id');
+        if (postId) {
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                toggleLike(this, postId);
+            });
+        }
+    });
+});
 
 function closeFollowModal() {
     document.getElementById("followModal").style.display = "none";
