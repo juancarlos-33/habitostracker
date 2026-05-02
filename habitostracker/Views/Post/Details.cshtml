@@ -1,61 +1,113 @@
 ﻿@model HabitTrackerApp.Models.Post
 
-<h2 class="mb-3">📸 Publicación</h2>
+@{
+    ViewData["Title"] = "Detalles de la publicación";
+}
 
-<div class="card p-3 shadow-sm">
-
-    <!-- 👤 USUARIO -->
-    <div class="d-flex align-items-center gap-2 mb-3">
-        @if (!string.IsNullOrEmpty(Model.User?.ProfileImage))
-        {
-            <img src="@Model.User.ProfileImage"
-                 style="width:45px;height:45px;border-radius:50%;object-fit:cover;" />
-        }
-        else
-        {
-            <div style="width:45px;height:45px;border-radius:50%;background:#3b82f6;color:white;display:flex;align-items:center;justify-content:center;font-weight:bold;">
-                @Model.User?.Username.Substring(0, 1).ToUpper()
-            </div>
-        }
-
-        <div>
-            <b>@Model.DisplayUsername</b><br />
-            <small class="text-muted">@Model.CreatedAt.ToString("dd/MM/yyyy HH:mm")</small>
-        </div>
-    </div>
-
-    <!-- 📝 TEXTO -->
-    @if (!string.IsNullOrEmpty(Model.Description))
-    {
-        <p style="font-size:16px;">@Model.Description</p>
-    }
-
-    <!-- IMAGEN -->
-    @if (!string.IsNullOrEmpty(Model.ImagePath))
-    {
-        @if (Model.IsSensitive)
-        {
-            <div style="position:relative;border-radius:14px;overflow:hidden;margin-top:10px;max-width:100%;">
-                <img src="@Model.ImagePath" id="detail-img"
-                     style="max-width:100%;border-radius:14px;display:block;filter:blur(26px);transform:scale(1.04);transition:filter 0.4s ease;" />
-                <div id="detail-overlay"
-                     style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.35);backdrop-filter:blur(2px);">
-                    <div style="text-align:center;color:#fff;">
-                        <div style="font-size:32px;margin-bottom:6px;">⚠️</div>
-                        <p style="font-size:14px;font-weight:600;margin:0 0 12px;">Contenido sensible</p>
-                        <button onclick="document.getElementById('detail-img').style.filter='none';document.getElementById('detail-img').style.transform='none';document.getElementById('detail-overlay').style.display='none';"
-                                style="background:rgba(255,255,255,0.2);color:#fff;border:1.5px solid rgba(255,255,255,0.6);padding:7px 20px;border-radius:20px;font-size:13px;font-weight:600;cursor:pointer;">
-                            Ver imagen
-                        </button>
+<div class="container mt-4" style="max-width: 680px;">
+    <div class="card shadow-sm border-0 rounded-4 overflow-hidden">
+        
+        <!-- HEADER -->
+        <div class="card-header bg-white border-0 pt-4 pb-2 px-4">
+            <div class="d-flex align-items-center gap-3">
+                @if (Model.User != null)
+                {
+                    <a asp-controller="User" asp-action="Profile" asp-route-id="@Model.UserId">
+                        @if (!string.IsNullOrEmpty(Model.User.ProfileImage))
+                        {
+                            <img src="@Model.User.ProfileImage" style="width: 48px; height: 48px; border-radius: 50%; object-fit: cover;" />
+                        }
+                        else
+                        {
+                            <div style="width: 48px; height: 48px; border-radius: 50%; background: linear-gradient(135deg, #6366f1, #2563eb); color: white; display: flex; align-items: center; justify-content: center; font-weight: 800;">@Model.User.Username.Substring(0,1).ToUpper()</div>
+                        }
+                    </a>
+                    <div>
+                        <div class="fw-bold">@Model.User.Username</div>
+                        <div class="text-muted small">@Model.CreatedAt.ToString("dd MMM yyyy · hh:mm tt", new System.Globalization.CultureInfo("es-CO"))</div>
                     </div>
+                }
+            </div>
+        </div>
+
+        <!-- ALERTAS ROJAS (si está en advertencia) -->
+        @if (Model.IsUnderWarning)
+        {
+            <div class="px-4 mt-2">
+                <div class="alert alert-danger py-1" style="border-left: 4px solid #dc2626; font-size: 13px;">
+                    ⚠️ <strong>Incumple nuestras normas</strong> – Esta publicación ha sido señalada.
+                </div>
+                <div class="alert alert-danger py-1" style="border-left: 4px solid #dc2626; background-color: #fff5f5; font-size: 13px;">
+                    🔴 <strong>Cuenta en riesgo</strong> – El propietario tiene restricciones activas.
+                </div>
+                <div class="alert alert-dark py-2 mt-1" role="alert">
+                    🛑 <strong>Publicación sancionada</strong> – Esta publicación ha sido revisada y no cumple con nuestras directrices. 
+                    El autor ha recibido una advertencia oficial. Los comentarios están permanentemente deshabilitados.
                 </div>
             </div>
         }
-        else
-        {
-            <img src="@Model.ImagePath"
-                 style="max-width:100%;border-radius:14px;margin-top:10px;" />
-        }
-    }
 
+        <!-- DESCRIPCIÓN -->
+        @if (!string.IsNullOrEmpty(Model.Description))
+        {
+            <div class="card-body px-4 pt-2 pb-0">
+                <p class="card-text" style="font-size: 15px; line-height: 1.6;">@Model.Description</p>
+            </div>
+        }
+
+        <!-- IMAGEN / VIDEO -->
+        @if (!string.IsNullOrEmpty(Model.ImagePath))
+        {
+            <div class="px-4 pb-3">
+                @if (Model.ImagePath.Contains(".mp4") || Model.ImagePath.Contains(".mov") || Model.ImagePath.Contains("/video/upload/"))
+                {
+                    <video controls class="img-fluid rounded-3" style="max-height: 500px; width: 100%;">
+                        <source src="@Model.ImagePath" />
+                    </video>
+                }
+                else
+                {
+                    <img src="@Model.ImagePath" class="img-fluid rounded-3" style="max-height: 500px; width: 100%; object-fit: cover;" />
+                }
+            </div>
+        }
+
+        <!-- SECCIÓN DE COMENTARIOS -->
+        <div class="card-footer bg-white border-0 px-4 pb-4 pt-2">
+            <h6 class="mb-3">💬 Comentarios</h6>
+
+            @if (!Model.CommentsDisabled)
+            {
+                <!-- Formulario para agregar comentario (si no está deshabilitado) -->
+                <form asp-action="AddComment" method="post" class="mb-4" enctype="multipart/form-data">
+                    <input type="hidden" name="postId" value="@Model.Id" />
+                    <div class="input-group">
+                        <input type="text" name="comment" class="form-control rounded-pill" placeholder="Escribe un comentario..." />
+                        <button type="submit" class="btn btn-primary rounded-pill px-4">Enviar</button>
+                    </div>
+                </form>
+
+                <!-- Aquí iría la lista de comentarios existentes (puedes cargarlos desde el controlador) -->
+                <div id="commentsList">
+                    @await Component.InvokeAsync("PostComments", new { postId = Model.Id })
+                </div>
+            }
+            else
+            {
+                <div class="alert alert-secondary mt-2">
+                    🔒 Los comentarios están deshabilitados para esta publicación por incumplimiento de normas.
+                </div>
+            }
+        </div>
+    </div>
 </div>
+
+<style>
+    body.bg-dark .card, body.bg-dark .card-header, body.bg-dark .card-footer {
+        background-color: #1e293b !important;
+        border-color: #334155 !important;
+        color: #f1f5f9;
+    }
+    body.bg-dark .text-muted { color: #94a3b8 !important; }
+    body.bg-dark .alert-dark { background-color: #2d3748; border-color: #4a5568; color: #e2e8f0; }
+</style>
