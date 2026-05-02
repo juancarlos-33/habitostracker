@@ -14,8 +14,8 @@
     var profilePic = !string.IsNullOrEmpty(Model.ProfileImage) ? Model.ProfileImage : Model.ProfilePicture;
     bool isMe = Model.Id == myId;
     bool isFriend = friendStatus == "Accepted";
- bool isSystemAccount = Model.Role == "System";
- bool canSeeProfile = !Model.IsPrivate || isFriend || isMe;
+    bool isSystemAccount = Model.Role == "System";
+    bool canSeeProfile = !Model.IsPrivate || isFriend || isMe;
     var msgRequest = db.MessageRequests.FirstOrDefault(r =>
         (r.SenderId == myId && r.ReceiverId == Model.Id) ||
         (r.SenderId == Model.Id && r.ReceiverId == myId));
@@ -31,91 +31,131 @@
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 
 <style>
-* { box-sizing: border-box; }
-.prof-wrap { max-width: 960px; margin: 0 auto; font-family: 'Plus Jakarta Sans', sans-serif; padding-bottom: 60px; }
-
-/* ══ COVER ══ */
-.prof-cover {
-    position: relative; height: 240px; border-radius: 24px; overflow: hidden;
-    background: linear-gradient(135deg, #1e1b4b 0%, #312e81 30%, #4c1d95 60%, #6d28d9 100%);
-    box-shadow: 0 24px 64px rgba(0,0,0,0.5);
+/* ===== ESTILOS COPIADOS DE POST/INDEX (para que las publicaciones se vean igual) ===== */
+.feed-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 24px; flex-wrap: wrap; gap: 12px;
 }
-.prof-verified-system {
-    font-size:18px; color:#6366f1;
-    filter:drop-shadow(0 0 6px rgba(99,102,241,0.8));
-    cursor:default; user-select:none; font-weight:900;
+.feed-title { font-size: 22px; font-weight: 800; margin: 0 0 2px; color: #111827; }
+.feed-subtitle { font-size: 13px; color: #9ca3af; margin: 0; }
+.new-post-btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: linear-gradient(135deg, #2563eb, #4f46e5);
+    color: white; padding: 10px 20px; border-radius: 50px;
+    font-size: 14px; font-weight: 600; text-decoration: none;
+    transition: 0.2s; box-shadow: 0 4px 14px rgba(37,99,235,0.3);
+    white-space: nowrap;
 }
-.prof-cover img { width:100%; height:100%; object-fit:cover; display:block; }
-.prof-cover-overlay { position:absolute; inset:0; background:linear-gradient(to bottom, transparent 30%, rgba(0,0,0,0.6) 100%); }
-.prof-cover-dots { position:absolute; inset:0; opacity:0.05; background-image:radial-gradient(circle,white 1px,transparent 1px); background-size:24px 24px; }
-@@media(max-width:768px){ .prof-cover { height:160px; border-radius:20px; } }
-
-/* ══ PROFILE CARD ══ */
-.prof-card {
-    background: linear-gradient(180deg,#161b2e 0%,#0f1623 100%);
-    border-radius: 0 0 28px 28px;
-    border: 1px solid rgba(255,255,255,0.06); border-top:none;
-    padding: 0 32px 28px; margin-bottom: 16px;
-    box-shadow: 0 16px 48px rgba(0,0,0,0.35);
+.new-post-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(37,99,235,0.4); color: white; }
+.feed-empty {
+    text-align: center; padding: 60px 20px; background: white;
+    border-radius: 22px; box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    border: 1px solid rgba(0,0,0,0.04); max-width: 620px; margin: 0 auto 24px;
 }
-@@media(max-width:768px){ .prof-card { padding: 0 16px 20px; } }
-
-/* ══ AVATAR ══ */
-.prof-avatar-zone { display:flex; align-items:flex-end; justify-content:space-between; margin-bottom:18px; }
-.prof-avatar-wrap { position:relative; margin-top:-56px; flex-shrink:0; }
-.prof-avatar {
-    width:110px; height:110px; border-radius:50%; object-fit:cover;
-    border:4px solid #0f1623; box-shadow:0 8px 32px rgba(0,0,0,0.6); display:block; transition:0.3s;
+.feed-empty-icon { font-size: 52px; margin-bottom: 16px; }
+.feed-empty h5 { font-size: 18px; font-weight: 700; color: #111827; margin-bottom: 8px; }
+.feed-empty p { font-size: 14px; color: #9ca3af; margin: 0; }
+.feed-container { max-width: 620px; margin: 0 auto; }
+.post-card {
+    background: white; border-radius: 22px; padding: 20px;
+    margin-bottom: 20px; box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    border: 1px solid rgba(0,0,0,0.04); transition: 0.2s;
 }
-.prof-avatar:hover { transform:scale(1.04); box-shadow:0 12px 40px rgba(99,102,241,0.3); }
-.prof-avatar-letter {
-    width:110px; height:110px; border-radius:50%;
-    background:linear-gradient(135deg,#6366f1,#7c3aed);
-    color:white; display:flex; align-items:center; justify-content:center;
-    font-size:44px; font-weight:900; border:4px solid #0f1623;
-    box-shadow:0 8px 32px rgba(0,0,0,0.6);
+.post-card:hover { box-shadow: 0 8px 28px rgba(0,0,0,0.1); transform: translateY(-1px); }
+.post-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 14px; gap: 8px;
 }
-.prof-online-dot {
-    position:absolute; bottom:6px; right:6px;
-    width:16px; height:16px; border-radius:50%;
-    background:#22c55e; border:3px solid #0f1623;
-    box-shadow:0 0 8px rgba(34,197,94,0.6);
+.post-header-left { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.post-header-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.avatar-link { text-decoration: none; flex-shrink: 0; }
+.post-avatar {
+    width: 44px; height: 44px; border-radius: 50%; object-fit: cover;
+    border: 2px solid #e5e7eb; flex-shrink: 0;
 }
-@@media(max-width:768px){ .prof-avatar,.prof-avatar-letter { width:88px; height:88px; font-size:34px; } .prof-avatar-wrap { margin-top:-44px; } }
-
-/* ══ INFO ══ */
-.prof-username-row { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:4px; }
-.prof-username { font-size:24px; font-weight:900; color:white; margin:0; letter-spacing:-0.5px; }
-.prof-premium-icon { font-size:18px; filter:drop-shadow(0 2px 6px rgba(251,191,36,0.5)); }
-.prof-fullname { font-size:14px; color:rgba(255,255,255,0.4); margin:0 0 10px; font-weight:500; }
-.prof-bio { font-size:14px; color:rgba(255,255,255,0.75); line-height:1.7; margin:0 0 14px; max-width:520px; }
-.prof-meta { display:flex; flex-wrap:wrap; gap:14px; margin-bottom:16px; }
-.prof-meta-item { display:flex; align-items:center; gap:5px; font-size:12px; color:rgba(255,255,255,0.35); font-weight:600; }
-
-/* Timeline de publicaciones vertical */
-.prof-posts-timeline { display: flex; flex-direction: column; gap: 20px; margin-top: 20px; }
-.prof-post-card {
-    background: rgba(255,255,255,0.05);
-    border-radius: 20px;
-    padding: 16px;
-    border: 1px solid rgba(255,255,255,0.08);
-    transition: 0.2s;
+.post-avatar-placeholder {
+    width: 44px; height: 44px; border-radius: 50%;
+    background: linear-gradient(135deg, #2563eb, #7c3aed);
+    color: white; display: flex; align-items: center; justify-content: center;
+    font-weight: 800; font-size: 17px; flex-shrink: 0;
 }
-.prof-post-card:hover { background: rgba(255,255,255,0.08); }
-.prof-post-header { display: flex; gap: 10px; align-items: center; margin-bottom: 12px; }
-.prof-post-avatar img, .prof-post-letter { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; }
-.prof-post-letter { background: linear-gradient(135deg,#6366f1,#4f46e5); color: white; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 16px; }
-.prof-post-info { flex: 1; }
-.prof-post-username { font-weight: 800; color: white; font-size: 14px; }
-.prof-post-date { font-size: 11px; color: rgba(255,255,255,0.4); margin-top: 1px; }
-.prof-post-text { font-size: 14px; color: rgba(255,255,255,0.7); line-height: 1.5; margin-bottom: 10px; }
-.prof-post-img { width: 100%; border-radius: 16px; margin-top: 8px; max-height: 500px; object-fit: cover; cursor: pointer; }
-.prof-post-footer { margin-top: 12px; text-align: right; }
-.prof-post-link { font-size: 12px; color: #818cf8; text-decoration: none; font-weight: 600; }
-.prof-post-link:hover { text-decoration: underline; }
-
-
-/* Estilos para el menú compartir y like explosion */
+.post-meta { display: flex; flex-direction: column; min-width: 0; }
+.post-username {
+    font-weight: 700; font-size: 15px; color: #111827;
+    display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+}
+.post-time-wrap { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 2px; }
+.post-time { font-size: 12px; color: #9ca3af; }
+.post-privacy-badge {
+    font-size: 10px; font-weight: 700; padding: 2px 7px;
+    border-radius: 20px; white-space: nowrap;
+}
+.post-privacy-badge.friends { background:#dbeafe; color:#1d4ed8; }
+.post-privacy-badge.private { background:#fce7f3; color:#9d174d; }
+.post-privacy-badge.public { background:#dcfce7; color:#15803d; }
+.sensitive-badge {
+    background: #fef3c7; color: #d97706; font-size: 10px;
+    padding: 3px 8px; border-radius: 20px; font-weight: 700;
+}
+.delete-btn {
+    font-size: 17px; color: #ef4444; text-decoration: none;
+    opacity: 0.7; transition: 0.2s; padding: 5px 8px; border-radius: 8px;
+}
+.delete-btn:hover { opacity: 1; background: #fef2f2; }
+.post-description {
+    font-size: 15px; color: #374151; line-height: 1.65;
+    margin: 0 0 14px; white-space: pre-wrap; word-break: break-word;
+}
+.post-media-wrap {
+    border-radius: 16px; overflow: hidden; margin-bottom: 12px;
+    background: #000; position: relative;
+}
+.post-media { width: 100%; max-height: 520px; object-fit: cover; display: block; }
+.video-wrap .post-media { object-fit: contain; background: #000; }
+.video-badge {
+    position: absolute; top: 10px; left: 10px;
+    background: rgba(0,0,0,0.6); color: white; font-size: 11px;
+    font-weight: 700; padding: 3px 10px; border-radius: 20px;
+    backdrop-filter: blur(4px);
+}
+.sensitive-blurred { filter: blur(28px); transform: scale(1.05); transition: filter 0.4s ease; }
+.sensitive-overlay {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(0,0,0,0.35);
+    backdrop-filter: blur(2px);
+    z-index: 2;
+}
+.sensitive-overlay-content { text-align: center; color: #fff; }
+.sensitive-overlay-content .sensitive-icon { font-size: 32px; display: block; margin-bottom: 6px; }
+.sensitive-overlay-content p { font-size: 14px; font-weight: 600; margin: 0 0 12px; }
+.reveal-btn {
+    background: rgba(255,255,255,0.2); color: #fff; border: 1.5px solid rgba(255,255,255,0.6);
+    padding: 7px 20px; border-radius: 20px; font-size: 13px; font-weight: 600;
+    cursor: pointer;
+}
+.post-stats {
+    display: flex; align-items: center; justify-content: space-between;
+    font-size: 13px; color: #6b7280; padding: 4px 2px 8px;
+}
+.post-divider { height: 1px; background: #f3f4f6; margin: 0 0 8px; }
+.post-actions {
+    display: flex; align-items: center;
+    gap: 0; flex-wrap: nowrap; overflow-x: auto;
+}
+.action-btn {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 8px 10px; border-radius: 10px; border: none;
+    background: transparent; cursor: pointer; font-size: 13px;
+    color: #6b7280; text-decoration: none; transition: 0.15s;
+    font-weight: 500; flex-shrink: 0; white-space: nowrap;
+}
+.action-btn:hover { background: #f3f4f6; color: #111; }
+.action-icon { font-size: 17px; }
+.action-label { font-size: 12px; font-weight: 600; }
+.like-btn.liked .action-label { color: #ef4444; }
+.report-btn:hover { background: #fef2f2; color: #ef4444; }
+/* Estilos para compartir, like explosion, etc. */
 .share-overlay {
     position: fixed; top: 0; left: 0; width: 100%; height: 100%;
     background: rgba(0,0,0,0.5); display: none; z-index: 9998;
@@ -170,7 +210,55 @@
     100% { transform: scale(1); }
 }
 .like-pop { animation: likePopIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); }
-/* ══ STATS ══ */
+
+/* ===== ESTILOS ORIGINALES DEL PERFIL (que no interfieren) ===== */
+* { box-sizing: border-box; }
+.prof-wrap { max-width: 960px; margin: 0 auto; font-family: 'Plus Jakarta Sans', sans-serif; padding-bottom: 60px; }
+.prof-cover {
+    position: relative; height: 240px; border-radius: 24px; overflow: hidden;
+    background: linear-gradient(135deg, #1e1b4b 0%, #312e81 30%, #4c1d95 60%, #6d28d9 100%);
+    box-shadow: 0 24px 64px rgba(0,0,0,0.5);
+}
+.prof-cover img { width:100%; height:100%; object-fit:cover; display:block; }
+.prof-cover-overlay { position:absolute; inset:0; background:linear-gradient(to bottom, transparent 30%, rgba(0,0,0,0.6) 100%); }
+.prof-cover-dots { position:absolute; inset:0; opacity:0.05; background-image:radial-gradient(circle,white 1px,transparent 1px); background-size:24px 24px; }
+@@media(max-width:768px){ .prof-cover { height:160px; border-radius:20px; } }
+.prof-card {
+    background: linear-gradient(180deg,#161b2e 0%,#0f1623 100%);
+    border-radius: 0 0 28px 28px;
+    border: 1px solid rgba(255,255,255,0.06); border-top:none;
+    padding: 0 32px 28px; margin-bottom: 16px;
+    box-shadow: 0 16px 48px rgba(0,0,0,0.35);
+}
+@@media(max-width:768px){ .prof-card { padding: 0 16px 20px; } }
+.prof-avatar-zone { display:flex; align-items:flex-end; justify-content:space-between; margin-bottom:18px; }
+.prof-avatar-wrap { position:relative; margin-top:-56px; flex-shrink:0; }
+.prof-avatar {
+    width:110px; height:110px; border-radius:50%; object-fit:cover;
+    border:4px solid #0f1623; box-shadow:0 8px 32px rgba(0,0,0,0.6); display:block; transition:0.3s;
+}
+.prof-avatar:hover { transform:scale(1.04); box-shadow:0 12px 40px rgba(99,102,241,0.3); }
+.prof-avatar-letter {
+    width:110px; height:110px; border-radius:50%;
+    background:linear-gradient(135deg,#6366f1,#7c3aed);
+    color:white; display:flex; align-items:center; justify-content:center;
+    font-size:44px; font-weight:900; border:4px solid #0f1623;
+    box-shadow:0 8px 32px rgba(0,0,0,0.6);
+}
+.prof-online-dot {
+    position:absolute; bottom:6px; right:6px;
+    width:16px; height:16px; border-radius:50%;
+    background:#22c55e; border:3px solid #0f1623;
+    box-shadow:0 0 8px rgba(34,197,94,0.6);
+}
+@@media(max-width:768px){ .prof-avatar,.prof-avatar-letter { width:88px; height:88px; font-size:34px; } .prof-avatar-wrap { margin-top:-44px; } }
+.prof-username-row { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:4px; }
+.prof-username { font-size:24px; font-weight:900; color:white; margin:0; letter-spacing:-0.5px; }
+.prof-premium-icon { font-size:18px; filter:drop-shadow(0 2px 6px rgba(251,191,36,0.5)); }
+.prof-fullname { font-size:14px; color:rgba(255,255,255,0.4); margin:0 0 10px; font-weight:500; }
+.prof-bio { font-size:14px; color:rgba(255,255,255,0.75); line-height:1.7; margin:0 0 14px; max-width:520px; }
+.prof-meta { display:flex; flex-wrap:wrap; gap:14px; margin-bottom:16px; }
+.prof-meta-item { display:flex; align-items:center; gap:5px; font-size:12px; color:rgba(255,255,255,0.35); font-weight:600; }
 .prof-stats-row {
     display:flex; gap:0; margin-bottom:0;
     background:rgba(255,255,255,0.04); border-radius:18px;
@@ -182,8 +270,6 @@
 .prof-stat-num { font-size:20px; font-weight:900; color:white; line-height:1; }
 .prof-stat-label { font-size:10px; color:rgba(255,255,255,0.3); font-weight:700; text-transform:uppercase; letter-spacing:0.8px; margin-top:3px; }
 @@media(max-width:768px){ .prof-stats-row { width:100%; } .prof-stat { flex:1; padding:12px 6px; } .prof-stat-num { font-size:17px; } }
-
-/* ══ HABIT STATS STRIP ══ */
 .prof-habit-strip {
     display:flex; gap:10px; margin-top:16px; flex-wrap:wrap;
 }
@@ -196,8 +282,6 @@
 .prof-habit-chip.fire { border-color:rgba(251,146,60,0.3); color:#fb923c; background:rgba(251,146,60,0.08); }
 .prof-habit-chip.trophy { border-color:rgba(251,191,36,0.3); color:#fbbf24; background:rgba(251,191,36,0.08); }
 .prof-habit-chip.habit { border-color:rgba(99,102,241,0.3); color:#818cf8; background:rgba(99,102,241,0.08); }
-
-/* ══ ACTIONS ══ */
 .prof-actions { display:flex; gap:8px; flex-wrap:wrap; padding-top:20px; }
 .prof-btn {
     padding:10px 20px; border-radius:12px; font-size:13px; font-weight:700;
@@ -216,8 +300,6 @@
 .prof-btn.ghost-red { background:rgba(239,68,68,0.1); color:#f87171; border:1px solid rgba(239,68,68,0.2); }
 .prof-btn.ghost-red:hover { background:rgba(239,68,68,0.2); color:#ef4444; }
 .prof-btn:disabled { cursor:not-allowed; opacity:0.6; transform:none !important; }
-
-/* ══ POSTS GRID ══ */
 .prof-tabs {
     display:flex; margin-bottom:16px;
     background:rgba(255,255,255,0.03); border-radius:18px;
@@ -232,50 +314,25 @@
 }
 .prof-tab.active { background:rgba(99,102,241,0.15); color:#818cf8; border-bottom:2px solid #6366f1; }
 .prof-tab:hover:not(.active) { background:rgba(255,255,255,0.04); color:rgba(255,255,255,0.6); }
-
 .prof-content { min-height:300px; }
-.posts-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:3px; border-radius:18px; overflow:hidden; }
-.post-tile { position:relative; aspect-ratio:1; overflow:hidden; display:block; background:#1e293b; text-decoration:none; }
-.post-tile-img { width:100%; height:100%; object-fit:cover; display:block; transition:0.35s; }
-.post-tile:hover .post-tile-img { transform:scale(1.08); }
-.post-tile-video { width:100%; height:100%; object-fit:cover; display:block; }
-.post-tile-badge { position:absolute; top:8px; right:8px; background:rgba(0,0,0,0.75); color:white; font-size:11px; font-weight:700; padding:3px 9px; border-radius:20px; backdrop-filter:blur(4px); }
-.post-tile-noimg { width:100%; height:100%; display:flex; align-items:center; justify-content:center; font-size:32px; background:linear-gradient(135deg,#1e293b,#2d1b69); }
-.post-tile-overlay { position:absolute; inset:0; background:rgba(0,0,0,0.65); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; opacity:0; transition:0.25s; backdrop-filter:blur(3px); }
-.post-tile:hover .post-tile-overlay { opacity:1; }
-.post-tile-overlay-text { color:white; font-weight:800; font-size:14px; }
-.post-tile-overlay-date { color:rgba(255,255,255,0.5); font-size:11px; }
-
-/* ══ EMPTY ══ */
-.prof-empty { display:flex; flex-direction:column; align-items:center; padding:80px 20px; text-align:center; }
-.prof-empty-icon { font-size:64px; margin-bottom:18px; }
-.prof-empty-title { font-size:18px; font-weight:800; color:rgba(255,255,255,0.6); margin-bottom:8px; }
-.prof-empty-sub { font-size:13px; color:rgba(255,255,255,0.25); line-height:1.6; max-width:240px; }
-
-/* ══ PRIVATE WALL ══ */
 .private-wall {
     display:flex; flex-direction:column; align-items:center; padding:90px 20px; text-align:center;
     background:linear-gradient(135deg,rgba(99,102,241,0.04),rgba(124,58,237,0.04));
     border-radius:24px; border:1px solid rgba(99,102,241,0.1);
 }
-
 @@keyframes fadeInPhoto { from{opacity:0;} to{opacity:1;} }
 @@keyframes scaleInPhoto { from{transform:scale(0.7);opacity:0;} to{transform:scale(1);opacity:1;} }
-
 .private-wall-lock { font-size:80px; margin-bottom:22px; filter:drop-shadow(0 8px 28px rgba(99,102,241,0.35)); animation:floatLock 3s ease-in-out infinite; }
 @@keyframes floatLock { 0%,100%{transform:translateY(0);} 50%{transform:translateY(-10px);} }
 .private-wall-title { font-size:24px; font-weight:900; color:white; margin-bottom:10px; }
 .private-wall-sub { font-size:14px; color:rgba(255,255,255,0.35); line-height:1.75; max-width:320px; }
 .private-wall-hint { margin-top:28px; padding:14px 22px; border-radius:16px; background:rgba(99,102,241,0.1); border:1px solid rgba(99,102,241,0.2); font-size:13px; color:#818cf8; font-weight:600; }
 .private-wall-notice { margin-top:14px; font-size:12px; color:rgba(255,255,255,0.2); font-style:italic; }
-
-/* ══ MODALS ══ */
 .follow-modal { position:fixed; inset:0; background:rgba(0,0,0,0.75); display:flex; justify-content:center; align-items:center; z-index:9999; backdrop-filter:blur(10px); }
 .follow-content { background:linear-gradient(135deg,#1a1f35,#111827); border-radius:24px; padding:24px; width:380px; max-height:520px; overflow-y:auto; box-shadow:0 40px 80px rgba(0,0,0,0.6); border:1px solid rgba(255,255,255,0.08); }
 .follow-header { display:flex; justify-content:space-between; align-items:center; font-weight:800; font-size:16px; color:white; margin-bottom:16px; padding-bottom:14px; border-bottom:1px solid rgba(255,255,255,0.07); }
 .close-btn { width:32px; height:32px; border-radius:50%; background:rgba(255,255,255,0.08); display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:14px; color:rgba(255,255,255,0.5); transition:0.2s; border:none; }
 .close-btn:hover { background:rgba(255,255,255,0.14); color:white; }
-
 .msg-req-modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:99999; align-items:center; justify-content:center; backdrop-filter:blur(12px); }
 .msg-req-card { background:linear-gradient(135deg,#1a1f35,#0f172a); border-radius:28px; padding:36px 30px; max-width:380px; width:92%; border:1px solid rgba(255,255,255,0.08); box-shadow:0 40px 80px rgba(0,0,0,0.7); }
 .msg-req-title { font-size:20px; font-weight:900; color:white; text-align:center; margin:0 0 6px; }
@@ -290,13 +347,9 @@
 .msg-req-send { flex:1; padding:12px; border-radius:13px; border:none; background:linear-gradient(135deg,#6366f1,#2563eb); color:white; font-size:13px; font-weight:700; cursor:pointer; font-family:inherit; transition:0.2s; box-shadow:0 4px 14px rgba(99,102,241,0.4); }
 .msg-req-send:hover { transform:translateY(-1px); }
 .msg-req-send:disabled { background:#334155; box-shadow:none; cursor:not-allowed; transform:none; }
-
-/* ══ TOAST ══ */
 .prof-toast { position:fixed; bottom:90px; left:50%; transform:translateX(-50%); background:rgba(15,23,42,0.97); color:white; padding:12px 24px; border-radius:24px; font-size:13px; font-weight:600; z-index:99999; box-shadow:0 8px 32px rgba(0,0,0,0.5); backdrop-filter:blur(12px); border:1px solid rgba(255,255,255,0.08); animation:toastIn 0.3s ease; white-space:nowrap; }
 @@keyframes toastIn { from{opacity:0;transform:translateX(-50%) translateY(10px);} to{opacity:1;transform:translateX(-50%) translateY(0);} }
-
 @@media(max-width:768px){
-    .posts-grid { gap:2px; }
     .prof-username { font-size:19px; }
     .prof-stats-row { width:100%; border-radius:14px; }
     .prof-tab { font-size:12px; padding:12px 8px; }
@@ -340,54 +393,21 @@
     <!-- PROFILE CARD -->
     <div class="prof-card">
         <div class="prof-avatar-zone">
-         <div class="prof-avatar-wrap">
-    @if (!string.IsNullOrEmpty(profilePic))
-    {
-        <img src="@profilePic" class="prof-avatar" style="cursor:pointer;"
-             onclick="abrirFotoPerfil('@profilePic')"
-             onerror="this.style.display='none';this.nextElementSibling.style.display='flex';" />
-        <div class="prof-avatar-letter" style="display:none;">@Model.Username.Substring(0,1).ToUpper()</div>
-    }
-    else
-    { <div class="prof-avatar-letter">@Model.Username.Substring(0,1).ToUpper()</div> }
+            <div class="prof-avatar-wrap">
+                @if (!string.IsNullOrEmpty(profilePic))
+                {
+                    <img src="@profilePic" class="prof-avatar" style="cursor:pointer;"
+                         onclick="abrirFotoPerfil('@profilePic')"
+                         onerror="this.style.display='none';this.nextElementSibling.style.display='flex';" />
+                    <div class="prof-avatar-letter" style="display:none;">@Model.Username.Substring(0,1).ToUpper()</div>
+                }
+                else
+                { <div class="prof-avatar-letter">@Model.Username.Substring(0,1).ToUpper()</div> }
+            </div>
 
-
-    <!-- SHARE MENU -->
-<div id="shareOverlay" class="share-overlay" onclick="closeShare()"></div>
-<div id="shareMenu" class="share-menu">
-    <div class="share-handle"></div>
-    <div class="share-title">Compartir publicación</div>
-    <div class="share-options">
-        <div class="share-option" onclick="shareWhatsApp()">
-            <span class="share-option-icon">📱</span>
-            <span>WhatsApp</span>
-        </div>
-        <div class="share-option" onclick="shareTelegram()">
-            <span class="share-option-icon">✈️</span>
-            <span>Telegram</span>
-        </div>
-        <div class="share-option" onclick="shareFacebook()">
-            <span class="share-option-icon">📘</span>
-            <span>Facebook</span>
-        </div>
-        <div class="share-option" onclick="copyLink()">
-            <span class="share-option-icon">📋</span>
-            <span>Copiar link</span>
-        </div>
-    </div>
-    <div class="share-option cancel" onclick="closeShare()">✕ Cancelar</div>
-</div>
-
-<!-- LIKE EXPLOSION -->
-<div id="likeExplosion" class="like-explosion" style="display:none;">❤️</div>
-
-<!-- COPY ALERT -->
-<div id="copyAlert" class="copy-alert">↪ Link copiado</div>
-</div>
-
-           @if (!isMe && !isSystemAccount)
-{
-    <div class="prof-actions" style="padding-top:16px;">
+            @if (!isMe && !isSystemAccount)
+            {
+                <div class="prof-actions" style="padding-top:16px;">
                     @if (isFollowing)
                     {
                         <form asp-controller="User" asp-action="Unfollow" method="post">
@@ -434,71 +454,69 @@
             @if (Model.IsPremium)
             { <span class="prof-premium-icon" title="Premium">👑</span> }
             @if (isSystemAccount)
-{
-   <span class="prof-verified-system" title="Cuenta oficial verificada de HabitTracker">✦</span>
-}
+            { <span class="prof-verified-system" title="Cuenta oficial verificada de HabitTracker">✦</span> }
         </div>
 
-     @if (!string.IsNullOrEmpty(Model.FullName) && !isSystemAccount)
-{ <p class="prof-fullname">@Model.FullName</p> }
+        @if (!string.IsNullOrEmpty(Model.FullName) && !isSystemAccount)
+        { <p class="prof-fullname">@Model.FullName</p> }
 
         @if (canSeeProfile)
         {
             @if (!string.IsNullOrEmpty(Model.Bio))
             { <p class="prof-bio">@Model.Bio</p> }
 
-        <div class="prof-meta">
-    @if (Model.CreatedAt.HasValue && !isSystemAccount)
-    { <span class="prof-meta-item">📅 Se unió en @Model.CreatedAt.Value.ToString("MMM yyyy", culture)</span> }
-    @if (Model.IsPremium)
-    { <span class="prof-meta-item" style="color:#fbbf24;">⭐ Premium</span> }
-</div>
-@if (!string.IsNullOrEmpty(Model.Country))
-{
-    <div style="margin-bottom:14px;">
-        <span class="prof-meta-item">🌍 @Model.Country</span>
-    </div>
-}
+            <div class="prof-meta">
+                @if (Model.CreatedAt.HasValue && !isSystemAccount)
+                { <span class="prof-meta-item">📅 Se unió en @Model.CreatedAt.Value.ToString("MMM yyyy", culture)</span> }
+                @if (Model.IsPremium)
+                { <span class="prof-meta-item" style="color:#fbbf24;">⭐ Premium</span> }
+            </div>
+            @if (!string.IsNullOrEmpty(Model.Country))
+            {
+                <div style="margin-bottom:14px;">
+                    <span class="prof-meta-item">🌍 @Model.Country</span>
+                </div>
+            }
 
-           <div class="prof-stats-row">
-    @if (isSystemAccount)
-    {
-        <div class="prof-stat">
-            <span class="prof-stat-num" style="color:rgba(255,255,255,0.3);">—</span>
-            <span class="prof-stat-label">Seguidores</span>
-        </div>
-        <div class="prof-stat">
-            <span class="prof-stat-num" style="color:rgba(255,255,255,0.3);">—</span>
-            <span class="prof-stat-label">Siguiendo</span>
-        </div>
-    }
-    else
-    {
-        <div class="prof-stat" onclick="openModal('followers')">
-            <span class="prof-stat-num">@followersCount</span>
-            <span class="prof-stat-label">Seguidores</span>
-        </div>
-        <div class="prof-stat" onclick="openModal('following')">
-            <span class="prof-stat-num">@followingCount</span>
-            <span class="prof-stat-label">Siguiendo</span>
-        </div>
-    }
- <div class="prof-stat">
-    <span class="prof-stat-num">@(isSystemAccount ? "—" : userPosts.Count.ToString())</span>
-    <span class="prof-stat-label">Posts</span>
-</div>
-</div>
+            <div class="prof-stats-row">
+                @if (isSystemAccount)
+                {
+                    <div class="prof-stat">
+                        <span class="prof-stat-num" style="color:rgba(255,255,255,0.3);">—</span>
+                        <span class="prof-stat-label">Seguidores</span>
+                    </div>
+                    <div class="prof-stat">
+                        <span class="prof-stat-num" style="color:rgba(255,255,255,0.3);">—</span>
+                        <span class="prof-stat-label">Siguiendo</span>
+                    </div>
+                }
+                else
+                {
+                    <div class="prof-stat" onclick="openModal('followers')">
+                        <span class="prof-stat-num">@followersCount</span>
+                        <span class="prof-stat-label">Seguidores</span>
+                    </div>
+                    <div class="prof-stat" onclick="openModal('following')">
+                        <span class="prof-stat-num">@followingCount</span>
+                        <span class="prof-stat-label">Siguiendo</span>
+                    </div>
+                }
+                <div class="prof-stat">
+                    <span class="prof-stat-num">@(isSystemAccount ? "—" : userPosts.Count.ToString())</span>
+                    <span class="prof-stat-label">Posts</span>
+                </div>
+            </div>
 
-         @if (canSeeProfile && totalHabits > 0 && isMe)
-{
-    <div class="prof-habit-strip">
-        <div class="prof-habit-chip habit">📋 @totalHabits hábitos</div>
-        @if (bestStreak > 0)
-        { <div class="prof-habit-chip fire">🔥 @bestStreak días de racha</div> }
-        @if (isFriend)
-        { <div class="prof-habit-chip trophy">🤝 Amigos</div> }
-    </div>
-}
+            @if (canSeeProfile && totalHabits > 0 && isMe)
+            {
+                <div class="prof-habit-strip">
+                    <div class="prof-habit-chip habit">📋 @totalHabits hábitos</div>
+                    @if (bestStreak > 0)
+                    { <div class="prof-habit-chip fire">🔥 @bestStreak días de racha</div> }
+                    @if (isFriend)
+                    { <div class="prof-habit-chip trophy">🤝 Amigos</div> }
+                </div>
+            }
         }
         else
         {
@@ -510,168 +528,177 @@
 
     @if (canSeeProfile)
     {
-       @if (!isSystemAccount)
-{
-    <div class="prof-tabs">
-        <button class="prof-tab active" onclick="switchTab(this)">📸 Publicaciones</button>
-    </div>
-}
+        @if (!isSystemAccount)
+        {
+            <div class="prof-tabs">
+                <button class="prof-tab active" onclick="switchTab(this)">📸 Publicaciones</button>
+            </div>
+        }
 
-      <div class="prof-content" id="tab-posts">
-    @{
-        var misPosts = ViewBag.UserPosts as List<Post> ?? new List<Post>();
-        var postLikes = ViewBag.PostLikes as Dictionary<int, int> ?? new Dictionary<int, int>();
-        var commentCounts = ViewBag.CommentCounts as Dictionary<int, int> ?? new Dictionary<int, int>();
-        var myLikes = ViewBag.MyLikes as HashSet<int> ?? new HashSet<int>();
-    }
-    @if (!misPosts.Any())
-    {
-        <div class="prof-empty">
-            @if (isSystemAccount)
+        <div class="prof-content" id="tab-posts">
+            @{
+                var misPosts = ViewBag.UserPosts as List<Post> ?? new List<Post>();
+                var postLikes = ViewBag.PostLikes as Dictionary<int, int> ?? new Dictionary<int, int>();
+                var commentCounts = ViewBag.CommentCounts as Dictionary<int, int> ?? new Dictionary<int, int>();
+                var myLikes = ViewBag.MyLikes as HashSet<int> ?? new HashSet<int>();
+            }
+            @if (!misPosts.Any())
             {
-                <div class="prof-empty-icon">🤖</div>
-                <div class="prof-empty-title">Cuenta oficial</div>
-                <div class="prof-empty-sub">Esta es la cuenta oficial de HabitTracker. Aquí compartimos actualizaciones, novedades y anuncios importantes de la plataforma. ✦</div>
+                <div class="prof-empty">
+                    @if (isSystemAccount)
+                    {
+                        <div class="prof-empty-icon">🤖</div>
+                        <div class="prof-empty-title">Cuenta oficial</div>
+                        <div class="prof-empty-sub">Esta es la cuenta oficial de HabitTracker. Aquí compartimos actualizaciones, novedades y anuncios importantes de la plataforma. ✦</div>
+                    }
+                    else
+                    {
+                        <div class="prof-empty-icon">📭</div>
+                        <div class="prof-empty-title">Sin publicaciones</div>
+                        <div class="prof-empty-sub">@Model.Username aún no ha compartido nada.</div>
+                    }
+                </div>
             }
             else
             {
-                <div class="prof-empty-icon">📭</div>
-                <div class="prof-empty-title">Sin publicaciones</div>
-                <div class="prof-empty-sub">@Model.Username aún no ha compartido nada.</div>
-            }
-        </div>
-    }
-    else
-    {
-        <div class="feed-container" style="max-width:100%; margin:0;">
-            @foreach (var post in misPosts)
-            {
-                var isVideo = !string.IsNullOrEmpty(post.ImagePath) &&
-                              (post.ImagePath.Contains("/video/upload/") ||
-                               post.ImagePath.EndsWith(".mp4") ||
-                               post.ImagePath.EndsWith(".mov") ||
-                               post.ImagePath.EndsWith(".webm"));
-                var likeCount = postLikes.ContainsKey(post.Id) ? postLikes[post.Id] : 0;
-                var isLiked = myLikes.Contains(post.Id);
-                var comentarios = commentCounts.ContainsKey(post.Id) ? commentCounts[post.Id] : 0;
-
-                <article class="post-card" id="post-@post.Id" style="background:rgba(255,255,255,0.05); border-radius:20px; padding:16px; margin-bottom:20px; border:1px solid rgba(255,255,255,0.08);">
-                    <!-- HEADER -->
-                    <div class="post-header" style="display:flex; justify-content:space-between; margin-bottom:12px;">
-                        <div style="display:flex; gap:10px;">
-                            <a asp-controller="User" asp-action="Profile" asp-route-id="@post.UserId" class="avatar-link">
-                                @{
-                                    var postPic = !string.IsNullOrEmpty(post.User?.ProfileImage) ? post.User.ProfileImage : post.User?.ProfilePicture;
-                                }
-                                @if (!string.IsNullOrEmpty(postPic))
-                                {
-                                    <img src="@postPic" style="width:44px; height:44px; border-radius:50%; object-fit:cover;" />
-                                }
-                                else
-                                {
-                                    <div style="width:44px; height:44px; border-radius:50%; background:linear-gradient(135deg,#2563eb,#7c3aed); color:white; display:flex; align-items:center; justify-content:center; font-weight:800;">@post.DisplayUsername.Substring(0,1).ToUpper()</div>
-                                }
-                            </a>
-                            <div>
-                                <div style="font-weight:700; color:white;">@post.DisplayUsername</div>
-                                <div style="font-size:12px; color:rgba(255,255,255,0.4);">@post.CreatedAt.ToString("dd MMM yyyy · hh:mm tt", new System.Globalization.CultureInfo("es-CO"))</div>
-                            </div>
-                        </div>
-                        <div>
-                            @if (post.IsSensitive)
-                            {
-                                <span style="background:#fef3c7; color:#d97706; font-size:10px; padding:3px 8px; border-radius:20px;">⚠️ Sensible</span>
-                            }
-                        </div>
-                    </div>
-
-                    <!-- DESCRIPCIÓN -->
-                    @if (!string.IsNullOrEmpty(post.Description))
+                <div class="feed-container" style="max-width:100%; margin:0;">
+                    @foreach (var post in misPosts)
                     {
-                        <p style="font-size:15px; color:rgba(255,255,255,0.7); line-height:1.65; margin:0 0 14px;">@post.Description</p>
-                    }
+                        var isVideo = !string.IsNullOrEmpty(post.ImagePath) &&
+                                      (post.ImagePath.Contains("/video/upload/") ||
+                                       post.ImagePath.EndsWith(".mp4") ||
+                                       post.ImagePath.EndsWith(".mov") ||
+                                       post.ImagePath.EndsWith(".webm"));
+                        var likeCount = postLikes.ContainsKey(post.Id) ? postLikes[post.Id] : 0;
+                        var isLiked = myLikes.Contains(post.Id);
+                        var comentarios = commentCounts.ContainsKey(post.Id) ? commentCounts[post.Id] : 0;
 
-                    <!-- MEDIA -->
-                    @if (!string.IsNullOrEmpty(post.ImagePath))
-                    {
-                        <div style="border-radius:16px; overflow:hidden; margin-bottom:12px; position:relative;">
-                            @if (isVideo)
-                            {
-                                <video controls style="width:100%; max-height:520px;">
-                                    <source src="@post.ImagePath" />
-                                </video>
-                                <div style="position:absolute; top:10px; left:10px; background:rgba(0,0,0,0.6); color:white; font-size:11px; padding:3px 10px; border-radius:20px;">▶ Video</div>
-                            }
-                            else if (post.IsSensitive)
-                            {
-                                <img src="@post.ImagePath" id="img-@post.Id" style="width:100%; filter:blur(28px); transform:scale(1.05); transition:filter 0.4s;" />
-                                <div id="overlay-@post.Id" style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,0.35); backdrop-filter:blur(2px);">
-                                    <div style="text-align:center; color:white;">
-                                        <span style="font-size:32px;">⚠️</span>
-                                        <p style="font-size:14px; font-weight:600; margin:6px 0;">Contenido sensible</p>
-                                        <button onclick="revealSensitive(@post.Id)" style="background:rgba(255,255,255,0.2); border:1px solid rgba(255,255,255,0.6); padding:7px 20px; border-radius:20px; color:white; cursor:pointer;">Ver imagen</button>
+                        <article class="post-card" id="post-@post.Id">
+                            <!-- HEADER -->
+                            <div class="post-header">
+                                <div class="post-header-left">
+                                    <a asp-controller="User" asp-action="Profile" asp-route-id="@post.UserId" class="avatar-link">
+                                        @{
+                                            var postPic = !string.IsNullOrEmpty(post.User?.ProfileImage) ? post.User.ProfileImage : post.User?.ProfilePicture;
+                                        }
+                                        @if (!string.IsNullOrEmpty(postPic))
+                                        {
+                                            <img src="@postPic" class="post-avatar" />
+                                        }
+                                        else
+                                        {
+                                            <div class="post-avatar-placeholder">@post.DisplayUsername.Substring(0,1).ToUpper()</div>
+                                        }
+                                    </a>
+                                    <div class="post-meta">
+                                        <div class="post-username">
+                                            <a href="/User/Profile/@post.UserId" style="text-decoration:none;color:inherit;">@post.DisplayUsername</a>
+                                        </div>
+                                        <div class="post-time-wrap">
+                                            <span class="post-time">@post.CreatedAt.ToString("dd MMM yyyy · hh:mm tt", new System.Globalization.CultureInfo("es-CO"))</span>
+                                            @if (post.UserId == myId)
+                                            {
+                                                if (post.Privacy == "Friends")
+                                                { <span class="post-privacy-badge friends">👥 Amigos</span> }
+                                                else if (post.Privacy == "Private")
+                                                { <span class="post-privacy-badge private">🔒 Solo yo</span> }
+                                                else
+                                                { <span class="post-privacy-badge public">🌐 Público</span> }
+                                            }
+                                        </div>
                                     </div>
                                 </div>
-                            }
-                            else
+                                <div class="post-header-right">
+                                    @if (post.IsSensitive)
+                                    {
+                                        <span class="sensitive-badge">⚠️ Sensible</span>
+                                    }
+                                </div>
+                            </div>
+
+                            <!-- DESCRIPCIÓN -->
+                            @if (!string.IsNullOrEmpty(post.Description))
                             {
-                                <img src="@post.ImagePath" style="width:100%; max-height:520px; object-fit:cover;" onclick="abrirFotoPost(this.src)" />
+                                <p class="post-description">@post.Description</p>
                             }
-                        </div>
+
+                            <!-- MEDIA -->
+                            @if (!string.IsNullOrEmpty(post.ImagePath))
+                            {
+                                <div class="post-media-wrap @(isVideo ? "video-wrap" : "") @(post.IsSensitive ? "sensitive-wrap" : "")">
+                                    @if (isVideo)
+                                    {
+                                        <video controls class="post-media" preload="metadata">
+                                            <source src="@post.ImagePath" />
+                                        </video>
+                                        <div class="video-badge">▶ Video</div>
+                                    }
+                                    else if (post.IsSensitive)
+                                    {
+                                        <img src="@post.ImagePath" class="post-media sensitive-blurred" id="img-@post.Id" />
+                                        <div class="sensitive-overlay" id="overlay-@post.Id">
+                                            <div class="sensitive-overlay-content">
+                                                <span class="sensitive-icon">⚠️</span>
+                                                <p>Contenido sensible</p>
+                                                <button class="reveal-btn" onclick="revealSensitive(@post.Id)">Ver imagen</button>
+                                            </div>
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <img src="@post.ImagePath" class="post-media" onclick="abrirFotoPost(this.src)" />
+                                    }
+                                </div>
+                            }
+
+                            <!-- STATS -->
+                            <div class="post-stats">
+                                <span id="like-summary-@post.Id">
+                                    @if (likeCount > 0)
+                                    {
+                                        <span>❤️ @likeCount @(likeCount == 1 ? "like" : "likes")</span>
+                                    }
+                                </span>
+                                <span>
+                                    @if (comentarios > 0)
+                                    {
+                                        <span>@comentarios @(comentarios == 1 ? "comentario" : "comentarios")</span>
+                                    }
+                                </span>
+                            </div>
+
+                            <div class="post-divider"></div>
+
+                            <!-- ACCIONES -->
+                            <div class="post-actions">
+                                <button class="action-btn like-btn" data-post-id="@post.Id" data-no-loader="true">
+                                    <span class="action-icon like-icon" id="like-icon-@post.Id">@(isLiked ? "❤️" : "🤍")</span>
+                                    <span class="action-label">Me gusta</span>
+                                </button>
+
+                                <a asp-controller="Post" asp-action="Comments" asp-route-postId="@post.Id" class="action-btn">
+                                    <span class="action-icon">💬</span>
+                                    <span class="action-label">Comentar</span>
+                                </a>
+
+                                <button class="action-btn" data-no-loader="true" onclick="openShare(@post.Id)">
+                                    <span class="action-icon">↪️</span>
+                                    <span class="action-label">Compartir</span>
+                                </button>
+
+                                <button class="action-btn save-btn" data-no-loader="true" onclick="savePost(@post.Id, this)">
+                                    <span class="action-icon">🔖</span>
+                                    <span class="action-label">Guardar</span>
+                                </button>
+
+                                <a asp-controller="Post" asp-action="Report" asp-route-postId="@post.Id" class="action-btn report-btn">
+                                    <span class="action-icon">🚩</span>
+                                    <span class="action-label">Reportar</span>
+                                </a>
+                            </div>
+                        </article>
                     }
-
-                    <!-- STATS (LIKES Y COMENTARIOS) -->
-                    <div style="display:flex; justify-content:space-between; font-size:13px; color:#6b7280; padding:4px 2px 8px;">
-                        <span id="like-summary-@post.Id">
-                            @if (likeCount > 0)
-                            {
-                                <span>❤️ @likeCount @(likeCount == 1 ? "like" : "likes")</span>
-                            }
-                        </span>
-                        <span>
-                            @if (comentarios > 0)
-                            {
-                                <span>@comentarios @(comentarios == 1 ? "comentario" : "comentarios")</span>
-                            }
-                        </span>
-                    </div>
-
-                    <div style="height:1px; background:rgba(255,255,255,0.08); margin:0 0 8px;"></div>
-
-                    <!-- ACCIONES -->
-                    <div style="display:flex; align-items:center; gap:0; flex-wrap:nowrap; overflow-x:auto;">
-                        <button class="action-btn like-btn" data-post-id="@post.Id" data-no-loader="true" style="display:inline-flex; align-items:center; gap:5px; padding:8px 10px; background:transparent; border:none; cursor:pointer; color:#6b7280;">
-                            <span class="action-icon like-icon" id="like-icon-@post.Id" style="font-size:17px;">@(isLiked ? "❤️" : "🤍")</span>
-                            <span class="action-label" style="font-size:12px; font-weight:600;">Me gusta</span>
-                        </button>
-
-                        <a asp-controller="Post" asp-action="Comments" asp-route-postId="@post.Id" class="action-btn" style="display:inline-flex; align-items:center; gap:5px; padding:8px 10px; text-decoration:none; color:#6b7280;">
-                            <span style="font-size:17px;">💬</span>
-                            <span style="font-size:12px; font-weight:600;">Comentar</span>
-                        </a>
-
-                        <button class="action-btn" data-no-loader="true" onclick="openShare(@post.Id)" style="display:inline-flex; align-items:center; gap:5px; padding:8px 10px; background:transparent; border:none; cursor:pointer; color:#6b7280;">
-                            <span style="font-size:17px;">↪️</span>
-                            <span style="font-size:12px; font-weight:600;">Compartir</span>
-                        </button>
-
-                        <button class="action-btn save-btn" data-no-loader="true" onclick="savePost(@post.Id, this)" style="display:inline-flex; align-items:center; gap:5px; padding:8px 10px; background:transparent; border:none; cursor:pointer; color:#6b7280;">
-                            <span style="font-size:17px;">🔖</span>
-                            <span style="font-size:12px; font-weight:600;">Guardar</span>
-                        </button>
-
-                        <a asp-controller="Post" asp-action="Report" asp-route-postId="@post.Id" class="action-btn report-btn" style="display:inline-flex; align-items:center; gap:5px; padding:8px 10px; text-decoration:none; color:#6b7280;">
-                            <span style="font-size:17px;">🚩</span>
-                            <span style="font-size:12px; font-weight:600;">Reportar</span>
-                        </a>
-                    </div>
-                </article>
-            }
-        </div>
-    }
-</div>
-    }
-</div>
+                </div>
             }
         </div>
     }
@@ -694,7 +721,24 @@
             <div class="private-wall-notice">🔒 Esta cuenta es privada</div>
         </div>
     }
-</div>
+
+    <!-- SHARE MENU, LIKE EXPLOSION, COPY ALERT (ubicados correctamente al final de prof-wrap) -->
+    <div id="shareOverlay" class="share-overlay" onclick="closeShare()"></div>
+    <div id="shareMenu" class="share-menu">
+        <div class="share-handle"></div>
+        <div class="share-title">Compartir publicación</div>
+        <div class="share-options">
+            <div class="share-option" onclick="shareWhatsApp()"><span class="share-option-icon">📱</span><span>WhatsApp</span></div>
+            <div class="share-option" onclick="shareTelegram()"><span class="share-option-icon">✈️</span><span>Telegram</span></div>
+            <div class="share-option" onclick="shareFacebook()"><span class="share-option-icon">📘</span><span>Facebook</span></div>
+            <div class="share-option" onclick="copyLink()"><span class="share-option-icon">📋</span><span>Copiar link</span></div>
+        </div>
+        <div class="share-option cancel" onclick="closeShare()">✕ Cancelar</div>
+    </div>
+    <div id="likeExplosion" class="like-explosion" style="display:none;">❤️</div>
+    <div id="copyAlert" class="copy-alert">↪ Link copiado</div>
+
+</div> <!-- cierre de prof-wrap -->
 
 <!-- MODAL SEGUIDORES -->
 <div id="followModal" class="follow-modal" style="display:none;">
@@ -708,7 +752,7 @@
 </div>
 
 <script>
-    // LIKES, SHARE, SAVE, REVEAL SENSITIVE
+// ========== FUNCIONES DE LIKES, SHARE, SAVE ==========
 function revealSensitive(postId) {
     const img = document.getElementById('img-' + postId);
     const overlay = document.getElementById('overlay-' + postId);
@@ -793,7 +837,7 @@ function showAlert(msg) {
     setTimeout(() => el.classList.remove('show'), 2500);
 }
 
-// Asignar eventos a los botones de like después de cargar la página
+// Asignar eventos a botones de like después de cargar la página
 document.addEventListener('DOMContentLoaded', function() {
     document.querySelectorAll('.like-btn').forEach(btn => {
         const postId = btn.getAttribute('data-post-id');
@@ -805,6 +849,8 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 });
+
+// ========== FUNCIONES EXISTENTES DEL PERFIL ==========
 const targetUserId = @Model.Id;
 
 function switchTab(btn) {
@@ -831,7 +877,7 @@ function updateReqChars() {
     document.getElementById("reqCharsCount").textContent = len;
     document.getElementById("msgReqSendBtn").disabled = len === 0;
 }
-// ══ FOTO PERFIL EXPANDIBLE ══
+
 function abrirFotoPerfil(src) {
     const overlay = document.createElement('div');
     overlay.id = 'photoOverlay';
@@ -841,7 +887,6 @@ function abrirFotoPerfil(src) {
         display:flex;align-items:center;justify-content:center;
         animation:fadeInPhoto 0.25s ease;cursor:pointer;
     `;
-
     overlay.innerHTML = `
         <div style="position:relative;display:flex;flex-direction:column;align-items:center;gap:16px;">
             <img src="${src}" style="
@@ -861,25 +906,11 @@ function abrirFotoPerfil(src) {
             </button>
         </div>
     `;
-
-    // cerrar al click fuera
     overlay.addEventListener('click', function(e) {
         if (e.target === this) cerrarFotoPerfil();
     });
-
     document.body.appendChild(overlay);
     document.body.style.overflow = 'hidden';
-}
-
-
-function abrirFotoPost(src) {
-    const overlay = document.createElement('div');
-    overlay.style.cssText = 'position:fixed;inset:0;z-index:999999;background:rgba(0,0,0,0.85);backdrop-filter:blur(12px);display:flex;align-items:center;justify-content:center;cursor:pointer;';
-    overlay.innerHTML = `<div><img src="${src}" style="max-width:90vw;max-height:90vh;border-radius:20px;box-shadow:0 20px 60px rgba(0,0,0,0.6);" /></div>`;
-    overlay.addEventListener('click', () => overlay.remove());
-    document.body.appendChild(overlay);
-    document.body.style.overflow = 'hidden';
-    overlay.addEventListener('click', () => { overlay.remove(); document.body.style.overflow = ''; });
 }
 function cerrarFotoPerfil() {
     const overlay = document.getElementById('photoOverlay');
@@ -889,7 +920,15 @@ function cerrarFotoPerfil() {
         setTimeout(() => { overlay.remove(); document.body.style.overflow = ''; }, 200);
     }
 }
-
+function abrirFotoPost(src) {
+    const overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;inset:0;z-index:999999;background:rgba(0,0,0,0.85);backdrop-filter:blur(12px);display:flex;align-items:center;justify-content:center;cursor:pointer;';
+    overlay.innerHTML = `<div><img src="${src}" style="max-width:90vw;max-height:90vh;border-radius:20px;box-shadow:0 20px 60px rgba(0,0,0,0.6);" /></div>`;
+    overlay.addEventListener('click', () => overlay.remove());
+    document.body.appendChild(overlay);
+    document.body.style.overflow = 'hidden';
+    overlay.addEventListener('click', () => { overlay.remove(); document.body.style.overflow = ''; });
+}
 async function sendMsgReq() {
     const msg = document.getElementById("msgReqText").value.trim();
     if (!msg) return;
@@ -917,9 +956,7 @@ async function sendMsgReq() {
         btn.disabled = false; btn.textContent = "Enviar →";
     }
 }
-
 document.getElementById("msgReqModal").addEventListener("click", function(e) { if(e.target===this) closeMsgReqModal(); });
-
 function confirmarEliminarAmigo() {
     if (!confirm("¿Eliminar a @Model.Username de tus amigos?")) return;
     fetch("/User/RemoveFriend", {
@@ -935,7 +972,6 @@ function confirmarEliminarAmigo() {
         } else { showToast("❌ No se pudo eliminar"); }
     }).catch(() => showToast("❌ Error"));
 }
-
 function showToast(msg) {
     document.querySelectorAll('.prof-toast').forEach(t => t.remove());
     const t = document.createElement("div");
