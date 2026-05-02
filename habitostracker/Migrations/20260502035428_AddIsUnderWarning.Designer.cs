@@ -11,8 +11,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace habitostracker.Migrations
 {
     [DbContext(typeof(HabitDbContext))]
-    [Migration("20260502034234_AddPostWarningAndCommentDisabled")]
-    partial class AddPostWarningAndCommentDisabled
+    [Migration("20260502035428_AddIsUnderWarning")]
+    partial class AddIsUnderWarning
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
