@@ -659,6 +659,51 @@ namespace HabitTrackerApp.Controllers
 
             return Json(new { liked = liked, count = count });
         }
+
+        // 🔹 PASO 3: Comentario automático del BOT + deshabilitar comentarios
+        [HttpGet]
+        public async Task<IActionResult> WarningJuanEsteban(int postId)
+        {
+            // 1. Verificar que la publicación existe
+            var post = await _context.Posts.FindAsync(postId);
+            if (post == null) return NotFound("Publicación no encontrada");
+
+            // 2. Buscar la cuenta BOT (cambia el nombre exacto si es necesario)
+            var botUser = await _context.Users.FirstOrDefaultAsync(u => u.Username == "HabitTracker✅");
+            if (botUser == null) return NotFound("Cuenta BOT no encontrada. Crea un usuario con ese nombre o corrige el nombre.");
+
+            // 3. Verificar si el BOT ya comentó (para no duplicar)
+            bool yaComento = await _context.PostComments.AnyAsync(c => c.PostId == postId && c.UserId == botUser.Id);
+            if (!yaComento)
+            {
+                var comment = new PostComment
+                {
+                    PostId = postId,
+                    UserId = botUser.Id,
+                    Username = botUser.Username,
+                    ProfileImage = botUser.ProfileImage ?? "",
+                    Comment = @"🚨 **AVISO OFICIAL – INCUMPLIMIENTO DE NORMAS**  
+
+Estimado usuario, esta publicación viola las políticas de la comunidad de HabitTracker.  
+Por tu rol de administrador no serás sancionado de inmediato, pero esta es tu **PRIMERA Y ÚLTIMA ADVERTENCIA**.  
+
+Cualquier reincidencia resultará en la suspensión de tu cuenta y tu inclusión en la **lista negra** de la plataforma.  
+Esta publicación ha sido marcada y los comentarios han sido deshabilitados.  
+
+— **Equipo de HabitTracker ✅**",
+                    CreatedAt = DateTime.Now
+                };
+                _context.PostComments.Add(comment);
+            }
+
+            // 4. Deshabilitar comentarios y marcar como en advertencia
+            post.CommentsDisabled = true;
+            post.IsUnderWarning = true;
+
+            await _context.SaveChangesAsync();
+
+            return Content("✅ Listo: comentario del BOT agregado y comentarios desactivados.");
+        }
         public IActionResult SavedPosts()
         {
             var userId = int.Parse(User.FindFirst("UserId").Value);
