@@ -92,3 +92,26 @@ body {
     word-break: break-word;
     white-space: normal;
 }
+/* =============================================
+   DARK MODE - FIX PARA NOMBRES DE USUARIO
+   ============================================= */
+body.bg-dark .my-username,
+body.bg-dark .hero-username,
+body.bg-dark .ht-sidebar-link,
+body.bg-dark .grp-member-name,
+body.bg-dark .card-title a,
+body.bg-dark .habit-name a,
+body.bg-dark .comment-author,
+body.bg-dark .post-username,
+body.bg-dark .user-name,
+body.bg-dark .fw-bold,
+body.bg-dark strong,
+body.bg-dark b,
+body.bg-dark .ht-bottom-nav .ht-bn-item,
+body.bg-dark .ht-dropdown-header .ht-dh-name,
+body.bg-dark .ht-menu-item,
+body.bg-dark .nav-link,
+body.bg-dark .username,
+body.bg-dark [class*="user"] {
+    color: #f1f5f9 !important; /* blanco hueso legible */
+}
