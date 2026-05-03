@@ -110,5 +110,21 @@ else
         margin-bottom: 4px;
         display: inline-block;
     }
+    /* Escritorio: recortar descripción */
+@@media (min-width: 769px) {
+    .grp-info div[style*="font-size:12px"] {
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+    }
+}
+
+/* Móvil: mostrar descripción completa */
+@@media (max-width: 768px) {
+    .grp-info div[style*="font-size:12px"] {
+        white-space: normal !important;
+        word-break: break-word !important;
+    }
+}
 }
                             </style>
