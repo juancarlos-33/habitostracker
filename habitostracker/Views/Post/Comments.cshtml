@@ -169,17 +169,7 @@
     cursor: pointer; font-weight: 700; padding: 4px 0; transition: 0.15s;
     display: flex; align-items: center; gap: 4px; font-family: inherit;
 }
-.owner-badge {
-    background: linear-gradient(135deg, #f59e0b, #d97706);
-    color: white;
-    font-size: 10px;
-    font-weight: 800;
-    padding: 2px 10px;
-    border-radius: 30px;
-    display: inline-block;
-    box-shadow: 0 2px 6px rgba(245,158,11,0.4);
-    letter-spacing: 0.3px;
-}
+
 .view-replies-btn:hover { opacity: 0.75; }
 .replies-container { margin-top: 8px; display: none; flex-direction: column; gap: 8px; }
 
@@ -293,10 +283,7 @@ else
             else
             { <a href="/User/Profile/@c.UserId" class="cmt-username">@c.Username</a> }
             
-            @if (c.UserId == 29)
-            {
-                <span class="owner-badge">🏠 Propietario</span>
-            }
+           
         </div>
    @if (c.UserId != 243)
 {
@@ -372,10 +359,7 @@ else
         else
         { <a href="/User/Profile/@parent.UserId" class="reply-username">@parent.Username</a> }
         
-        @if (parent.UserId == 29)
-        {
-            <span class="owner-badge">🏠 Propietario</span>
-        }
+      
     </div>
     <span class="reply-time" data-utc="@parent.CreatedAt.ToString("o")" data-format="datetime"></span>
 </div>
@@ -431,10 +415,7 @@ else
                                                           <div class="reply-header">
     <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
         <a href="/User/Profile/@child.UserId" class="reply-username">@child.Username</a>
-        @if (child.UserId == 29)
-        {
-            <span class="owner-badge">🏠 Propietario</span>
-        }
+      
     </div>
     <span class="reply-arrow">→ @parent.Username</span>
     <span class="reply-time">@child.CreatedAt.ToString("dd MMM · HH:mm")</span>

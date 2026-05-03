@@ -72,15 +72,7 @@
 
                     <div class="post-meta">
                         <div class="post-username">
-                            @if (post.UserId == 29)
-                            {
-                                <a href="/User" style="text-decoration:none;color:inherit;">@post.DisplayUsername</a>
-                                <span class="owner-badge">👑 Propietario</span>
-                            }
-                            else
-                            {
-                                <a href="/User/Profile/@post.UserId" style="text-decoration:none;color:inherit;">@post.DisplayUsername</a>
-                            }
+                          <a href="/User/Profile/@post.UserId" style="text-decoration:none;color:inherit;">@post.DisplayUsername</a>
                         </div>
                <div class="post-time-wrap">
  <span class="post-time">@post.CreatedAt.ToString("dd MMM yyyy · hh:mm tt", new System.Globalization.CultureInfo("es-CO"))</span>
