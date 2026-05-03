@@ -671,9 +671,7 @@ body:not(.bg-dark) .prof-empty-sub {
 </div>
         }
 
-        <div class="prof-content" id="tab-posts">
-
-            <div class="prof-content" id="tab-reposts" style="display:none;">
+      <div class="prof-content" id="tab-posts">
     @{
         var reposts = ViewBag.Reposts as List<HabitTrackerApp.Models.Repost> ?? new();
     }
@@ -693,6 +691,65 @@ body:not(.bg-dark) .prof-empty-sub {
                 var rpost = repost.Post;
                 if (rpost == null) continue;
                 <div style="font-size:12px;color:rgba(255,255,255,0.35);font-weight:700;margin-bottom:6px;display:flex;align-items:center;gap:6px;">
+                    ↪️ @Model.Username reposteó
+                </div>
+                <article class="post-card" id="rpost-@rpost.Id">
+                    <div class="post-header">
+                        <div class="post-header-left">
+                            <a href="/User/Profile/@rpost.UserId" class="avatar-link">
+                                @{ var rpostPic = rpost.User?.ProfileImage ?? rpost.User?.ProfilePicture ?? ""; }
+                                @if (!string.IsNullOrEmpty(rpostPic))
+                                { <img src="@rpostPic" class="post-avatar" /> }
+                                else
+                                { <div class="post-avatar-placeholder">@(rpost.User?.Username ?? "?").Substring(0,1).ToUpper()</div> }
+                            </a>
+                            <div class="post-meta">
+                                <div class="post-username">@(rpost.User?.Username ?? "Usuario")</div>
+                                <div class="post-time-wrap">
+                                    <span class="post-time">@rpost.CreatedAt.ToString("dd MMM yyyy · hh:mm tt", new System.Globalization.CultureInfo("es-CO"))</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    @if (!string.IsNullOrEmpty(rpost.Description))
+                    { <p class="post-description">@rpost.Description</p> }
+                    @if (!string.IsNullOrEmpty(rpost.ImagePath))
+                    {
+                        <div class="post-media-wrap">
+                            <img src="@rpost.ImagePath" class="post-media" />
+                        </div>
+                    }
+                </article>
+            }
+        </div>
+    }
+</div>
+}
+
+
+
+</div> <!-- cierre tab-posts -->
+
+<div class="prof-content" id="tab-reposts" style="display:none;">
+   @{
+    var repostsList = ViewBag.Reposts as List<HabitTrackerApp.Models.Repost> ?? new();
+}
+    @if (!repostsList.Any())
+    {
+        <div class="prof-empty">
+            <div class="prof-empty-icon">↪️</div>
+            <div class="prof-empty-title">Sin reposts</div>
+            <div class="prof-empty-sub">@Model.Username aún no ha reposteado nada.</div>
+        </div>
+    }
+    else
+    {
+        <div class="feed-container" style="max-width:100%;margin:0;">
+            @foreach (var repost in repostsList)
+            {
+                var rpost = repost.Post;
+                if (rpost == null) continue;
+                <div style="font-size:12px;color:rgba(255,255,255,0.35);font-weight:700;margin-bottom:6px;">
                     ↪️ @Model.Username reposteó
                 </div>
                 <article class="post-card" id="rpost-@rpost.Id">
@@ -927,27 +984,34 @@ body:not(.bg-dark) .prof-empty-sub {
     }
 
     <!-- SHARE MENU, LIKE EXPLOSION, COPY ALERT (ubicados correctamente al final de prof-wrap) -->
-    <div id="shareOverlay" class="share-overlay" onclick="closeShare()"></div>
-    <div id="shareMenu" class="share-menu">
-        <div class="share-handle"></div>
-        <div class="share-title">Compartir publicación</div>
-        <div class="share-options">
-            <div class="share-option" onclick="shareWhatsApp()">
-                
-                <div class="share-options">
-    <div class="share-option" id="repostBtn" onclick="repostear()">
-        <span class="share-option-icon">↪️</span>
-        <span>Repostear</span>
-    </div>
-    <div class="share-option" onclick="shareWhatsApp()">
-                
-                <span class="share-option-icon">📱</span><span>WhatsApp</span></div>
-            <div class="share-option" onclick="shareTelegram()"><span class="share-option-icon">✈️</span><span>Telegram</span></div>
-            <div class="share-option" onclick="shareFacebook()"><span class="share-option-icon">📘</span><span>Facebook</span></div>
-            <div class="share-option" onclick="copyLink()"><span class="share-option-icon">📋</span><span>Copiar link</span></div>
+   <div id="shareOverlay" class="share-overlay" onclick="closeShare()"></div>
+<div id="shareMenu" class="share-menu">
+    <div class="share-handle"></div>
+    <div class="share-title">Compartir publicación</div>
+    <div class="share-options">
+        <div class="share-option" onclick="repostear()">
+            <span class="share-option-icon">↪️</span>
+            <span>Repostear</span>
         </div>
-        <div class="share-option cancel" onclick="closeShare()">✕ Cancelar</div>
+        <div class="share-option" onclick="shareWhatsApp()">
+            <span class="share-option-icon">📱</span>
+            <span>WhatsApp</span>
+        </div>
+        <div class="share-option" onclick="shareTelegram()">
+            <span class="share-option-icon">✈️</span>
+            <span>Telegram</span>
+        </div>
+        <div class="share-option" onclick="shareFacebook()">
+            <span class="share-option-icon">📘</span>
+            <span>Facebook</span>
+        </div>
+        <div class="share-option" onclick="copyLink()">
+            <span class="share-option-icon">📋</span>
+            <span>Copiar link</span>
+        </div>
     </div>
+    <div class="share-option cancel" onclick="closeShare()">✕ Cancelar</div>
+</div>
     <div id="likeExplosion" class="like-explosion" style="display:none;">❤️</div>
     <div id="copyAlert" class="copy-alert">↪ Link copiado</div>
 
