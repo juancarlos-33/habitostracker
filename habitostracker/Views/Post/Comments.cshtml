@@ -314,23 +314,28 @@ else
                         }
                     </div>
 
-                    <div class="cmt-actions">
-                        <button class="cmt-btn like" data-id="@c.Id" onclick="toggleCommentLike(this)">
-                            <span class="heart-icon">@(isLiked ? "❤️" : "🤍")</span>
-                            <span id="like-count-@c.Id">@likeCount</span>
-                        </button>
-                        <button class="cmt-btn reply" onclick="toggleReplyBox(@c.Id)">
-                            💬 Responder
-                        </button>
-                        @if (isMine)
-                        {
-                            <a asp-controller="Post" asp-action="DeleteComment" asp-route-id="@c.Id"
-                               class="cmt-btn delete" data-no-loader="true"
-                               onclick="return confirm('¿Eliminar este comentario?')">
-                                🗑 Eliminar
-                            </a>
-                        }
-                    </div>
+                  <div class="cmt-actions">
+    @if (c.UserId != 243)
+    {
+        <button class="cmt-btn like" data-id="@c.Id" onclick="toggleCommentLike(this)">
+            <span class="heart-icon">@(isLiked ? "❤️" : "🤍")</span>
+            <span id="like-count-@c.Id">@likeCount</span>
+        </button>
+        <button class="cmt-btn reply" onclick="toggleReplyBox(@c.Id)">
+            💬 Responder
+        </button>
+    }
+    else
+    {
+        <span class="cmt-btn" style="opacity:0.5; cursor:not-allowed;">🔒 Comentario oficial</span>
+    }
+    
+    @if (isMine)
+    {
+        <a asp-controller="Post" asp-action="DeleteComment" asp-route-id="@c.Id"
+           class="cmt-btn delete" ...>🗑 Eliminar</a>
+    }
+</div>
 
                     <div class="cmt-reply-form" id="replyBox-@c.Id">
                         <form asp-controller="Post" asp-action="ReplyComment" method="post" data-no-loader="true">
@@ -375,15 +380,22 @@ else
     <span class="reply-time" data-utc="@parent.CreatedAt.ToString("o")" data-format="datetime"></span>
 </div>
                                         <p class="reply-text">@parent.Text</p>
-                                        <div class="reply-actions">
-                                            <button class="cmt-btn like" data-id="@parent.Id" onclick="toggleReplyLike(this)">
-                                                <span class="heart-icon">@(rLiked ? "❤️" : "🤍")</span>
-                                                <span id="reply-like-count-@parent.Id">@rCount</span>
-                                            </button>
-                                            <button class="cmt-btn reply" onclick="toggleReplyToReply(@parent.Id)">
-                                                ↩️ Responder
-                                            </button>
-                                        </div>
+                                      <div class="reply-actions">
+    @if (parent.UserId != 243)
+    {
+        <button class="cmt-btn like" data-id="@parent.Id" onclick="toggleReplyLike(this)">
+            <span class="heart-icon">@(rLiked ? "❤️" : "🤍")</span>
+            <span id="reply-like-count-@parent.Id">@rCount</span>
+        </button>
+        <button class="cmt-btn reply" onclick="toggleReplyToReply(@parent.Id)">
+            ↩️ Responder
+        </button>
+    }
+    else
+    {
+        <span class="cmt-btn" style="opacity:0.5; cursor:not-allowed;">🔒 Respuesta oficial</span>
+    }
+</div>
 
                                         <div class="cmt-reply-form" id="replyToReplyBox-@parent.Id">
                                             <form asp-controller="Post" asp-action="ReplyComment" method="post" data-no-loader="true">
@@ -428,12 +440,19 @@ else
     <span class="reply-time">@child.CreatedAt.ToString("dd MMM · HH:mm")</span>
 </div>
                                                             <p class="reply-text">@child.Text</p>
-                                                            <div class="reply-actions">
-                                                                <button class="cmt-btn like" data-id="@child.Id" onclick="toggleReplyLike(this)">
-                                                                    <span class="heart-icon">@(cLiked ? "❤️" : "🤍")</span>
-                                                                    <span id="reply-like-count-@child.Id">@cCount</span>
-                                                                </button>
-                                                            </div>
+                                                         <div class="reply-actions">
+    @if (child.UserId != 243)
+    {
+        <button class="cmt-btn like" data-id="@child.Id" onclick="toggleReplyLike(this)">
+            <span class="heart-icon">@(cLiked ? "❤️" : "🤍")</span>
+            <span id="reply-like-count-@child.Id">@cCount</span>
+        </button>
+    }
+    else
+    {
+        <span class="cmt-btn" style="opacity:0.5; cursor:not-allowed;">🔒 Respuesta oficial</span>
+    }
+</div>
                                                         </div>
                                                     </div>
                                                 }
