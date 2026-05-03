@@ -74,6 +74,30 @@
     box-shadow: 0 6px 18px rgba(99,102,241,0.4); transition: 0.2s;
     font-family: inherit; white-space: nowrap;
 }
+.group-name {
+    white-space: normal;
+    word-break: break-word;
+    overflow-wrap: break-word;
+}
+
+/* Para que en escritorio se vea bien, puedes limitar el ancho máximo */
+@@media (min-width: 769px) {
+    .group-name {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 200px;
+    }
+}
+
+@@media (max-width: 768px) {
+    .group-name {
+        white-space: normal;
+        font-size: 14px;
+        line-height: 1.3;
+        margin-bottom: 4px;
+    }
+}
 .grp-create-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 24px rgba(99,102,241,0.5); color: white; }
 
 /* ── TABS ── */
@@ -144,6 +168,16 @@
     box-shadow: 0 8px 28px rgba(0,0,0,0.1);
     transform: translateY(-2px);
     border-color: rgba(99,102,241,0.15);
+}
+@@media (max-width: 768px) {
+    .group-card .group-name,
+    .group-item .group-name,
+    .grupo-nombre /* usa la clase real que tengas */ {
+        white-space: normal !important;
+        overflow: visible !important;
+        text-overflow: unset !important;
+        word-break: break-word;
+    }
 }
 .grp-card:active { transform: translateY(0); }
 .grp-card-banner { width: 5px; flex-shrink: 0; }
