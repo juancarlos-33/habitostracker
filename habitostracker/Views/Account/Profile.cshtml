@@ -408,34 +408,16 @@
                         <p style="font-size:15px; color:rgba(255,255,255,0.7); line-height:1.65; margin:0 0 14px;">@post.Description</p>
                     }
 
-                    <!-- MEDIA -->
-                    @if (!string.IsNullOrEmpty(post.ImagePath))
-                    {
-                        <div style="border-radius:16px; overflow:hidden; margin-bottom:12px; position:relative;">
-                            @if (isVideo)
-                            {
-                                <video controls style="width:100%; max-height:520px;">
-                                    <source src="@post.ImagePath" />
-                                </video>
-                                <div style="position:absolute; top:10px; left:10px; background:rgba(0,0,0,0.6); color:white; font-size:11px; padding:3px 10px; border-radius:20px;">▶ Video</div>
-                            }
-                            else if (post.IsSensitive)
-                            {
-                                <img src="@post.ImagePath" id="img-@post.Id" style="width:100%; filter:blur(28px); transform:scale(1.05); transition:filter 0.4s;" />
-                                <div id="overlay-@post.Id" style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,0.35); backdrop-filter:blur(2px);">
-                                    <div style="text-align:center; color:white;">
-                                        <span style="font-size:32px;">⚠️</span>
-                                        <p style="font-size:14px; font-weight:600; margin:6px 0;">Contenido sensible</p>
-                                        <button onclick="revealSensitive(@post.Id)" style="background:rgba(255,255,255,0.2); border:1px solid rgba(255,255,255,0.6); padding:7px 20px; border-radius:20px; color:white; cursor:pointer;">Ver imagen</button>
-                                    </div>
-                                </div>
-                            }
-                            else
-                            {
-                                <img src="@post.ImagePath" style="width:100%; max-height:520px; object-fit:cover; cursor:pointer;" onclick="abrirFotoPost(this.src)" />
-                            }
-                        </div>
-                    }
+                  function revealBlurred(postId) {
+    const img = document.getElementById('img-' + postId);
+    const overlay = document.getElementById('overlay-' + postId);
+    if (img) {
+        img.classList.remove('blurred-image');
+        img.style.filter = 'none';
+        img.style.transform = 'none';
+    }
+    if (overlay) overlay.style.display = 'none';
+}
 
                     <!-- STATS (LIKES Y COMENTARIOS) -->
                     <div style="display:flex; justify-content:space-between; font-size:13px; color:#6b7280; padding:4px 2px 8px;">
@@ -747,6 +729,56 @@
     border-radius:14px; overflow:hidden; cursor:pointer;
     border:2.5px solid transparent; transition:0.2s; aspect-ratio:1;
     background:rgba(255,255,255,0.04); padding:6px;
+}
+/* Blur para imágenes sospechosas o sensibles */
+.blurred-image {
+    filter: blur(28px);
+    transform: scale(1.05);
+    transition: filter 0.4s ease, transform 0.4s ease;
+}
+.blur-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0,0,0,0.45);
+    backdrop-filter: blur(3px);
+    z-index: 2;
+    transition: opacity 0.3s ease;
+}
+.blur-overlay-content {
+    text-align: center;
+    color: #fff;
+    background: rgba(0,0,0,0.6);
+    padding: 12px 24px;
+    border-radius: 40px;
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255,255,255,0.2);
+}
+.blur-icon {
+    font-size: 28px;
+    display: block;
+    margin-bottom: 6px;
+}
+.blur-overlay-content p {
+    font-size: 14px;
+    font-weight: 600;
+    margin: 0 0 12px;
+}
+.reveal-btn {
+    background: rgba(255,255,255,0.2);
+    border: 1.5px solid rgba(255,255,255,0.6);
+    padding: 6px 18px;
+    border-radius: 30px;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: 0.2s;
+    font-family: inherit;
+}
+.reveal-btn:hover {
+    background: rgba(255,255,255,0.35);
 }
 .my-avatar-opt:hover { border-color:rgba(99,102,241,0.5); transform:scale(1.04); }
 .my-avatar-opt.selected { border-color:#6366f1; box-shadow:0 0 0 3px rgba(99,102,241,0.25); }
@@ -1173,6 +1205,17 @@ function revealSensitive(postId) {
     const img = document.getElementById('img-' + postId);
     const overlay = document.getElementById('overlay-' + postId);
     if (img) img.classList.remove('sensitive-blurred');
+    if (overlay) overlay.style.display = 'none';
+}
+
+function revealBlurred(postId) {
+    const img = document.getElementById('img-' + postId);
+    const overlay = document.getElementById('overlay-' + postId);
+    if (img) {
+        img.classList.remove('blurred-image');
+        img.style.filter = 'none';
+        img.style.transform = 'none';
+    }
     if (overlay) overlay.style.display = 'none';
 }
 
