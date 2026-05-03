@@ -274,8 +274,18 @@ else
                     ? ((IDictionary<int,int>)ViewBag.CommentLikes)[c.Id] : 0;
 
                 <div class="cmt-card" id="cmt-@c.Id">
-                   <div class="cmt-header">
-    ...
+              <div class="cmt-header">
+    <!-- AVATAR -->
+    @if (!string.IsNullOrEmpty(c.ProfileImage))
+    {
+        <img src="@c.ProfileImage" class="cmt-avatar" />
+    }
+    else
+    {
+        <div class="cmt-avatar-letter">@c.Username.Substring(0,1).ToUpper()</div>
+    }
+
+    <!-- NOMBRE + BADGE + FECHA -->
     <div>
         <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
             @if (c.UserId == 29)
