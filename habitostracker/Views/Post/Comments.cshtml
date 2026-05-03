@@ -298,7 +298,10 @@ else
                 <span class="owner-badge">🏠 Propietario</span>
             }
         </div>
-        <div class="cmt-time" data-utc="@c.CreatedAt.ToString("o")" data-format="datetime"></div>
+   @if (c.UserId != 243)
+{
+    <div class="cmt-time" data-utc="@c.CreatedAt.ToString("o")" data-format="datetime"></div>
+}
     </div>
 </div>
 
