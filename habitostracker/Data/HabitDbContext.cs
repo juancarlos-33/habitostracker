@@ -16,6 +16,7 @@ namespace HabitTrackerApp.Data
         public DbSet<Habit> Habits { get; set; }
 
         public DbSet<BlockedIP> BlockedIPs { get; set; }
+        public DbSet<Repost> Reposts { get; set; }
         public DbSet<Block> Blocks { get; set; }
         public DbSet<Report> Reports { get; set; }
         public DbSet<UserSession> UserSessions { get; set; }

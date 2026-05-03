@@ -3,9 +3,10 @@ using HabitTrackerApp.Hubs;
 using HabitTrackerApp.Models;
 using HabitTrackerApp.Services;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
-using Microsoft.AspNetCore.Http;
+using Microsoft.EntityFrameworkCore;
 using System.IO;
 
 namespace HabitTrackerApp.Controllers
@@ -85,6 +86,14 @@ namespace HabitTrackerApp.Controllers
 
             ViewBag.Followers = _context.Follows.Count(f => f.FollowingId == id);
             ViewBag.Following = _context.Follows.Count(f => f.FollowerId == id);
+
+            var reposts = _context.Reposts
+    .Include(r => r.Post).ThenInclude(p => p.User)
+    .Where(r => r.UserId == user.Id)
+    .OrderByDescending(r => r.CreatedAt)
+    .ToList();
+
+            ViewBag.Reposts = reposts;
 
             // ========== CARGAR PUBLICACIONES DEL USUARIO ==========
             var userPosts = _context.Posts

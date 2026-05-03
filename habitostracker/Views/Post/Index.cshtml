@@ -226,6 +226,12 @@
     <div class="share-title">Compartir publicación</div>
     <div class="share-options">
         <div class="share-option" onclick="shareWhatsApp()">
+            <div class="share-options">
+    <div class="share-option" id="repostBtn" onclick="repostear()">
+        <span class="share-option-icon">↪️</span>
+        <span>Repostear</span>
+    </div>
+    <div class="share-option" onclick="shareWhatsApp()">
             <span class="share-option-icon">📱</span>
             <span>WhatsApp</span>
         </div>
@@ -746,6 +752,27 @@ function showAlert(msg) {
     el.textContent = msg;
     el.classList.add('show');
     setTimeout(() => el.classList.remove('show'), 2500);
+}
+
+
+async function repostear() {
+    if (!currentPost) return;
+    closeShare();
+    try {
+        const res = await fetch('/Post/Repost', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(currentPost)
+        });
+        const data = await res.json();
+        if (data.success) {
+            showAlert(data.reposted ? '↪️ Reposteado en tu perfil' : '↩️ Repost eliminado');
+        } else {
+            showAlert('⚠️ ' + (data.error ?? 'Error'));
+        }
+    } catch {
+        showAlert('❌ Error de conexión');
+    }
 }
 
 // ══ ANUNCIO PRIMERA VEZ ══

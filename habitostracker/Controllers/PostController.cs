@@ -716,6 +716,58 @@ Esta publicación ha sido marcada y los comentarios han sido deshabilitados.
 
             return Content("✅ Listo: comentario del BOT agregado y comentarios desactivados.");
         }
+        [HttpPost]
+        [IgnoreAntiforgeryToken]
+        public async Task<IActionResult> Repost([FromBody] int postId)
+        {
+            var userId = int.Parse(User.FindFirst("UserId").Value);
+
+            // verificar que el post existe
+            var post = await _context.Posts.FindAsync(postId);
+            if (post == null) return Json(new { success = false, error = "Post no encontrado" });
+
+            // no repostear tu propio post
+            if (post.UserId == userId)
+                return Json(new { success = false, error = "No puedes repostear tu propio post" });
+
+            // verificar si ya reposteó
+            var existing = _context.Reposts.FirstOrDefault(r => r.UserId == userId && r.PostId == postId);
+            if (existing != null)
+            {
+                // deshacer repost
+                _context.Reposts.Remove(existing);
+                await _context.SaveChangesAsync();
+                return Json(new { success = true, reposted = false });
+            }
+
+            _context.Reposts.Add(new Repost
+            {
+                UserId = userId,
+                PostId = postId,
+                CreatedAt = DateTime.UtcNow
+            });
+            await _context.SaveChangesAsync();
+
+            // notificar al dueño
+            var user = await _context.Users.FindAsync(userId);
+            if (post.UserId != userId)
+            {
+                _context.Notifications.Add(new Notification
+                {
+                    UserId = post.UserId,
+                    FromUserId = userId,
+                    FromUsername = user.Username,
+                    FromUserImage = user.ProfileImage ?? "",
+                    Message = $"{user.Username} reposteó tu publicación",
+                    Link = $"/Post/Comments?postId={postId}",
+                    IsRead = false,
+                    CreatedAt = DateTime.UtcNow
+                });
+                await _context.SaveChangesAsync();
+            }
+
+            return Json(new { success = true, reposted = true });
+        }
         public IActionResult SavedPosts()
         {
             var userId = int.Parse(User.FindFirst("UserId").Value);

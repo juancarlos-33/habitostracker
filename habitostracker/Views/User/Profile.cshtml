@@ -665,12 +665,67 @@ body:not(.bg-dark) .prof-empty-sub {
     {
         @if (!isSystemAccount)
         {
-            <div class="prof-tabs">
-                <button class="prof-tab active" onclick="switchTab(this)">📸 Publicaciones</button>
-            </div>
+           <div class="prof-tabs">
+    <button class="prof-tab active" onclick="switchTab(this, 'posts')">📸 Publicaciones</button>
+    <button class="prof-tab" onclick="switchTab(this, 'reposts')">↪️ Reposts</button>
+</div>
         }
 
         <div class="prof-content" id="tab-posts">
+
+            <div class="prof-content" id="tab-reposts" style="display:none;">
+    @{
+        var reposts = ViewBag.Reposts as List<HabitTrackerApp.Models.Repost> ?? new();
+    }
+    @if (!reposts.Any())
+    {
+        <div class="prof-empty">
+            <div class="prof-empty-icon">↪️</div>
+            <div class="prof-empty-title">Sin reposts</div>
+            <div class="prof-empty-sub">@Model.Username aún no ha reposteado nada.</div>
+        </div>
+    }
+    else
+    {
+        <div class="feed-container" style="max-width:100%;margin:0;">
+            @foreach (var repost in reposts)
+            {
+                var rpost = repost.Post;
+                if (rpost == null) continue;
+                <div style="font-size:12px;color:rgba(255,255,255,0.35);font-weight:700;margin-bottom:6px;display:flex;align-items:center;gap:6px;">
+                    ↪️ @Model.Username reposteó
+                </div>
+                <article class="post-card" id="rpost-@rpost.Id">
+                    <div class="post-header">
+                        <div class="post-header-left">
+                            <a href="/User/Profile/@rpost.UserId" class="avatar-link">
+                                @{ var rpostPic = rpost.User?.ProfileImage ?? rpost.User?.ProfilePicture ?? ""; }
+                                @if (!string.IsNullOrEmpty(rpostPic))
+                                { <img src="@rpostPic" class="post-avatar" /> }
+                                else
+                                { <div class="post-avatar-placeholder">@(rpost.User?.Username ?? "?").Substring(0,1).ToUpper()</div> }
+                            </a>
+                            <div class="post-meta">
+                                <div class="post-username">@(rpost.User?.Username ?? "Usuario")</div>
+                                <div class="post-time-wrap">
+                                    <span class="post-time">@rpost.CreatedAt.ToString("dd MMM yyyy · hh:mm tt", new System.Globalization.CultureInfo("es-CO"))</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    @if (!string.IsNullOrEmpty(rpost.Description))
+                    { <p class="post-description">@rpost.Description</p> }
+                    @if (!string.IsNullOrEmpty(rpost.ImagePath))
+                    {
+                        <div class="post-media-wrap">
+                            <img src="@rpost.ImagePath" class="post-media" />
+                        </div>
+                    }
+                </article>
+            }
+        </div>
+    }
+</div>
             @{
                 var misPosts = ViewBag.UserPosts as List<Post> ?? new List<Post>();
                 var postLikes = ViewBag.PostLikes as Dictionary<int, int> ?? new Dictionary<int, int>();
@@ -877,7 +932,16 @@ body:not(.bg-dark) .prof-empty-sub {
         <div class="share-handle"></div>
         <div class="share-title">Compartir publicación</div>
         <div class="share-options">
-            <div class="share-option" onclick="shareWhatsApp()"><span class="share-option-icon">📱</span><span>WhatsApp</span></div>
+            <div class="share-option" onclick="shareWhatsApp()">
+                
+                <div class="share-options">
+    <div class="share-option" id="repostBtn" onclick="repostear()">
+        <span class="share-option-icon">↪️</span>
+        <span>Repostear</span>
+    </div>
+    <div class="share-option" onclick="shareWhatsApp()">
+                
+                <span class="share-option-icon">📱</span><span>WhatsApp</span></div>
             <div class="share-option" onclick="shareTelegram()"><span class="share-option-icon">✈️</span><span>Telegram</span></div>
             <div class="share-option" onclick="shareFacebook()"><span class="share-option-icon">📘</span><span>Facebook</span></div>
             <div class="share-option" onclick="copyLink()"><span class="share-option-icon">📋</span><span>Copiar link</span></div>
@@ -1002,9 +1066,11 @@ document.addEventListener('DOMContentLoaded', function() {
 // ========== FUNCIONES EXISTENTES DEL PERFIL ==========
 const targetUserId = @Model.Id;
 
-function switchTab(btn) {
+function switchTab(btn, tab) {
     document.querySelectorAll('.prof-tab').forEach(t => t.classList.remove('active'));
     btn.classList.add('active');
+    document.getElementById('tab-posts').style.display = tab === 'posts' ? 'block' : 'none';
+    document.getElementById('tab-reposts').style.display = tab === 'reposts' ? 'block' : 'none';
 }
 
 function openModal(type) {
@@ -1067,6 +1133,25 @@ function cerrarFotoPerfil() {
         overlay.style.opacity = '0';
         overlay.style.transition = 'opacity 0.2s';
         setTimeout(() => { overlay.remove(); document.body.style.overflow = ''; }, 200);
+    }
+}
+async function repostear() {
+    if (!currentPost) return;
+    closeShare();
+    try {
+        const res = await fetch('/Post/Repost', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(currentPost)
+        });
+        const data = await res.json();
+        if (data.success) {
+            showAlert(data.reposted ? '↪️ Reposteado en tu perfil' : '↩️ Repost eliminado');
+        } else {
+            showAlert('⚠️ ' + (data.error ?? 'Error'));
+        }
+    } catch {
+        showAlert('❌ Error de conexión');
     }
 }
 function abrirFotoPost(src) {
