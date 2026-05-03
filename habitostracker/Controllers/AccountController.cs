@@ -14,6 +14,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.EntityFrameworkCore;
 using System.IO;
 using System.Net;
 using System.Net.Mail;
@@ -1224,9 +1225,10 @@ namespace HabitTrackerApp.Controllers
 
                 // Cargar publicaciones del usuario (mi perfil)
                 var misPosts = _context.Posts
-                    .Where(p => p.UserId == me.Id)
-                    .OrderByDescending(p => p.CreatedAt)
-                    .ToList();
+      .Include(p => p.User)
+      .Where(p => p.UserId == me.Id)
+      .OrderByDescending(p => p.CreatedAt)
+      .ToList();
                 ViewBag.UserPosts = misPosts;
 
                 // ========== ESTADÍSTICAS DE LIKES Y COMENTARIOS ==========
