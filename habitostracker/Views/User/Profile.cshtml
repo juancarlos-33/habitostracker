@@ -365,7 +365,7 @@ body:not(.bg-dark) .prof-empty-sub { color: #475569; }
         {
             <div class="prof-tabs">
                 <button class="prof-tab active" onclick="switchTab(this, 'posts')">📸 Publicaciones</button>
-                <button class="prof-tab" onclick="switchTab(this, 'reposts')">↪️ Reposts</button>
+                <button class="prof-tab" onclick="switchTab(this, 'reposts')">↪️ Compartidos</button>
             </div>
         }
 
@@ -502,7 +502,7 @@ body:not(.bg-dark) .prof-empty-sub { color: #475569; }
                         var rIsVideo = !string.IsNullOrEmpty(rpost.ImagePath) &&
                             (rpost.ImagePath.Contains("/video/upload/") || rpost.ImagePath.EndsWith(".mp4") || rpost.ImagePath.EndsWith(".mov") || rpost.ImagePath.EndsWith(".webm"));
 
-                        <div class="repost-badge">↪️ @Model.Username reposteó</div>
+                        <div class="repost-badge">↪️ @Model.Username compartió</div>
                         <article class="post-card" id="rpost-@rpost.Id">
                             <div class="post-header">
                                 <div class="post-header-left">
