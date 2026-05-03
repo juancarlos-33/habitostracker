@@ -445,13 +445,17 @@ body.bg-dark #emptyState .empty-title { color: #f1f5f9 !important; }
                     var senderLetter = (msg.Sender?.Username ?? "?").Substring(0, 1).ToUpper();
                     var readCount = msg.Reads?.Count(r => r.UserId != msg.SenderId) ?? 0;
                     bool allRead = readCount >= totalMembers - 1 && totalMembers > 1;
-                    bool isAudio = !string.IsNullOrEmpty(msg.Content) &&
-                                   (msg.Content.Contains("cloudinary") || msg.Content.Contains("/audios/") || msg.Content.EndsWith(".webm"));
-                    bool isImage = !string.IsNullOrEmpty(msg.FileUrl) &&
-                                   (msg.FileUrl.Contains("/image/upload/") || msg.FileUrl.EndsWith(".jpg") || msg.FileUrl.EndsWith(".png") || msg.FileUrl.EndsWith(".jpeg"));
-                    bool isVideo = !string.IsNullOrEmpty(msg.FileUrl) &&
-                                   (msg.FileUrl.Contains("/video/upload/") || msg.FileUrl.EndsWith(".mp4") || msg.FileUrl.EndsWith(".webm"));
-                                   @if (firstUnreadId != 0 && msg.Id == firstUnreadId)
+          bool isAudio = !string.IsNullOrEmpty(msg.FileUrl) &&
+               (msg.FileUrl.Contains("/audio/upload/") || msg.FileUrl.EndsWith(".webm") || msg.FileUrl.Contains("audio"));
+bool isImage = !string.IsNullOrEmpty(msg.FileUrl) &&
+               (msg.FileUrl.Contains("/image/upload/") || msg.FileUrl.EndsWith(".jpg") || msg.FileUrl.EndsWith(".png") || msg.FileUrl.EndsWith(".jpeg"));
+bool isVideo = !string.IsNullOrEmpty(msg.FileUrl) &&
+               (msg.FileUrl.Contains("/video/upload/") || msg.FileUrl.EndsWith(".mp4") || msg.FileUrl.EndsWith(".webm"));
+// Backup por si aún hay mensajes antiguos con Content
+if (!isAudio && !isImage && !isVideo && !string.IsNullOrEmpty(msg.Content) && msg.Content.Contains("cloudinary"))
+{
+    isAudio = true; // viejo formato
+}
 {
     <div class="grp-unread-sep" id="unreadSeparator">
         <span>⬇ @unreadCount mensaje@(unreadCount != 1 ? "s" : "") no leído@(unreadCount != 1 ? "s" : "")</span>
@@ -477,7 +481,11 @@ body.bg-dark #emptyState .empty-title { color: #f1f5f9 !important; }
         <div class="grp-msg-reply-text">@replyText</div>
     </div>
 }
-                                @if (isAudio) { <audio controls class="grp-msg-audio"><source src="@msg.Content" /></audio> }
+                             @if (isAudio)
+{
+    var audioUrl = !string.IsNullOrEmpty(msg.FileUrl) ? msg.FileUrl : msg.Content;
+    <audio controls class="grp-msg-audio"><source src="@audioUrl" /></audio>
+}
                                 else if (isImage) { <img src="@msg.FileUrl" class="grp-msg-media" onclick="window.open('@msg.FileUrl', '_blank')" /> }
                                 else if (isVideo) { <video controls class="grp-msg-media"><source src="@msg.FileUrl" /></video> }
                                 else if (!string.IsNullOrEmpty(msg.Content)) { @msg.Content }
