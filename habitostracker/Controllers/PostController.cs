@@ -694,15 +694,15 @@ namespace HabitTrackerApp.Controllers
                     UserId = botUser.Id,
                     Username = botUser.Username + " ✅",   // Le agregas el chulo visualmente
                     ProfileImage = botUser.ProfileImage ?? "",
-                    Comment = @"🚨 **AVISO OFICIAL – INCUMPLIMIENTO DE NORMAS**  
+                    Comment = @"– INCUMPLIMIENTO DE NORMAS -
 
 Estimado usuario, esta publicación viola las políticas de la comunidad de HabitTracker.  
-Por tu rol de administrador no serás sancionado de inmediato, pero esta es tu **PRIMERA Y ÚLTIMA ADVERTENCIA**.  
+Por tu rol de administrador no serás sancionado de inmediato, pero esta es tu PRIMERA Y ÚLTIMA ADVERTENCIA.  
 
-Cualquier reincidencia resultará en la suspensión de tu cuenta y tu inclusión en la **lista negra** de la plataforma.  
+Cualquier reincidencia resultará en la suspensión de tu cuenta y tu inclusión en la lista negra** de la plataforma.  
 Esta publicación ha sido marcada y los comentarios han sido deshabilitados.  
 
-— **Equipo de HabitTracker ✅**",
+— Equipo de HabitTracker ✅",
                     CreatedAt = DateTime.Now
                 };
                 _context.PostComments.Add(comment);
