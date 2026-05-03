@@ -460,19 +460,19 @@
         </div>
 
         <!-- INFO -->
-        <div class="prof-username-row">
-            <h1 class="prof-username">@Model.Username</h1>
-            @if (Model.IsPremium)
-            { <span class="prof-premium-icon" title="Premium">👑</span> }
-            @if (isSystemAccount)
-            { <span class="prof-verified-system" title="Cuenta oficial verificada de HabitTracker">✦</span> }
-        </div>
+    <div class="prof-username-row">
+    <h1 class="prof-username">@Model.Username</h1>
+    @if (Model.IsPremium)
+    { <span class="prof-premium-icon" title="Premium">👑</span> }
+    @if (isSystemAccount)
+    { <span class="prof-verified-system" title="Cuenta oficial verificada de HabitTracker">✦</span> }
 
-        @if (ViewBag.UserRole == "Admin" || ViewBag.UserRole == "SuperAdmin")
-{
-    var roleText = (Model.Gender?.ToLower() == "femenino") ? "Administradora" : "Administrador";
-    <span class="prof-role-badge admin">👑 @roleText</span>
-}
+    @if (Model.Role == "Admin" || Model.Role == "SuperAdmin")
+    {
+        var roleText = (Model.Gender?.ToLower() == "femenino") ? "Administradora" : "Administrador";
+        <span class="prof-role-badge">👑 @roleText</span>
+    }
+</div>
 
         @if (!string.IsNullOrEmpty(Model.FullName) && !isSystemAccount)
         { <p class="prof-fullname">@Model.FullName</p> }

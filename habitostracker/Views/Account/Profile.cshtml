@@ -87,16 +87,7 @@
                         { <div class="my-fullname">@Model.FullName</div> }
                         <div class="my-bio-preview">@(string.IsNullOrEmpty(Model.Bio) ? "Sin biografía aún..." : Model.Bio)</div>
                     </div>
-                    <div class="my-username">
-    @Model.Username
-    @if (Model.IsPremium) { <span class="my-premium-icon" title="Premium">👑</span> }
-    @if (Model.IsPrivate) { <span class="my-private-badge">🔒</span> }
-    @if (Model.Role == "Admin" || Model.Role == "SuperAdmin")
-    {
-        var roleText = (Model.Gender?.ToLower() == "femenino") ? "Administradora" : "Administrador";
-        <span class="profile-role-badge">👑 @roleText</span>
-    }
-</div>
+
                 </div>
 
                 <!-- BADGES -->
@@ -837,16 +828,6 @@
     font-size:15px; font-weight:800; cursor:pointer; transition:0.2s;
     box-shadow:0 6px 20px rgba(99,102,241,0.4); font-family:inherit;
     letter-spacing:-0.2px;
-}
-.profile-role-badge {
-    margin-left: 8px;
-    padding: 3px 10px;
-    border-radius: 20px;
-    font-size: 10px;
-    font-weight: 800;
-    background: linear-gradient(135deg, #f97316, #dc2626);
-    color: white;
-    display: inline-block;
 }
 .my-save-btn:hover { transform:translateY(-2px); box-shadow:0 10px 28px rgba(99,102,241,0.55); }
 
