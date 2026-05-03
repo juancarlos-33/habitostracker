@@ -383,6 +383,9 @@ namespace HabitTrackerApp.Controllers
             ViewBag.IsMuted = member.IsMuted;
             ViewBag.UnreadCount = unreadCount;
             ViewBag.FirstUnreadId = firstUnreadId;
+
+            ViewBag.IsAdminOnly = group.IsAdminOnly;
+            ViewBag.CanWrite = (!group.IsAdminOnly) || (member.Role == "Admin") || (group.CreatorId == userId);
             return View(group);
         }
         [HttpGet]
@@ -890,10 +893,10 @@ namespace HabitTrackerApp.Controllers
         public async Task<IActionResult> SendAudio(int groupId, IFormFile audio)
         {
             var userId = int.Parse(User.FindFirst("UserId").Value);
-            var member = _context.GroupMembers
-     .FirstOrDefault(m => m.GroupId == groupId && m.UserId == userId && m.IsActive);
+            var member = _context.GroupMembers.FirstOrDefault(m => m.GroupId == groupId && m.UserId == userId && m.IsActive);
             if (member == null || audio == null) return Json(new { success = false });
-            // 🔒 Verificar si el grupo es solo para administradores
+
+            // 🔒 Verificar si el grupo es solo para administradores (lo añadiremos después)
             var group = _context.Groups.FirstOrDefault(g => g.Id == groupId);
             if (group != null && group.IsAdminOnly)
             {
@@ -906,18 +909,41 @@ namespace HabitTrackerApp.Controllers
             var sender = _context.Users.FirstOrDefault(u => u.Id == userId);
             var cloudinary = GetCloudinary();
             using var stream = audio.OpenReadStream();
-            var result = await cloudinary.UploadAsync(new RawUploadParams { File = new FileDescription(audio.FileName, stream), Folder = "group_audios", PublicId = $"audio_{Guid.NewGuid()}" });
+            var result = await cloudinary.UploadAsync(new RawUploadParams
+            {
+                File = new FileDescription(audio.FileName, stream),
+                Folder = "group_audios",
+                PublicId = $"audio_{Guid.NewGuid()}"
+            });
             var audioUrl = result.SecureUrl.ToString();
 
-            var msg = new GroupMessage { GroupId = groupId, SenderId = userId, Content = audioUrl, SentAt = DateTime.UtcNow };
+            // ✅ CORREGIDO: Content = "" , FileUrl = audioUrl
+            var msg = new GroupMessage
+            {
+                GroupId = groupId,
+                SenderId = userId,
+                Content = "",          // ← vacío, no la URL
+                FileUrl = audioUrl,    // ← aquí va la URL
+                SentAt = DateTime.UtcNow
+            };
             _context.GroupMessages.Add(msg);
             await _context.SaveChangesAsync();
             _context.GroupMessageReads.Add(new GroupMessageRead { GroupMessageId = msg.Id, UserId = userId, ReadAt = DateTime.UtcNow });
             await _context.SaveChangesAsync();
 
             var totalMembers = _context.GroupMembers.Count(m => m.GroupId == groupId && m.IsActive);
-            return Json(new { success = true, id = msg.Id, audioUrl, sentAt = msg.SentAt.ToLocalTime().ToString("hh:mm tt"), senderName = sender?.Username ?? "Usuario", senderImage = sender?.ProfileImage ?? sender?.ProfilePicture ?? "", totalMembers });
+            return Json(new
+            {
+                success = true,
+                id = msg.Id,
+                audioUrl = audioUrl,
+                sentAt = msg.SentAt.ToLocalTime().ToString("hh:mm tt"),
+                senderName = sender?.Username ?? "Usuario",
+                senderImage = sender?.ProfileImage ?? sender?.ProfilePicture ?? "",
+                totalMembers
+            });
         }
+
 
         [HttpPost]
         public async Task<IActionResult> UpdateImage(int groupId, IFormFile image)

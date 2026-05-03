@@ -29,21 +29,23 @@ namespace HabitTrackerApp.Controllers
         {
             var myId = int.Parse(User.FindFirst("UserId").Value);
 
-            var friendIds = _context.FriendRequests
-                .Where(f => (f.SenderId == myId || f.ReceiverId == myId) && f.Status == "Accepted")
-                .Select(f => f.SenderId == myId ? f.ReceiverId : f.SenderId)
-                .ToList();
-
-            var friends = _context.Users
-                .Where(u => friendIds.Contains(u.Id))
-                .Select(u => new {
+            // ✅ Ahora obtenemos TODOS los usuarios activos,
+            //    excepto el propio usuario, y excluyendo roles especiales.
+            var allUsers = _context.Users
+                .Where(u => u.Id != myId
+                            && u.IsActive == true
+                            && u.Role != "System"
+                            && u.Role != "Guest")
+                .OrderBy(u => u.Username) // Orden alfabético para mejor experiencia
+                .Select(u => new
+                {
                     id = u.Id,
                     username = u.Username,
                     profileImage = u.ProfileImage ?? u.ProfilePicture
                 })
                 .ToList();
 
-            return Json(friends);
+            return Json(allUsers);
         }
         public IActionResult Index()
         {
