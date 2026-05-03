@@ -26,255 +26,19 @@
     var totalHabits = db.Habits.Count(h => h.UserId == Model.Id);
     var bestStreak = db.Habits.Where(h => h.UserId == Model.Id).Any()
         ? db.Habits.Where(h => h.UserId == Model.Id).Max(h => h.MaxStreak) : 0;
+    var misPosts = ViewBag.UserPosts as List<Post> ?? new List<Post>();
+    var postLikes = ViewBag.PostLikes as Dictionary<int, int> ?? new Dictionary<int, int>();
+    var commentCounts = ViewBag.CommentCounts as Dictionary<int, int> ?? new Dictionary<int, int>();
+    var myLikes = ViewBag.MyLikes as HashSet<int> ?? new HashSet<int>();
+    var repostsList = ViewBag.Reposts as List<HabitTrackerApp.Models.Repost> ?? new();
 }
 
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 
 <style>
-/* ===== ESTILOS COPIADOS DE POST/INDEX (para que las publicaciones se vean igual) ===== */
-.feed-header {
-    display: flex; align-items: center; justify-content: space-between;
-    margin-bottom: 24px; flex-wrap: wrap; gap: 12px;
-}
-.feed-title { font-size: 22px; font-weight: 800; margin: 0 0 2px; color: #111827; }
-.feed-subtitle { font-size: 13px; color: #9ca3af; margin: 0; }
-.new-post-btn {
-    display: inline-flex; align-items: center; gap: 6px;
-    background: linear-gradient(135deg, #2563eb, #4f46e5);
-    color: white; padding: 10px 20px; border-radius: 50px;
-    font-size: 14px; font-weight: 600; text-decoration: none;
-    transition: 0.2s; box-shadow: 0 4px 14px rgba(37,99,235,0.3);
-    white-space: nowrap;
-}
-.new-post-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(37,99,235,0.4); color: white; }
-.feed-empty {
-    text-align: center; padding: 60px 20px; background: white;
-    border-radius: 22px; box-shadow: 0 2px 12px rgba(0,0,0,0.06);
-    border: 1px solid rgba(0,0,0,0.04); max-width: 620px; margin: 0 auto 24px;
-}
-.feed-empty-icon { font-size: 52px; margin-bottom: 16px; }
-.feed-empty h5 { font-size: 18px; font-weight: 700; color: #111827; margin-bottom: 8px; }
-.feed-empty p { font-size: 14px; color: #9ca3af; margin: 0; }
-.feed-container { max-width: 620px; margin: 0 auto; }
-.post-card {
-    background: white; border-radius: 22px; padding: 20px;
-    margin-bottom: 20px; box-shadow: 0 2px 12px rgba(0,0,0,0.06);
-    border: 1px solid rgba(0,0,0,0.04); transition: 0.2s;
-}
-.post-card:hover { box-shadow: 0 8px 28px rgba(0,0,0,0.1); transform: translateY(-1px); }
-.post-header {
-    display: flex; align-items: center; justify-content: space-between;
-    margin-bottom: 14px; gap: 8px;
-}
-.post-header-left { display: flex; align-items: center; gap: 10px; min-width: 0; }
-.post-header-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
-.avatar-link { text-decoration: none; flex-shrink: 0; }
-.post-avatar {
-    width: 44px; height: 44px; border-radius: 50%; object-fit: cover;
-    border: 2px solid #e5e7eb; flex-shrink: 0;
-}
-.post-avatar-placeholder {
-    width: 44px; height: 44px; border-radius: 50%;
-    background: linear-gradient(135deg, #2563eb, #7c3aed);
-    color: white; display: flex; align-items: center; justify-content: center;
-    font-weight: 800; font-size: 17px; flex-shrink: 0;
-}
-.post-meta { display: flex; flex-direction: column; min-width: 0; }
-.post-username {
-    font-weight: 700; font-size: 15px; color: #111827;
-    display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
-}
-.post-time-wrap { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 2px; }
-.post-time { font-size: 12px; color: #9ca3af; }
-.post-privacy-badge {
-    font-size: 10px; font-weight: 700; padding: 2px 7px;
-    border-radius: 20px; white-space: nowrap;
-}
-.post-privacy-badge.friends { background:#dbeafe; color:#1d4ed8; }
-.post-privacy-badge.private { background:#fce7f3; color:#9d174d; }
-.post-privacy-badge.public { background:#dcfce7; color:#15803d; }
-.sensitive-badge {
-    background: #fef3c7; color: #d97706; font-size: 10px;
-    padding: 3px 8px; border-radius: 20px; font-weight: 700;
-}
-.delete-btn {
-    font-size: 17px; color: #ef4444; text-decoration: none;
-    opacity: 0.7; transition: 0.2s; padding: 5px 8px; border-radius: 8px;
-}
-.delete-btn:hover { opacity: 1; background: #fef2f2; }
-.post-description {
-    font-size: 15px; color: #374151; line-height: 1.65;
-    margin: 0 0 14px; white-space: pre-wrap; word-break: break-word;
-}
-.post-media-wrap {
-    border-radius: 16px; overflow: hidden; margin-bottom: 12px;
-    background: #000; position: relative;
-}
-.post-media { width: 100%; max-height: 520px; object-fit: cover; display: block; }
-.video-wrap .post-media { object-fit: contain; background: #000; }
-.video-badge {
-    position: absolute; top: 10px; left: 10px;
-    background: rgba(0,0,0,0.6); color: white; font-size: 11px;
-    font-weight: 700; padding: 3px 10px; border-radius: 20px;
-    backdrop-filter: blur(4px);
-}
-.sensitive-blurred { filter: blur(28px); transform: scale(1.05); transition: filter 0.4s ease; }
-.sensitive-overlay {
-    position: absolute; inset: 0;
-    display: flex; align-items: center; justify-content: center;
-    background: rgba(0,0,0,0.35);
-    backdrop-filter: blur(2px);
-    z-index: 2;
-}
-.sensitive-overlay-content { text-align: center; color: #fff; }
-.sensitive-overlay-content .sensitive-icon { font-size: 32px; display: block; margin-bottom: 6px; }
-.sensitive-overlay-content p { font-size: 14px; font-weight: 600; margin: 0 0 12px; }
-.reveal-btn {
-    background: rgba(255,255,255,0.2); color: #fff; border: 1.5px solid rgba(255,255,255,0.6);
-    padding: 7px 20px; border-radius: 20px; font-size: 13px; font-weight: 600;
-    cursor: pointer;
-}
-.post-stats {
-    display: flex; align-items: center; justify-content: space-between;
-    font-size: 13px; color: #6b7280; padding: 4px 2px 8px;
-}
-.post-divider { height: 1px; background: #f3f4f6; margin: 0 0 8px; }
-.post-actions {
-    display: flex; align-items: center;
-    gap: 0; flex-wrap: nowrap; overflow-x: auto;
-}
-.action-btn {
-    display: inline-flex; align-items: center; gap: 5px;
-    padding: 8px 10px; border-radius: 10px; border: none;
-    background: transparent; cursor: pointer; font-size: 13px;
-    color: #6b7280; text-decoration: none; transition: 0.15s;
-    font-weight: 500; flex-shrink: 0; white-space: nowrap;
-}
-.action-btn:hover { background: #f3f4f6; color: #111; }
-.action-icon { font-size: 17px; }
-.action-label { font-size: 12px; font-weight: 600; }
-.like-btn.liked .action-label { color: #ef4444; }
-.report-btn:hover { background: #fef2f2; color: #ef4444; }
-/* Estilos para compartir, like explosion, etc. */
-.share-overlay {
-    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(0,0,0,0.5); display: none; z-index: 9998;
-    backdrop-filter: blur(2px);
-}
-.share-menu {
-    position: fixed; bottom: 0; left: 0; right: 0;
-    background: white; border-radius: 24px 24px 0 0;
-    padding: 16px 20px 32px; display: none; z-index: 9999;
-    box-shadow: 0 -10px 40px rgba(0,0,0,0.15);
-}
-.share-handle {
-    width: 40px; height: 4px; background: #e5e7eb;
-    border-radius: 10px; margin: 0 auto 16px;
-}
-.share-title { font-weight: 700; font-size: 16px; margin-bottom: 16px; color: #111; text-align: center; }
-.share-options { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 16px; }
-.share-option {
-    display: flex; flex-direction: column; align-items: center; gap: 6px;
-    padding: 14px 10px; border-radius: 16px; cursor: pointer;
-    font-weight: 500; font-size: 12px; color: #374151;
-    transition: 0.15s; background: #f9fafb; text-align: center;
-}
-.prof-role-badge {
-    display: inline-block;
-    margin-left: 8px;
-    padding: 4px 10px;
-    border-radius: 20px;
-    font-size: 11px;
-    font-weight: 800;
-    background: linear-gradient(135deg, #f97316, #dc2626);
-    color: white;
-    box-shadow: 0 2px 8px rgba(249,115,22,0.3);
-}
-.share-option:hover { background: #f3f4f6; transform: scale(1.03); }
-.share-option-icon { font-size: 24px; }
-.share-option.cancel {
-    width: 100%; text-align: center; padding: 14px; color: #ef4444;
-    background: #fef2f2; border-radius: 12px; flex-direction: row;
-    justify-content: center; font-size: 14px;
-}
-.copy-alert {
-    position: fixed; bottom: 40px; left: 50%; transform: translateX(-50%);
-    background: #111; color: white; padding: 10px 22px; border-radius: 50px;
-    font-size: 14px; opacity: 0; transition: 0.3s; pointer-events: none;
-    z-index: 99999; white-space: nowrap;
-}
-.copy-alert.show { opacity: 1; }
-.like-explosion {
-    position: fixed; font-size: 36px; pointer-events: none;
-    z-index: 99999; transform: translate(-50%, -50%);
-}
-/* Blur para imágenes sospechosas o sensibles */
-.blurred-image {
-    filter: blur(28px);
-    transform: scale(1.05);
-    transition: filter 0.4s ease, transform 0.4s ease;
-}
-.blur-overlay {
-    position: absolute;
-    inset: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: rgba(0,0,0,0.45);
-    backdrop-filter: blur(3px);
-    z-index: 2;
-    transition: opacity 0.3s ease;
-}
-.blur-overlay-content {
-    text-align: center;
-    color: #fff;
-    background: rgba(0,0,0,0.6);
-    padding: 12px 24px;
-    border-radius: 40px;
-    backdrop-filter: blur(8px);
-    border: 1px solid rgba(255,255,255,0.2);
-}
-.blur-icon {
-    font-size: 28px;
-    display: block;
-    margin-bottom: 6px;
-}
-.blur-overlay-content p {
-    font-size: 14px;
-    font-weight: 600;
-    margin: 0 0 12px;
-}
-.reveal-btn {
-    background: rgba(255,255,255,0.2);
-    border: 1.5px solid rgba(255,255,255,0.6);
-    padding: 6px 18px;
-    border-radius: 30px;
-    font-size: 12px;
-    font-weight: 700;
-    cursor: pointer;
-    transition: 0.2s;
-    font-family: inherit;
-}
-.reveal-btn:hover {
-    background: rgba(255,255,255,0.35);
-}
-@@keyframes likeExplosionAnim {
-    0% { transform: translate(-50%, -50%) scale(0); opacity: 1; }
-    50% { transform: translate(-50%, -80%) scale(1.8); opacity: 1; }
-    100% { transform: translate(-50%, -120%) scale(2.5); opacity: 0; }
-}
-.like-explosion.animate { animation: likeExplosionAnim 0.6s ease forwards; }
-@@keyframes likePopIn {
-    0% { transform: scale(1); }
-    30% { transform: scale(1.5); }
-    60% { transform: scale(0.9); }
-    100% { transform: scale(1); }
-}
-.like-pop { animation: likePopIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); }
-
-/* ===== ESTILOS ORIGINALES DEL PERFIL (que no interfieren) ===== */
 * { box-sizing: border-box; }
 .prof-wrap { max-width: 960px; margin: 0 auto; font-family: 'Plus Jakarta Sans', sans-serif; padding-bottom: 60px; }
+
 .prof-cover {
     position: relative; height: 240px; border-radius: 24px; overflow: hidden;
     background: linear-gradient(135deg, #1e1b4b 0%, #312e81 30%, #4c1d95 60%, #6d28d9 100%);
@@ -284,6 +48,7 @@
 .prof-cover-overlay { position:absolute; inset:0; background:linear-gradient(to bottom, transparent 30%, rgba(0,0,0,0.6) 100%); }
 .prof-cover-dots { position:absolute; inset:0; opacity:0.05; background-image:radial-gradient(circle,white 1px,transparent 1px); background-size:24px 24px; }
 @@media(max-width:768px){ .prof-cover { height:160px; border-radius:20px; } }
+
 .prof-card {
     background: linear-gradient(180deg,#161b2e 0%,#0f1623 100%);
     border-radius: 0 0 28px 28px;
@@ -292,95 +57,14 @@
     box-shadow: 0 16px 48px rgba(0,0,0,0.35);
 }
 @@media(max-width:768px){ .prof-card { padding: 0 16px 20px; } }
+
 .prof-avatar-zone { display:flex; align-items:flex-end; justify-content:space-between; margin-bottom:18px; }
 .prof-avatar-wrap { position:relative; margin-top:-56px; flex-shrink:0; }
-.prof-avatar {
-    width:110px; height:110px; border-radius:50%; object-fit:cover;
-    border:4px solid #0f1623; box-shadow:0 8px 32px rgba(0,0,0,0.6); display:block; transition:0.3s;
-}
-/* ===== ESTILO PARA ESTADO VACÍO (Sin publicaciones) ===== */
-.prof-empty {
-    text-align: center;
-    padding: 60px 24px;
-    background: rgba(255,255,255,0.03);
-    border-radius: 32px;
-    margin: 20px 0;
-    border: 1px solid rgba(255,255,255,0.05);
-    backdrop-filter: blur(4px);
-    transition: all 0.3s ease;
-}
-.prof-empty-icon {
-    font-size: 72px;
-    margin-bottom: 16px;
-    opacity: 0.7;
-    filter: drop-shadow(0 8px 20px rgba(0,0,0,0.1));
-    transition: transform 0.2s ease;
-}
-.prof-empty:hover .prof-empty-icon {
-    transform: scale(1.05);
-}
-.prof-empty-title {
-    font-size: 22px;
-    font-weight: 800;
-    color: #f1f5f9;
-    margin-bottom: 8px;
-    letter-spacing: -0.3px;
-    background: linear-gradient(135deg, #e2e8f0, #cbd5e1);
-    background-clip: text;
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-}
-.prof-empty-sub {
-    font-size: 14px;
-    color: rgba(255,255,255,0.45);
-    max-width: 280px;
-    margin: 0 auto;
-    line-height: 1.5;
-}
-@@keyframes floatEmpty {
-    0% { transform: translateY(0px); }
-    50% { transform: translateY(-6px); }
-    100% { transform: translateY(0px); }
-}
-.prof-empty-icon {
-    animation: floatEmpty 4s ease-in-out infinite;
-}
-/* Versión para modo claro (body sin bg-dark) */
-body:not(.bg-dark) .prof-empty {
-    background: #f8fafc;
-    border: 1px solid #e2e8f0;
-}
-body:not(.bg-dark) .prof-empty-title {
-    background: linear-gradient(135deg, #1e293b, #334155);
-    background-clip: text;
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-}
-body:not(.bg-dark) .prof-empty-sub {
-    color: #475569;
-}
-/* Responsive */
-@@media (max-width: 640px) {
-    .prof-empty { padding: 40px 20px; }
-    .prof-empty-icon { font-size: 56px; }
-    .prof-empty-title { font-size: 18px; }
-    .prof-empty-sub { font-size: 13px; }
-}
+.prof-avatar { width:110px; height:110px; border-radius:50%; object-fit:cover; border:4px solid #0f1623; box-shadow:0 8px 32px rgba(0,0,0,0.6); display:block; transition:0.3s; }
 .prof-avatar:hover { transform:scale(1.04); box-shadow:0 12px 40px rgba(99,102,241,0.3); }
-.prof-avatar-letter {
-    width:110px; height:110px; border-radius:50%;
-    background:linear-gradient(135deg,#6366f1,#7c3aed);
-    color:white; display:flex; align-items:center; justify-content:center;
-    font-size:44px; font-weight:900; border:4px solid #0f1623;
-    box-shadow:0 8px 32px rgba(0,0,0,0.6);
-}
-.prof-online-dot {
-    position:absolute; bottom:6px; right:6px;
-    width:16px; height:16px; border-radius:50%;
-    background:#22c55e; border:3px solid #0f1623;
-    box-shadow:0 0 8px rgba(34,197,94,0.6);
-}
+.prof-avatar-letter { width:110px; height:110px; border-radius:50%; background:linear-gradient(135deg,#6366f1,#7c3aed); color:white; display:flex; align-items:center; justify-content:center; font-size:44px; font-weight:900; border:4px solid #0f1623; box-shadow:0 8px 32px rgba(0,0,0,0.6); }
 @@media(max-width:768px){ .prof-avatar,.prof-avatar-letter { width:88px; height:88px; font-size:34px; } .prof-avatar-wrap { margin-top:-44px; } }
+
 .prof-username-row { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:4px; }
 .prof-username { font-size:24px; font-weight:900; color:white; margin:0; letter-spacing:-0.5px; }
 .prof-premium-icon { font-size:18px; filter:drop-shadow(0 2px 6px rgba(251,191,36,0.5)); }
@@ -388,75 +72,135 @@ body:not(.bg-dark) .prof-empty-sub {
 .prof-bio { font-size:14px; color:rgba(255,255,255,0.75); line-height:1.7; margin:0 0 14px; max-width:520px; }
 .prof-meta { display:flex; flex-wrap:wrap; gap:14px; margin-bottom:16px; }
 .prof-meta-item { display:flex; align-items:center; gap:5px; font-size:12px; color:rgba(255,255,255,0.35); font-weight:600; }
-.prof-stats-row {
-    display:flex; gap:0; margin-bottom:0;
-    background:rgba(255,255,255,0.04); border-radius:18px;
-    border:1px solid rgba(255,255,255,0.07); overflow:hidden; width:fit-content;
-}
+
+.prof-stats-row { display:flex; gap:0; margin-bottom:0; background:rgba(255,255,255,0.04); border-radius:18px; border:1px solid rgba(255,255,255,0.07); overflow:hidden; width:fit-content; }
 .prof-stat { display:flex; flex-direction:column; align-items:center; padding:14px 28px; cursor:pointer; transition:0.2s; position:relative; }
 .prof-stat:not(:last-child)::after { content:""; position:absolute; right:0; top:20%; height:60%; width:1px; background:rgba(255,255,255,0.07); }
 .prof-stat:hover { background:rgba(255,255,255,0.05); }
 .prof-stat-num { font-size:20px; font-weight:900; color:white; line-height:1; }
 .prof-stat-label { font-size:10px; color:rgba(255,255,255,0.3); font-weight:700; text-transform:uppercase; letter-spacing:0.8px; margin-top:3px; }
 @@media(max-width:768px){ .prof-stats-row { width:100%; } .prof-stat { flex:1; padding:12px 6px; } .prof-stat-num { font-size:17px; } }
-.prof-habit-strip {
-    display:flex; gap:10px; margin-top:16px; flex-wrap:wrap;
-}
-.prof-habit-chip {
-    display:flex; align-items:center; gap:6px;
-    padding:8px 14px; border-radius:14px;
-    background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.07);
-    font-size:12px; font-weight:700; color:rgba(255,255,255,0.6);
-}
+
+.prof-habit-strip { display:flex; gap:10px; margin-top:16px; flex-wrap:wrap; }
+.prof-habit-chip { display:flex; align-items:center; gap:6px; padding:8px 14px; border-radius:14px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.07); font-size:12px; font-weight:700; color:rgba(255,255,255,0.6); }
 .prof-habit-chip.fire { border-color:rgba(251,146,60,0.3); color:#fb923c; background:rgba(251,146,60,0.08); }
 .prof-habit-chip.trophy { border-color:rgba(251,191,36,0.3); color:#fbbf24; background:rgba(251,191,36,0.08); }
 .prof-habit-chip.habit { border-color:rgba(99,102,241,0.3); color:#818cf8; background:rgba(99,102,241,0.08); }
+
 .prof-actions { display:flex; gap:8px; flex-wrap:wrap; padding-top:20px; }
-.prof-btn {
-    padding:10px 20px; border-radius:12px; font-size:13px; font-weight:700;
-    cursor:pointer; border:none; text-decoration:none;
-    display:inline-flex; align-items:center; gap:6px; transition:0.2s;
-    font-family:inherit; white-space:nowrap;
-}
+.prof-btn { padding:10px 20px; border-radius:12px; font-size:13px; font-weight:700; cursor:pointer; border:none; text-decoration:none; display:inline-flex; align-items:center; gap:6px; transition:0.2s; font-family:inherit; white-space:nowrap; }
 .prof-btn.primary { background:linear-gradient(135deg,#6366f1,#4f46e5); color:white; box-shadow:0 4px 16px rgba(99,102,241,0.35); }
 .prof-btn.primary:hover { transform:translateY(-1px); box-shadow:0 8px 24px rgba(99,102,241,0.55); color:white; }
 .prof-btn.secondary { background:rgba(255,255,255,0.08); color:rgba(255,255,255,0.8); border:1px solid rgba(255,255,255,0.12); }
 .prof-btn.secondary:hover { background:rgba(255,255,255,0.14); color:white; }
 .prof-btn.success { background:linear-gradient(135deg,#22c55e,#16a34a); color:white; box-shadow:0 4px 14px rgba(34,197,94,0.3); }
-.prof-btn.success:hover { transform:translateY(-1px); color:white; box-shadow:0 8px 20px rgba(34,197,94,0.4); }
+.prof-btn.success:hover { transform:translateY(-1px); color:white; }
 .prof-btn.ghost-green { background:rgba(34,197,94,0.1); color:#4ade80; border:1px solid rgba(34,197,94,0.2); }
 .prof-btn.ghost-yellow { background:rgba(251,191,36,0.1); color:#fbbf24; border:1px solid rgba(251,191,36,0.2); }
 .prof-btn.ghost-red { background:rgba(239,68,68,0.1); color:#f87171; border:1px solid rgba(239,68,68,0.2); }
 .prof-btn.ghost-red:hover { background:rgba(239,68,68,0.2); color:#ef4444; }
 .prof-btn:disabled { cursor:not-allowed; opacity:0.6; transform:none !important; }
-.prof-tabs {
-    display:flex; margin-bottom:16px;
-    background:rgba(255,255,255,0.03); border-radius:18px;
-    border:1px solid rgba(255,255,255,0.06); overflow:hidden;
-    position:sticky; top:70px; z-index:10; backdrop-filter:blur(20px);
-}
-.prof-tab {
-    flex:1; padding:14px 16px; text-align:center; font-size:13px; font-weight:700;
-    color:rgba(255,255,255,0.35); cursor:pointer; transition:0.2s;
-    border:none; background:transparent; font-family:inherit;
-    display:flex; align-items:center; justify-content:center; gap:6px;
-}
+
+.prof-tabs { display:flex; margin-bottom:16px; background:rgba(255,255,255,0.03); border-radius:18px; border:1px solid rgba(255,255,255,0.06); overflow:hidden; position:sticky; top:70px; z-index:10; backdrop-filter:blur(20px); }
+.prof-tab { flex:1; padding:14px 16px; text-align:center; font-size:13px; font-weight:700; color:rgba(255,255,255,0.35); cursor:pointer; transition:0.2s; border:none; background:transparent; font-family:inherit; display:flex; align-items:center; justify-content:center; gap:6px; }
 .prof-tab.active { background:rgba(99,102,241,0.15); color:#818cf8; border-bottom:2px solid #6366f1; }
 .prof-tab:hover:not(.active) { background:rgba(255,255,255,0.04); color:rgba(255,255,255,0.6); }
+@@media(max-width:768px){ .prof-tab { font-size:12px; padding:12px 8px; } .prof-tabs { top:60px; border-radius:14px; } }
+
 .prof-content { min-height:300px; }
-.private-wall {
-    display:flex; flex-direction:column; align-items:center; padding:90px 20px; text-align:center;
-    background:linear-gradient(135deg,rgba(99,102,241,0.04),rgba(124,58,237,0.04));
-    border-radius:24px; border:1px solid rgba(99,102,241,0.1);
-}
-@@keyframes fadeInPhoto { from{opacity:0;} to{opacity:1;} }
-@@keyframes scaleInPhoto { from{transform:scale(0.7);opacity:0;} to{transform:scale(1);opacity:1;} }
-.private-wall-lock { font-size:80px; margin-bottom:22px; filter:drop-shadow(0 8px 28px rgba(99,102,241,0.35)); animation:floatLock 3s ease-in-out infinite; }
+
+/* POSTS */
+.post-card { background: white; border-radius: 22px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); border: 1px solid rgba(0,0,0,0.04); transition: 0.2s; }
+.post-card:hover { box-shadow: 0 8px 28px rgba(0,0,0,0.1); transform: translateY(-1px); }
+.post-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; gap: 8px; }
+.post-header-left { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.post-header-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.avatar-link { text-decoration: none; flex-shrink: 0; }
+.post-avatar { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; border: 2px solid #e5e7eb; flex-shrink: 0; }
+.post-avatar-placeholder { width: 44px; height: 44px; border-radius: 50%; background: linear-gradient(135deg, #2563eb, #7c3aed); color: white; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 17px; flex-shrink: 0; }
+.post-meta { display: flex; flex-direction: column; min-width: 0; }
+.post-username { font-weight: 700; font-size: 15px; color: #111827; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.post-time-wrap { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 2px; }
+.post-time { font-size: 12px; color: #9ca3af; }
+.post-privacy-badge { font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 20px; white-space: nowrap; }
+.post-privacy-badge.friends { background:#dbeafe; color:#1d4ed8; }
+.post-privacy-badge.private { background:#fce7f3; color:#9d174d; }
+.post-privacy-badge.public { background:#dcfce7; color:#15803d; }
+.sensitive-badge { background: #fef3c7; color: #d97706; font-size: 10px; padding: 3px 8px; border-radius: 20px; font-weight: 700; }
+.post-description { font-size: 15px; color: #374151; line-height: 1.65; margin: 0 0 14px; white-space: pre-wrap; word-break: break-word; }
+.post-media-wrap { border-radius: 16px; overflow: hidden; margin-bottom: 12px; background: #000; position: relative; }
+.post-media { width: 100%; max-height: 520px; object-fit: cover; display: block; }
+.video-wrap .post-media { object-fit: contain; background: #000; }
+.video-badge { position: absolute; top: 10px; left: 10px; background: rgba(0,0,0,0.6); color: white; font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 20px; backdrop-filter: blur(4px); }
+.blurred-image { filter: blur(28px); transform: scale(1.05); transition: filter 0.4s ease, transform 0.4s ease; }
+.blur-overlay { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.45); backdrop-filter: blur(3px); z-index: 2; }
+.blur-overlay-content { text-align: center; color: #fff; background: rgba(0,0,0,0.6); padding: 12px 24px; border-radius: 40px; backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,0.2); }
+.blur-icon { font-size: 28px; display: block; margin-bottom: 6px; }
+.blur-overlay-content p { font-size: 14px; font-weight: 600; margin: 0 0 12px; }
+.reveal-btn { background: rgba(255,255,255,0.2); border: 1.5px solid rgba(255,255,255,0.6); padding: 6px 18px; border-radius: 30px; font-size: 12px; font-weight: 700; cursor: pointer; color: white; font-family: inherit; }
+.reveal-btn:hover { background: rgba(255,255,255,0.35); }
+.post-stats { display: flex; align-items: center; justify-content: space-between; font-size: 13px; color: #6b7280; padding: 4px 2px 8px; }
+.post-divider { height: 1px; background: #f3f4f6; margin: 0 0 8px; }
+.post-actions { display: flex; align-items: center; gap: 0; flex-wrap: nowrap; overflow-x: auto; }
+.action-btn { display: inline-flex; align-items: center; gap: 5px; padding: 8px 10px; border-radius: 10px; border: none; background: transparent; cursor: pointer; font-size: 13px; color: #6b7280; text-decoration: none; transition: 0.15s; font-weight: 500; flex-shrink: 0; white-space: nowrap; }
+.action-btn:hover { background: #f3f4f6; color: #111; }
+.action-icon { font-size: 17px; }
+.action-label { font-size: 12px; font-weight: 600; }
+.like-btn.liked .action-label { color: #ef4444; }
+.report-btn:hover { background: #fef2f2; color: #ef4444; }
+
+/* REPOST BADGE */
+.repost-badge { font-size: 12px; color: rgba(255,255,255,0.35); font-weight: 700; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; padding: 6px 0; }
+
+/* DARK MODE POSTS */
+body.bg-dark .post-card { background: #1e1e2e !important; border-color: #2d2d3d !important; }
+body.bg-dark .post-username { color: #f1f5f9 !important; }
+body.bg-dark .post-description { color: #cbd5e1 !important; }
+body.bg-dark .post-divider { background: #2d2d3d !important; }
+body.bg-dark .post-stats { color: #64748b !important; }
+body.bg-dark .action-btn { color: #94a3b8 !important; }
+body.bg-dark .action-btn:hover { background: #2d2d3d !important; color: #f1f5f9 !important; }
+
+/* SHARE */
+.share-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; z-index: 9998; backdrop-filter: blur(2px); }
+.share-menu { position: fixed; bottom: 0; left: 0; right: 0; background: white; border-radius: 24px 24px 0 0; padding: 16px 20px 32px; display: none; z-index: 9999; box-shadow: 0 -10px 40px rgba(0,0,0,0.15); }
+.share-handle { width: 40px; height: 4px; background: #e5e7eb; border-radius: 10px; margin: 0 auto 16px; }
+.share-title { font-weight: 700; font-size: 16px; margin-bottom: 16px; color: #111; text-align: center; }
+.share-options { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 16px; }
+.share-option { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 12px 8px; border-radius: 16px; cursor: pointer; font-weight: 500; font-size: 11px; color: #374151; transition: 0.15s; background: #f9fafb; text-align: center; }
+.share-option:hover { background: #f3f4f6; transform: scale(1.03); }
+.share-option-icon { font-size: 22px; }
+.share-option.cancel { width: 100%; text-align: center; padding: 14px; color: #ef4444; background: #fef2f2; border-radius: 12px; flex-direction: row; justify-content: center; font-size: 14px; }
+.copy-alert { position: fixed; bottom: 40px; left: 50%; transform: translateX(-50%); background: #111; color: white; padding: 10px 22px; border-radius: 50px; font-size: 14px; opacity: 0; transition: 0.3s; pointer-events: none; z-index: 99999; white-space: nowrap; }
+.copy-alert.show { opacity: 1; }
+.like-explosion { position: fixed; font-size: 36px; pointer-events: none; z-index: 99999; transform: translate(-50%, -50%); }
+@@keyframes likeExplosionAnim { 0% { transform: translate(-50%, -50%) scale(0); opacity: 1; } 50% { transform: translate(-50%, -80%) scale(1.8); opacity: 1; } 100% { transform: translate(-50%, -120%) scale(2.5); opacity: 0; } }
+.like-explosion.animate { animation: likeExplosionAnim 0.6s ease forwards; }
+@@keyframes likePopIn { 0% { transform: scale(1); } 30% { transform: scale(1.5); } 60% { transform: scale(0.9); } 100% { transform: scale(1); } }
+.like-pop { animation: likePopIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); }
+
+/* EMPTY */
+.prof-empty { text-align: center; padding: 60px 24px; background: rgba(255,255,255,0.03); border-radius: 32px; margin: 20px 0; border: 1px solid rgba(255,255,255,0.05); }
+.prof-empty-icon { font-size: 72px; margin-bottom: 16px; opacity: 0.7; animation: floatEmpty 4s ease-in-out infinite; }
+@@keyframes floatEmpty { 0%,100%{transform:translateY(0);} 50%{transform:translateY(-6px);} }
+.prof-empty-title { font-size: 22px; font-weight: 800; color: #f1f5f9; margin-bottom: 8px; }
+.prof-empty-sub { font-size: 14px; color: rgba(255,255,255,0.45); max-width: 280px; margin: 0 auto; line-height: 1.5; }
+body:not(.bg-dark) .prof-empty { background: #f8fafc; border: 1px solid #e2e8f0; }
+body:not(.bg-dark) .prof-empty-title { color: #1e293b; }
+body:not(.bg-dark) .prof-empty-sub { color: #475569; }
+
+/* PRIVATE WALL */
+.private-wall { display:flex; flex-direction:column; align-items:center; padding:90px 20px; text-align:center; background:linear-gradient(135deg,rgba(99,102,241,0.04),rgba(124,58,237,0.04)); border-radius:24px; border:1px solid rgba(99,102,241,0.1); }
+.private-wall-lock { font-size:80px; margin-bottom:22px; animation:floatLock 3s ease-in-out infinite; }
 @@keyframes floatLock { 0%,100%{transform:translateY(0);} 50%{transform:translateY(-10px);} }
 .private-wall-title { font-size:24px; font-weight:900; color:white; margin-bottom:10px; }
 .private-wall-sub { font-size:14px; color:rgba(255,255,255,0.35); line-height:1.75; max-width:320px; }
 .private-wall-hint { margin-top:28px; padding:14px 22px; border-radius:16px; background:rgba(99,102,241,0.1); border:1px solid rgba(99,102,241,0.2); font-size:13px; color:#818cf8; font-weight:600; }
 .private-wall-notice { margin-top:14px; font-size:12px; color:rgba(255,255,255,0.2); font-style:italic; }
+
+/* MODALES */
+@@keyframes fadeInPhoto { from{opacity:0;} to{opacity:1;} }
+@@keyframes scaleInPhoto { from{transform:scale(0.7);opacity:0;} to{transform:scale(1);opacity:1;} }
 .follow-modal { position:fixed; inset:0; background:rgba(0,0,0,0.75); display:flex; justify-content:center; align-items:center; z-index:9999; backdrop-filter:blur(10px); }
 .follow-content { background:linear-gradient(135deg,#1a1f35,#111827); border-radius:24px; padding:24px; width:380px; max-height:520px; overflow-y:auto; box-shadow:0 40px 80px rgba(0,0,0,0.6); border:1px solid rgba(255,255,255,0.08); }
 .follow-header { display:flex; justify-content:space-between; align-items:center; font-weight:800; font-size:16px; color:white; margin-bottom:16px; padding-bottom:14px; border-bottom:1px solid rgba(255,255,255,0.07); }
@@ -467,25 +211,16 @@ body:not(.bg-dark) .prof-empty-sub {
 .msg-req-title { font-size:20px; font-weight:900; color:white; text-align:center; margin:0 0 6px; }
 .msg-req-sub { font-size:13px; color:rgba(255,255,255,0.4); text-align:center; margin:0 0 20px; line-height:1.6; }
 .msg-req-input { width:100%; padding:13px 16px; border-radius:14px; border:1.5px solid rgba(255,255,255,0.08); background:rgba(255,255,255,0.04); color:white; font-size:14px; font-family:inherit; outline:none; resize:none; transition:0.2s; box-sizing:border-box; margin-bottom:6px; }
-.msg-req-input:focus { border-color:#6366f1; background:rgba(99,102,241,0.06); }
+.msg-req-input:focus { border-color:#6366f1; }
 .msg-req-input::placeholder { color:rgba(255,255,255,0.2); }
 .msg-req-chars { font-size:11px; color:rgba(255,255,255,0.25); text-align:right; margin-bottom:18px; }
 .msg-req-btns { display:flex; gap:10px; }
-.msg-req-cancel { flex:1; padding:12px; border-radius:13px; border:1px solid rgba(255,255,255,0.1); background:rgba(255,255,255,0.04); color:rgba(255,255,255,0.4); font-size:13px; font-weight:700; cursor:pointer; font-family:inherit; transition:0.2s; }
-.msg-req-cancel:hover { background:rgba(255,255,255,0.08); color:rgba(255,255,255,0.7); }
-.msg-req-send { flex:1; padding:12px; border-radius:13px; border:none; background:linear-gradient(135deg,#6366f1,#2563eb); color:white; font-size:13px; font-weight:700; cursor:pointer; font-family:inherit; transition:0.2s; box-shadow:0 4px 14px rgba(99,102,241,0.4); }
-.msg-req-send:hover { transform:translateY(-1px); }
-.msg-req-send:disabled { background:#334155; box-shadow:none; cursor:not-allowed; transform:none; }
+.msg-req-cancel { flex:1; padding:12px; border-radius:13px; border:1px solid rgba(255,255,255,0.1); background:rgba(255,255,255,0.04); color:rgba(255,255,255,0.4); font-size:13px; font-weight:700; cursor:pointer; font-family:inherit; }
+.msg-req-send { flex:1; padding:12px; border-radius:13px; border:none; background:linear-gradient(135deg,#6366f1,#2563eb); color:white; font-size:13px; font-weight:700; cursor:pointer; font-family:inherit; box-shadow:0 4px 14px rgba(99,102,241,0.4); }
+.msg-req-send:disabled { background:#334155; box-shadow:none; cursor:not-allowed; }
 .prof-toast { position:fixed; bottom:90px; left:50%; transform:translateX(-50%); background:rgba(15,23,42,0.97); color:white; padding:12px 24px; border-radius:24px; font-size:13px; font-weight:600; z-index:99999; box-shadow:0 8px 32px rgba(0,0,0,0.5); backdrop-filter:blur(12px); border:1px solid rgba(255,255,255,0.08); animation:toastIn 0.3s ease; white-space:nowrap; }
 @@keyframes toastIn { from{opacity:0;transform:translateX(-50%) translateY(10px);} to{opacity:1;transform:translateX(-50%) translateY(0);} }
-@@media(max-width:768px){
-    .prof-username { font-size:19px; }
-    .prof-stats-row { width:100%; border-radius:14px; }
-    .prof-tab { font-size:12px; padding:12px 8px; }
-    .prof-tabs { top:60px; border-radius:14px; }
-    .prof-habit-strip { gap:6px; }
-    .prof-habit-chip { font-size:11px; padding:6px 10px; }
-}
+.prof-role-badge { display:inline-block; margin-left:8px; padding:4px 10px; border-radius:20px; font-size:11px; font-weight:800; background:linear-gradient(135deg,#f97316,#dc2626); color:white; }
 </style>
 
 <!-- MODAL MENSAJE -->
@@ -493,13 +228,8 @@ body:not(.bg-dark) .prof-empty-sub {
     <div class="msg-req-card">
         <div style="text-align:center;margin-bottom:16px;font-size:36px;">💬</div>
         <div class="msg-req-title">Enviar mensaje</div>
-        <div class="msg-req-sub">
-            Escribe a <strong style="color:#818cf8;">@Model.Username</strong>.<br>
-            Cuando lo acepte podrán chatear libremente.
-        </div>
-        <textarea class="msg-req-input" id="msgReqText" rows="3"
-                  placeholder="Hola, me gustaría conectar contigo..."
-                  maxlength="200" oninput="updateReqChars()"></textarea>
+        <div class="msg-req-sub">Escribe a <strong style="color:#818cf8;">@Model.Username</strong>.<br>Cuando lo acepte podrán chatear libremente.</div>
+        <textarea class="msg-req-input" id="msgReqText" rows="3" placeholder="Hola, me gustaría conectar contigo..." maxlength="200" oninput="updateReqChars()"></textarea>
         <div class="msg-req-chars"><span id="reqCharsCount">0</span>/200</div>
         <div class="msg-req-btns">
             <button class="msg-req-cancel" onclick="closeMsgReqModal()">Cancelar</button>
@@ -577,218 +307,70 @@ body:not(.bg-dark) .prof-empty-sub {
             }
         </div>
 
-        <!-- INFO -->
-    <div class="prof-username-row">
-    <h1 class="prof-username">@Model.Username</h1>
-    @if (Model.IsPremium)
-    { <span class="prof-premium-icon" title="Premium">👑</span> }
-    @if (isSystemAccount)
-    { <span class="prof-verified-system" title="Cuenta oficial verificada de HabitTracker">✦</span> }
-
-    @if (Model.Role == "Admin" || Model.Role == "SuperAdmin")
-    {
-        var roleText = (Model.Gender?.ToLower() == "femenino") ? "Administradora" : "Administrador";
-        <span class="prof-role-badge">👑 @roleText</span>
-    }
-</div>
+        <div class="prof-username-row">
+            <h1 class="prof-username">@Model.Username</h1>
+            @if (Model.IsPremium) { <span class="prof-premium-icon" title="Premium">👑</span> }
+            @if (isSystemAccount) { <span title="Cuenta oficial">✦</span> }
+            @if (Model.Role == "Admin" || Model.Role == "SuperAdmin")
+            {
+                var roleText = (Model.Gender?.ToLower() == "femenino") ? "Administradora" : "Administrador";
+                <span class="prof-role-badge">👑 @roleText</span>
+            }
+        </div>
 
         @if (!string.IsNullOrEmpty(Model.FullName) && !isSystemAccount)
         { <p class="prof-fullname">@Model.FullName</p> }
 
         @if (canSeeProfile)
         {
-            @if (!string.IsNullOrEmpty(Model.Bio))
-            { <p class="prof-bio">@Model.Bio</p> }
-
+            @if (!string.IsNullOrEmpty(Model.Bio)) { <p class="prof-bio">@Model.Bio</p> }
             <div class="prof-meta">
                 @if (Model.CreatedAt.HasValue && !isSystemAccount)
                 { <span class="prof-meta-item">📅 Se unió en @Model.CreatedAt.Value.ToString("MMM yyyy", culture)</span> }
-                @if (Model.IsPremium)
-                { <span class="prof-meta-item" style="color:#fbbf24;">⭐ Premium</span> }
+                @if (Model.IsPremium) { <span class="prof-meta-item" style="color:#fbbf24;">⭐ Premium</span> }
             </div>
             @if (!string.IsNullOrEmpty(Model.Country))
-            {
-                <div style="margin-bottom:14px;">
-                    <span class="prof-meta-item">🌍 @Model.Country</span>
-                </div>
-            }
+            { <div style="margin-bottom:14px;"><span class="prof-meta-item">🌍 @Model.Country</span></div> }
 
             <div class="prof-stats-row">
                 @if (isSystemAccount)
                 {
-                    <div class="prof-stat">
-                        <span class="prof-stat-num" style="color:rgba(255,255,255,0.3);">—</span>
-                        <span class="prof-stat-label">Seguidores</span>
-                    </div>
-                    <div class="prof-stat">
-                        <span class="prof-stat-num" style="color:rgba(255,255,255,0.3);">—</span>
-                        <span class="prof-stat-label">Siguiendo</span>
-                    </div>
+                    <div class="prof-stat"><span class="prof-stat-num" style="color:rgba(255,255,255,0.3);">—</span><span class="prof-stat-label">Seguidores</span></div>
+                    <div class="prof-stat"><span class="prof-stat-num" style="color:rgba(255,255,255,0.3);">—</span><span class="prof-stat-label">Siguiendo</span></div>
                 }
                 else
                 {
-                    <div class="prof-stat" onclick="openModal('followers')">
-                        <span class="prof-stat-num">@followersCount</span>
-                        <span class="prof-stat-label">Seguidores</span>
-                    </div>
-                    <div class="prof-stat" onclick="openModal('following')">
-                        <span class="prof-stat-num">@followingCount</span>
-                        <span class="prof-stat-label">Siguiendo</span>
-                    </div>
+                    <div class="prof-stat" onclick="openModal('followers')"><span class="prof-stat-num">@followersCount</span><span class="prof-stat-label">Seguidores</span></div>
+                    <div class="prof-stat" onclick="openModal('following')"><span class="prof-stat-num">@followingCount</span><span class="prof-stat-label">Siguiendo</span></div>
                 }
-                <div class="prof-stat">
-                    <span class="prof-stat-num">@(isSystemAccount ? "—" : userPosts.Count.ToString())</span>
-                    <span class="prof-stat-label">Posts</span>
-                </div>
+                <div class="prof-stat"><span class="prof-stat-num">@(isSystemAccount ? "—" : userPosts.Count.ToString())</span><span class="prof-stat-label">Posts</span></div>
             </div>
 
-            @if (canSeeProfile && totalHabits > 0 && isMe)
+            @if (totalHabits > 0 && isMe)
             {
                 <div class="prof-habit-strip">
                     <div class="prof-habit-chip habit">📋 @totalHabits hábitos</div>
-                    @if (bestStreak > 0)
-                    { <div class="prof-habit-chip fire">🔥 @bestStreak días de racha</div> }
-                    @if (isFriend)
-                    { <div class="prof-habit-chip trophy">🤝 Amigos</div> }
+                    @if (bestStreak > 0) { <div class="prof-habit-chip fire">🔥 @bestStreak días de racha</div> }
+                    @if (isFriend) { <div class="prof-habit-chip trophy">🤝 Amigos</div> }
                 </div>
             }
         }
         else
-        {
-            <p style="font-size:13px;color:rgba(255,255,255,0.25);font-style:italic;margin:10px 0 0;">
-                🔒 Esta cuenta es privada
-            </p>
-        }
+        { <p style="font-size:13px;color:rgba(255,255,255,0.25);font-style:italic;margin:10px 0 0;">🔒 Esta cuenta es privada</p> }
     </div>
 
     @if (canSeeProfile)
     {
         @if (!isSystemAccount)
         {
-           <div class="prof-tabs">
-    <button class="prof-tab active" onclick="switchTab(this, 'posts')">📸 Publicaciones</button>
-    <button class="prof-tab" onclick="switchTab(this, 'reposts')">↪️ Reposts</button>
-</div>
+            <div class="prof-tabs">
+                <button class="prof-tab active" onclick="switchTab(this, 'posts')">📸 Publicaciones</button>
+                <button class="prof-tab" onclick="switchTab(this, 'reposts')">↪️ Reposts</button>
+            </div>
         }
 
-      <div class="prof-content" id="tab-posts">
-    @{
-        var reposts = ViewBag.Reposts as List<HabitTrackerApp.Models.Repost> ?? new();
-    }
-    @if (!reposts.Any())
-    {
-        <div class="prof-empty">
-            <div class="prof-empty-icon">↪️</div>
-            <div class="prof-empty-title">Sin reposts</div>
-            <div class="prof-empty-sub">@Model.Username aún no ha reposteado nada.</div>
-        </div>
-    }
-    else
-    {
-        <div class="feed-container" style="max-width:100%;margin:0;">
-            @foreach (var repost in reposts)
-            {
-                var rpost = repost.Post;
-                if (rpost == null) continue;
-                <div style="font-size:12px;color:rgba(255,255,255,0.35);font-weight:700;margin-bottom:6px;display:flex;align-items:center;gap:6px;">
-                    ↪️ @Model.Username reposteó
-                </div>
-                <article class="post-card" id="rpost-@rpost.Id">
-                    <div class="post-header">
-                        <div class="post-header-left">
-                            <a href="/User/Profile/@rpost.UserId" class="avatar-link">
-                                @{ var rpostPic = rpost.User?.ProfileImage ?? rpost.User?.ProfilePicture ?? ""; }
-                                @if (!string.IsNullOrEmpty(rpostPic))
-                                { <img src="@rpostPic" class="post-avatar" /> }
-                                else
-                                { <div class="post-avatar-placeholder">@(rpost.User?.Username ?? "?").Substring(0,1).ToUpper()</div> }
-                            </a>
-                            <div class="post-meta">
-                                <div class="post-username">@(rpost.User?.Username ?? "Usuario")</div>
-                                <div class="post-time-wrap">
-                                    <span class="post-time">@rpost.CreatedAt.ToString("dd MMM yyyy · hh:mm tt", new System.Globalization.CultureInfo("es-CO"))</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    @if (!string.IsNullOrEmpty(rpost.Description))
-                    { <p class="post-description">@rpost.Description</p> }
-                    @if (!string.IsNullOrEmpty(rpost.ImagePath))
-                    {
-                        <div class="post-media-wrap">
-                            <img src="@rpost.ImagePath" class="post-media" />
-                        </div>
-                    }
-                </article>
-            }
-        </div>
-    }
-</div>
-}
-
-
-
-</div> <!-- cierre tab-posts -->
-
-<div class="prof-content" id="tab-reposts" style="display:none;">
-   @{
-    var repostsList = ViewBag.Reposts as List<HabitTrackerApp.Models.Repost> ?? new();
-}
-    @if (!repostsList.Any())
-    {
-        <div class="prof-empty">
-            <div class="prof-empty-icon">↪️</div>
-            <div class="prof-empty-title">Sin reposts</div>
-            <div class="prof-empty-sub">@Model.Username aún no ha reposteado nada.</div>
-        </div>
-    }
-    else
-    {
-        <div class="feed-container" style="max-width:100%;margin:0;">
-            @foreach (var repost in repostsList)
-            {
-                var rpost = repost.Post;
-                if (rpost == null) continue;
-                <div style="font-size:12px;color:rgba(255,255,255,0.35);font-weight:700;margin-bottom:6px;">
-                    ↪️ @Model.Username reposteó
-                </div>
-                <article class="post-card" id="rpost-@rpost.Id">
-                    <div class="post-header">
-                        <div class="post-header-left">
-                            <a href="/User/Profile/@rpost.UserId" class="avatar-link">
-                                @{ var rpostPic = rpost.User?.ProfileImage ?? rpost.User?.ProfilePicture ?? ""; }
-                                @if (!string.IsNullOrEmpty(rpostPic))
-                                { <img src="@rpostPic" class="post-avatar" /> }
-                                else
-                                { <div class="post-avatar-placeholder">@(rpost.User?.Username ?? "?").Substring(0,1).ToUpper()</div> }
-                            </a>
-                            <div class="post-meta">
-                                <div class="post-username">@(rpost.User?.Username ?? "Usuario")</div>
-                                <div class="post-time-wrap">
-                                    <span class="post-time">@rpost.CreatedAt.ToString("dd MMM yyyy · hh:mm tt", new System.Globalization.CultureInfo("es-CO"))</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    @if (!string.IsNullOrEmpty(rpost.Description))
-                    { <p class="post-description">@rpost.Description</p> }
-                    @if (!string.IsNullOrEmpty(rpost.ImagePath))
-                    {
-                        <div class="post-media-wrap">
-                            <img src="@rpost.ImagePath" class="post-media" />
-                        </div>
-                    }
-                </article>
-            }
-        </div>
-    }
-</div>
-            @{
-                var misPosts = ViewBag.UserPosts as List<Post> ?? new List<Post>();
-                var postLikes = ViewBag.PostLikes as Dictionary<int, int> ?? new Dictionary<int, int>();
-                var commentCounts = ViewBag.CommentCounts as Dictionary<int, int> ?? new Dictionary<int, int>();
-                var myLikes = ViewBag.MyLikes as HashSet<int> ?? new HashSet<int>();
-            }
+        <!-- TAB PUBLICACIONES -->
+        <div class="prof-content" id="tab-posts">
             @if (!misPosts.Any())
             {
                 <div class="prof-empty">
@@ -796,7 +378,7 @@ body:not(.bg-dark) .prof-empty-sub {
                     {
                         <div class="prof-empty-icon">🤖</div>
                         <div class="prof-empty-title">Cuenta oficial</div>
-                        <div class="prof-empty-sub">Esta es la cuenta oficial de HabitTracker. Aquí compartimos actualizaciones, novedades y anuncios importantes de la plataforma. ✦</div>
+                        <div class="prof-empty-sub">Esta es la cuenta oficial de HabitTracker.</div>
                     }
                     else
                     {
@@ -808,154 +390,179 @@ body:not(.bg-dark) .prof-empty-sub {
             }
             else
             {
-                <div class="feed-container" style="max-width:100%; margin:0;">
+                <div class="feed-container" style="max-width:100%;margin:0;">
                     @foreach (var post in misPosts)
                     {
                         var isVideo = !string.IsNullOrEmpty(post.ImagePath) &&
-                                      (post.ImagePath.Contains("/video/upload/") ||
-                                       post.ImagePath.EndsWith(".mp4") ||
-                                       post.ImagePath.EndsWith(".mov") ||
-                                       post.ImagePath.EndsWith(".webm"));
+                                      (post.ImagePath.Contains("/video/upload/") || post.ImagePath.EndsWith(".mp4") || post.ImagePath.EndsWith(".mov") || post.ImagePath.EndsWith(".webm"));
                         var likeCount = postLikes.ContainsKey(post.Id) ? postLikes[post.Id] : 0;
                         var isLiked = myLikes.Contains(post.Id);
                         var comentarios = commentCounts.ContainsKey(post.Id) ? commentCounts[post.Id] : 0;
 
                         <article class="post-card" id="post-@post.Id">
-                            <!-- HEADER -->
                             <div class="post-header">
                                 <div class="post-header-left">
-                                    <a asp-controller="User" asp-action="Profile" asp-route-id="@post.UserId" class="avatar-link">
-                                        @{
-                                            var postPic = !string.IsNullOrEmpty(post.User?.ProfileImage) ? post.User.ProfileImage : post.User?.ProfilePicture;
-                                        }
-                                        @if (!string.IsNullOrEmpty(postPic))
-                                        {
-                                            <img src="@postPic" class="post-avatar" />
-                                        }
-                                        else
-                                        {
-                                            <div class="post-avatar-placeholder">@post.DisplayUsername.Substring(0,1).ToUpper()</div>
-                                        }
+                                    <a href="/User/Profile/@post.UserId" class="avatar-link">
+                                        @{ var postPic = post.User?.ProfileImage ?? post.User?.ProfilePicture ?? ""; }
+                                        @if (!string.IsNullOrEmpty(postPic)) { <img src="@postPic" class="post-avatar" /> }
+                                        else { <div class="post-avatar-placeholder">@post.DisplayUsername.Substring(0,1).ToUpper()</div> }
                                     </a>
                                     <div class="post-meta">
-                                        <div class="post-username">
-                                            <a href="/User/Profile/@post.UserId" style="text-decoration:none;color:inherit;">@post.DisplayUsername</a>
-                                        </div>
+                                        <div class="post-username"><a href="/User/Profile/@post.UserId" style="text-decoration:none;color:inherit;">@post.DisplayUsername</a></div>
                                         <div class="post-time-wrap">
                                             <span class="post-time">@post.CreatedAt.ToString("dd MMM yyyy · hh:mm tt", new System.Globalization.CultureInfo("es-CO"))</span>
                                             @if (post.UserId == myId)
                                             {
-                                                if (post.Privacy == "Friends")
-                                                { <span class="post-privacy-badge friends">👥 Amigos</span> }
-                                                else if (post.Privacy == "Private")
-                                                { <span class="post-privacy-badge private">🔒 Solo yo</span> }
-                                                else
-                                                { <span class="post-privacy-badge public">🌐 Público</span> }
+                                                if (post.Privacy == "Friends") { <span class="post-privacy-badge friends">👥 Amigos</span> }
+                                                else if (post.Privacy == "Private") { <span class="post-privacy-badge private">🔒 Solo yo</span> }
+                                                else { <span class="post-privacy-badge public">🌐 Público</span> }
                                             }
                                         </div>
                                     </div>
                                 </div>
                                 <div class="post-header-right">
-                                    @if (post.IsSensitive)
-                                    {
-                                        <span class="sensitive-badge">⚠️ Sensible</span>
-                                    }
+                                    @if (post.IsSensitive) { <span class="sensitive-badge">⚠️ Sensible</span> }
                                 </div>
                             </div>
 
-                            <!-- DESCRIPCIÓN -->
-                            @if (!string.IsNullOrEmpty(post.Description))
+                            @if (!string.IsNullOrEmpty(post.Description)) { <p class="post-description">@post.Description</p> }
+
+                            @if (post.IsUnderWarning)
                             {
-                                <p class="post-description">@post.Description</p>
+                                <div style="border-left:4px solid #dc2626;font-size:13px;background:rgba(220,38,38,0.1);border-radius:8px;padding:8px 12px;margin-bottom:8px;">⚠️ <strong>Incumple nuestras normas</strong></div>
                             }
 
-                            <!-- ALERTAS DE ADVERTENCIA -->
-@if (post.IsUnderWarning)
-{
-    <div class="alert alert-danger mt-2 py-1" style="border-left: 4px solid #dc2626; font-size: 13px; background-color: rgba(220,38,38,0.1); border-radius: 8px;">
-        ⚠️ <strong>Incumple nuestras normas</strong>
-    </div>
-    <div class="alert alert-danger mt-1 py-1" style="border-left: 4px solid #dc2626; background-color: rgba(220,38,38,0.05); font-size: 13px; border-radius: 8px;">
-        🔴 <strong>Cuenta en riesgo</strong> 
-    </div>
-}
+                            @if (!string.IsNullOrEmpty(post.ImagePath))
+                            {
+                                var isBlurred = post.IsSensitive || post.IsUnderWarning;
+                                var blurMessage = post.IsUnderWarning ? "⚠️ Publicación sospechosa" : "⚠️ Contenido sensible";
+                                <div class="post-media-wrap @(isVideo ? "video-wrap" : "")">
+                                    @if (isVideo)
+                                    {
+                                        <video controls class="post-media" preload="metadata"><source src="@post.ImagePath" /></video>
+                                        <div class="video-badge">▶ Video</div>
+                                    }
+                                    else if (isBlurred)
+                                    {
+                                        <img src="@post.ImagePath" class="post-media blurred-image" id="img-@post.Id" />
+                                        <div class="blur-overlay" id="overlay-@post.Id">
+                                            <div class="blur-overlay-content">
+                                                <span class="blur-icon">🚫</span>
+                                                <p>@blurMessage</p>
+                                                <button class="reveal-btn" onclick="revealBlurred(@post.Id)">Ver imagen</button>
+                                            </div>
+                                        </div>
+                                    }
+                                    else
+                                    { <img src="@post.ImagePath" class="post-media" onclick="abrirFotoPost(this.src)" /> }
+                                </div>
+                            }
 
-
-                          <!-- MEDIA -->
-@if (!string.IsNullOrEmpty(post.ImagePath))
-{
-    var isBlurred = post.IsSensitive || post.IsUnderWarning;
-    var blurMessage = post.IsUnderWarning ? "⚠️ Publicación sospechosa - Incumple normas" : "⚠️ Contenido sensible";
-
-    <div class="post-media-wrap @(isVideo ? "video-wrap" : "") @(isBlurred ? "blurred-wrap" : "")">
-        @if (isVideo)
-        {
-            <video controls class="post-media" preload="metadata">
-                <source src="@post.ImagePath" />
-            </video>
-            <div class="video-badge">▶ Video</div>
-        }
-        else if (isBlurred)
-        {
-            <img src="@post.ImagePath" class="post-media blurred-image" id="img-@post.Id" />
-            <div class="blur-overlay" id="overlay-@post.Id">
-                <div class="blur-overlay-content">
-                    <span class="blur-icon">🚫</span>
-                    <p>@blurMessage</p>
-                    <button class="reveal-btn" onclick="revealBlurred(@post.Id)">Ver imagen</button>
-                </div>
-            </div>
-        }
-        else
-        {
-            <img src="@post.ImagePath" class="post-media" onclick="abrirFotoPost(this.src)" />
-        }
-    </div>
-}
-                            <!-- STATS -->
                             <div class="post-stats">
-                                <span id="like-summary-@post.Id">
-                                    @if (likeCount > 0)
-                                    {
-                                        <span>❤️ @likeCount @(likeCount == 1 ? "like" : "likes")</span>
-                                    }
-                                </span>
-                                <span>
-                                    @if (comentarios > 0)
-                                    {
-                                        <span>@comentarios @(comentarios == 1 ? "comentario" : "comentarios")</span>
-                                    }
-                                </span>
+                                <span id="like-summary-@post.Id">@if (likeCount > 0) { <span>❤️ @likeCount @(likeCount == 1 ? "like" : "likes")</span> }</span>
+                                <span>@if (comentarios > 0) { <span>@comentarios @(comentarios == 1 ? "comentario" : "comentarios")</span> }</span>
                             </div>
-
                             <div class="post-divider"></div>
-
-                            <!-- ACCIONES -->
                             <div class="post-actions">
                                 <button class="action-btn like-btn" data-post-id="@post.Id" data-no-loader="true">
                                     <span class="action-icon like-icon" id="like-icon-@post.Id">@(isLiked ? "❤️" : "🤍")</span>
                                     <span class="action-label">Me gusta</span>
                                 </button>
+                                <a href="/Post/Comments?postId=@post.Id" class="action-btn"><span class="action-icon">💬</span><span class="action-label">Comentar</span></a>
+                                <button class="action-btn" data-no-loader="true" onclick="openShare(@post.Id)"><span class="action-icon">↪️</span><span class="action-label">Compartir</span></button>
+                                <button class="action-btn" data-no-loader="true" onclick="savePost(@post.Id, this)"><span class="action-icon">🔖</span><span class="action-label">Guardar</span></button>
+                                <a href="/Post/Report?postId=@post.Id" class="action-btn report-btn"><span class="action-icon">🚩</span><span class="action-label">Reportar</span></a>
+                            </div>
+                        </article>
+                    }
+                </div>
+            }
+        </div>
 
-                                <a asp-controller="Post" asp-action="Comments" asp-route-postId="@post.Id" class="action-btn">
-                                    <span class="action-icon">💬</span>
-                                    <span class="action-label">Comentar</span>
-                                </a>
+        <!-- TAB REPOSTS -->
+        <div class="prof-content" id="tab-reposts" style="display:none;">
+            @if (!repostsList.Any())
+            {
+                <div class="prof-empty">
+                    <div class="prof-empty-icon">↪️</div>
+                    <div class="prof-empty-title">Sin reposts</div>
+                    <div class="prof-empty-sub">@Model.Username aún no ha reposteado nada.</div>
+                </div>
+            }
+            else
+            {
+                <div class="feed-container" style="max-width:100%;margin:0;">
+                    @foreach (var repost in repostsList)
+                    {
+                        var rpost = repost.Post;
+                        if (rpost == null) continue;
+                        var rLikeCount = postLikes.ContainsKey(rpost.Id) ? postLikes[rpost.Id] : 0;
+                        var rIsLiked = myLikes.Contains(rpost.Id);
+                        var rComentarios = commentCounts.ContainsKey(rpost.Id) ? commentCounts[rpost.Id] : 0;
+                        var rIsVideo = !string.IsNullOrEmpty(rpost.ImagePath) &&
+                            (rpost.ImagePath.Contains("/video/upload/") || rpost.ImagePath.EndsWith(".mp4") || rpost.ImagePath.EndsWith(".mov") || rpost.ImagePath.EndsWith(".webm"));
 
-                                <button class="action-btn" data-no-loader="true" onclick="openShare(@post.Id)">
-                                    <span class="action-icon">↪️</span>
-                                    <span class="action-label">Compartir</span>
+                        <div class="repost-badge">↪️ @Model.Username reposteó</div>
+                        <article class="post-card" id="rpost-@rpost.Id">
+                            <div class="post-header">
+                                <div class="post-header-left">
+                                    <a href="/User/Profile/@rpost.UserId" class="avatar-link">
+                                        @{ var rpostPic = rpost.User?.ProfileImage ?? rpost.User?.ProfilePicture ?? ""; }
+                                        @if (!string.IsNullOrEmpty(rpostPic)) { <img src="@rpostPic" class="post-avatar" /> }
+                                        else { <div class="post-avatar-placeholder">@(rpost.User?.Username ?? "?").Substring(0,1).ToUpper()</div> }
+                                    </a>
+                                    <div class="post-meta">
+                                        <div class="post-username">@(rpost.User?.Username ?? "Usuario")</div>
+                                        <div class="post-time-wrap">
+                                            <span class="post-time">@rpost.CreatedAt.ToString("dd MMM yyyy · hh:mm tt", new System.Globalization.CultureInfo("es-CO"))</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="post-header-right">
+                                    @if (rpost.IsSensitive) { <span class="sensitive-badge">⚠️ Sensible</span> }
+                                </div>
+                            </div>
+
+                            @if (!string.IsNullOrEmpty(rpost.Description)) { <p class="post-description">@rpost.Description</p> }
+
+                            @if (!string.IsNullOrEmpty(rpost.ImagePath))
+                            {
+                                <div class="post-media-wrap @(rIsVideo ? "video-wrap" : "")">
+                                    @if (rIsVideo)
+                                    {
+                                        <video controls class="post-media" preload="metadata"><source src="@rpost.ImagePath" /></video>
+                                        <div class="video-badge">▶ Video</div>
+                                    }
+                                    else if (rpost.IsSensitive)
+                                    {
+                                        <img src="@rpost.ImagePath" class="post-media blurred-image" id="img-r-@rpost.Id" />
+                                        <div class="blur-overlay" id="overlay-r-@rpost.Id">
+                                            <div class="blur-overlay-content">
+                                                <span class="blur-icon">⚠️</span>
+                                                <p>Contenido sensible</p>
+                                                <button class="reveal-btn" onclick="revealBlurredR(@rpost.Id)">Ver imagen</button>
+                                            </div>
+                                        </div>
+                                    }
+                                    else
+                                    { <img src="@rpost.ImagePath" class="post-media" onclick="abrirFotoPost(this.src)" /> }
+                                </div>
+                            }
+
+                            <div class="post-stats">
+                                <span id="like-summary-r-@rpost.Id">@if (rLikeCount > 0) { <span>❤️ @rLikeCount @(rLikeCount == 1 ? "like" : "likes")</span> }</span>
+                                <span>@if (rComentarios > 0) { <span>@rComentarios @(rComentarios == 1 ? "comentario" : "comentarios")</span> }</span>
+                            </div>
+                            <div class="post-divider"></div>
+                            <div class="post-actions">
+                                <button class="action-btn like-btn-r" data-post-id="@rpost.Id" data-no-loader="true">
+                                    <span class="action-icon like-icon-r" id="like-icon-r-@rpost.Id">@(rIsLiked ? "❤️" : "🤍")</span>
+                                    <span class="action-label">Me gusta</span>
                                 </button>
-
-                                <button class="action-btn save-btn" data-no-loader="true" onclick="savePost(@post.Id, this)">
-                                    <span class="action-icon">🔖</span>
-                                    <span class="action-label">Guardar</span>
-                                </button>
-
-                                <a asp-controller="Post" asp-action="Report" asp-route-postId="@post.Id" class="action-btn report-btn">
-                                    <span class="action-icon">🚩</span>
-                                    <span class="action-label">Reportar</span>
-                                </a>
+                                <a href="/Post/Comments?postId=@rpost.Id" class="action-btn"><span class="action-icon">💬</span><span class="action-label">Comentar</span></a>
+                                <button class="action-btn" data-no-loader="true" onclick="openShare(@rpost.Id)"><span class="action-icon">↪️</span><span class="action-label">Compartir</span></button>
+                                <button class="action-btn" data-no-loader="true" onclick="savePost(@rpost.Id, this)"><span class="action-icon">🔖</span><span class="action-label">Guardar</span></button>
+                                <a href="/Post/Report?postId=@rpost.Id" class="action-btn report-btn"><span class="action-icon">🚩</span><span class="action-label">Reportar</span></a>
                             </div>
                         </article>
                     }
@@ -968,54 +575,33 @@ body:not(.bg-dark) .prof-empty-sub {
         <div class="private-wall">
             <div class="private-wall-lock">🔒</div>
             <div class="private-wall-title">Esta cuenta es privada</div>
-            <div class="private-wall-sub">
-                Solo los amigos de <strong style="color:white;">@Model.Username</strong> pueden ver sus publicaciones.
-            </div>
+            <div class="private-wall-sub">Solo los amigos de <strong style="color:white;">@Model.Username</strong> pueden ver sus publicaciones.</div>
             @if (friendStatus == null || friendStatus == "")
-            {
-                <div class="private-wall-hint">👤 Agrégalo como amigo para ver su contenido</div>
-            }
+            { <div class="private-wall-hint">👤 Agrégalo como amigo para ver su contenido</div> }
             else if (friendStatus == "Pending")
-            {
-                <div class="private-wall-hint" style="color:#fbbf24;border-color:rgba(251,191,36,0.2);background:rgba(251,191,36,0.08);">⏳ Solicitud enviada — esperando respuesta</div>
-            }
+            { <div class="private-wall-hint" style="color:#fbbf24;border-color:rgba(251,191,36,0.2);background:rgba(251,191,36,0.08);">⏳ Solicitud enviada — esperando respuesta</div> }
             <div class="private-wall-notice">🔒 Esta cuenta es privada</div>
         </div>
     }
 
-    <!-- SHARE MENU, LIKE EXPLOSION, COPY ALERT (ubicados correctamente al final de prof-wrap) -->
-   <div id="shareOverlay" class="share-overlay" onclick="closeShare()"></div>
-<div id="shareMenu" class="share-menu">
-    <div class="share-handle"></div>
-    <div class="share-title">Compartir publicación</div>
-    <div class="share-options">
-        <div class="share-option" onclick="repostear()">
-            <span class="share-option-icon">↪️</span>
-            <span>Repostear</span>
+    <!-- SHARE MENU -->
+    <div id="shareOverlay" class="share-overlay" onclick="closeShare()"></div>
+    <div id="shareMenu" class="share-menu">
+        <div class="share-handle"></div>
+        <div class="share-title">Compartir publicación</div>
+        <div class="share-options">
+            <div class="share-option" onclick="repostear()"><span class="share-option-icon">↪️</span><span>Repostear</span></div>
+            <div class="share-option" onclick="shareWhatsApp()"><span class="share-option-icon">📱</span><span>WhatsApp</span></div>
+            <div class="share-option" onclick="shareTelegram()"><span class="share-option-icon">✈️</span><span>Telegram</span></div>
+            <div class="share-option" onclick="shareFacebook()"><span class="share-option-icon">📘</span><span>Facebook</span></div>
+            <div class="share-option" onclick="copyLink()"><span class="share-option-icon">📋</span><span>Copiar link</span></div>
         </div>
-        <div class="share-option" onclick="shareWhatsApp()">
-            <span class="share-option-icon">📱</span>
-            <span>WhatsApp</span>
-        </div>
-        <div class="share-option" onclick="shareTelegram()">
-            <span class="share-option-icon">✈️</span>
-            <span>Telegram</span>
-        </div>
-        <div class="share-option" onclick="shareFacebook()">
-            <span class="share-option-icon">📘</span>
-            <span>Facebook</span>
-        </div>
-        <div class="share-option" onclick="copyLink()">
-            <span class="share-option-icon">📋</span>
-            <span>Copiar link</span>
-        </div>
+        <div class="share-option cancel" onclick="closeShare()">✕ Cancelar</div>
     </div>
-    <div class="share-option cancel" onclick="closeShare()">✕ Cancelar</div>
-</div>
     <div id="likeExplosion" class="like-explosion" style="display:none;">❤️</div>
     <div id="copyAlert" class="copy-alert">↪ Link copiado</div>
 
-</div> <!-- cierre de prof-wrap -->
+</div><!-- cierre prof-wrap -->
 
 <!-- MODAL SEGUIDORES -->
 <div id="followModal" class="follow-modal" style="display:none;">
@@ -1029,18 +615,37 @@ body:not(.bg-dark) .prof-empty-sub {
 </div>
 
 <script>
-// ========== FUNCIONES DE LIKES, SHARE, SAVE ==========
-function revealSensitive(postId) {
-    const img = document.getElementById('img-' + postId);
-    const overlay = document.getElementById('overlay-' + postId);
-    if (img) img.classList.remove('sensitive-blurred');
-    if (overlay) overlay.style.display = 'none';
+const targetUserId = @Model.Id;
+let currentPost = null;
+
+// ── TABS ──
+function switchTab(btn, tab) {
+    document.querySelectorAll('.prof-tab').forEach(t => t.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('tab-posts').style.display = tab === 'posts' ? 'block' : 'none';
+    const tabReposts = document.getElementById('tab-reposts');
+    if (tabReposts) tabReposts.style.display = tab === 'reposts' ? 'block' : 'none';
 }
 
-function toggleLike(btnElement, postId) {
-    const icon = btnElement.querySelector('.like-icon');
+// ── LIKES PUBLICACIONES ──
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.like-btn').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            toggleLike(this, this.getAttribute('data-post-id'), 'like-icon-', 'like-summary-');
+        });
+    });
+    document.querySelectorAll('.like-btn-r').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            toggleLike(this, this.getAttribute('data-post-id'), 'like-icon-r-', 'like-summary-r-');
+        });
+    });
+});
+
+function toggleLike(btn, postId, iconPrefix, summaryPrefix) {
+    const icon = btn.querySelector('.action-icon');
     const isLiked = icon.textContent === '❤️';
-    // Animación local
     icon.classList.remove('like-pop');
     void icon.offsetWidth;
     icon.classList.add('like-pop');
@@ -1059,94 +664,79 @@ function toggleLike(btnElement, postId) {
         .then(res => res.json())
         .then(data => {
             icon.textContent = data.liked ? '❤️' : '🤍';
-            const summary = document.getElementById('like-summary-' + postId);
-            if (summary) {
-                summary.innerHTML = data.count > 0 ? `<span>❤️ ${data.count} ${data.count === 1 ? 'like' : 'likes'}</span>` : '';
-            }
+            const summary = document.getElementById(summaryPrefix + postId);
+            if (summary) summary.innerHTML = data.count > 0 ? `<span>❤️ ${data.count} ${data.count === 1 ? 'like' : 'likes'}</span>` : '';
         });
 }
 
 function savePost(postId, btn) {
-    fetch('/Post/SavePost', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(postId)
-    }).then(() => {
-        const icon = btn.querySelector('.action-icon');
-        icon.textContent = '🔖';
-        icon.style.filter = 'drop-shadow(0 0 4px rgba(99,102,241,0.6))';
-        showAlert('🔖 Publicación guardada');
-        setTimeout(() => icon.style.filter = '', 1000);
-    });
+    fetch('/Post/SavePost', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(postId) })
+        .then(() => { showAlert('🔖 Publicación guardada'); });
 }
 
-let currentPost = null;
-function openShare(postId) {
-    currentPost = postId;
-    document.getElementById('shareMenu').style.display = 'block';
-    document.getElementById('shareOverlay').style.display = 'block';
-}
-function closeShare() {
-    document.getElementById('shareMenu').style.display = 'none';
-    document.getElementById('shareOverlay').style.display = 'none';
-}
-function shareWhatsApp() {
-    window.open('https://wa.me/?text=' + encodeURIComponent(window.location.origin + '/Post/Comments?postId=' + currentPost));
+// ── SHARE ──
+function openShare(postId) { currentPost = postId; document.getElementById('shareMenu').style.display = 'block'; document.getElementById('shareOverlay').style.display = 'block'; }
+function closeShare() { document.getElementById('shareMenu').style.display = 'none'; document.getElementById('shareOverlay').style.display = 'none'; }
+function shareWhatsApp() { window.open('https://wa.me/?text=' + encodeURIComponent(location.origin + '/Post/Comments?postId=' + currentPost)); closeShare(); }
+function shareTelegram() { window.open('https://t.me/share/url?url=' + encodeURIComponent(location.origin + '/Post/Comments?postId=' + currentPost)); closeShare(); }
+function shareFacebook() { window.open('https://www.facebook.com/sharer/sharer.php?u=' + encodeURIComponent(location.origin + '/Post/Comments?postId=' + currentPost)); closeShare(); }
+function copyLink() { navigator.clipboard.writeText(location.origin + '/Post/Comments?postId=' + currentPost); closeShare(); showAlert('↪ Link copiado'); }
+async function repostear() {
+    if (!currentPost) return;
     closeShare();
-}
-function shareTelegram() {
-    window.open('https://t.me/share/url?url=' + encodeURIComponent(window.location.origin + '/Post/Comments?postId=' + currentPost));
-    closeShare();
-}
-function shareFacebook() {
-    window.open('https://www.facebook.com/sharer/sharer.php?u=' + encodeURIComponent(window.location.origin + '/Post/Comments?postId=' + currentPost));
-    closeShare();
-}
-function copyLink() {
-    navigator.clipboard.writeText(window.location.origin + '/Post/Comments?postId=' + currentPost);
-    closeShare();
-    showAlert('↪ Link copiado');
-}
-function showAlert(msg) {
-    const el = document.getElementById('copyAlert');
-    el.textContent = msg;
-    el.classList.add('show');
-    setTimeout(() => el.classList.remove('show'), 2500);
+    try {
+        const res = await fetch('/Post/Repost', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(currentPost) });
+        const data = await res.json();
+        showAlert(data.success ? (data.reposted ? '↪️ Reposteado en tu perfil' : '↩️ Repost eliminado') : '⚠️ ' + (data.error ?? 'Error'));
+    } catch { showAlert('❌ Error de conexión'); }
 }
 
-// Asignar eventos a botones de like después de cargar la página
-document.addEventListener('DOMContentLoaded', function() {
-    document.querySelectorAll('.like-btn').forEach(btn => {
-        const postId = btn.getAttribute('data-post-id');
-        if (postId) {
-            btn.addEventListener('click', function(e) {
-                e.preventDefault();
-                toggleLike(this, postId);
-            });
-        }
-    });
-});
+function showAlert(msg) { const el = document.getElementById('copyAlert'); el.textContent = msg; el.classList.add('show'); setTimeout(() => el.classList.remove('show'), 2500); }
 
-// ========== FUNCIONES EXISTENTES DEL PERFIL ==========
-const targetUserId = @Model.Id;
-
-function switchTab(btn, tab) {
-    document.querySelectorAll('.prof-tab').forEach(t => t.classList.remove('active'));
-    btn.classList.add('active');
-    document.getElementById('tab-posts').style.display = tab === 'posts' ? 'block' : 'none';
-    document.getElementById('tab-reposts').style.display = tab === 'reposts' ? 'block' : 'none';
+// ── REVEAL ──
+function revealBlurred(postId) {
+    const img = document.getElementById('img-' + postId);
+    const overlay = document.getElementById('overlay-' + postId);
+    if (img) { img.classList.remove('blurred-image'); img.style.filter = 'none'; img.style.transform = 'none'; }
+    if (overlay) overlay.style.display = 'none';
+}
+function revealBlurredR(postId) {
+    const img = document.getElementById('img-r-' + postId);
+    const overlay = document.getElementById('overlay-r-' + postId);
+    if (img) { img.classList.remove('blurred-image'); img.style.filter = 'none'; img.style.transform = 'none'; }
+    if (overlay) overlay.style.display = 'none';
 }
 
+// ── FOTOS ──
+function abrirFotoPerfil(src) {
+    const overlay = document.createElement('div');
+    overlay.id = 'photoOverlay';
+    overlay.style.cssText = 'position:fixed;inset:0;z-index:999999;background:rgba(0,0,0,0.85);backdrop-filter:blur(12px);display:flex;align-items:center;justify-content:center;cursor:pointer;';
+    overlay.innerHTML = `<div style="display:flex;flex-direction:column;align-items:center;gap:16px;"><img src="${src}" style="width:280px;height:280px;border-radius:50%;object-fit:cover;border:4px solid rgba(255,255,255,0.15);box-shadow:0 20px 60px rgba(0,0,0,0.6);"/><button onclick="cerrarFotoPerfil()" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);color:white;padding:8px 24px;border-radius:20px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;">✕ Cerrar</button></div>`;
+    overlay.addEventListener('click', function(e) { if (e.target === this) cerrarFotoPerfil(); });
+    document.body.appendChild(overlay);
+    document.body.style.overflow = 'hidden';
+}
+function cerrarFotoPerfil() {
+    const o = document.getElementById('photoOverlay');
+    if (o) { o.style.opacity='0'; o.style.transition='opacity 0.2s'; setTimeout(() => { o.remove(); document.body.style.overflow=''; }, 200); }
+}
+function abrirFotoPost(src) {
+    const overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;inset:0;z-index:999999;background:rgba(0,0,0,0.85);backdrop-filter:blur(12px);display:flex;align-items:center;justify-content:center;cursor:pointer;';
+    overlay.innerHTML = `<img src="${src}" style="max-width:90vw;max-height:90vh;border-radius:20px;box-shadow:0 20px 60px rgba(0,0,0,0.6);" />`;
+    overlay.addEventListener('click', () => { overlay.remove(); document.body.style.overflow=''; });
+    document.body.appendChild(overlay);
+    document.body.style.overflow = 'hidden';
+}
+
+// ── MODALES ──
 function openModal(type) {
-    const modal = document.getElementById("followModal");
-    const list = document.getElementById("followList");
+    document.getElementById("followModal").style.display = "flex";
     document.getElementById("modalTitle").innerText = type === "followers" ? "Seguidores" : "Siguiendo";
-    modal.style.display = "flex";
-    list.innerHTML = "<div style='text-align:center;padding:20px;color:rgba(255,255,255,0.3);'>Cargando...</div>";
-    fetch('/User/' + (type === "followers" ? "GetFollowers" : "GetFollowing") + '?userId=' + targetUserId)
-        .then(r => r.text()).then(data => list.innerHTML = data);
+    document.getElementById("followList").innerHTML = "<div style='text-align:center;padding:20px;color:rgba(255,255,255,0.3);'>Cargando...</div>";
+    fetch('/User/' + (type === "followers" ? "GetFollowers" : "GetFollowing") + '?userId=' + targetUserId).then(r => r.text()).then(d => document.getElementById("followList").innerHTML = d);
 }
-
 function closeModal() { document.getElementById("followModal").style.display = "none"; }
 document.getElementById("followModal").addEventListener("click", function(e) { if(e.target===this) closeModal(); });
 
@@ -1156,130 +746,35 @@ function updateReqChars() {
     document.getElementById("reqCharsCount").textContent = len;
     document.getElementById("msgReqSendBtn").disabled = len === 0;
 }
+document.getElementById("msgReqModal").addEventListener("click", function(e) { if(e.target===this) closeMsgReqModal(); });
 
-function abrirFotoPerfil(src) {
-    const overlay = document.createElement('div');
-    overlay.id = 'photoOverlay';
-    overlay.style.cssText = `
-        position:fixed;inset:0;z-index:999999;
-        background:rgba(0,0,0,0.85);backdrop-filter:blur(12px);
-        display:flex;align-items:center;justify-content:center;
-        animation:fadeInPhoto 0.25s ease;cursor:pointer;
-    `;
-    overlay.innerHTML = `
-        <div style="position:relative;display:flex;flex-direction:column;align-items:center;gap:16px;">
-            <img src="${src}" style="
-                width:280px;height:280px;border-radius:50%;object-fit:cover;
-                border:4px solid rgba(255,255,255,0.15);
-                box-shadow:0 20px 60px rgba(0,0,0,0.6);
-                animation:scaleInPhoto 0.3s cubic-bezier(0.34,1.56,0.64,1);
-            "/>
-            <button onclick="cerrarFotoPerfil()" style="
-                background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);
-                color:white;padding:8px 24px;border-radius:20px;
-                font-size:13px;font-weight:700;cursor:pointer;
-                font-family:inherit;transition:0.2s;
-            " onmouseover="this.style.background='rgba(255,255,255,0.2)'"
-               onmouseout="this.style.background='rgba(255,255,255,0.1)'">
-                ✕ Cerrar
-            </button>
-        </div>
-    `;
-    overlay.addEventListener('click', function(e) {
-        if (e.target === this) cerrarFotoPerfil();
-    });
-    document.body.appendChild(overlay);
-    document.body.style.overflow = 'hidden';
-}
-function cerrarFotoPerfil() {
-    const overlay = document.getElementById('photoOverlay');
-    if (overlay) {
-        overlay.style.opacity = '0';
-        overlay.style.transition = 'opacity 0.2s';
-        setTimeout(() => { overlay.remove(); document.body.style.overflow = ''; }, 200);
-    }
-}
-async function repostear() {
-    if (!currentPost) return;
-    closeShare();
-    try {
-        const res = await fetch('/Post/Repost', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(currentPost)
-        });
-        const data = await res.json();
-        if (data.success) {
-            showAlert(data.reposted ? '↪️ Reposteado en tu perfil' : '↩️ Repost eliminado');
-        } else {
-            showAlert('⚠️ ' + (data.error ?? 'Error'));
-        }
-    } catch {
-        showAlert('❌ Error de conexión');
-    }
-}
-function abrirFotoPost(src) {
-    const overlay = document.createElement('div');
-    overlay.style.cssText = 'position:fixed;inset:0;z-index:999999;background:rgba(0,0,0,0.85);backdrop-filter:blur(12px);display:flex;align-items:center;justify-content:center;cursor:pointer;';
-    overlay.innerHTML = `<div><img src="${src}" style="max-width:90vw;max-height:90vh;border-radius:20px;box-shadow:0 20px 60px rgba(0,0,0,0.6);" /></div>`;
-    overlay.addEventListener('click', () => overlay.remove());
-    document.body.appendChild(overlay);
-    document.body.style.overflow = 'hidden';
-    overlay.addEventListener('click', () => { overlay.remove(); document.body.style.overflow = ''; });
-}
 async function sendMsgReq() {
     const msg = document.getElementById("msgReqText").value.trim();
     if (!msg) return;
     const btn = document.getElementById("msgReqSendBtn");
     btn.disabled = true; btn.textContent = "⏳ Enviando...";
     try {
-        const res = await fetch("/Message/SendMessageRequest", {
-            method:"POST", headers:{"Content-Type":"application/json"},
-            body: JSON.stringify({ receiverId: targetUserId, message: msg })
-        });
+        const res = await fetch("/Message/SendMessageRequest", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ receiverId: targetUserId, message: msg }) });
         const data = await res.json();
-        if (data.success) {
-            closeMsgReqModal();
-            document.querySelectorAll(".prof-btn.secondary").forEach(b => {
-                if (b.textContent.includes("Mensaje") && !b.href)
-                    b.outerHTML = '<button class="prof-btn ghost-yellow" disabled>⏳ Mensaje enviado</button>';
-            });
-            showToast("✅ Solicitud enviada");
-        } else {
-            showToast("⚠️ " + (data.error ?? "Error al enviar"));
-            btn.disabled = false; btn.textContent = "Enviar →";
-        }
-    } catch {
-        showToast("❌ Error de conexión");
-        btn.disabled = false; btn.textContent = "Enviar →";
-    }
+        if (data.success) { closeMsgReqModal(); showToast("✅ Solicitud enviada"); }
+        else { showToast("⚠️ " + (data.error ?? "Error")); btn.disabled = false; btn.textContent = "Enviar →"; }
+    } catch { showToast("❌ Error"); btn.disabled = false; btn.textContent = "Enviar →"; }
 }
-function revealBlurred(postId) {
-    const img = document.getElementById('img-' + postId);
-    const overlay = document.getElementById('overlay-' + postId);
-    if (img) {
-        img.classList.remove('blurred-image');
-        img.style.filter = 'none';
-        img.style.transform = 'none';
-    }
-    if (overlay) overlay.style.display = 'none';
-}
-document.getElementById("msgReqModal").addEventListener("click", function(e) { if(e.target===this) closeMsgReqModal(); });
+
 function confirmarEliminarAmigo() {
     if (!confirm("¿Eliminar a @Model.Username de tus amigos?")) return;
-    fetch("/User/RemoveFriend", {
-        method:"POST", headers:{"Content-Type":"application/json"},
-        body: JSON.stringify({ blockedId: targetUserId })
-    }).then(r => r.json()).then(data => {
-        if (data.success) {
-            showToast("✅ Amigo eliminado");
-            const fb = document.querySelector(".prof-btn.ghost-green");
-            const rb = document.getElementById("removeFriendBtn");
-            if (fb) fb.outerHTML = '<form action="/User/SendFriendRequest" method="post" style="display:inline;"><input type="hidden" name="receiverId" value="'+targetUserId+'"/><button class="prof-btn success">👤 Agregar</button></form>';
-            if (rb) rb.remove();
-        } else { showToast("❌ No se pudo eliminar"); }
-    }).catch(() => showToast("❌ Error"));
+    fetch("/User/RemoveFriend", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ blockedId: targetUserId }) })
+        .then(r => r.json()).then(data => {
+            if (data.success) {
+                showToast("✅ Amigo eliminado");
+                const fb = document.querySelector(".prof-btn.ghost-green");
+                const rb = document.getElementById("removeFriendBtn");
+                if (fb) fb.outerHTML = `<form action="/User/SendFriendRequest" method="post" style="display:inline;"><input type="hidden" name="receiverId" value="${targetUserId}"/><button class="prof-btn success">👤 Agregar</button></form>`;
+                if (rb) rb.remove();
+            } else showToast("❌ No se pudo eliminar");
+        }).catch(() => showToast("❌ Error"));
 }
+
 function showToast(msg) {
     document.querySelectorAll('.prof-toast').forEach(t => t.remove());
     const t = document.createElement("div");
