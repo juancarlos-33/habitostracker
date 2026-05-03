@@ -903,17 +903,71 @@ function makeTime() { return new Date().toLocaleTimeString('es-CO', { hour:'2-di
 function escapeHtml(text) { return String(text).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
 function agregarBurbujaMia(contentHTML, tempId) {
     document.getElementById("emptyState")?.remove();
+
+    // Crear contenedor principal del mensaje
     const row = document.createElement("div");
-    row.className = "grp-msg-row mine"; row.id = tempId;
-    const myReplyHTML = (replyToMessageId && replyToContent)
-        ? `<div class="grp-msg-reply" onclick="scrollToMessage(${replyToMessageId})">
+    row.className = "grp-msg-row mine";
+    row.id = tempId;
+
+    // Crear contenedor del wrap
+    const wrap = document.createElement("div");
+    wrap.className = "grp-msg-wrap";
+
+    // Crear burbuja
+    const bubble = document.createElement("div");
+    bubble.className = "grp-msg-bubble";
+    bubble.style.position = "relative";
+    // Asignar eventos (sin pasar contentHTML como texto)
+    bubble.oncontextmenu = (e) => {
+        e.preventDefault();
+        abrirReactionPicker(e, tempId);
+    };
+    bubble.ondblclick = () => {
+        responderMensaje(tempId, myName, "mensaje"); // pasamos un placeholder, el contenido real se obtendrá de otro modo si es necesario
+    };
+
+    // Agregar reply si existe
+    if (replyToMessageId && replyToContent) {
+        const replyDiv = document.createElement("div");
+        replyDiv.className = "grp-msg-reply";
+        replyDiv.onclick = () => scrollToMessage(replyToMessageId);
+        replyDiv.innerHTML = `
             <div class="grp-msg-reply-name">${escapeHtml(replyToSender ?? "")}</div>
             <div class="grp-msg-reply-text">${escapeHtml((replyToContent ?? "").length > 50 ? (replyToContent ?? "").substring(0, 50) + '...' : (replyToContent ?? ""))}</div>
-           </div>` : '';
+        `;
+        bubble.appendChild(replyDiv);
+    }
 
-    row.innerHTML = `<div class="grp-msg-wrap"><div class="grp-msg-bubble" oncontextmenu="abrirReactionPicker(event,${tempId})" ondblclick="responderMensaje(${tempId},'${myName}','${contentHTML}')" style="position:relative;">${myReplyHTML}${contentHTML}</div><div class="grp-msg-footer"><span class="grp-msg-time">${makeTime()}</span><span class="grp-msg-check" id="check-${tempId}">✔</span></div><div class="grp-reactions" id="reactions-${tempId}"></div></div>`;
+    // Insertar el contenido HTML (que puede ser audio, imagen, texto)
+    // IMPORTANTE: contentHTML ya contiene el HTML del reproductor (ej: <audio>). Lo insertamos como innerHTML.
+    bubble.innerHTML += contentHTML;
+
+    wrap.appendChild(bubble);
+
+    // Footer
+    const footer = document.createElement("div");
+    footer.className = "grp-msg-footer";
+    const timeSpan = document.createElement("span");
+    timeSpan.className = "grp-msg-time";
+    timeSpan.textContent = makeTime();
+    const checkSpan = document.createElement("span");
+    checkSpan.className = "grp-msg-check";
+    checkSpan.id = "check-" + tempId;
+    checkSpan.textContent = "✔";
+    footer.appendChild(timeSpan);
+    footer.appendChild(checkSpan);
+    wrap.appendChild(footer);
+
+    // Contenedor de reacciones
+    const reactionsDiv = document.createElement("div");
+    reactionsDiv.className = "grp-reactions";
+    reactionsDiv.id = "reactions-" + tempId;
+    wrap.appendChild(reactionsDiv);
+
+    row.appendChild(wrap);
     chatBox.insertBefore(row, document.getElementById("typingIndicator"));
     chatBox.scrollTop = chatBox.scrollHeight;
+
     return row;
 }
 
