@@ -87,37 +87,27 @@ namespace HabitTrackerApp.Controllers
             ViewBag.Followers = _context.Follows.Count(f => f.FollowingId == id);
             ViewBag.Following = _context.Follows.Count(f => f.FollowerId == id);
 
-            var reposts = _context.Reposts
-    .Include(r => r.Post).ThenInclude(p => p.User)
-    .Where(r => r.UserId == user.Id)
-    .OrderByDescending(r => r.CreatedAt)
-    .ToList();
-
-            ViewBag.Reposts = reposts;
-
             // ========== CARGAR PUBLICACIONES DEL USUARIO ==========
             var userPosts = _context.Posts
+                .Include(p => p.User)
                 .Where(p => p.UserId == user.Id)
                 .OrderByDescending(p => p.CreatedAt)
                 .ToList();
             ViewBag.UserPosts = userPosts;
 
-            // ========== ESTADÍSTICAS DE LIKES Y COMENTARIOS ==========
-            var postIds = userPosts.Select(p => p.Id).ToList();
+            var userPostIds = userPosts.Select(p => p.Id).ToList();
 
-            // Likes por post
+            // ========== ESTADÍSTICAS DE PUBLICACIONES ==========
             var likesCount = _context.PostLikes
-                .Where(l => postIds.Contains(l.PostId))
+                .Where(l => userPostIds.Contains(l.PostId))
                 .GroupBy(l => l.PostId)
                 .ToDictionary(g => g.Key, g => g.Count());
 
-            // Comentarios directos
             var commentCountsQuery = _context.PostComments
-                .Where(c => postIds.Contains(c.PostId))
+                .Where(c => userPostIds.Contains(c.PostId))
                 .Select(c => new { c.PostId, c.Id })
                 .ToList();
 
-            // Respuestas a comentarios
             var replyCounts = _context.CommentReplies
                 .Where(r => commentCountsQuery.Select(c => c.Id).Contains(r.CommentId))
                 .GroupBy(r => r.CommentId)
@@ -127,11 +117,59 @@ namespace HabitTrackerApp.Controllers
                 .GroupBy(c => c.PostId)
                 .ToDictionary(g => g.Key, g => g.Count() + g.Sum(c => replyCounts.ContainsKey(c.Id) ? replyCounts[c.Id] : 0));
 
-            // Mis likes (del usuario actual, no del dueño del perfil)
             var myLikes = _context.PostLikes
-                .Where(l => l.UserId == myId && postIds.Contains(l.PostId))
+                .Where(l => l.UserId == myId && userPostIds.Contains(l.PostId))
                 .Select(l => l.PostId)
                 .ToHashSet();
+
+            // ========== REPOSTS ==========
+            var reposts = _context.Reposts
+                .Include(r => r.Post).ThenInclude(p => p.User)
+                .Where(r => r.UserId == user.Id)
+                .OrderByDescending(r => r.CreatedAt)
+                .ToList();
+
+            ViewBag.Reposts = reposts;
+
+            var repostPostIds = reposts.Where(r => r.Post != null).Select(r => r.PostId).ToList();
+
+            // Likes de posts reposteados
+            var repostLikes = _context.PostLikes
+                .Where(l => repostPostIds.Contains(l.PostId))
+                .GroupBy(l => l.PostId)
+                .ToDictionary(g => g.Key, g => g.Count());
+
+            foreach (var kv in repostLikes)
+                if (!likesCount.ContainsKey(kv.Key))
+                    likesCount[kv.Key] = kv.Value;
+
+            // Comentarios de posts reposteados
+            var repostCommentQuery = _context.PostComments
+                .Where(c => repostPostIds.Contains(c.PostId))
+                .Select(c => new { c.PostId, c.Id })
+                .ToList();
+
+            var repostReplyCounts = _context.CommentReplies
+                .Where(r => repostCommentQuery.Select(c => c.Id).Contains(r.CommentId))
+                .GroupBy(r => r.CommentId)
+                .ToDictionary(g => g.Key, g => g.Count());
+
+            var repostCommentCounts = repostCommentQuery
+                .GroupBy(c => c.PostId)
+                .ToDictionary(g => g.Key, g => g.Count() + g.Sum(c => repostReplyCounts.ContainsKey(c.Id) ? repostReplyCounts[c.Id] : 0));
+
+            foreach (var kv in repostCommentCounts)
+                if (!commentCounts.ContainsKey(kv.Key))
+                    commentCounts[kv.Key] = kv.Value;
+
+            // Mis likes en posts reposteados
+            var myLikesOnReposts = _context.PostLikes
+                .Where(l => l.UserId == myId && repostPostIds.Contains(l.PostId))
+                .Select(l => l.PostId)
+                .ToHashSet();
+
+            foreach (var repostId in myLikesOnReposts)
+                myLikes.Add(repostId);
 
             ViewBag.PostLikes = likesCount;
             ViewBag.CommentCounts = commentCounts;

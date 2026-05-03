@@ -402,15 +402,43 @@
                         </div>
                     </div>
 
-                    <!-- DESCRIPCIÓN -->
-                    @if (!string.IsNullOrEmpty(post.Description))
-                    {
-                        <p style="font-size:15px; color:rgba(255,255,255,0.7); line-height:1.65; margin:0 0 14px;">@post.Description</p>
-                    }
+                   <!-- DESCRIPCIÓN -->
+@if (!string.IsNullOrEmpty(post.Description))
+{
+    <p style="font-size:15px; color:rgba(255,255,255,0.7); line-height:1.65; margin:0 0 14px;">@post.Description</p>
+}
 
-            
+<!-- MEDIA -->
+@if (!string.IsNullOrEmpty(post.ImagePath))
+{
+    var isBlurred = post.IsSensitive || post.IsUnderWarning;
+    var blurMsg = post.IsUnderWarning ? "⚠️ Publicación sospechosa" : "⚠️ Contenido sensible";
+    <div style="border-radius:16px;overflow:hidden;margin-bottom:12px;background:#000;position:relative;">
+        @if (isVideo)
+        {
+            <video controls style="width:100%;max-height:520px;object-fit:contain;display:block;" preload="metadata">
+                <source src="@post.ImagePath" />
+            </video>
+        }
+        else if (isBlurred)
+        {
+            <img src="@post.ImagePath" style="width:100%;max-height:520px;object-fit:cover;display:block;filter:blur(28px);transform:scale(1.05);" id="img-@post.Id" />
+            <div id="overlay-@post.Id" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.45);backdrop-filter:blur(3px);z-index:2;">
+                <div style="text-align:center;color:#fff;background:rgba(0,0,0,0.6);padding:12px 24px;border-radius:40px;border:1px solid rgba(255,255,255,0.2);">
+                    <span style="font-size:28px;display:block;margin-bottom:6px;">🚫</span>
+                    <p style="font-size:14px;font-weight:600;margin:0 0 12px;">@blurMsg</p>
+                    <button onclick="revealBlurred(@post.Id)" style="background:rgba(255,255,255,0.2);border:1.5px solid rgba(255,255,255,0.6);padding:6px 18px;border-radius:30px;font-size:12px;font-weight:700;cursor:pointer;color:white;font-family:inherit;">Ver imagen</button>
+                </div>
+            </div>
+        }
+        else
+        {
+            <img src="@post.ImagePath" style="width:100%;max-height:520px;object-fit:cover;display:block;cursor:pointer;" onclick="abrirFotoPost(this.src)" />
+        }
+    </div>
+}
 
-                    <!-- STATS (LIKES Y COMENTARIOS) -->
+<!-- STATS (LIKES Y COMENTARIOS) -->
                     <div style="display:flex; justify-content:space-between; font-size:13px; color:#6b7280; padding:4px 2px 8px;">
                         <span id="like-summary-@post.Id">
                             @if (likeCount > 0)
@@ -466,9 +494,12 @@
     <div class="share-handle"></div>
     <div class="share-title">Compartir publicación</div>
     <div class="share-options">
-        <div class="share-option" onclick="shareWhatsApp()">
-            <div class="share-options">
-    <div class="share-option" id="repostBtn" onclick="repostear()">
+     <div class="share-options">
+    <div class="share-option" onclick="repostear()">
+        <span class="share-option-icon">↪️</span>
+        <span>Repostear</span>
+    </div>
+    <div class="share-option" onclick="shareWhatsApp()">
         <span class="share-option-icon">↪️</span>
         <span>Repostear</span>
     </div>
@@ -1385,4 +1416,12 @@ document.addEventListener('DOMContentLoaded', () => {
         document.querySelectorAll('.my-size-btn').forEach(b => b.classList.toggle('active', b.dataset.size === size));
     }
 });
+function abrirFotoPost(src) {
+    const overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;inset:0;z-index:999999;background:rgba(0,0,0,0.85);backdrop-filter:blur(12px);display:flex;align-items:center;justify-content:center;cursor:pointer;';
+    overlay.innerHTML = `<img src="${src}" style="max-width:90vw;max-height:90vh;border-radius:20px;box-shadow:0 20px 60px rgba(0,0,0,0.6);" />`;
+    overlay.addEventListener('click', () => { overlay.remove(); document.body.style.overflow=''; });
+    document.body.appendChild(overlay);
+    document.body.style.overflow = 'hidden';
+}
 </script>
