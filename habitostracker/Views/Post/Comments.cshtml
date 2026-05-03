@@ -211,6 +211,16 @@ body.bg-dark .cmt-empty-text { color: #64748b !important; }
     <div class="cmt-title">💬 Comentarios</div>
 
     <!-- FORM -->
+   @if (ViewBag.CommentsDisabled == true)
+{
+    <div class="cmt-form-card" style="background: #fef2f2; border: 1px solid #fecaca;">
+        <div style="display: flex; align-items: center; gap: 8px; color: #dc2626; font-weight: 600;">
+            🔒 Los comentarios están deshabilitados para esta publicación por incumplimiento de las normas.
+        </div>
+    </div>
+}
+else
+{
     <div class="cmt-form-card">
         <form asp-action="AddComment" method="post" enctype="multipart/form-data" data-no-loader="true">
             <input type="hidden" name="postId" value="@ViewBag.PostId" />
@@ -227,6 +237,7 @@ body.bg-dark .cmt-empty-text { color: #64748b !important; }
             </div>
         </form>
     </div>
+}
 
     <!-- LISTA -->
     <div class="cmt-list">

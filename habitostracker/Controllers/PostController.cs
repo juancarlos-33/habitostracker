@@ -463,12 +463,16 @@ namespace HabitTrackerApp.Controllers
         [HttpGet]
         public IActionResult Comments(int postId)
         {
+            var post = _context.Posts.Find(postId);
+            if (post == null) return NotFound();
+
+            ViewBag.PostId = postId;
+            ViewBag.CommentsDisabled = post.CommentsDisabled;  // ✅ NUEVA LÍNEA
+
             var comments = _context.PostComments
                 .Where(c => c.PostId == postId)
                 .OrderByDescending(c => c.CreatedAt)
                 .ToList();
-
-            ViewBag.PostId = postId;
 
             var userId = int.Parse(User.FindFirst("UserId").Value);
 
@@ -498,6 +502,15 @@ namespace HabitTrackerApp.Controllers
         [HttpPost]
         public async Task<IActionResult> AddComment(int postId, string comment, IFormFile image)
         {
+            // 🔒 VERIFICAR SI COMENTARIOS ESTÁN DESHABILITADOS
+            var post = await _context.Posts.FindAsync(postId);
+            if (post == null) return NotFound();
+            if (post.CommentsDisabled)
+            {
+                TempData["Error"] = "No se pueden agregar comentarios a esta publicación porque ha sido bloqueada por incumplir las normas.";
+                return RedirectToAction("Comments", new { postId });
+            }
+
             var userId = int.Parse(User.FindFirst("UserId").Value);
             var username = User.Identity.Name;
             var user = await _context.Users.FindAsync(userId);
@@ -527,14 +540,14 @@ namespace HabitTrackerApp.Controllers
             _context.PostComments.Add(newComment);
             await _context.SaveChangesAsync();
 
-            var post = _context.Posts.FirstOrDefault(p => p.Id == postId);
+            var postForNotif = _context.Posts.FirstOrDefault(p => p.Id == postId);
 
             // 🔔 Notificación al dueño del post
-            if (post != null && post.UserId != userId)
+            if (postForNotif != null && postForNotif.UserId != userId)
             {
                 _context.Notifications.Add(new Notification
                 {
-                    UserId = post.UserId,
+                    UserId = postForNotif.UserId,
                     FromUserId = userId,
                     FromUsername = user.Username,
                     FromUserImage = user?.ProfileImage ?? "",
@@ -544,7 +557,7 @@ namespace HabitTrackerApp.Controllers
                     CreatedAt = DateTime.Now
                 });
 
-                await _hubContext.Clients.Group(post.UserId.ToString())
+                await _hubContext.Clients.Group(postForNotif.UserId.ToString())
                     .SendAsync("ReceiveNotification", userId,
                         user.Username + " comentó tu publicación",
                         user.Username, user?.ProfileImage ?? "",
@@ -590,7 +603,6 @@ namespace HabitTrackerApp.Controllers
 
             return RedirectToAction("Comments", new { postId = postId });
         }
-
         [HttpPost]
         public async Task<IActionResult> ToggleLike(int postId)
         {
