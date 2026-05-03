@@ -445,69 +445,91 @@ body.bg-dark #emptyState .empty-title { color: #f1f5f9 !important; }
                     var senderLetter = (msg.Sender?.Username ?? "?").Substring(0, 1).ToUpper();
                     var readCount = msg.Reads?.Count(r => r.UserId != msg.SenderId) ?? 0;
                     bool allRead = readCount >= totalMembers - 1 && totalMembers > 1;
-          bool isAudio = !string.IsNullOrEmpty(msg.FileUrl) &&
-               (msg.FileUrl.Contains("/audio/upload/") || msg.FileUrl.EndsWith(".webm") || msg.FileUrl.Contains("audio"));
+    
+// ========== DETECCIÓN DE TIPO DE CONTENIDO ==========
 bool isImage = !string.IsNullOrEmpty(msg.FileUrl) &&
                (msg.FileUrl.Contains("/image/upload/") || msg.FileUrl.EndsWith(".jpg") || msg.FileUrl.EndsWith(".png") || msg.FileUrl.EndsWith(".jpeg"));
 bool isVideo = !string.IsNullOrEmpty(msg.FileUrl) &&
                (msg.FileUrl.Contains("/video/upload/") || msg.FileUrl.EndsWith(".mp4") || msg.FileUrl.EndsWith(".webm"));
-// Backup por si aún hay mensajes antiguos con Content
-if (!isAudio && !isImage && !isVideo && !string.IsNullOrEmpty(msg.Content) && msg.Content.Contains("cloudinary"))
-{
-    isAudio = true; // viejo formato
-}
+bool isAudio = false;
+if (!string.IsNullOrEmpty(msg.FileUrl) && (msg.FileUrl.Contains("/audio/upload/") || msg.FileUrl.EndsWith(".webm") || msg.FileUrl.Contains("audio")))
+    isAudio = true;
+else if (!string.IsNullOrEmpty(msg.Content) && (msg.Content.Contains("cloudinary") || msg.Content.Contains("/audios/") || msg.Content.EndsWith(".webm")))
+    isAudio = true; // compatibilidad con mensajes antiguos
+
+// ========== SEPARADOR DE NO LEÍDOS ==========
+@if (firstUnreadId != 0 && msg.Id == firstUnreadId)
 {
     <div class="grp-unread-sep" id="unreadSeparator">
         <span>⬇ @unreadCount mensaje@(unreadCount != 1 ? "s" : "") no leído@(unreadCount != 1 ? "s" : "")</span>
     </div>
 }
-                    <div class="grp-msg-row @(isMine ? "mine" : "theirs")" id="msg-@msg.Id">
-                        @if (!isMine)
-                        {
-                            <a href="/User/Profile/@msg.SenderId" class="grp-msg-avatar">
-                                @if (!string.IsNullOrEmpty(senderImg)) { <img src="@senderImg" /> }
-                                else { @senderLetter }
-                            </a>
-                        }
-                        <div class="grp-msg-wrap">
-                            @if (!isMine) { <a href="/User/Profile/@msg.SenderId" class="grp-msg-sender">@msg.Sender?.Username</a> }
-                    <div class="grp-msg-bubble" oncontextmenu="abrirReactionPicker(event, @msg.Id)" ondblclick="responderMensaje(@msg.Id, '@(msg.Sender?.Username ?? "")', '@(msg.Content?.Replace("'", "\\'").Replace("\n", " ") ?? "")')" style="position:relative;">
-                           @if (msg.ReplyToMessageId.HasValue && msg.ReplyToMessage != null)
-{
-    var replyText = msg.ReplyToMessage.Content?.Length > 50
-        ? msg.ReplyToMessage.Content.Substring(0, 50) + "..." : msg.ReplyToMessage.Content ?? "";
-    <div class="grp-msg-reply" onclick="scrollToMessage(@msg.ReplyToMessageId)">
-        <div class="grp-msg-reply-name">@msg.ReplyToMessage.Sender?.Username</div>
-        <div class="grp-msg-reply-text">@replyText</div>
-    </div>
-}
-                             @if (isAudio)
-{
-    var audioUrl = !string.IsNullOrEmpty(msg.FileUrl) ? msg.FileUrl : msg.Content;
-    <audio controls class="grp-msg-audio"><source src="@audioUrl" /></audio>
-}
-                                else if (isImage) { <img src="@msg.FileUrl" class="grp-msg-media" onclick="window.open('@msg.FileUrl', '_blank')" /> }
-                                else if (isVideo) { <video controls class="grp-msg-media"><source src="@msg.FileUrl" /></video> }
-                                else if (!string.IsNullOrEmpty(msg.Content)) { @msg.Content }
-                            </div>
-                           <div class="grp-msg-footer">
-    <span class="grp-msg-time">@msg.SentAt.ToLocalTime().ToString("hh:mm tt")</span>
-    @if (isMine) { <span class="grp-msg-check @(allRead ? "seen" : "")" id="check-@msg.Id">@(allRead ? "✔✔" : "✔")</span> }
-</div>
-<div class="grp-reactions" id="reactions-@msg.Id">
-    @if (msg.Reactions != null && msg.Reactions.Any())
+
+// ========== MENSAJE ==========
+<div class="grp-msg-row @(isMine ? "mine" : "theirs")" id="msg-@msg.Id">
+    @if (!isMine)
     {
-        var reactionGroups = msg.Reactions.GroupBy(r => r.Emoji);
-        foreach (var rg in reactionGroups)
-        {
-            <button class="grp-reaction-btn" onclick="reaccionar(@msg.Id, '@rg.Key')">
-                @rg.Key<span>@rg.Count()</span>
-            </button>
-        }
+        <a href="/User/Profile/@msg.SenderId" class="grp-msg-avatar">
+            @if (!string.IsNullOrEmpty(senderImg)) { <img src="@senderImg" /> }
+            else { @senderLetter }
+        </a>
     }
+    <div class="grp-msg-wrap">
+        @if (!isMine)
+        {
+            <a href="/User/Profile/@msg.SenderId" class="grp-msg-sender">@msg.Sender?.Username</a>
+        }
+        <div class="grp-msg-bubble" oncontextmenu="abrirReactionPicker(event, @msg.Id)" ondblclick="responderMensaje(@msg.Id, '@(msg.Sender?.Username ?? "")', '@(msg.Content?.Replace("'", "\\'").Replace("\n", " ") ?? "")')" style="position:relative;">
+            @if (msg.ReplyToMessageId.HasValue && msg.ReplyToMessage != null)
+            {
+                var replyText = msg.ReplyToMessage.Content?.Length > 50
+                    ? msg.ReplyToMessage.Content.Substring(0, 50) + "..."
+                    : msg.ReplyToMessage.Content ?? "";
+                <div class="grp-msg-reply" onclick="scrollToMessage(@msg.ReplyToMessageId)">
+                    <div class="grp-msg-reply-name">@msg.ReplyToMessage.Sender?.Username</div>
+                    <div class="grp-msg-reply-text">@replyText</div>
+                </div>
+            }
+
+            @if (isAudio)
+            {
+                var audioUrl = !string.IsNullOrEmpty(msg.FileUrl) ? msg.FileUrl : msg.Content;
+                <audio controls class="grp-msg-audio"><source src="@audioUrl" /></audio>
+            }
+            else if (isImage)
+            {
+                <img src="@msg.FileUrl" class="grp-msg-media" onclick="window.open('@msg.FileUrl', '_blank')" />
+            }
+            else if (isVideo)
+            {
+                <video controls class="grp-msg-media"><source src="@msg.FileUrl" /></video>
+            }
+            else if (!string.IsNullOrEmpty(msg.Content))
+            {
+                @msg.Content
+            }
+        </div>
+        <div class="grp-msg-footer">
+            <span class="grp-msg-time">@msg.SentAt.ToLocalTime().ToString("hh:mm tt")</span>
+            @if (isMine)
+            {
+                <span class="grp-msg-check @(allRead ? "seen" : "")" id="check-@msg.Id">@(allRead ? "✔✔" : "✔")</span>
+            }
+        </div>
+        <div class="grp-reactions" id="reactions-@msg.Id">
+            @if (msg.Reactions != null && msg.Reactions.Any())
+            {
+                var reactionGroups = msg.Reactions.GroupBy(r => r.Emoji);
+                foreach (var rg in reactionGroups)
+                {
+                    <button class="grp-reaction-btn" onclick="reaccionar(@msg.Id, '@rg.Key')">
+                        @rg.Key<span>@rg.Count()</span>
+                    </button>
+                }
+            }
+        </div>
+    </div>
 </div>
-                        </div>
-                    </div>
                 }
             }
         }
