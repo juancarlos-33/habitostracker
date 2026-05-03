@@ -128,39 +128,37 @@
     </div>
 }
 
-            <!-- MEDIA -->
-            @if (!string.IsNullOrEmpty(post.ImagePath))
-            {
-                <div class="post-media-wrap @(isVideo ? "video-wrap" : "") @(post.IsSensitive ? "sensitive-wrap" : "")">
-                    @if (isVideo)
-                    {
-                        <video controls class="post-media" preload="metadata">
-                            <source src="@post.ImagePath" />
-                        </video>
-                        <div class="video-badge">▶ Video</div>
-                    }
-                    else if (post.IsSensitive)
-                    {
-                        <img src="@post.ImagePath" class="post-media sensitive-blurred"
-                             id="img-@post.Id"
-                             onerror="this.parentElement.style.display='none'"
-                             loading="lazy" />
-                        <div class="sensitive-overlay" id="overlay-@post.Id">
-                            <div class="sensitive-overlay-content">
-                                <span class="sensitive-icon">⚠️</span>
-                                <p>Contenido sensible</p>
-                                <button class="reveal-btn" onclick="revealSensitive(@post.Id)">Ver imagen</button>
-                            </div>
-                        </div>
-                    }
-                    else
-                    {
-                        <img src="@post.ImagePath" class="post-media"
-                             onerror="this.parentElement.style.display='none'"
-                             loading="lazy" />
-                    }
+          <!-- MEDIA -->
+@if (!string.IsNullOrEmpty(post.ImagePath))
+{
+    var isBlurred = post.IsSensitive || post.IsUnderWarning;
+    var blurMessage = post.IsUnderWarning ? "⚠️ Publicación sospechosa - Incumple normas" : "⚠️ Contenido sensible";
+
+    <div class="post-media-wrap @(isVideo ? "video-wrap" : "") @(isBlurred ? "blurred-wrap" : "")">
+        @if (isVideo)
+        {
+            <video controls class="post-media" preload="metadata">
+                <source src="@post.ImagePath" />
+            </video>
+            <div class="video-badge">▶ Video</div>
+        }
+        else if (isBlurred)
+        {
+            <img src="@post.ImagePath" class="post-media blurred-image" id="img-@post.Id" />
+            <div class="blur-overlay" id="overlay-@post.Id">
+                <div class="blur-overlay-content">
+                    <span class="blur-icon">🚫</span>
+                    <p>@blurMessage</p>
+                    <button class="reveal-btn" onclick="revealBlurred(@post.Id)">Ver imagen</button>
                 </div>
-            }
+            </div>
+        }
+        else
+        {
+            <img src="@post.ImagePath" class="post-media" onclick="abrirFotoPost(this.src)" />
+        }
+    </div>
+}
 
 
 
@@ -406,6 +404,57 @@ body.bg-dark .post-privacy-badge.public { background:rgba(21,128,61,0.2); color:
     border-radius: 20px; font-weight: 700;
 }
 
+/* Blur para imágenes sospechosas o sensibles */
+.blurred-image {
+    filter: blur(28px);
+    transform: scale(1.05);
+    transition: filter 0.4s ease, transform 0.4s ease;
+}
+.blur-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0,0,0,0.45);
+    backdrop-filter: blur(3px);
+    z-index: 2;
+    transition: opacity 0.3s ease;
+}
+.blur-overlay-content {
+    text-align: center;
+    color: #fff;
+    background: rgba(0,0,0,0.6);
+    padding: 12px 24px;
+    border-radius: 40px;
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255,255,255,0.2);
+}
+.blur-icon {
+    font-size: 28px;
+    display: block;
+    margin-bottom: 6px;
+}
+.blur-overlay-content p {
+    font-size: 14px;
+    font-weight: 600;
+    margin: 0 0 12px;
+}
+.reveal-btn {
+    background: rgba(255,255,255,0.2);
+    border: 1.5px solid rgba(255,255,255,0.6);
+    padding: 6px 18px;
+    border-radius: 30px;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: 0.2s;
+    font-family: inherit;
+}
+.reveal-btn:hover {
+    background: rgba(255,255,255,0.35);
+}
+
 .sensitive-badge {
     background: #fef3c7; color: #d97706; font-size: 10px;
     padding: 3px 8px; border-radius: 20px; font-weight: 700;
@@ -633,6 +682,16 @@ function toggleLike(postId, element) {
                     : '';
             }
         });
+}
+function revealBlurred(postId) {
+    const img = document.getElementById('img-' + postId);
+    const overlay = document.getElementById('overlay-' + postId);
+    if (img) {
+        img.classList.remove('blurred-image');
+        img.style.filter = 'none';
+        img.style.transform = 'none';
+    }
+    if (overlay) overlay.style.display = 'none';
 }
 
 function savePost(postId, btn) {
