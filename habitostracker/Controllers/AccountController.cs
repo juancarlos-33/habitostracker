@@ -1958,7 +1958,7 @@ namespace HabitTrackerApp.Controllers
                 IsPersistent = true,
                 ExpiresUtc = DateTimeOffset.UtcNow.AddDays(30)
             };
-            properties.Parameters.Add("prompt", "select_account");
+          
 
             return Challenge(properties, "Google");
         }
