@@ -326,6 +326,31 @@ namespace HabitTrackerApp.Controllers
             ViewBag.Type = type;
             return PartialView("_DiscoverPartial", groups);
         }
+        [HttpPost]
+        public async Task<IActionResult> DeleteMessage(int messageId)
+        {
+            var userId = int.Parse(User.FindFirst("UserId").Value);
+            var msg = _context.GroupMessages.FirstOrDefault(m => m.Id == messageId);
+            if (msg == null) return Json(new { success = false });
+
+            var isAdmin = _context.GroupMembers
+                .Any(m => m.GroupId == msg.GroupId && m.UserId == userId && m.Role == "Admin" && m.IsActive);
+            var group = _context.Groups.FirstOrDefault(g => g.Id == msg.GroupId);
+            bool isOwner = msg.SenderId == userId;
+            bool isCreator = group?.CreatorId == userId;
+
+            if (!isOwner && !isAdmin && !isCreator)
+                return Json(new { success = false, error = "Sin permisos." });
+
+            msg.IsDeleted = true;
+            msg.Content = "🚫 Mensaje eliminado";
+            await _context.SaveChangesAsync();
+
+            await _hub.Clients.Group("group-" + msg.GroupId)
+                .SendAsync("GroupMessageDeleted", messageId.ToString());
+
+            return Json(new { success = true });
+        }
         [HttpGet]
         public IActionResult Chat(int id)
         {
@@ -341,10 +366,9 @@ namespace HabitTrackerApp.Controllers
 
             if (group == null) return RedirectToAction("Index");
             if (member == null) return RedirectToAction("Index");
-
             var messages = _context.GroupMessages
-        .Where(m => m.GroupId == id && !m.IsDeleted)
-        .Include(m => m.Sender)
+                .Where(m => m.GroupId == id && !m.IsDeleted && m.SentAt >= member.JoinedAt)
+                    .Include(m => m.Sender)
         .Include(m => m.Reads)
         .Include(m => m.ReplyToMessage).ThenInclude(m => m.Sender)
         .Include(m => m.Reactions)

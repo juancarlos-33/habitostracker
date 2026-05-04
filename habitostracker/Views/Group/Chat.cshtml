@@ -820,6 +820,14 @@ grpConnection.on("AddedToGroup", (gId, groupName, adderName) => {
 grpConnection.on("GroupMessageReaction", (msgId, reactions) => {
     actualizarReacciones(msgId, reactions);
 });
+grpConnection.on("GroupMessageDeleted", (msgId) => {
+    const bubble = document.querySelector(`#msg-${msgId} .grp-msg-bubble`);
+    if (bubble) {
+        bubble.innerHTML = '<span style="opacity:0.5;font-style:italic;">🚫 Mensaje eliminado</span>';
+        bubble.style.background = 'rgba(0,0,0,0.06)';
+        bubble.style.boxShadow = 'none';
+    }
+});
 
 sessionStorage.setItem('activeGroupChat', groupId.toString());
 window.addEventListener('beforeunload', () => {
@@ -1114,13 +1122,31 @@ function abrirReactionPicker(e, msgId) {
     if (!bubble) return;
     const picker = document.createElement("div");
     picker.className = "grp-reaction-picker";
-    picker.innerHTML = EMOJIS_REACCION.map(em => `<span onclick="reaccionar(${msgId}, '${em}')">${em}</span>`).join("");
+const row = document.getElementById("msg-" + msgId);
+const isMine = row?.classList.contains("mine");
+const deleteBtn = isMine || @(isAdmin.ToString().ToLower()) 
+    ? `<span onclick="eliminarMensaje(${msgId})" title="Eliminar" style="font-size:16px;">🗑️</span>` 
+    : '';
+picker.innerHTML = EMOJIS_REACCION.map(em => `<span onclick="reaccionar(${msgId}, '${em}')">${em}</span>`).join("") + deleteBtn;
     bubble.appendChild(picker);
     setTimeout(() => {
         document.addEventListener("click", function cerrar(ev) {
             if (!picker.contains(ev.target)) { picker.remove(); document.removeEventListener("click", cerrar); }
         });
     }, 100);
+}
+async function eliminarMensaje(msgId) {
+    document.querySelectorAll('.grp-reaction-picker').forEach(p => p.remove());
+    if (!confirm("¿Eliminar este mensaje?")) return;
+    try {
+        const res = await fetch("/Group/DeleteMessage", {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: `messageId=${msgId}&__RequestVerificationToken=${encodeURIComponent(token())}`
+        });
+        const data = await res.json();
+        if (!data.success) showToast("❌ No se pudo eliminar");
+    } catch { showToast("❌ Error de conexión"); }
 }
 
 async function reaccionar(msgId, emoji) {
