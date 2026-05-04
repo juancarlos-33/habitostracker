@@ -1095,64 +1095,27 @@ if ("Notification" in window) Notification.requestPermission();
     </text>
 
 }
-// ══ LIMPIAR HISTORIAL OAUTH ══
-(function() {
-    if (window.location.search.includes('fromOAuth=1')) {
-        // Reemplazar la URL actual quitando el parámetro
-        history.replaceState(null, '', window.location.pathname);
-        // Bloquear el botón atrás
-        history.pushState(null, '', window.location.pathname);
-        window.addEventListener('popstate', function() {
-            history.pushState(null, '', window.location.pathname);
-        });
-    }
-})();
-// ══ BLOQUEAR PÁGINAS DE AUTENTICACIÓN EN HISTORIAL ══
-// ══ BLOQUEAR ATRÁS EN HOME ══
-// ══ BLOQUEAR ATRÁS EN HOME ══
+// ══ BLOQUEAR ATRÁS ══
 (function() {
     const path = window.location.pathname.toLowerCase();
     const esHome = path === '/' || path.includes('/habit/index') || path === '/habit';
-    const vieneDeOauth = window.location.search.includes('fromOAuth=1');
     
     if (esHome) {
-        if (vieneDeOauth) {
-            // Limpiar el parámetro de la URL
+        // Limpiar parámetro oauth si existe
+        if (window.location.search.includes('fromOAuth=1')) {
             history.replaceState(null, '', window.location.pathname);
         }
-        // Agregar DOS entradas para que ambos clicks de atrás queden bloqueados
-        history.pushState(null, '', window.location.href);
-        history.pushState(null, '', window.location.href);
+        // Llenar el historial con 10 entradas del home
+        // así el usuario tendría que dar atrás 10 veces para salir
+        for (let i = 0; i < 10; i++) {
+            history.pushState(null, '', window.location.pathname);
+        }
+        // Cada vez que intente ir atrás, volver a agregar entradas
         window.addEventListener('popstate', function() {
-            history.pushState(null, '', window.location.href);
+            for (let i = 0; i < 5; i++) {
+                history.pushState(null, '', window.location.pathname);
+            }
         });
-    }
-})();
-// ══ BLOQUEAR HISTORIAL GOOGLE OAUTH ══
-(function() {
-    const path = window.location.pathname.toLowerCase();
-    const bloqueadas = [
-        '/account/completeprofil',
-        '/account/creandocuenta', 
-        '/account/googlelogin',
-        '/account/googleresponse',
-        '/account/externallogin',
-        '/account/externallogincallback',
-        '/signin-google'
-    ];
-    // Si la página actual es el home y venimos de oauth, reemplazar historial
-    if (path.includes('/habit/index') || path === '/') {
-        history.replaceState(null, '', window.location.href);
-    }
-})();
-// Bloquear páginas de onboarding del historial
-(function() {
-    const bloqueadas = ['/account/completeperfil', '/account/completprofile', '/account/creandocuenta'];
-    const actual = window.location.pathname.toLowerCase();
-    const esBloqueada = bloqueadas.some(b => actual.includes(b));
-    if (!esBloqueada && sessionStorage.getItem('onboardingDone')) {
-        // reemplazar entradas del historial de onboarding
-        history.replaceState(null, '', window.location.href);
     }
 })();
 </script>
