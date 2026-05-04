@@ -2230,25 +2230,19 @@ namespace HabitTrackerApp.Controllers
             var principal = new ClaimsPrincipal(identity);
 
             await HttpContext.SignInAsync("Cookies", principal);
-
+            
             return RedirectToAction("Index", "Habit");
         }
-
         [HttpGet]
         public IActionResult CompleteProfile()
         {
             var userIdClaim = User.FindFirst("UserId");
             if (userIdClaim == null) return RedirectToAction("Login");
-
             var userId = int.Parse(userIdClaim.Value);
             var user = _context.Users.FirstOrDefault(u => u.Id == userId);
-
-            // Si ya completó el perfil, ir al home
             if (user != null && !string.IsNullOrEmpty(user.Gender)
-                && user.Gender != "No especificado"
-                && user.Gender != "")
+                && user.Gender != "No especificado")
                 return RedirectToAction("Index", "Habit");
-
             return View();
         }
 

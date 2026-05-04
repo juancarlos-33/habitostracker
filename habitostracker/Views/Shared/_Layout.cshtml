@@ -1068,15 +1068,16 @@ if ("Notification" in window) Notification.requestPermission();
     }
     </text>
 }
-</script>
 // Bienvenida solo para nuevos
-(function() {
+function() {
     const key = 'ht_welcome_shown_@(User.FindFirst("UserId")?.Value ?? "0")';
     if (localStorage.getItem(key)) return;
     if (!document.getElementById('welcomeNewModal')) return;
     localStorage.setItem(key, '1');
     document.getElementById('welcomeNewModal').style.display = 'flex';
 })();
+</script>
+
 
 </body>
 </html>

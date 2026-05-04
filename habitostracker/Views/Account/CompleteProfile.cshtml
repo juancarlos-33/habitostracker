@@ -488,6 +488,15 @@ document.querySelectorAll('.gender-card').forEach(card => {
         this.querySelector('input[type="radio"]').checked = true;
     });
 });
+// Si ya pasó por aquí antes, ir al home directamente
+if (sessionStorage.getItem('profileCompleted')) {
+    window.location.replace('/Habit/Index');
+}
+
+document.getElementById('profileForm').addEventListener('submit', function() {
+    sessionStorage.setItem('showCreating', '1');
+    sessionStorage.setItem('profileCompleted', '1');
+});
 
 // Bio contador
 const bioInput = document.querySelector('.bio-input');
