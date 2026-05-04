@@ -1042,18 +1042,34 @@ if ("Notification" in window) Notification.requestPermission();
 
 
 
-
+<!-- MODAL BIENVENIDA NUEVOS -->
+<div id="welcomeNewModal" style="display:none;position:fixed;inset:0;z-index:999998;background:rgba(0,0,0,0.85);backdrop-filter:blur(12px);align-items:center;justify-content:center;padding:20px;">
+    <div style="background:linear-gradient(135deg,#0f172a,#1e293b);border-radius:28px;max-width:420px;width:100%;padding:40px 32px;border:1px solid rgba(255,255,255,0.08);box-shadow:0 30px 80px rgba(0,0,0,0.6);text-align:center;position:relative;">
+        <button onclick="document.getElementById('welcomeNewModal').style.display='none'" style="position:absolute;top:16px;right:16px;background:rgba(255,255,255,0.08);border:none;color:white;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;">✕</button>
+        <img src="https://res.cloudinary.com/dzrjag7ia/image/upload/v1776560628/NE_lmertz.jpg" style="width:80px;height:80px;border-radius:50%;object-fit:cover;border:3px solid rgba(99,102,241,0.4);margin-bottom:20px;" />
+        <h2 style="color:white;font-size:24px;font-weight:900;margin:0 0 10px;">¡Bienvenido a HabitTracker! 🎉</h2>
+        <p style="color:rgba(255,255,255,0.5);font-size:14px;line-height:1.7;margin:0 0 12px;">Estamos muy contentos de tenerte aquí.</p>
+        <div style="background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.2);border-radius:16px;padding:16px;margin-bottom:24px;text-align:left;">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;"><span>🎯</span><span style="color:rgba(255,255,255,0.7);font-size:13px;">Crea tu primer hábito hoy</span></div>
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;"><span>👥</span><span style="color:rgba(255,255,255,0.7);font-size:13px;">Conecta con la comunidad</span></div>
+            <div style="display:flex;align-items:center;gap:10px;"><span>🔥</span><span style="color:rgba(255,255,255,0.7);font-size:13px;">Mantén tu racha diaria</span></div>
+        </div>
+        <button onclick="document.getElementById('welcomeNewModal').style.display='none'" style="width:100%;padding:14px;border-radius:14px;border:none;background:linear-gradient(135deg,#6366f1,#2563eb);color:white;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;">✅ ¡Empezar ahora!</button>
+    </div>
+</div>
 
 <div id="cookieBanner" style="position:fixed; bottom:0; left:0; right:0; background:#1e293b; color:white; padding:16px; text-align:center; z-index:9999; display:none; box-shadow:0 -4px 20px rgba(0,0,0,0.3);">
     <p style="margin:0 0 12px;">🍪 Usamos cookies para mejorar tu experiencia. <a href="/Home/Privacy" style="color:#818cf8;">Más info</a></p>
     <button onclick="aceptarCookies()" style="background:#6366f1; border:none; padding:8px 24px; border-radius:30px; color:white; font-weight:bold; cursor:pointer;">Aceptar</button>
     <button onclick="rechazarCookies()" style="background:transparent; border:1px solid #94a3b8; padding:8px 24px; border-radius:30px; color:#cbd5e1; margin-left:8px; cursor:pointer;">Rechazar</button>
 </div>
+
+
 <script>
-  @if (User.Identity.IsAuthenticated)
+@if (User.Identity.IsAuthenticated && !User.IsInRole("Guest"))
 {
-    var cookieKey = $"cookiesAccepted_{User.FindFirst("UserId")?.Value}";
     <text>
+    // ══ COOKIES ══
     const cookieKey = 'cookiesAccepted_@(User.FindFirst("UserId")?.Value ?? "0")';
     if (localStorage.getItem(cookieKey) === null) {
         document.getElementById('cookieBanner').style.display = 'block';
@@ -1066,15 +1082,27 @@ if ("Notification" in window) Notification.requestPermission();
         localStorage.setItem(cookieKey, 'false');
         document.getElementById('cookieBanner').style.display = 'none';
     }
+
+    // ══ BIENVENIDA NUEVOS ══
+    (function() {
+        const welcomeKey = 'ht_welcome_shown_@(User.FindFirst("UserId")?.Value ?? "0")';
+        if (localStorage.getItem(welcomeKey)) return;
+        const modal = document.getElementById('welcomeNewModal');
+        if (!modal) return;
+        localStorage.setItem(welcomeKey, '1');
+        modal.style.display = 'flex';
+    })();
     </text>
 }
-// Bienvenida solo para nuevos
-function() {
-    const key = 'ht_welcome_shown_@(User.FindFirst("UserId")?.Value ?? "0")';
-    if (localStorage.getItem(key)) return;
-    if (!document.getElementById('welcomeNewModal')) return;
-    localStorage.setItem(key, '1');
-    document.getElementById('welcomeNewModal').style.display = 'flex';
+// Bloquear páginas de onboarding del historial
+(function() {
+    const bloqueadas = ['/account/completeperfil', '/account/completprofile', '/account/creandocuenta'];
+    const actual = window.location.pathname.toLowerCase();
+    const esBloqueada = bloqueadas.some(b => actual.includes(b));
+    if (!esBloqueada && sessionStorage.getItem('onboardingDone')) {
+        // reemplazar entradas del historial de onboarding
+        history.replaceState(null, '', window.location.href);
+    }
 })();
 </script>
 
