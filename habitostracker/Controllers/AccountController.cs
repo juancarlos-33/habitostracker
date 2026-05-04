@@ -2114,9 +2114,8 @@ namespace HabitTrackerApp.Controllers
                 Console.WriteLine($"❌ Error sesión GoogleResponse: {ex.Message}");
             }
 
-            // 🔥 solo mandar a CompleteProfile si es nuevo usuario
             if (isNewUser)
-                return RedirectToAction("Index", "Habit", null, "https");
+                return RedirectToAction("CompleteProfile", "Account");
 
             return Redirect("/Habit/Index?fromOAuth=1");
         }

@@ -37,16 +37,8 @@ namespace HabitTrackerApp.Controllers
             if (user == null) return RedirectToAction("Login", "Account");
 
             // 🔥 Si es Google y el perfil está incompleto → forzar CompleteProfile
-            if (user.IsGoogleAccount)
-            {
-                bool perfilIncompleto = string.IsNullOrEmpty(user.Gender)
-                    || user.Gender == "No especificado"
-                    || string.IsNullOrEmpty(user.Bio)
-                    || user.Bio == "Registrado con Google";
-
-                if (perfilIncompleto)
-                    return RedirectToAction("CompleteProfile", "Account");
-            }
+            if (!user.OnboardingComplete)
+                return RedirectToAction("CompleteProfile", "Account");
 
             var habits = _context.Habits
                 .Where(h => h.UserId == userId)
