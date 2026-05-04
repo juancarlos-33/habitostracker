@@ -464,6 +464,11 @@
 </div>
 
 <script>
+    // Bloquear botón atrás en CompleteProfile
+history.pushState(null, '', window.location.href);
+window.addEventListener('popstate', function() {
+    history.pushState(null, '', window.location.href);
+});
 // Partículas
 const container = document.getElementById('particles');
 for (let i = 0; i < 12; i++) {

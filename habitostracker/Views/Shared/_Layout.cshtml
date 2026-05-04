@@ -1093,6 +1093,7 @@ if ("Notification" in window) Notification.requestPermission();
         modal.style.display = 'flex';
     })();
     </text>
+
 }
 // ══ LIMPIAR HISTORIAL OAUTH ══
 (function() {
@@ -1107,12 +1108,20 @@ if ("Notification" in window) Notification.requestPermission();
     }
 })();
 // ══ BLOQUEAR PÁGINAS DE AUTENTICACIÓN EN HISTORIAL ══
+// ══ BLOQUEAR ATRÁS EN HOME ══
 (function() {
     const path = window.location.pathname.toLowerCase();
     const esHome = path === '/' || path.includes('/habit/index') || path === '/habit';
-    if (esHome) {
-        // Reemplazar la entrada actual para que "atrás" no vuelva a oauth
-        history.replaceState(null, document.title, window.location.href);
+    const vieneDeOauth = window.location.search.includes('fromOAuth=1');
+    
+    if (esHome || vieneDeOauth) {
+        if (vieneDeOauth) {
+            history.replaceState(null, '', window.location.pathname);
+        }
+        history.pushState(null, '', window.location.href);
+        window.addEventListener('popstate', function() {
+            history.pushState(null, '', window.location.href);
+        });
     }
 })();
 // ══ BLOQUEAR HISTORIAL GOOGLE OAUTH ══

@@ -319,6 +319,12 @@
 
 <script>
 
+    // Bloquear botón atrás en CreandoCuenta
+history.pushState(null, '', window.location.href);
+window.addEventListener('popstate', function() {
+    history.pushState(null, '', window.location.href);
+});
+
   
 sessionStorage.setItem('onboardingDone', '1');  // ← agregar esta líne
 
