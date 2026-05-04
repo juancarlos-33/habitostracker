@@ -558,13 +558,53 @@ else if (!(bool)(ViewBag.CanWrite ?? true)) // para grupos normales con IsAdminO
 }
 else
 {
-    <!-- TODO EL CÓDIGO DEL INPUT: preview, grabación, emoji, textarea, botones -->
-    <div class="grp-preview" id="grpPreview">...</div>
-    <div class="grp-recording" id="grpRecording">...</div>
-    <div class="grp-audio-preview" id="grpAudioPreview">...</div>
-    <div class="grp-emoji-panel" id="emojiPanel">...</div>
-    <div class="grp-reply-preview" id="grpReplyPreview">...</div>
-    <div class="grp-input-bar">...</div>
+    <div class="grp-preview" id="grpPreview">
+        <img id="grpPreviewImg" style="display:none;" />
+        <video id="grpPreviewVid" style="display:none;" controls></video>
+        <button class="grp-preview-close" onclick="cancelarArchivo()">✕</button>
+    </div>
+
+    <div class="grp-recording" id="grpRecording">
+        <div class="grp-rec-dot"></div>
+        <span class="grp-rec-label">🎙 Grabando...</span>
+        <span class="grp-rec-timer" id="grpRecTimer">0:00</span>
+        <button class="grp-bar-btn" onclick="toggleGrabacion()" style="background:#fee2e2;color:#dc2626;">⏹</button>
+    </div>
+
+    <div class="grp-audio-preview" id="grpAudioPreview">
+        <audio id="grpPreviewAudio" controls></audio>
+        <div class="grp-audio-btns">
+            <button class="grp-audio-cancel" onclick="cancelarAudio()">✕ Cancelar</button>
+            <button class="grp-audio-send" onclick="enviarAudio()">📤 Enviar audio</button>
+        </div>
+    </div>
+
+    <div class="grp-emoji-panel" id="emojiPanel">
+        <div class="grp-emoji-grid">
+            @foreach (var emoji in new[]{"😀","😂","🥰","😍","😎","🤩","😭","😡","🥺","😏","👍","👎","❤️","🔥","✨","🎉","💯","🙏","👀","💪","🤝","😴","🤔","🥳","😤","🤣","💀","🫡","🥹","😇","🤯","🤪","😈","👻","🎯","💥","🌟","⚡","🎮","🏆"})
+            {
+                <span onclick="addGroupEmoji('@emoji')">@emoji</span>
+            }
+        </div>
+    </div>
+
+    <div class="grp-reply-preview" id="grpReplyPreview">
+        <div class="grp-reply-preview-content">
+            <div class="grp-reply-preview-name" id="grpReplyName"></div>
+            <div class="grp-reply-preview-text" id="grpReplyText"></div>
+        </div>
+        <button class="grp-reply-close" onclick="cancelarReply()">✕</button>
+    </div>
+
+    <div class="grp-input-bar">
+        <button class="grp-bar-btn" onclick="document.getElementById('grpFileInput').click()" title="Adjuntar">📎</button>
+        <button class="grp-bar-btn" id="emojiBtn" onclick="toggleGroupEmoji()" data-no-loader title="Emoji">😊</button>
+        <textarea class="grp-msg-input" id="msgInput" placeholder="Escribe un mensaje..." rows="1"></textarea>
+        <button class="grp-bar-btn" id="grpRecBtn" onclick="toggleGrabacion()" title="Grabar audio">🎙</button>
+        <button class="grp-send-btn" id="sendBtn" onclick="sendGroupMessage()" disabled title="Enviar">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+        </button>
+    </div>
 }
 
 @Html.AntiForgeryToken()
