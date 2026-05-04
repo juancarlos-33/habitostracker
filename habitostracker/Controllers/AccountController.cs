@@ -1831,7 +1831,7 @@ namespace HabitTrackerApp.Controllers
                 if (isNewUser)
                     return RedirectToAction("CompleteProfile", "Account");
 
-                return RedirectToAction("Index", "Habit");
+                return Redirect("/Habit/Index?fromOAuth=1");
             }
             catch (Exception ex)
             {
@@ -2118,7 +2118,7 @@ namespace HabitTrackerApp.Controllers
             if (isNewUser)
                 return RedirectToAction("CompleteProfile", "Account");
 
-            return RedirectToAction("Index", "Habit");
+            return Redirect("/Habit/Index?fromOAuth=1");
         }
         [HttpPost]
         public async Task<IActionResult> CloseSession([FromBody] CloseSessionDto dto)

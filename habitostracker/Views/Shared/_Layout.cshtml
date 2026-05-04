@@ -1094,6 +1094,18 @@ if ("Notification" in window) Notification.requestPermission();
     })();
     </text>
 }
+// ══ LIMPIAR HISTORIAL OAUTH ══
+(function() {
+    if (window.location.search.includes('fromOAuth=1')) {
+        // Reemplazar la URL actual quitando el parámetro
+        history.replaceState(null, '', window.location.pathname);
+        // Bloquear el botón atrás
+        history.pushState(null, '', window.location.pathname);
+        window.addEventListener('popstate', function() {
+            history.pushState(null, '', window.location.pathname);
+        });
+    }
+})();
 // ══ BLOQUEAR PÁGINAS DE AUTENTICACIÓN EN HISTORIAL ══
 (function() {
     const path = window.location.pathname.toLowerCase();
