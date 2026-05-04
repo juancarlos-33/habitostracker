@@ -148,6 +148,9 @@
 .action-label { font-size: 12px; font-weight: 600; }
 .like-btn.liked .action-label { color: #ef4444; }
 .report-btn:hover { background: #fef2f2; color: #ef4444; }
+@@keyframes spinBtn {
+    to { transform: rotate(360deg); }
+}
 
 /* REPOST BADGE */
 .repost-badge { font-size: 12px; color: rgba(255,255,255,0.35); font-weight: 700; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; padding: 6px 0; }
@@ -249,6 +252,7 @@ body:not(.bg-dark) .prof-empty-sub { color: #475569; }
 </div>
 
 <div class="prof-wrap">
+    @Html.AntiForgeryToken()
 
     <!-- COVER -->
     <div class="prof-cover">
@@ -765,24 +769,37 @@ async function sendMsgReq() {
     } catch { showToast("❌ Error"); btn.disabled = false; btn.textContent = "Enviar →"; }
 }
 async function toggleFollow(btn, userId, isFollowing) {
+    // Mostrar estado de carga
+    const textoOriginal = btn.textContent;
+    btn.disabled = true;
+    btn.innerHTML = '<span style="display:inline-flex;align-items:center;gap:6px;"><span style="width:14px;height:14px;border:2px solid rgba(255,255,255,0.4);border-top-color:white;border-radius:50%;animation:spinBtn 0.6s linear infinite;display:inline-block;"></span> Cargando...</span>';
+    
     const url = isFollowing ? '/User/Unfollow' : '/User/Follow';
     const formData = new FormData();
     formData.append('userId', userId);
     formData.append('__RequestVerificationToken', document.querySelector('input[name="__RequestVerificationToken"]')?.value ?? '');
-    const res = await fetch(url, { method: 'POST', body: formData });
-    if (res.ok) {
-        if (isFollowing) {
-            btn.textContent = '+ Seguir';
-            btn.className = 'prof-btn primary';
-            btn.onclick = () => toggleFollow(btn, userId, false);
+    
+    try {
+        const res = await fetch(url, { method: 'POST', body: formData });
+        if (res.ok) {
+            if (isFollowing) {
+                btn.textContent = '+ Seguir';
+                btn.className = 'prof-btn primary';
+                btn.onclick = () => toggleFollow(btn, userId, false);
+            } else {
+                btn.textContent = '✓ Siguiendo';
+                btn.className = 'prof-btn secondary';
+                btn.onclick = () => toggleFollow(btn, userId, true);
+            }
         } else {
-            btn.textContent = '✓ Siguiendo';
-            btn.className = 'prof-btn secondary';
-            btn.onclick = () => toggleFollow(btn, userId, true);
+            btn.textContent = textoOriginal;
         }
+    } catch {
+        btn.textContent = textoOriginal;
+        showToast('❌ Error de conexión');
     }
+    btn.disabled = false;
 }
-
 function confirmarEliminarAmigo() {
     if (!confirm("¿Eliminar a @Model.Username de tus amigos?")) return;
     fetch("/User/RemoveFriend", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ blockedId: targetUserId }) })

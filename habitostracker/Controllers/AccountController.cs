@@ -2283,8 +2283,6 @@ namespace HabitTrackerApp.Controllers
             if (userIdClaim == null) return RedirectToAction("Login");
             var userId = int.Parse(userIdClaim.Value);
             var user = _context.Users.FirstOrDefault(u => u.Id == userId);
-            if (user != null && user.OnboardingComplete)
-                return RedirectToAction("Index", "Habit");
             return View();
         }
         private string GetOS(string userAgent)

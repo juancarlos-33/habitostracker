@@ -787,10 +787,22 @@ namespace HabitTrackerApp.Controllers
 
             // 🔒 Verificar si el grupo es solo para administradores
             var group = _context.Groups.FirstOrDefault(g => g.Id == groupId);
-            if (group != null && group.IsAdminOnly)
+            if (group == null) return Json(new { success = false });
+
+            // Verificar canal — solo creador y admins
+            if (group.Type == "channel")
             {
-                bool isAdminOrCreator = _context.GroupMembers
-                    .Any(m => m.GroupId == groupId && m.UserId == userId && m.IsActive && (m.Role == "Admin" || m.UserId == group.CreatorId));
+                bool isAdminOrCreator = userId == group.CreatorId ||
+                    _context.GroupMembers.Any(m => m.GroupId == groupId && m.UserId == userId && m.IsActive && m.Role == "Admin");
+                if (!isAdminOrCreator)
+                    return Json(new { success = false, error = "Solo el creador y administradores pueden escribir en este canal." });
+            }
+
+            // Verificar IsAdminOnly para grupos normales
+            if (group.IsAdminOnly)
+            {
+                bool isAdminOrCreator = userId == group.CreatorId ||
+                    _context.GroupMembers.Any(m => m.GroupId == groupId && m.UserId == userId && m.IsActive && m.Role == "Admin");
                 if (!isAdminOrCreator)
                     return Json(new { success = false, error = "Solo administradores pueden escribir aquí." });
             }
@@ -854,12 +866,24 @@ namespace HabitTrackerApp.Controllers
             if (member == null || file == null) return Json(new { success = false });
             // 🔒 Verificar si el grupo es solo para administradores
             var group = _context.Groups.FirstOrDefault(g => g.Id == groupId);
-            if (group != null && group.IsAdminOnly)
+            if (group == null) return Json(new { success = false });
+
+            // Verificar canal — solo creador y admins
+            if (group.Type == "channel")
             {
-                bool isAdminOrCreator = _context.GroupMembers
-                    .Any(m => m.GroupId == groupId && m.UserId == userId && m.IsActive && (m.Role == "Admin" || m.UserId == group.CreatorId));
+                bool isAdminOrCreator = userId == group.CreatorId ||
+                    _context.GroupMembers.Any(m => m.GroupId == groupId && m.UserId == userId && m.IsActive && m.Role == "Admin");
                 if (!isAdminOrCreator)
-                    return Json(new { success = false, error = "Solo administradores pueden enviar archivos aquí." });
+                    return Json(new { success = false, error = "Solo el creador y administradores pueden escribir en este canal." });
+            }
+
+            // Verificar IsAdminOnly para grupos normales
+            if (group.IsAdminOnly)
+            {
+                bool isAdminOrCreator = userId == group.CreatorId ||
+                    _context.GroupMembers.Any(m => m.GroupId == groupId && m.UserId == userId && m.IsActive && m.Role == "Admin");
+                if (!isAdminOrCreator)
+                    return Json(new { success = false, error = "Solo administradores pueden escribir aquí." });
             }
 
             var sender = _context.Users.FirstOrDefault(u => u.Id == userId);

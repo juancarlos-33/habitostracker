@@ -3,6 +3,10 @@
     Layout = "_LayoutLogin";
 }
 
+<meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate" />
+<meta http-equiv="Pragma" content="no-cache" />
+<meta http-equiv="Expires" content="0" />
+
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -17,7 +21,6 @@
     position: relative;
 }
 
-/* Fondo animado */
 .bg-orb {
     position: absolute;
     border-radius: 50%;
@@ -48,7 +51,6 @@
     50% { transform: scale(1.15) translate(20px,20px); }
 }
 
-/* Partículas que suben */
 .spark {
     position: absolute;
     width: 4px; height: 4px;
@@ -75,7 +77,6 @@
     to { opacity: 1; transform: translateY(0); }
 }
 
-/* Imagen con efecto */
 .creating-img-wrap {
     position: relative;
     width: 180px;
@@ -96,7 +97,6 @@
     50% { box-shadow: 0 0 80px rgba(99,102,241,0.6), 0 0 120px rgba(99,102,241,0.25); }
 }
 
-/* Anillo giratorio alrededor de la imagen */
 .creating-ring {
     position: absolute;
     inset: -10px;
@@ -117,7 +117,6 @@
 }
 @@keyframes spin { to { transform: rotate(360deg); } }
 
-/* Logo sobre la imagen */
 .creating-logo-badge {
     position: absolute;
     bottom: 4px; right: 4px;
@@ -153,12 +152,8 @@
     margin-bottom: 40px;
     line-height: 1.6;
 }
-.creating-subtitle span {
-    color: #818cf8;
-    font-weight: 600;
-}
+.creating-subtitle span { color: #818cf8; font-weight: 600; }
 
-/* Steps animados */
 .creating-steps {
     display: flex;
     flex-direction: column;
@@ -209,11 +204,7 @@
     to { transform: scale(1); }
 }
 
-/* Barra de progreso */
-.creating-progress-wrap {
-    max-width: 320px;
-    margin: 0 auto 20px;
-}
+.creating-progress-wrap { max-width: 320px; margin: 0 auto 20px; }
 .creating-progress-bar {
     height: 6px;
     background: rgba(255,255,255,0.08);
@@ -228,19 +219,9 @@
     border-radius: 10px;
     transition: width 0.4s ease;
 }
-.creating-progress-label {
-    font-size: 12px;
-    color: rgba(255,255,255,0.35);
-    text-align: center;
-}
+.creating-progress-label { font-size: 12px; color: rgba(255,255,255,0.35); text-align: center; }
 
-/* Dots de carga */
-.creating-dots {
-    display: flex;
-    justify-content: center;
-    gap: 6px;
-    margin-top: 8px;
-}
+.creating-dots { display: flex; justify-content: center; gap: 6px; margin-top: 8px; }
 .creating-dot {
     width: 8px; height: 8px;
     border-radius: 50%;
@@ -257,18 +238,13 @@
 
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
-<!-- Orbes de fondo -->
 <div class="bg-orb bg-orb-1"></div>
 <div class="bg-orb bg-orb-2"></div>
 <div class="bg-orb bg-orb-3"></div>
-
-<!-- Partículas -->
 <div id="sparks"></div>
 
 <div class="creating-wrapper">
     <div class="creating-card">
-
-        <!-- Imagen con anillos -->
         <div class="creating-img-wrap">
             <div class="creating-ring"></div>
             <div class="creating-ring-2"></div>
@@ -281,7 +257,6 @@
         <h1 class="creating-title">Creando tu cuenta</h1>
         <p class="creating-subtitle">Espera un momento, <span>estamos preparando todo</span><br/>para que empieces tu journey 🚀</p>
 
-        <!-- Pasos -->
         <div class="creating-steps">
             <div class="creating-step" id="step1">
                 <div class="step-icon purple">🔐</div>
@@ -300,7 +275,6 @@
             </div>
         </div>
 
-        <!-- Progreso -->
         <div class="creating-progress-wrap">
             <div class="creating-progress-bar">
                 <div class="creating-progress-fill" id="progressFill"></div>
@@ -313,22 +287,24 @@
             <div class="creating-dot"></div>
             <div class="creating-dot"></div>
         </div>
-
     </div>
 </div>
 
 <script>
+// ── BLOQUEAR ATRÁS ──
+sessionStorage.setItem('onboardingDone', '1');
 
-    // Bloquear botón atrás en CreandoCuenta
-history.pushState(null, '', window.location.href);
-window.addEventListener('popstate', function() {
+// Llenar historial para bloquear atrás
+for (let i = 0; i < 10; i++) {
     history.pushState(null, '', window.location.href);
+}
+window.addEventListener('popstate', function() {
+    for (let i = 0; i < 5; i++) {
+        history.pushState(null, '', window.location.href);
+    }
 });
 
-  
-sessionStorage.setItem('onboardingDone', '1');  // ← agregar esta líne
-
-// Partículas
+// ── PARTÍCULAS ──
 const sparksEl = document.getElementById('sparks');
 for (let i = 0; i < 20; i++) {
     const s = document.createElement('div');
@@ -345,7 +321,7 @@ for (let i = 0; i < 20; i++) {
     sparksEl.appendChild(s);
 }
 
-// Animación de pasos y progreso
+// ── PASOS ──
 const steps = [
     { check: 'check1', progress: 33, label: 'Verificando identidad...' },
     { check: 'check2', progress: 66, label: 'Configurando perfil...' },
@@ -371,7 +347,7 @@ function runStep() {
 
 setTimeout(runStep, 500);
 
-// Redirigir después de 3 segundos
+// ── REDIRIGIR AL HOME ──
 setTimeout(() => {
     window.location.replace('/Habit/Index');
 }, 3000);
