@@ -1109,15 +1109,19 @@ if ("Notification" in window) Notification.requestPermission();
 })();
 // ══ BLOQUEAR PÁGINAS DE AUTENTICACIÓN EN HISTORIAL ══
 // ══ BLOQUEAR ATRÁS EN HOME ══
+// ══ BLOQUEAR ATRÁS EN HOME ══
 (function() {
     const path = window.location.pathname.toLowerCase();
     const esHome = path === '/' || path.includes('/habit/index') || path === '/habit';
     const vieneDeOauth = window.location.search.includes('fromOAuth=1');
     
-    if (esHome || vieneDeOauth) {
+    if (esHome) {
         if (vieneDeOauth) {
+            // Limpiar el parámetro de la URL
             history.replaceState(null, '', window.location.pathname);
         }
+        // Agregar DOS entradas para que ambos clicks de atrás queden bloqueados
+        history.pushState(null, '', window.location.href);
         history.pushState(null, '', window.location.href);
         window.addEventListener('popstate', function() {
             history.pushState(null, '', window.location.href);
