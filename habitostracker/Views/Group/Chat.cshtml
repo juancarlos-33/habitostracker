@@ -544,7 +544,7 @@ else if (!string.IsNullOrEmpty(msg.Content) && (msg.Content.Contains("cloudinary
 {
     <div class="grp-left-banner"><span>⚠️</span><span>Ya no eres miembro de este grupo. Solo puedes ver el historial.</span></div>
 }
-else if (Model.Type == "channel" && (User.FindFirst("UserId").Value != Model.CreatorId.ToString() && !isAdmin))
+else if (Model.Type == "channel" && !isAdmin && User.FindFirst("UserId").Value != Model.CreatorId.ToString())
 {
     <div class="grp-left-banner" style="background:rgba(239,68,68,0.1); border-color:rgba(239,68,68,0.2);">
         <span>🔒</span><span>Solo el creador y administradores pueden escribir en este canal.</span>

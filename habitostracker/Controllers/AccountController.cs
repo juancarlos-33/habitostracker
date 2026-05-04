@@ -891,20 +891,7 @@ namespace HabitTrackerApp.Controllers
             _context.SaveChanges();
 
             // 🔥 Crear publicación de bienvenida automática
-            var welcomePost = new Post
-            {
-                UserId = newUser.Id,
-                Username = newUser.Username,
-                Description = $"🎉 ¡Bienvenido/a {newUser.Username}! La comunidad de HabitTracker está feliz de tenerte. Cuéntanos, ¿qué hábito quieres construir hoy? 💪",
-                ImagePath = null, // o puedes poner una imagen por defecto
-                CreatedAt = DateTime.Now,
-                IsSensitive = false,
-                Privacy = "Public", // o "Friends" si prefieres
-                IsWelcomePost = true,
-                IsOfficialAnnouncement = false
-            };
-            _context.Posts.Add(welcomePost);
-            await _context.SaveChangesAsync();
+          
 
             await SendConfirmationCode(newUser);
             _context.SaveChanges();
@@ -1766,19 +1753,7 @@ namespace HabitTrackerApp.Controllers
                     _context.SaveChanges();
 
                     // 🔥 PUBLICACIÓN DE BIENVENIDA PARA CUENTA NUEVA
-                    var welcomePost = new Post
-                    {
-                        UserId = user.Id,
-                        Username = user.Username,
-                        Description = $"🎉 ¡Bienvenido/a {user.Username}! La comunidad de HabitTracker está feliz de tenerte. Cuéntanos, ¿qué hábito quieres construir hoy? 💪",
-                        ImagePath = null,
-                        CreatedAt = DateTime.Now,
-                        IsSensitive = false,
-                        Privacy = "Public",
-                        IsWelcomePost = true
-                    };
-                    _context.Posts.Add(welcomePost);
-                    await _context.SaveChangesAsync();
+                  
 
                     await SendSystemWelcomeMessage(user.Id);
                 }
@@ -2052,19 +2027,7 @@ namespace HabitTrackerApp.Controllers
                     _context.SaveChanges();
 
                     // 🔥 PUBLICACIÓN DE BIENVENIDA PARA INVITADO QUE CONVIERTE
-                    var welcomePost = new Post
-                    {
-                        UserId = currentUser.Id,
-                        Username = currentUser.Username,
-                        Description = $"🎉 ¡Bienvenido/a {currentUser.Username}! La comunidad de HabitTracker está feliz de tenerte. Cuéntanos, ¿qué hábito quieres construir hoy? 💪",
-                        ImagePath = null,
-                        CreatedAt = DateTime.Now,
-                        IsSensitive = false,
-                        Privacy = "Public",
-                        IsWelcomePost = true
-                    };
-                    _context.Posts.Add(welcomePost);
-                    await _context.SaveChangesAsync();
+                  
 
                     await SignInUser(currentUser);
                     return RedirectToAction("CompleteProfile", "Account");
@@ -2274,6 +2237,18 @@ namespace HabitTrackerApp.Controllers
         [HttpGet]
         public IActionResult CompleteProfile()
         {
+            var userIdClaim = User.FindFirst("UserId");
+            if (userIdClaim == null) return RedirectToAction("Login");
+
+            var userId = int.Parse(userIdClaim.Value);
+            var user = _context.Users.FirstOrDefault(u => u.Id == userId);
+
+            // Si ya completó el perfil, ir al home
+            if (user != null && !string.IsNullOrEmpty(user.Gender)
+                && user.Gender != "No especificado"
+                && user.Gender != "")
+                return RedirectToAction("Index", "Habit");
+
             return View();
         }
 
@@ -2455,7 +2430,7 @@ namespace HabitTrackerApp.Controllers
                         EmailConfirmed = true,
                         CreatedAt = DateTime.UtcNow,
                         ProfileImage = SYSTEM_IMAGE,
-                        Bio = "Cuenta oficial de HabitTracker",
+                        Bio = "¿Tienes alguna queja o reclamo? Comunícaselo a un administrador o escríbenos a privacidad@habittracker.app",
                         FullName = "HabitTracker Official",
                         Gender = "No especificado"
                     };

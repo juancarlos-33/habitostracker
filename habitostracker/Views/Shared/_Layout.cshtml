@@ -1050,19 +1050,33 @@ if ("Notification" in window) Notification.requestPermission();
     <button onclick="rechazarCookies()" style="background:transparent; border:1px solid #94a3b8; padding:8px 24px; border-radius:30px; color:#cbd5e1; margin-left:8px; cursor:pointer;">Rechazar</button>
 </div>
 <script>
+  @if (User.Identity.IsAuthenticated)
+{
+    var cookieKey = $"cookiesAccepted_{User.FindFirst("UserId")?.Value}";
+    <text>
+    const cookieKey = 'cookiesAccepted_@(User.FindFirst("UserId")?.Value ?? "0")';
+    if (localStorage.getItem(cookieKey) === null) {
+        document.getElementById('cookieBanner').style.display = 'block';
+    }
     function aceptarCookies() {
-        localStorage.setItem('cookiesAccepted', 'true');
+        localStorage.setItem(cookieKey, 'true');
         document.getElementById('cookieBanner').style.display = 'none';
     }
     function rechazarCookies() {
-        localStorage.setItem('cookiesAccepted', 'false');
+        localStorage.setItem(cookieKey, 'false');
         document.getElementById('cookieBanner').style.display = 'none';
     }
-    if (localStorage.getItem('cookiesAccepted') === null) {
-        document.getElementById('cookieBanner').style.display = 'block';
-    }
+    </text>
+}
 </script>
-
+// Bienvenida solo para nuevos
+(function() {
+    const key = 'ht_welcome_shown_@(User.FindFirst("UserId")?.Value ?? "0")';
+    if (localStorage.getItem(key)) return;
+    if (!document.getElementById('welcomeNewModal')) return;
+    localStorage.setItem(key, '1');
+    document.getElementById('welcomeNewModal').style.display = 'flex';
+})();
 
 </body>
 </html>

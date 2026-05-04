@@ -161,6 +161,16 @@ body.bg-dark .post-stats { color: #64748b !important; }
 body.bg-dark .action-btn { color: #94a3b8 !important; }
 body.bg-dark .action-btn:hover { background: #2d2d3d !important; color: #f1f5f9 !important; }
 
+body:not(.bg-dark) .private-wall {
+    background: linear-gradient(135deg,rgba(99,102,241,0.06),rgba(124,58,237,0.06));
+    border: 1px solid rgba(99,102,241,0.15);
+}
+body:not(.bg-dark) .private-wall-title { color: #1e293b; }
+body:not(.bg-dark) .private-wall-sub { color: #475569; }
+body:not(.bg-dark) .private-wall-hint { color: #4f46e5; background: rgba(99,102,241,0.08); border-color: rgba(99,102,241,0.2); }
+body:not(.bg-dark) .private-wall-notice { color: #94a3b8; }
+body:not(.bg-dark) .private-wall-lock { filter: drop-shadow(0 8px 28px rgba(99,102,241,0.2)); }
+
 /* SHARE */
 .share-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; z-index: 9998; backdrop-filter: blur(2px); }
 .share-menu { position: fixed; bottom: 0; left: 0; right: 0; background: white; border-radius: 24px 24px 0 0; padding: 16px 20px 32px; display: none; z-index: 9999; box-shadow: 0 -10px 40px rgba(0,0,0,0.15); }
@@ -269,17 +279,11 @@ body:not(.bg-dark) .prof-empty-sub { color: #475569; }
                 <div class="prof-actions" style="padding-top:16px;">
                     @if (isFollowing)
                     {
-                        <form asp-controller="User" asp-action="Unfollow" method="post">
-                            <input type="hidden" name="userId" value="@Model.Id" />
-                            <button class="prof-btn secondary">✓ Siguiendo</button>
-                        </form>
+                        <button class="prof-btn secondary" onclick="toggleFollow(this, @Model.Id, true)" id="followBtn">✓ Siguiendo</button>
                     }
                     else
                     {
-                        <form asp-controller="User" asp-action="Follow" method="post">
-                            <input type="hidden" name="userId" value="@Model.Id" />
-                            <button class="prof-btn primary">+ Seguir</button>
-                        </form>
+                       <button class="prof-btn primary" onclick="toggleFollow(this, @Model.Id, false)" id="followBtn">+ Seguir</button>
                     }
                     @if (isFriend)
                     {
@@ -759,6 +763,24 @@ async function sendMsgReq() {
         if (data.success) { closeMsgReqModal(); showToast("✅ Solicitud enviada"); }
         else { showToast("⚠️ " + (data.error ?? "Error")); btn.disabled = false; btn.textContent = "Enviar →"; }
     } catch { showToast("❌ Error"); btn.disabled = false; btn.textContent = "Enviar →"; }
+}
+async function toggleFollow(btn, userId, isFollowing) {
+    const url = isFollowing ? '/User/Unfollow' : '/User/Follow';
+    const formData = new FormData();
+    formData.append('userId', userId);
+    formData.append('__RequestVerificationToken', document.querySelector('input[name="__RequestVerificationToken"]')?.value ?? '');
+    const res = await fetch(url, { method: 'POST', body: formData });
+    if (res.ok) {
+        if (isFollowing) {
+            btn.textContent = '+ Seguir';
+            btn.className = 'prof-btn primary';
+            btn.onclick = () => toggleFollow(btn, userId, false);
+        } else {
+            btn.textContent = '✓ Siguiendo';
+            btn.className = 'prof-btn secondary';
+            btn.onclick = () => toggleFollow(btn, userId, true);
+        }
+    }
 }
 
 function confirmarEliminarAmigo() {
