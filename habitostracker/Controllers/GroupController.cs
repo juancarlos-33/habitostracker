@@ -1285,15 +1285,37 @@ namespace HabitTrackerApp.Controllers
                 .Where(m => m.GroupId == groupId && m.IsActive)
                 .Select(m => m.UserId).ToList();
 
-            var friendIds = _context.FriendRequests
-                .Where(f => (f.SenderId == userId || f.ReceiverId == userId) && f.Status == "Accepted")
-                .Select(f => f.SenderId == userId ? f.ReceiverId : f.SenderId)
-                .ToList();
+            var group = _context.Groups.FirstOrDefault(g => g.Id == groupId);
+            bool isPublicOrChannel = group?.Type == "public" || group?.Type == "channel";
 
-            var available = _context.Users
-                .Where(u => friendIds.Contains(u.Id) && !currentMemberIds.Contains(u.Id))
-                .Select(u => new { u.Id, u.Username, img = u.ProfileImage ?? u.ProfilePicture ?? "" })
-                .ToList();
+            List<object> available;
+
+            if (isPublicOrChannel)
+            {
+                available = _context.Users
+                    .Where(u => !currentMemberIds.Contains(u.Id)
+                        && u.Role != "Guest"
+                        && u.Role != "System"
+                        && u.Role != "SuperAdmin")
+                    .Select(u => new { u.Id, u.Username, img = u.ProfileImage ?? u.ProfilePicture ?? "" })
+                    .Cast<object>()
+                    .ToList();
+            }
+            else
+            {
+                var friendIds = _context.FriendRequests
+                    .Where(f => (f.SenderId == userId || f.ReceiverId == userId) && f.Status == "Accepted")
+                    .Select(f => f.SenderId == userId ? f.ReceiverId : f.SenderId)
+                    .ToList();
+
+                available = _context.Users
+                    .Where(u => friendIds.Contains(u.Id) && !currentMemberIds.Contains(u.Id))
+                    .Select(u => new { u.Id, u.Username, img = u.ProfileImage ?? u.ProfilePicture ?? "" })
+                    .Cast<object>()
+                    .ToList();
+            }
+
+            return Json(available);
 
             return Json(available);
         }
