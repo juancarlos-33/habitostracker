@@ -550,7 +550,7 @@ else if (Model.Type == "channel" && !isAdmin && User.FindFirst("UserId").Value !
         <span>🔒</span><span>Solo el creador y administradores pueden escribir en este canal.</span>
     </div>
 }
-else if (ViewBag.CanWrite == false) // para grupos normales con IsAdminOnly
+else if (!(bool)(ViewBag.CanWrite ?? true)) // para grupos normales con IsAdminOnly
 {
     <div class="grp-left-banner" style="background:rgba(239,68,68,0.1); border-color:rgba(239,68,68,0.2);">
         <span>🔒</span><span>Solo el creador y administradores pueden escribir en este grupo.</span>
