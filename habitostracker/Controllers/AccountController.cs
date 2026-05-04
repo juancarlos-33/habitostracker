@@ -2116,7 +2116,7 @@ namespace HabitTrackerApp.Controllers
 
             // 🔥 solo mandar a CompleteProfile si es nuevo usuario
             if (isNewUser)
-                return RedirectToAction("CompleteProfile", "Account");
+                return RedirectToAction("Index", "Habit", null, "https");
 
             return Redirect("/Habit/Index?fromOAuth=1");
         }
@@ -2229,6 +2229,9 @@ namespace HabitTrackerApp.Controllers
         [HttpGet]
         public IActionResult CompleteProfile()
         {
+            Response.Headers["Cache-Control"] = "no-store, no-cache, must-revalidate";
+            Response.Headers["Pragma"] = "no-cache";
+
             var userIdClaim = User.FindFirst("UserId");
             if (userIdClaim == null) return RedirectToAction("Login");
             var userId = int.Parse(userIdClaim.Value);
@@ -2238,6 +2241,7 @@ namespace HabitTrackerApp.Controllers
                 return RedirectToAction("Index", "Habit");
             return View();
         }
+
 
         [HttpPost]
         [IgnoreAntiforgeryToken] // 🔥 Google OAuth rompe el token
@@ -2258,12 +2262,16 @@ namespace HabitTrackerApp.Controllers
 
             await RefreshUserSession(user);
 
+            Response.Headers["Cache-Control"] = "no-store, no-cache, must-revalidate";
+            Response.Headers["Pragma"] = "no-cache";
             return RedirectToAction("CreandoCuenta", "Account");
         }
 
 
         public IActionResult CreandoCuenta()
         {
+            Response.Headers["Cache-Control"] = "no-store, no-cache, must-revalidate";
+            Response.Headers["Pragma"] = "no-cache";
             return View();
         }
         private string GetOS(string userAgent)
