@@ -1831,7 +1831,7 @@ namespace HabitTrackerApp.Controllers
                 if (isNewUser)
                     return RedirectToAction("CompleteProfile", "Account");
 
-                return Redirect("/Habit/Index?fromOAuth=1");
+                return RedirectToAction("OAuthLanding", "Account");
             }
             catch (Exception ex)
             {
@@ -1961,6 +1961,13 @@ namespace HabitTrackerApp.Controllers
           
 
             return Challenge(properties, "Google");
+        }
+        [HttpGet]
+        public IActionResult OAuthLanding()
+        {
+            Response.Headers["Cache-Control"] = "no-store, no-cache, must-revalidate";
+            Response.Headers["Pragma"] = "no-cache";
+            return View();
         }
         public async Task<IActionResult> GoogleResponse()
         {
@@ -2117,7 +2124,7 @@ namespace HabitTrackerApp.Controllers
             if (isNewUser)
                 return RedirectToAction("CompleteProfile", "Account");
 
-            return Redirect("/Habit/Index?fromOAuth=1");
+            return RedirectToAction("OAuthLanding", "Account");
         }
         [HttpPost]
         public async Task<IActionResult> CloseSession([FromBody] CloseSessionDto dto)
