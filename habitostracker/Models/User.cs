@@ -102,6 +102,7 @@ namespace HabitTrackerApp.Models
         public bool CommentsDisabled { get; set; } = false;
         public bool IsOfficialAnnouncement { get; set; } = false;
         public bool IsWarningPost { get; set; } = false;
+        public bool OnboardingComplete { get; set; } = false;
 
         // En Group.cs agregar:
         public bool ShowHealthWarning { get; set; } = false;

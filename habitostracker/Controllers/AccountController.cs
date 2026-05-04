@@ -2236,8 +2236,7 @@ namespace HabitTrackerApp.Controllers
             if (userIdClaim == null) return RedirectToAction("Login");
             var userId = int.Parse(userIdClaim.Value);
             var user = _context.Users.FirstOrDefault(u => u.Id == userId);
-            if (user != null && !string.IsNullOrEmpty(user.Gender)
-                && user.Gender != "No especificado")
+            if (user != null && user.OnboardingComplete)
                 return RedirectToAction("Index", "Habit");
             return View();
         }
@@ -2256,6 +2255,7 @@ namespace HabitTrackerApp.Controllers
 
             user.Gender = gender;
             user.Bio = bio;
+            user.OnboardingComplete = true;
             _context.SaveChanges();
 
             _ = SendWelcomeEmail(user);
@@ -2272,6 +2272,13 @@ namespace HabitTrackerApp.Controllers
         {
             Response.Headers["Cache-Control"] = "no-store, no-cache, must-revalidate";
             Response.Headers["Pragma"] = "no-cache";
+
+            var userIdClaim = User.FindFirst("UserId");
+            if (userIdClaim == null) return RedirectToAction("Login");
+            var userId = int.Parse(userIdClaim.Value);
+            var user = _context.Users.FirstOrDefault(u => u.Id == userId);
+            if (user != null && user.OnboardingComplete)
+                return RedirectToAction("Index", "Habit");
             return View();
         }
         private string GetOS(string userAgent)

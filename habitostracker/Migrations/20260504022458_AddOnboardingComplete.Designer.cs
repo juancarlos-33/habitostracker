@@ -3,6 +3,7 @@ using System;
 using HabitTrackerApp.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace habitostracker.Migrations
 {
     [DbContext(typeof(HabitDbContext))]
-    partial class HabitDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260504022458_AddOnboardingComplete")]
+    partial class AddOnboardingComplete
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

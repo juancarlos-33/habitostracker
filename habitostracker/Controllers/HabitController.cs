@@ -29,6 +29,8 @@ namespace HabitTrackerApp.Controllers
         // 📌 DASHBOARD
         public IActionResult Index()
         {
+            Response.Headers["Cache-Control"] = "no-store, no-cache, must-revalidate";
+            Response.Headers["Pragma"] = "no-cache";
             var userId = GetUserId();
 
             var user = _context.Users.FirstOrDefault(u => u.Id == userId);
