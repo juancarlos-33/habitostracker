@@ -1944,31 +1944,24 @@ namespace HabitTrackerApp.Controllers
 
         public IActionResult GoogleLogin()
         {
-            // 🔥 OBTENER IP
             string ip = HttpContext.Request.Headers["X-Forwarded-For"].FirstOrDefault();
-
             if (!string.IsNullOrEmpty(ip))
-            {
                 ip = ip.Split(',').First().Trim();
-            }
             else
-            {
                 ip = HttpContext.Connection.RemoteIpAddress?.ToString();
-            }
-
-            // 🔥 VALIDAR BLOQUEO ANTES DE GOOGLE
-       
 
             var redirectUrl = Url.Action("GoogleResponse", "Account");
 
             var properties = new AuthenticationProperties
             {
-                RedirectUri = redirectUrl
+                RedirectUri = redirectUrl,
+                IsPersistent = true,
+                ExpiresUtc = DateTimeOffset.UtcNow.AddDays(30)
             };
+            properties.Parameters.Add("prompt", "select_account");
 
             return Challenge(properties, "Google");
         }
-
         public async Task<IActionResult> GoogleResponse()
         {
             string ip = HttpContext.Request.Headers["X-Forwarded-For"].FirstOrDefault();
