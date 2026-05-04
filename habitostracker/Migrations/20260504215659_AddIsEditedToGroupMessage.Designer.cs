@@ -3,6 +3,7 @@ using System;
 using HabitTrackerApp.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace habitostracker.Migrations
 {
     [DbContext(typeof(HabitDbContext))]
-    partial class HabitDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260504215659_AddIsEditedToGroupMessage")]
+    partial class AddIsEditedToGroupMessage
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -382,9 +385,6 @@ namespace habitostracker.Migrations
                         .IsRequired()
                         .HasColumnType("longtext");
 
-                    b.Property<int?>("PinnedMessageId")
-                        .HasColumnType("int");
-
                     b.Property<bool>("ShowHealthWarning")
                         .HasColumnType("tinyint(1)");
 
@@ -395,8 +395,6 @@ namespace habitostracker.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("CreatorId");
-
-                    b.HasIndex("PinnedMessageId");
 
                     b.ToTable("Groups");
                 });
@@ -1090,30 +1088,6 @@ namespace habitostracker.Migrations
                     b.ToTable("SavedPosts");
                 });
 
-            modelBuilder.Entity("HabitTrackerApp.Models.StarredMessage", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    b.Property<int>("MessageId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("StarredAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<int>("UserId")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("MessageId");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("StarredMessages");
-                });
-
             modelBuilder.Entity("HabitTrackerApp.Models.Story", b =>
                 {
                     b.Property<int>("Id")
@@ -1571,14 +1545,7 @@ namespace habitostracker.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("HabitTrackerApp.Models.GroupMessage", "PinnedMessage")
-                        .WithMany()
-                        .HasForeignKey("PinnedMessageId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
                     b.Navigation("Creator");
-
-                    b.Navigation("PinnedMessage");
                 });
 
             modelBuilder.Entity("HabitTrackerApp.Models.GroupJoinRequest", b =>
@@ -1629,8 +1596,7 @@ namespace habitostracker.Migrations
 
                     b.HasOne("HabitTrackerApp.Models.GroupMessage", "ReplyToMessage")
                         .WithMany()
-                        .HasForeignKey("ReplyToMessageId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .HasForeignKey("ReplyToMessageId");
 
                     b.HasOne("HabitTrackerApp.Models.User", "Sender")
                         .WithMany()
@@ -1892,25 +1858,6 @@ namespace habitostracker.Migrations
                         .IsRequired();
 
                     b.Navigation("Post");
-                });
-
-            modelBuilder.Entity("HabitTrackerApp.Models.StarredMessage", b =>
-                {
-                    b.HasOne("HabitTrackerApp.Models.GroupMessage", "Message")
-                        .WithMany()
-                        .HasForeignKey("MessageId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("HabitTrackerApp.Models.User", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Message");
-
-                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("HabitTrackerApp.Models.Story", b =>

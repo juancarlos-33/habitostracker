@@ -357,7 +357,10 @@ body.bg-dark .grp-last-msg.unread { color: #94a3b8 !important; }
 
                     bool isMine = lastMsg?.SenderId == myId;
                     string typeBadge = g.Type == "channel" ? "📢" : g.Type == "public" ? "🌍" : "";
+                  
                     idx++;
+var unreadByGroup2 = ViewBag.UnreadByGroup as Dictionary<int, int> ?? new Dictionary<int, int>();
+var unreadCount = unreadByGroup2.ContainsKey(g.Id) ? unreadByGroup2[g.Id] : 0;
 
                     <a asp-controller="Group" asp-action="Chat" asp-route-id="@g.Id"
                        class="grp-card" data-name="@g.Name.ToLower()">
@@ -374,20 +377,27 @@ body.bg-dark .grp-last-msg.unread { color: #94a3b8 !important; }
                                     { <span style="margin-right:4px;">@typeBadge</span> }
                                     @g.Name
                                 </div>
-                                <div class="grp-last-msg">
+                             <div class="grp-last-msg @(unreadCount > 0 ? "unread" : "")">
                                     @if (isMine && lastMsg != null && !lastMsg.IsSystem) { <text>Tú: </text> }
                                     @lastMsgText
                                 </div>
                             </div>
-                            <div class="grp-card-right">
-                                @if (!string.IsNullOrEmpty(timeLabel))
-                                { <span class="grp-time">@timeLabel</span> }
-                                @if (isAdmin)
-                                { <span class="grp-role-badge admin">👑 Admin</span> }
-                                else
-                                { <span class="grp-role-badge member">💬 Miembro</span> }
-                                <span class="grp-card-chevron">›</span>
-                            </div>
+             
+<div class="grp-card-right">
+    @if (!string.IsNullOrEmpty(timeLabel))
+    { <span class="grp-time" style="@(unreadCount > 0 ? "color:#6366f1;font-weight:700;" : "")">@timeLabel</span> }
+    @if (unreadCount > 0)
+    {
+        <span style="background:#6366f1;color:white;font-size:11px;font-weight:800;padding:2px 8px;border-radius:20px;min-width:20px;text-align:center;">
+            @(unreadCount > 99 ? "99+" : unreadCount.ToString())
+        </span>
+    }
+    else if (isAdmin)
+    { <span class="grp-role-badge admin">👑 Admin</span> }
+    else
+    { <span class="grp-role-badge member">💬 Miembro</span> }
+    <span class="grp-card-chevron">›</span>
+</div>
                         </div>
                     </a>
                 }
@@ -488,4 +498,50 @@ async function solicitarUnirse(groupId, btn) {
         btn.textContent = '✋ Solicitar';
     }
 }
+// ══ ANUNCIO PRIMERA VEZ GRUPOS ══
+(function() {
+    const key = 'ht_groups_welcome_seen_@(User.FindFirst("UserId")?.Value ?? "0")';
+    if (localStorage.getItem(key)) return;
+
+    const overlay = document.createElement('div');
+    overlay.id = 'welcomeGroupsOverlay';
+    overlay.style.cssText = 'position:fixed;inset:0;z-index:999999;background:rgba(0,0,0,0.75);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;padding:20px;';
+
+    overlay.innerHTML = `
+        <div style="background:linear-gradient(135deg,#0f172a,#1e293b);border:1px solid rgba(255,255,255,0.08);border-radius:28px;max-width:420px;width:100%;padding:36px 32px;box-shadow:0 30px 80px rgba(0,0,0,0.6);position:relative;">
+            <div style="font-size:48px;text-align:center;margin-bottom:16px;">👥</div>
+            <h3 style="color:white;font-size:20px;font-weight:800;text-align:center;margin:0 0 8px;">Bienvenido a Grupos</h3>
+            <p style="color:rgba(255,255,255,0.45);font-size:13px;text-align:center;margin:0 0 24px;line-height:1.6;">Los grupos son espacios para conectar con otros. Úsalos con responsabilidad.</p>
+            <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:28px;">
+                <div style="display:flex;align-items:flex-start;gap:12px;background:rgba(255,255,255,0.04);padding:12px 14px;border-radius:14px;border:1px solid rgba(255,255,255,0.06);">
+                    <span style="font-size:18px;flex-shrink:0;">⚠️</span>
+                    <span style="color:rgba(255,255,255,0.7);font-size:13px;line-height:1.5;">Ten cuidado con grupos de personas que no conoces. No compartas información personal como dirección, teléfono o datos bancarios.</span>
+                </div>
+                <div style="display:flex;align-items:flex-start;gap:12px;background:rgba(255,255,255,0.04);padding:12px 14px;border-radius:14px;border:1px solid rgba(255,255,255,0.06);">
+                    <span style="font-size:18px;flex-shrink:0;">🚫</span>
+                    <span style="color:rgba(255,255,255,0.7);font-size:13px;line-height:1.5;">Nadie del equipo de HabitTracker te pedirá contraseñas o datos sensibles por un grupo. Si alguien lo hace, repórtalo inmediatamente.</span>
+                </div>
+                <div style="display:flex;align-items:flex-start;gap:12px;background:rgba(255,255,255,0.04);padding:12px 14px;border-radius:14px;border:1px solid rgba(255,255,255,0.06);">
+                    <span style="font-size:18px;flex-shrink:0;">🤝</span>
+                    <span style="color:rgba(255,255,255,0.7);font-size:13px;line-height:1.5;">Mantén un ambiente respetuoso. El acoso, spam o contenido inapropiado puede resultar en la eliminación de tu cuenta.</span>
+                </div>
+                <div style="display:flex;align-items:flex-start;gap:12px;background:rgba(99,102,241,0.08);padding:12px 14px;border-radius:14px;border:1px solid rgba(99,102,241,0.2);">
+                    <span style="font-size:18px;flex-shrink:0;">🤖</span>
+                    <span style="color:rgba(255,255,255,0.7);font-size:13px;line-height:1.5;">Contamos con <strong style="color:#818cf8;">IA y moderadores</strong> monitoreando los grupos. El contenido que viole nuestras normas será eliminado automáticamente.</span>
+                </div>
+            </div>
+            <button onclick="cerrarAnuncioGrupos()" style="width:100%;padding:14px;border-radius:14px;border:none;background:linear-gradient(135deg,#6366f1,#2563eb);color:white;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;">
+                ✅ Entendido, continuar
+            </button>
+        </div>
+    `;
+
+    document.body.appendChild(overlay);
+
+    window.cerrarAnuncioGrupos = function() {
+        localStorage.setItem(key, '1');
+        const el = document.getElementById('welcomeGroupsOverlay');
+        if (el) { el.style.opacity='0'; el.style.transition='opacity 0.3s'; setTimeout(() => el.remove(), 300); }
+    };
+})();
 </script>

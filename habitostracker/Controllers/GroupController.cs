@@ -89,14 +89,35 @@ namespace HabitTrackerApp.Controllers
         {
             var userId = int.Parse(User.FindFirst("UserId").Value);
             var groups = _context.GroupMembers
-                .Where(m => m.UserId == userId && m.IsActive)
-                .Include(m => m.Group).ThenInclude(g => g.Members)
-                .Include(m => m.Group).ThenInclude(g => g.Creator)
-                .Select(m => m.Group)
-                .Where(g => g.IsActive)
-                .OrderByDescending(g => g.CreatedAt)
-                .ToList();
+    .Where(m => m.UserId == userId && m.IsActive)
+    .Include(m => m.Group).ThenInclude(g => g.Members)
+    .Include(m => m.Group).ThenInclude(g => g.Creator)
+    .Select(m => m.Group)
+    .Where(g => g.IsActive)
+    .OrderByDescending(g => g.CreatedAt)
+    .ToList();
+
+            // calcular no leídos por grupo
+            var unreadByGroup = new Dictionary<int, int>();
+            foreach (var g in groups)
+            {
+                var member = _context.GroupMembers
+                    .FirstOrDefault(m => m.GroupId == g.Id && m.UserId == userId);
+                if (member == null) continue;
+
+                var unread = _context.GroupMessages
+                    .Where(m => m.GroupId == g.Id && !m.IsDeleted
+                        && m.SenderId != userId
+                        && m.SentAt >= member.JoinedAt)
+                    .Include(m => m.Reads)
+                    .Count(m => !m.Reads.Any(r => r.UserId == userId));
+
+                unreadByGroup[g.Id] = unread;
+            }
+            ViewBag.UnreadByGroup = unreadByGroup;
+
             return View(groups);
+
         }
 
         [HttpGet]
@@ -1270,6 +1291,177 @@ namespace HabitTrackerApp.Controllers
             await CreateSystemMessage(groupId, $"⬇️ {creator?.Username} quitó el admin a {demoted?.Username}");
 
             return Json(new { success = true });
+        }
+        [HttpGet]
+        public IActionResult GetMyGroups()
+        {
+            var userId = int.Parse(User.FindFirst("UserId").Value);
+            var groups = _context.GroupMembers
+                .Where(m => m.UserId == userId && m.IsActive)
+                .Include(m => m.Group).ThenInclude(g => g.Members)
+                .Select(m => new {
+                    id = m.Group.Id,
+                    name = m.Group.Name,
+                    image = m.Group.ImageUrl ?? "",
+                    memberCount = m.Group.Members.Count(mb => mb.IsActive)
+                })
+                .ToList();
+            return Json(groups);
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> ForwardMessage(int messageId, int targetGroupId)
+        {
+            var userId = int.Parse(User.FindFirst("UserId").Value);
+
+            var originalMsg = _context.GroupMessages
+                .FirstOrDefault(m => m.Id == messageId && !m.IsDeleted);
+            if (originalMsg == null) return Json(new { success = false });
+
+            var isMember = _context.GroupMembers
+                .Any(m => m.GroupId == targetGroupId && m.UserId == userId && m.IsActive);
+            if (!isMember) return Json(new { success = false, error = "No eres miembro de ese grupo." });
+
+            var sender = _context.Users.FirstOrDefault(u => u.Id == userId);
+            var forwardedContent = string.IsNullOrEmpty(originalMsg.Content)
+                ? "" : $"↪️ {originalMsg.Content}";
+
+            var newMsg = new GroupMessage
+            {
+                GroupId = targetGroupId,
+                SenderId = userId,
+                Content = forwardedContent,
+                FileUrl = originalMsg.FileUrl,
+                SentAt = DateTime.UtcNow,
+                IsDeleted = false
+            };
+            _context.GroupMessages.Add(newMsg);
+            await _context.SaveChangesAsync();
+
+            _context.GroupMessageReads.Add(new GroupMessageRead
+            {
+                GroupMessageId = newMsg.Id,
+                UserId = userId,
+                ReadAt = DateTime.UtcNow
+            });
+            await _context.SaveChangesAsync();
+
+            var totalMembers = _context.GroupMembers.Count(m => m.GroupId == targetGroupId && m.IsActive);
+
+            await _hub.Clients.Group("group-" + targetGroupId)
+                .SendAsync("ReceiveGroupMessage",
+                    userId.ToString(),
+                    sender?.Username ?? "Usuario",
+                    sender?.ProfileImage ?? sender?.ProfilePicture ?? "",
+                    forwardedContent,
+                    newMsg.SentAt.ToLocalTime().ToString("hh:mm tt"),
+                    newMsg.Id.ToString(),
+                    originalMsg.FileUrl ?? "",
+                    string.IsNullOrEmpty(originalMsg.FileUrl) ? "text" : "image",
+                    "");
+
+            return Json(new { success = true });
+        }
+        [HttpPost]
+        public async Task<IActionResult> StarMessage(int messageId)
+        {
+            var userId = int.Parse(User.FindFirst("UserId").Value);
+            var msg = _context.GroupMessages.FirstOrDefault(m => m.Id == messageId && !m.IsDeleted);
+            if (msg == null) return Json(new { success = false });
+
+            // verificar que sea miembro del grupo
+            var isMember = _context.GroupMembers
+                .Any(m => m.GroupId == msg.GroupId && m.UserId == userId && m.IsActive);
+            if (!isMember) return Json(new { success = false });
+
+            var existing = _context.StarredMessages
+                .FirstOrDefault(s => s.MessageId == messageId && s.UserId == userId);
+
+            if (existing != null)
+            {
+                _context.StarredMessages.Remove(existing);
+                await _context.SaveChangesAsync();
+                return Json(new { success = true, starred = false });
+            }
+
+            _context.StarredMessages.Add(new StarredMessage
+            {
+                MessageId = messageId,
+                UserId = userId,
+                StarredAt = DateTime.UtcNow
+            });
+            await _context.SaveChangesAsync();
+            return Json(new { success = true, starred = true });
+        }
+
+        [HttpGet]
+        public IActionResult GetStarredMessages(int groupId)
+        {
+            var userId = int.Parse(User.FindFirst("UserId").Value);
+            var starred = _context.StarredMessages
+                .Where(s => s.UserId == userId && s.Message.GroupId == groupId && !s.Message.IsDeleted)
+                .Include(s => s.Message).ThenInclude(m => m.Sender)
+                .OrderByDescending(s => s.StarredAt)
+                .Select(s => new {
+                    id = s.Message.Id,
+                    content = s.Message.Content ?? "📎 Archivo",
+                    sender = s.Message.Sender.Username,
+                    sentAt = s.Message.SentAt,
+                    fileUrl = s.Message.FileUrl ?? ""
+                })
+                .ToList();
+            return Json(starred);
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> PinMessage(int messageId)
+        {
+            var userId = int.Parse(User.FindFirst("UserId").Value);
+            var msg = _context.GroupMessages.FirstOrDefault(m => m.Id == messageId && !m.IsDeleted);
+            if (msg == null) return Json(new { success = false });
+
+            var isAdmin = _context.GroupMembers
+                .Any(m => m.GroupId == msg.GroupId && m.UserId == userId && m.Role == "Admin" && m.IsActive);
+            var group = _context.Groups.FirstOrDefault(g => g.Id == msg.GroupId);
+            if (!isAdmin && group?.CreatorId != userId)
+                return Json(new { success = false, error = "Solo admins pueden fijar mensajes." });
+
+            // toggle — si ya está fijado, desfijar
+            if (group.PinnedMessageId == messageId)
+            {
+                group.PinnedMessageId = null;
+                await _context.SaveChangesAsync();
+                await _hub.Clients.Group("group-" + msg.GroupId)
+                    .SendAsync("GroupMessageUnpinned");
+                return Json(new { success = true, pinned = false });
+            }
+
+            group.PinnedMessageId = messageId;
+            await _context.SaveChangesAsync();
+
+            var sender = _context.Users.FirstOrDefault(u => u.Id == userId);
+            await _hub.Clients.Group("group-" + msg.GroupId)
+                .SendAsync("GroupMessagePinned", messageId.ToString(), msg.Content ?? "📎 Archivo", sender?.Username ?? "");
+
+            return Json(new { success = true, pinned = true, content = msg.Content ?? "📎 Archivo" });
+        }
+        [HttpPost]
+        public async Task<IActionResult> EditMessage(int messageId, string newContent)
+        {
+            var userId = int.Parse(User.FindFirst("UserId").Value);
+            var msg = _context.GroupMessages.FirstOrDefault(m => m.Id == messageId);
+            if (msg == null) return Json(new { success = false });
+            if (msg.SenderId != userId) return Json(new { success = false, error = "Solo puedes editar tus mensajes." });
+            if (string.IsNullOrWhiteSpace(newContent)) return Json(new { success = false });
+
+            msg.Content = newContent.Trim();
+            msg.IsEdited = true;
+            await _context.SaveChangesAsync();
+
+            await _hub.Clients.Group("group-" + msg.GroupId)
+                .SendAsync("GroupMessageEdited", messageId.ToString(), msg.Content);
+
+            return Json(new { success = true, content = msg.Content });
         }
 
         // 🔥 buscar amigos que no están en el grupo para añadir

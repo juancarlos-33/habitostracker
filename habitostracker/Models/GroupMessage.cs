@@ -13,6 +13,7 @@ namespace HabitTrackerApp.Models
         public ICollection<GroupMessageReaction> Reactions { get; set; } = new List<GroupMessageReaction>();
         public ICollection<GroupMessageRead> Reads { get; set; } = new List<GroupMessageRead>();
         public int? SenderId { get; set; }
+        public bool IsEdited { get; set; } = false;
         public User Sender { get; set; }
         public string Content { get; set; }
         public string? FileUrl { get; set; }

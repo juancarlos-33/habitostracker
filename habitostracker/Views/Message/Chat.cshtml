@@ -37,7 +37,10 @@
                 { <img src="@otherImg" class="chat-header-avatar" /> }
                 else
                 { <div class="chat-header-avatar avatar-letter">@otherName.Substring(0,1).ToUpper()</div> }
-                <span class="online-dot" id="onlineDot" style="@(isOnline ? "" : "display:none;")"></span>
+            @if (ViewBag.IsSystemChat != true)
+{
+    <span class="online-dot" id="onlineDot" style="@(isOnline ? "" : "display:none;")"></span>
+}
             </div>
             <div>
             <div class="chat-header-name">
@@ -56,9 +59,16 @@
         </span>
     }
 </div>
-                <div class="chat-header-status @(isOnline ? "online" : "offline")" id="onlineStatus">
-                    @(isOnline ? "● En línea" : "○ " + lastOnlineText)
-                </div>
+               @if (ViewBag.IsSystemChat != true)
+{
+    <div class="chat-header-status @(isOnline ? "online" : "offline")" id="onlineStatus">
+        @(isOnline ? "● En línea" : "○ " + lastOnlineText)
+    </div>
+}
+else
+{
+    <div class="chat-header-status" id="onlineStatus" style="display:none;"></div>
+}
             </div>
         </a>
         <div class="header-menu-wrap">

@@ -9,6 +9,8 @@ namespace HabitTrackerApp.Models
         public string Name { get; set; }
         public string Type { get; set; } = "private"; // "private", "public", "channel"
         public bool IsPublic { get; set; } = false;
+        public int? PinnedMessageId { get; set; }
+        public GroupMessage? PinnedMessage { get; set; }
         public string? InviteCode { get; set; }
         public bool IsAdminOnly { get; set; } = false; // true = solo admins/creador pueden escribir
         public ICollection<GroupJoinRequest> JoinRequests { get; set; }

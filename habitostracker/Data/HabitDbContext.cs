@@ -51,6 +51,7 @@ namespace HabitTrackerApp.Data
         public DbSet<CommentLike> CommentLikes { get; set; }
         public DbSet<CommentReplyLike> CommentReplyLikes { get; set; }
         public DbSet<SupportMessage> SupportMessages { get; set; }
+        public DbSet<StarredMessage> StarredMessages { get; set; }
         public DbSet<PostReport> PostReports { get; set; }
         public DbSet<FriendRequest> FriendRequests { get; set; }
         public DbSet<Message> Messages { get; set; }
@@ -84,6 +85,28 @@ namespace HabitTrackerApp.Data
                 .WithMany()
                 .HasForeignKey(m => m.ReceiverId)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            // 🔥 GROUP - PINNED MESSAGE
+            modelBuilder.Entity<Group>()
+                .HasMany(g => g.Messages)
+                .WithOne(m => m.Group)
+                .HasForeignKey(m => m.GroupId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<Group>()
+                .HasOne(g => g.PinnedMessage)
+                .WithMany()
+                .HasForeignKey(g => g.PinnedMessageId)
+                .OnDelete(DeleteBehavior.SetNull)
+                .IsRequired(false);
+
+            // 🔥 GROUP MESSAGE - REPLY
+            modelBuilder.Entity<GroupMessage>()
+                .HasOne(m => m.ReplyToMessage)
+                .WithMany()
+                .HasForeignKey(m => m.ReplyToMessageId)
+                .OnDelete(DeleteBehavior.Restrict)
+                .IsRequired(false);
 
             // 🔥 HABIT COMMENT (EL FIX REAL)
             modelBuilder.Entity<HabitComment>()

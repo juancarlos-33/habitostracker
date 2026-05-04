@@ -393,6 +393,48 @@ body.bg-dark #emptyState .empty-title { color: #f1f5f9 !important; }
 <div class="grp-chat-page">
 
     <div class="grp-header" onclick="window.location.href='/Group/Details/@Model.Id'">
+        @{
+    var pinnedMsg = Model.PinnedMessageId.HasValue
+        ? messages.FirstOrDefault(m => m.Id == Model.PinnedMessageId)
+        : null;
+}
+@if (pinnedMsg != null)
+{
+    <div id="pinnedBanner" style="display:flex;align-items:center;gap:10px;padding:8px 16px;background:rgba(99,102,241,0.12);border-bottom:1px solid rgba(99,102,241,0.2);cursor:pointer;flex-shrink:0;" onclick="scrollToMessage(@pinnedMsg.Id)">
+        <span style="font-size:18px;">📌</span>
+        <div style="flex:1;min-width:0;">
+            <div style="font-size:10px;font-weight:700;color:#818cf8;text-transform:uppercase;letter-spacing:0.5px;">Mensaje fijado</div>
+            <div style="font-size:13px;color:rgba(255,255,255,0.7);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+                @(pinnedMsg.Content?.Length > 60 ? pinnedMsg.Content.Substring(0, 60) + "..." : pinnedMsg.Content ?? "📎 Archivo")
+            </div>
+        </div>
+        @if (isAdmin)
+        {
+            <button onclick="event.stopPropagation();desfijarMensaje()" style="background:none;border:none;color:rgba(255,255,255,0.3);cursor:pointer;font-size:14px;padding:4px;">✕</button>
+        }
+    </div>
+}
+else
+{
+    <div id="pinnedBanner" style="display:none;align-items:center;gap:10px;padding:8px 16px;background:rgba(99,102,241,0.12);border-bottom:1px solid rgba(99,102,241,0.2);cursor:pointer;flex-shrink:0;">
+        <span style="font-size:18px;">📌</span>
+        <div style="flex:1;min-width:0;">
+            <div style="font-size:10px;font-weight:700;color:#818cf8;text-transform:uppercase;letter-spacing:0.5px;">Mensaje fijado</div>
+            <div id="pinnedContent" style="font-size:13px;color:rgba(255,255,255,0.7);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></div>
+        </div>
+        <button onclick="event.stopPropagation();desfijarMensaje()" style="background:none;border:none;color:rgba(255,255,255,0.3);cursor:pointer;font-size:14px;padding:4px;">✕</button>
+    </div>
+}
+<!-- BARRA DE BÚSQUEDA -->
+<div id="searchBar" style="display:none;flex-shrink:0;padding:8px 12px;background:#1e293b;border-bottom:1px solid rgba(255,255,255,0.06);align-items:center;gap:8px;">
+    <input id="searchInput" type="text" placeholder="🔍 Buscar en el chat..." 
+           oninput="buscarMensajes(this.value)"
+           style="flex:1;padding:8px 14px;border-radius:20px;border:1.5px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.06);color:white;font-size:13px;outline:none;font-family:inherit;" />
+    <span id="searchResults" style="color:rgba(255,255,255,0.35);font-size:12px;font-weight:600;white-space:nowrap;"></span>
+    <button onclick="navegarResultado(-1)" style="background:rgba(255,255,255,0.08);border:none;color:white;width:28px;height:28px;border-radius:50%;cursor:pointer;font-size:12px;">↑</button>
+    <button onclick="navegarResultado(1)" style="background:rgba(255,255,255,0.08);border:none;color:white;width:28px;height:28px;border-radius:50%;cursor:pointer;font-size:12px;">↓</button>
+    <button onclick="toggleBusqueda()" style="background:rgba(255,255,255,0.08);border:none;color:white;width:28px;height:28px;border-radius:50%;cursor:pointer;font-size:12px;">✕</button>
+</div>
         <div class="grp-header-avatar">
             @if (!string.IsNullOrEmpty(Model.ImageUrl))
             { <img src="@Model.ImageUrl" /> }
@@ -607,6 +649,32 @@ else
     </div>
 }
 
+<!-- MODAL REENVIAR -->
+<div id="forwardModal" style="display:none;position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,0.7);backdrop-filter:blur(8px);align-items:center;justify-content:center;padding:20px;">
+    <div style="background:#1e293b;border-radius:24px;width:100%;max-width:400px;border:1px solid rgba(255,255,255,0.08);box-shadow:0 30px 80px rgba(0,0,0,0.6);">
+        <div style="padding:20px 24px;border-bottom:1px solid rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:space-between;">
+            <span style="color:white;font-weight:800;font-size:16px;">↪️ Reenviar a...</span>
+            <button onclick="cerrarReenvio()" style="background:rgba(255,255,255,0.08);border:none;color:white;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:14px;">✕</button>
+        </div>
+        <div id="forwardGroupList" style="max-height:360px;overflow-y:auto;padding:12px;">
+            <div style="text-align:center;color:rgba(255,255,255,0.3);padding:20px;">Cargando grupos...</div>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL INFO MENSAJE -->
+<div id="msgInfoModal" style="display:none;position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,0.7);backdrop-filter:blur(8px);align-items:center;justify-content:center;padding:20px;">
+    <div style="background:#1e293b;border-radius:24px;width:100%;max-width:400px;border:1px solid rgba(255,255,255,0.08);box-shadow:0 30px 80px rgba(0,0,0,0.6);">
+        <div style="padding:20px 24px;border-bottom:1px solid rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:space-between;">
+            <span style="color:white;font-weight:800;font-size:16px;">ℹ️ Info del mensaje</span>
+            <button onclick="cerrarInfoMensaje()" style="background:rgba(255,255,255,0.08);border:none;color:white;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:14px;">✕</button>
+        </div>
+        <div id="msgInfoContent" style="padding:20px 24px;max-height:400px;overflow-y:auto;">
+            <div style="text-align:center;color:rgba(255,255,255,0.3);padding:20px;">Cargando...</div>
+        </div>
+    </div>
+</div>
+
 @Html.AntiForgeryToken()
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
@@ -655,9 +723,11 @@ window.addEventListener("load", () => {
                 sep.style.opacity = "0";
                 setTimeout(() => sep.remove(), 500);
             }, 5000);
+        } else {
+            setTimeout(() => { chatBox.scrollTop = chatBox.scrollHeight; }, 100);
         }
     } else {
-        chatBox.scrollTop = chatBox.scrollHeight;
+        setTimeout(() => { chatBox.scrollTop = chatBox.scrollHeight; }, 100);
     }
 });
 
@@ -819,6 +889,16 @@ grpConnection.on("AddedToGroup", (gId, groupName, adderName) => {
 
 grpConnection.on("GroupMessageReaction", (msgId, reactions) => {
     actualizarReacciones(msgId, reactions);
+});
+grpConnection.on("GroupMessageEdited", (msgId, newContent) => {
+    const bubble = document.querySelector(`#msg-${msgId} .grp-msg-bubble`);
+    if (bubble) {
+        // preservar reply si existe
+        const reply = bubble.querySelector('.grp-msg-reply');
+        bubble.innerHTML = (reply ? reply.outerHTML : '') + 
+            escapeHtml(newContent) + 
+            '<span style="font-size:10px;opacity:0.5;margin-left:6px;font-style:italic;">editado</span>';
+    }
 });
 grpConnection.on("GroupMessageDeleted", (msgId) => {
     const bubble = document.querySelector(`#msg-${msgId} .grp-msg-bubble`);
@@ -1018,7 +1098,51 @@ function agregarBurbujaMia(contentHTML, tempId) {
 
     return row;
 }
+async function verInfoMensaje(msgId) {
+    document.querySelectorAll('.grp-reaction-picker').forEach(p => p.remove());
+    const modal = document.getElementById('msgInfoModal');
+    const content = document.getElementById('msgInfoContent');
+    modal.style.display = 'flex';
+    content.innerHTML = '<div style="text-align:center;color:rgba(255,255,255,0.3);padding:20px;">Cargando...</div>';
 
+    try {
+        const res = await fetch(`/Group/GetMessageReads?messageId=${msgId}`);
+        const reads = await res.json();
+
+        if (!reads.length) {
+            content.innerHTML = '<div style="text-align:center;color:rgba(255,255,255,0.3);padding:20px;">Nadie ha leído este mensaje aún</div>';
+            return;
+        }
+
+        content.innerHTML = `
+            <div style="margin-bottom:16px;">
+                <div style="font-size:11px;font-weight:700;color:#818cf8;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;">
+                    ✔✔ Leído por ${reads.length} persona${reads.length !== 1 ? 's' : ''}
+                </div>
+                ${reads.map(r => `
+                    <div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.05);">
+                        <div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#2563eb);display:flex;align-items:center;justify-content:center;color:white;font-weight:800;font-size:14px;flex-shrink:0;">
+                            ${escapeHtml(r.username.charAt(0).toUpperCase())}
+                        </div>
+                        <div style="flex:1;">
+                            <div style="color:white;font-weight:700;font-size:13px;">${escapeHtml(r.username)}</div>
+                            <div style="color:rgba(255,255,255,0.3);font-size:11px;">
+                                ${new Date(r.readAt).toLocaleString('es-CO', { day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' })}
+                            </div>
+                        </div>
+                        <span style="color:#6366f1;font-size:16px;">✔✔</span>
+                    </div>
+                `).join('')}
+            </div>
+        `;
+    } catch {
+        content.innerHTML = '<div style="text-align:center;color:#ef4444;padding:20px;">❌ Error cargando info</div>';
+    }
+}
+
+function cerrarInfoMensaje() {
+    document.getElementById('msgInfoModal').style.display = 'none';
+}
 async function sendGroupMessage() {
     const content = msgInput ? msgInput.value.trim() : "";
     if (!content && !selectedFile) return;
@@ -1069,9 +1193,32 @@ await grpConnection.invoke("SendGroupMessage", groupId.toString(), myId, myName,
 function responderMensaje(msgId, senderName, content) {
     replyToMessageId = msgId;
     replyToSender = senderName;
-    replyToContent = content;
+
+    // Detectar si es imagen, video o audio
+    const msgEl = document.getElementById("msg-" + msgId);
+    let previewText = content;
+    let previewHTML = "";
+
+    if (msgEl) {
+        const img = msgEl.querySelector(".grp-msg-media[src]");
+        const vid = msgEl.querySelector("video");
+        const aud = msgEl.querySelector("audio");
+        if (img && img.tagName === "IMG") {
+            previewText = "📷 Foto";
+            previewHTML = `<img src="${img.src}" style="height:40px;border-radius:6px;margin-top:4px;" />`;
+        } else if (vid) {
+            previewText = "🎥 Video";
+        } else if (aud) {
+            previewText = "🎵 Audio";
+        }
+    }
+
+    replyToContent = previewText;
     document.getElementById("grpReplyName").textContent = senderName;
-    document.getElementById("grpReplyText").textContent = content.length > 60 ? content.substring(0, 60) + "..." : content;
+    document.getElementById("grpReplyText").textContent = previewText;
+    if (previewHTML) {
+        document.getElementById("grpReplyText").innerHTML = previewHTML;
+    }
     document.getElementById("grpReplyPreview").style.display = "flex";
     if (msgInput) msgInput.focus();
 }
@@ -1081,6 +1228,77 @@ function cancelarReply() {
     replyToContent = "";
     replyToSender = "";
     document.getElementById("grpReplyPreview").style.display = "none";
+}
+let forwardMsgId = null;
+
+function reenviarMensaje(msgId) {
+    document.querySelectorAll('.grp-reaction-picker').forEach(p => p.remove());
+    forwardMsgId = msgId;
+    const modal = document.getElementById('forwardModal');
+    modal.style.display = 'flex';
+
+    // obtener contenido del mensaje
+    const bubble = document.querySelector(`#msg-${msgId} .grp-msg-bubble`);
+    const content = bubble?.innerText?.replace(' editado','')?.trim() ?? '';
+
+    // cargar grupos disponibles
+    fetch('/Group/GetMyGroups')
+        .then(r => r.json())
+        .then(groups => {
+            const list = document.getElementById('forwardGroupList');
+            if (!groups.length) {
+                list.innerHTML = '<div style="text-align:center;color:rgba(255,255,255,0.3);padding:20px;">No tienes otros grupos</div>';
+                return;
+            }
+            list.innerHTML = groups
+                .filter(g => g.id !== groupId)
+                .map(g => `
+                    <div onclick="confirmarReenvio(${g.id}, '${g.name.replace(/'/g,"\\'")}')" 
+                         style="display:flex;align-items:center;gap:12px;padding:12px 16px;border-radius:14px;cursor:pointer;transition:0.15s;"
+                         onmouseover="this.style.background='rgba(99,102,241,0.1)'"
+                         onmouseout="this.style.background='transparent'">
+                        <div style="width:42px;height:42px;border-radius:12px;background:linear-gradient(135deg,#6366f1,#2563eb);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800;color:white;flex-shrink:0;overflow:hidden;">
+                            ${g.image ? `<img src="${g.image}" style="width:100%;height:100%;object-fit:cover;" />` : g.name.charAt(0).toUpperCase()}
+                        </div>
+                        <div>
+                            <div style="color:white;font-weight:700;font-size:14px;">${escapeHtml(g.name)}</div>
+                            <div style="color:rgba(255,255,255,0.35);font-size:12px;">${g.memberCount} miembro${g.memberCount !== 1 ? 's' : ''}</div>
+                        </div>
+                        <div style="margin-left:auto;color:#6366f1;font-size:18px;">↪️</div>
+                    </div>
+                `).join('');
+        })
+        .catch(() => {
+            document.getElementById('forwardGroupList').innerHTML = 
+                '<div style="text-align:center;color:#ef4444;padding:20px;">❌ Error cargando grupos</div>';
+        });
+}
+
+async function confirmarReenvio(targetGroupId, groupName) {
+    if (!forwardMsgId) return;
+    
+    const bubble = document.querySelector(`#msg-${forwardMsgId} .grp-msg-bubble`);
+    const content = bubble?.innerText?.replace(' editado','')?.trim() ?? '';
+    
+    try {
+        const res = await fetch('/Group/ForwardMessage', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: `messageId=${forwardMsgId}&targetGroupId=${targetGroupId}&__RequestVerificationToken=${encodeURIComponent(token())}`
+        });
+        const data = await res.json();
+        if (data.success) {
+            showToast(`↪️ Reenviado a "${groupName}"`);
+            cerrarReenvio();
+        } else {
+            showToast('❌ No se pudo reenviar');
+        }
+    } catch { showToast('❌ Error de conexión'); }
+}
+
+function cerrarReenvio() {
+    document.getElementById('forwardModal').style.display = 'none';
+    forwardMsgId = null;
 }
 
 function scrollToMessage(msgId) {
@@ -1124,10 +1342,23 @@ function abrirReactionPicker(e, msgId) {
     picker.className = "grp-reaction-picker";
 const row = document.getElementById("msg-" + msgId);
 const isMine = row?.classList.contains("mine");
+const editBtn = isMine 
+    ? `<span onclick="iniciarEdicion(${msgId})" title="Editar" style="font-size:16px;">✏️</span>` 
+    : '';
 const deleteBtn = isMine || @(isAdmin.ToString().ToLower()) 
     ? `<span onclick="eliminarMensaje(${msgId})" title="Eliminar" style="font-size:16px;">🗑️</span>` 
     : '';
-picker.innerHTML = EMOJIS_REACCION.map(em => `<span onclick="reaccionar(${msgId}, '${em}')">${em}</span>`).join("") + deleteBtn;
+const forwardBtn = `<span onclick="reenviarMensaje(${msgId})" title="Reenviar" style="font-size:16px;">↪️</span>`;
+const pinBtn = @(isAdmin.ToString().ToLower()) 
+    ? `<span onclick="fijarMensaje(${msgId})" title="Fijar" style="font-size:16px;">📌</span>` 
+    : '';
+const infoBtn = isMine 
+    ? `<span onclick="verInfoMensaje(${msgId})" title="Info" style="font-size:16px;">ℹ️</span>` 
+    : '';
+picker.innerHTML = EMOJIS_REACCION.map(em => 
+    `<span onclick="reaccionar(${msgId}, '${em}')">${em}</span>`).join("") + editBtn + forwardBtn + pinBtn + infoBtn + deleteBtn;
+picker.innerHTML = EMOJIS_REACCION.map(em => 
+    `<span onclick="reaccionar(${msgId}, '${em}')">${em}</span>`).join("") + editBtn + forwardBtn + deleteBtn;
     bubble.appendChild(picker);
     setTimeout(() => {
         document.addEventListener("click", function cerrar(ev) {
@@ -1148,7 +1379,48 @@ async function eliminarMensaje(msgId) {
         if (!data.success) showToast("❌ No se pudo eliminar");
     } catch { showToast("❌ Error de conexión"); }
 }
+let pinnedMsgId = @(Model.PinnedMessageId?.ToString() ?? "null");
 
+async function fijarMensaje(msgId) {
+    document.querySelectorAll('.grp-reaction-picker').forEach(p => p.remove());
+    try {
+        const res = await fetch('/Group/PinMessage', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: `messageId=${msgId}&__RequestVerificationToken=${encodeURIComponent(token())}`
+        });
+        const data = await res.json();
+        if (data.success) {
+            showToast(data.pinned ? '📌 Mensaje fijado' : '📌 Mensaje desfijado');
+        } else {
+            showToast('❌ ' + (data.error ?? 'Error'));
+        }
+    } catch { showToast('❌ Error de conexión'); }
+}
+
+async function desfijarMensaje() {
+    if (!pinnedMsgId) return;
+    await fijarMensaje(pinnedMsgId);
+}
+
+grpConnection.on("GroupMessagePinned", (msgId, content, pinnedBy) => {
+    pinnedMsgId = msgId;
+    const banner = document.getElementById('pinnedBanner');
+    const contentEl = document.getElementById('pinnedContent');
+    if (banner) {
+        banner.style.display = 'flex';
+        banner.onclick = () => scrollToMessage(msgId);
+    }
+    if (contentEl) contentEl.textContent = content.length > 60 ? content.substring(0, 60) + '...' : content;
+    showToast(`📌 ${pinnedBy} fijó un mensaje`);
+});
+
+grpConnection.on("GroupMessageUnpinned", () => {
+    pinnedMsgId = null;
+    const banner = document.getElementById('pinnedBanner');
+    if (banner) banner.style.display = 'none';
+    showToast('📌 Mensaje desfijado');
+});
 async function reaccionar(msgId, emoji) {
     document.querySelectorAll('.grp-reaction-picker').forEach(p => p.remove());
     try {
@@ -1161,7 +1433,151 @@ async function reaccionar(msgId, emoji) {
         if (data.success) actualizarReacciones(msgId.toString(), data.reactions);
     } catch (err) { console.error(err); }
 }
+// ══ BÚSQUEDA EN CHAT ══
+let searchResultIds = [];
+let searchCurrentIndex = -1;
 
+function toggleBusqueda() {
+    const bar = document.getElementById('searchBar');
+    const input = document.getElementById('searchInput');
+    const isOpen = bar.style.display === 'flex';
+    bar.style.display = isOpen ? 'none' : 'flex';
+    if (!isOpen) {
+        input.focus();
+        limpiarBusqueda();
+    } else {
+        limpiarBusqueda();
+    }
+}
+
+function limpiarBusqueda() {
+    // quitar highlights anteriores
+    document.querySelectorAll('.search-highlight').forEach(el => {
+        el.style.background = '';
+        el.style.outline = '';
+        el.classList.remove('search-highlight');
+    });
+    searchResultIds = [];
+    searchCurrentIndex = -1;
+    document.getElementById('searchResults').textContent = '';
+    const input = document.getElementById('searchInput');
+    if (input) input.value = '';
+}
+
+function buscarMensajes(query) {
+    // limpiar highlights anteriores
+    document.querySelectorAll('.search-highlight').forEach(el => {
+        el.style.background = '';
+        el.style.outline = '';
+        el.classList.remove('search-highlight');
+    });
+    searchResultIds = [];
+    searchCurrentIndex = -1;
+
+    if (!query || query.trim().length < 2) {
+        document.getElementById('searchResults').textContent = '';
+        return;
+    }
+
+    const q = query.toLowerCase().trim();
+    const bubbles = document.querySelectorAll('.grp-msg-bubble');
+
+    bubbles.forEach(bubble => {
+        const text = bubble.innerText.toLowerCase();
+        if (text.includes(q)) {
+            const row = bubble.closest('.grp-msg-row');
+            if (row) {
+                searchResultIds.push(row.id);
+                bubble.classList.add('search-highlight');
+                bubble.style.outline = '2px solid #6366f1';
+                bubble.style.outlineOffset = '2px';
+            }
+        }
+    });
+
+    const count = searchResultIds.length;
+    const resultsEl = document.getElementById('searchResults');
+
+    if (count === 0) {
+        resultsEl.textContent = 'Sin resultados';
+        resultsEl.style.color = '#ef4444';
+        return;
+    }
+
+    resultsEl.style.color = 'rgba(255,255,255,0.35)';
+    searchCurrentIndex = 0;
+    navegarResultado(0, true);
+    resultsEl.textContent = `1 / ${count}`;
+}
+
+function navegarResultado(direction, reset = false) {
+    if (!searchResultIds.length) return;
+
+    if (!reset) {
+        searchCurrentIndex += direction;
+        if (searchCurrentIndex < 0) searchCurrentIndex = searchResultIds.length - 1;
+        if (searchCurrentIndex >= searchResultIds.length) searchCurrentIndex = 0;
+    }
+
+    const rowId = searchResultIds[searchCurrentIndex];
+    const row = document.getElementById(rowId);
+    if (row) {
+        row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        const bubble = row.querySelector('.grp-msg-bubble');
+        if (bubble) {
+            bubble.style.outline = '2px solid #6366f1';
+            // resaltar el actual más fuerte
+            document.querySelectorAll('.search-highlight').forEach(el => {
+                el.style.background = '';
+            });
+            bubble.style.background = 'rgba(99,102,241,0.2)';
+        }
+    }
+
+    document.getElementById('searchResults').textContent = 
+        `${searchCurrentIndex + 1} / ${searchResultIds.length}`;
+}
+
+function iniciarEdicion(msgId) {
+    document.querySelectorAll('.grp-reaction-picker').forEach(p => p.remove());
+    const bubble = document.querySelector(`#msg-${msgId} .grp-msg-bubble`);
+    if (!bubble) return;
+
+    // obtener texto actual sin el "editado"
+    const textoActual = bubble.innerText.replace(' editado', '').trim();
+    
+    // reemplazar burbuja por input de edición
+    bubble.innerHTML = `
+        <textarea id="editInput-${msgId}" style="width:100%;background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);border-radius:10px;padding:6px 10px;color:white;font-family:inherit;font-size:14px;resize:none;outline:none;">${textoActual}</textarea>
+        <div style="display:flex;gap:6px;margin-top:6px;justify-content:flex-end;">
+            <button onclick="cancelarEdicion(${msgId}, '${textoActual.replace(/'/g, "\\'")}')" style="padding:4px 12px;border-radius:8px;border:none;background:rgba(255,255,255,0.15);color:white;font-size:12px;cursor:pointer;font-family:inherit;">✕ Cancelar</button>
+            <button onclick="guardarEdicion(${msgId})" style="padding:4px 12px;border-radius:8px;border:none;background:#22c55e;color:white;font-size:12px;cursor:pointer;font-family:inherit;">✓ Guardar</button>
+        </div>
+    `;
+    document.getElementById(`editInput-${msgId}`)?.focus();
+}
+
+function cancelarEdicion(msgId, textoOriginal) {
+    const bubble = document.querySelector(`#msg-${msgId} .grp-msg-bubble`);
+    if (bubble) bubble.innerHTML = escapeHtml(textoOriginal);
+}
+
+async function guardarEdicion(msgId) {
+    const input = document.getElementById(`editInput-${msgId}`);
+    if (!input) return;
+    const newContent = input.value.trim();
+    if (!newContent) return;
+
+    try {
+        const res = await fetch("/Group/EditMessage", {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: `messageId=${msgId}&newContent=${encodeURIComponent(newContent)}&__RequestVerificationToken=${encodeURIComponent(token())}`
+        });
+        const data = await res.json();
+        if (!data.success) showToast("❌ No se pudo editar");
+    } catch { showToast("❌ Error de conexión"); }
+}
 function actualizarReacciones(msgId, reactions) {
     const container = document.getElementById("reactions-" + msgId);
     if (!container) return;
@@ -1170,4 +1586,64 @@ function actualizarReacciones(msgId, reactions) {
         `<button class="grp-reaction-btn" onclick="reaccionar(${msgId}, '${r.emoji}')">${r.emoji}<span>${r.count}</span></button>`
     ).join("");
 }
+// ══ ANUNCIO AL ENTRAR AL GRUPO ══
+(function() {
+    const key = 'ht_group_chat_seen_@(Model.Id)_@(User.FindFirst("UserId")?.Value ?? "0")';
+    if (localStorage.getItem(key)) return;
+
+    const overlay = document.createElement('div');
+    overlay.id = 'welcomeGroupChatOverlay';
+    overlay.style.cssText = 'position:fixed;inset:0;z-index:999999;background:rgba(0,0,0,0.8);backdrop-filter:blur(10px);display:flex;align-items:flex-end;justify-content:center;padding:0;';
+
+    overlay.innerHTML = `
+        <div style="background:linear-gradient(135deg,#1e293b,#0f172a);border:1px solid rgba(255,255,255,0.08);border-radius:28px 28px 0 0;max-width:500px;width:100%;padding:32px 28px 40px;box-shadow:0 -20px 60px rgba(0,0,0,0.6);animation:slideUp 0.4s cubic-bezier(0.34,1.56,0.64,1);">
+            <style>@@keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }</style>
+            <div style="width:40px;height:4px;background:rgba(255,255,255,0.15);border-radius:10px;margin:0 auto 24px;"></div>
+            <div style="display:flex;align-items:center;gap:14px;margin-bottom:16px;">
+                <div style="width:52px;height:52px;border-radius:14px;background:linear-gradient(135deg,#6366f1,#2563eb);display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0;">👥</div>
+                <div>
+                    <div style="color:white;font-weight:800;font-size:16px;margin-bottom:3px;">@Model.Name</div>
+                    <div style="color:rgba(255,255,255,0.4);font-size:12px;">@(members.Count) miembro@(members.Count != 1 ? "s" : "")</div>
+                </div>
+            </div>
+            <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07);border-radius:16px;padding:14px 16px;margin-bottom:20px;">
+                <p style="color:rgba(255,255,255,0.6);font-size:13px;line-height:1.7;margin:0;">
+                    ⚠️ <strong style="color:white;">Ten cuidado.</strong> No compartas información personal, contraseñas ni datos bancarios en este grupo. Si alguien te los pide, repórtalo de inmediato.<br><br>
+                    🤖 Este grupo está monitoreado por <strong style="color:#818cf8;">IA y moderadores</strong>. El contenido inapropiado será eliminado automáticamente.
+                </p>
+            </div>
+            <div style="display:flex;gap:10px;">
+                <button onclick="salirDelGrupo()" style="flex:1;padding:14px;border-radius:14px;border:1.5px solid rgba(239,68,68,0.3);background:rgba(239,68,68,0.08);color:#f87171;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;transition:0.2s;"
+                    onmouseover="this.style.background='rgba(239,68,68,0.15)'"
+                    onmouseout="this.style.background='rgba(239,68,68,0.08)'">
+                    🚪 Salir del grupo
+                </button>
+                <button onclick="quedarseEnGrupo()" style="flex:2;padding:14px;border-radius:14px;border:none;background:linear-gradient(135deg,#6366f1,#2563eb);color:white;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;box-shadow:0 4px 14px rgba(99,102,241,0.4);">
+                    ✅ Confío en este grupo
+                </button>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(overlay);
+
+    window.quedarseEnGrupo = function() {
+        localStorage.setItem(key, '1');
+        const el = document.getElementById('welcomeGroupChatOverlay');
+        if (el) { el.style.opacity='0'; el.style.transition='opacity 0.3s'; setTimeout(() => el.remove(), 300); }
+    };
+
+    window.salirDelGrupo = async function() {
+        try {
+            await fetch('/Group/Leave', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: `groupId=@Model.Id&__RequestVerificationToken=${encodeURIComponent(document.querySelector('input[name="__RequestVerificationToken"]')?.value ?? '')}`
+            });
+            window.location.href = '/Group/Index';
+        } catch {
+            window.location.href = '/Group/Index';
+        }
+    };
+})();
 </script>
