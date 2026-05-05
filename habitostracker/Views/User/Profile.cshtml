@@ -323,8 +323,8 @@ body:not(.bg-dark) .prof-empty-sub { color: #475569; }
             }
         </div>
 
-        @if (!string.IsNullOrEmpty(Model.FullName) && !isSystemAccount)
-        { <p class="prof-fullname">@Model.FullName</p> }
+      @if (!string.IsNullOrEmpty(Model.FullName))
+{ <p class="prof-fullname">@Model.FullName</p> }
 
         @if (canSeeProfile)
         {
