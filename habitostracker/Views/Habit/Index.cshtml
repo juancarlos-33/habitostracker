@@ -620,15 +620,50 @@ body.bg-dark {
 /* ══════════════════════════════
    RESPONSIVE
 ══════════════════════════════ */
-.ht-hero { min-height: 160px; padding: 16px 14px 16px; border-radius: 18px; }
-    .ht-hero-stat-val { font-size: 17px; }
-    .ht-hero-name { font-size: 17px; }
-    .ht-hero-avatar { width: 44px; height: 44px; }
-    .ht-story-viewer-card { border-radius: 0; max-height: 100vh; max-width: 100%; }
-    .ht-progress-card, .ht-streak-card, .ht-tips-card { display: none; }
-    .ht-chart-card { display: none; }
-    .ht-actions { flex-wrap: nowrap; overflow-x: auto; }
+@@media(max-width:768px) {
+    .ht-home { padding: 0 2px 80px; }
+    .ht-hero { min-height: auto; padding: 14px 12px 16px; border-radius: 16px; margin-bottom: 12px; }
+    .ht-hero-top { margin-bottom: 14px; gap: 10px; flex-wrap: wrap; }
+    .ht-hero-user { width: 100%; }
+    .ht-hero-name { font-size: 15px; white-space: normal; }
+    .ht-hero-avatar { width: 40px; height: 40px; font-size: 16px; }
+    .ht-hero-sub { font-size: 11px; }
+    .ht-plan-pill { font-size: 11px; padding: 5px 10px; }
+    .ht-weather-pill { font-size: 11px; padding: 5px 9px; }
+    .ht-hero-stats { border-radius: 12px; }
+    .ht-hero-stat { padding: 10px 6px; }
+    .ht-hero-stat-val { font-size: 15px; }
+    .ht-hero-stat-label { font-size: 8px; letter-spacing: 0.3px; }
+    .ht-ring-svg { width: 22px; height: 22px; top: 4px; right: 4px; }
+    .ht-stories-wrap { border-radius: 14px; margin-bottom: 12px; }
+    .ht-stories-inner { padding: 10px 8px; }
+    .ht-story-item { width: 64px; padding: 0 2px; }
+    .ht-story-ring { width: 54px; height: 54px; }
+    .ht-story-name { font-size: 10px; max-width: 60px; }
+    .ht-kpi-grid { gap: 8px; }
+    .ht-kpi { padding: 12px 10px; gap: 8px; }
+    .ht-kpi-icon { width: 34px; height: 34px; border-radius: 10px; font-size: 16px; }
+    .ht-kpi-val { font-size: 20px; }
+    .ht-kpi-lbl { font-size: 10px; }
+    .ht-habits-card { border-radius: 16px; }
+    .ht-habits-header { padding: 14px 14px 0; }
+    .ht-habits-tabs { padding: 10px 14px 0; gap: 3px; }
+    .ht-habit-tab { padding: 5px 10px; font-size: 11px; }
+    .ht-habits-list { padding: 10px 10px 12px; gap: 6px; }
+    .ht-habit { padding: 10px 10px; gap: 8px; }
+    .ht-habit-check { width: 30px; height: 30px; border-radius: 9px; font-size: 13px; }
+    .ht-habit-name { font-size: 13px; }
+    .ht-habit-status { display: none; }
+    .ht-hab-btn { width: 28px; height: 28px; border-radius: 8px; font-size: 12px; }
+    .ht-habit-actions { gap: 4px; }
+    .ht-quote { padding: 10px 12px; border-radius: 12px; }
+    .ht-quote-text { font-size: 12px; }
+    .ht-actions { flex-wrap: nowrap; overflow-x: auto; gap: 6px; }
     .ht-actions::-webkit-scrollbar { display: none; }
+    .ht-action-btn { padding: 8px 14px; font-size: 12px; }
+    .ht-body { gap: 10px; }
+    .ht-progress-card, .ht-streak-card, .ht-tips-card, .ht-chart-card { display: none; }
+    .ht-story-viewer-card { border-radius: 0; max-height: 100vh; max-width: 100%; }
 }
 
 @@media(min-width:769px) {
@@ -668,43 +703,31 @@ body.bg-dark .ht-habit-tab.active { background: rgba(91,94,244,0.15) !important;
             <div class="ht-hero-orb ht-hero-orb-2"></div>
         </div>
     </div>
-    <div class="ht-hero-inner">
-    <div class="ht-hero-top">
-    <div class="ht-hero-user">
-        <div class="ht-hero-avatar">
-            @{ var profileImage = User.FindFirst("ProfileImage")?.Value; }
-            @if (!string.IsNullOrEmpty(profileImage))
-            { <img src="@profileImage" alt="avatar" /> }
-            else
-            { <span>@(username.Length > 0 ? username.Substring(0,1).ToUpper() : "?")</span> }
-        </div>
-        <div>
-            <div class="ht-hero-name">@welcomeMsg</div>
-            <div class="ht-hero-sub">
-                @if (user != null && !user.IsPremium)
-                { <a href="/User/Pay" class="ht-plan-pill free" style="display:inline-flex;margin-top:4px;">⚡ Hazte Premium</a> }
-                else if (user?.IsPremium == true)
-                { <span class="ht-plan-pill premium">👑 Pro</span> }
-                else
-                { <text>Disciplina diaria · Resultados reales</text> }
-            </div>
-        </div>
-    </div>
-    <div class="ht-weather-pill" id="weatherPill">
-        <span id="wIcon">⛅</span><span id="wTemp">--</span><span id="wCity" style="font-size:10px;opacity:0.7;">--</span>
-    </div>
-</div>
-            <div class="ht-hero-badges">
-                <div class="ht-weather-pill" id="weatherPill">
-                    <span id="wIcon">⛅</span><span id="wTemp">--</span><span id="wCity" style="font-size:10px;opacity:0.7;">--</span>
-                </div>
-                @if (user != null)
-                {
-                    if (!user.IsPremium)
-                    { <a href="/User/Pay" class="ht-plan-pill free">⚡ Hazte Premium</a> }
+<div class="ht-hero-inner">
+        <div class="ht-hero-top">
+            <div class="ht-hero-user">
+                <div class="ht-hero-avatar">
+                    @{ var profileImage = User.FindFirst("ProfileImage")?.Value; }
+                    @if (!string.IsNullOrEmpty(profileImage))
+                    { <img src="@profileImage" alt="avatar" /> }
                     else
-                    { <div class="ht-plan-pill premium">👑 Pro</div> }
-                }
+                    { <span>@(username.Length > 0 ? username.Substring(0,1).ToUpper() : "?")</span> }
+                </div>
+                <div style="min-width:0;">
+                    <div class="ht-hero-name">@welcomeMsg</div>
+                    <div class="ht-hero-sub">Disciplina diaria · Resultados reales</div>
+                </div>
+            </div>
+            <div style="display:flex;gap:8px;align-items:center;flex-shrink:0;flex-wrap:wrap;">
+                <div class="ht-weather-pill" id="weatherPill">
+                    <span id="wIcon">⛅</span>
+                    <span id="wTemp"></span>
+                    <span id="wCity" style="font-size:10px;opacity:0.7;"></span>
+                </div>
+                @if (user != null && !user.IsPremium)
+                { <a href="/User/Pay" class="ht-plan-pill free">⚡ Premium</a> }
+                else if (user?.IsPremium == true)
+                { <div class="ht-plan-pill premium">👑 Pro</div> }
             </div>
         </div>
         <div class="ht-hero-stats">
@@ -822,10 +845,7 @@ body.bg-dark .ht-habit-tab.active { background: rgba(91,94,244,0.15) !important;
                 </div>
             }
 
-            @if (user != null && !user.IsPremium && Model.Count >= 5)
-            {
-                <div class="ht-limit-pill">🚫 Límite de 5 hábitos alcanzado · <a href="/User/Pay">Hazte Premium 🔥</a></div>
-            }
+         
 
             @if (Model.Count == 0)
             {
