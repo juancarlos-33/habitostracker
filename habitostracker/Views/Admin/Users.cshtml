@@ -289,9 +289,12 @@ body.bg-dark .qb.n{background:#1e293b!important;color:#94a3b8!important;border-c
             }
             else if (me?.Role == "SuperAdmin")
             {
-                <form asp-controller="Admin" asp-action="ToggleConnectionBlock" method="post">
-                    <button class="cab blk" onclick="return confirm('¿Bloquear conexión global?')">🔒 Bloquear conexión para todos</button>
-                </form>
+              <form asp-controller="Admin" asp-action="ToggleConnectionBlock" method="post" id="blockConnForm">
+    <button type="button" class="cab blk"
+        onclick="showConfirm({icon:'🔒',title:'Bloquear conexión global',message:'Todos los usuarios perderán acceso a la plataforma. ¿Estás seguro?',confirmText:'🔒 Sí, bloquear',confirmColor:'#dc2626',onConfirm:()=>document.getElementById('blockConnForm').submit()})">
+        🔒 Bloquear conexión para todos
+    </button>
+</form>
             }
             else if (me?.Role == "Admin")
             {
@@ -466,31 +469,49 @@ body.bg-dark .qb.n{background:#1e293b!important;color:#94a3b8!important;border-c
                                 {
                                     if (!user.IsActive)
                                     {
-                                        <a asp-controller="Admin" asp-action="ReactivateUser" asp-route-id="@user.Id" class="ab su" onclick="return confirm('¿Reactivar?')">🔓 Reactivar</a>
+                                      <a href="#" class="ab su"
+   onclick="event.preventDefault(); showConfirm({icon:'🔓',title:'Reactivar cuenta',message:'@user.Username podrá volver a acceder a la plataforma.',confirmText:'🔓 Reactivar',confirmColor:'#10b981',onConfirm:()=>window.location.href='@Url.Action("ReactivateUser","Admin",new{id=user.Id})'})">
+    🔓 Reactivar
+</a>
                                     }
                                     else if (user.IsBanned)
                                     {
-                                        <a asp-controller="Admin" asp-action="UnbanUser" asp-route-id="@user.Id" class="ab su" onclick="return confirm('¿Desbanear?')">🔓 Desbanear</a>
+                                       <a href="#" class="ab su"
+   onclick="event.preventDefault(); showConfirm({icon:'🔓',title:'Desbanear usuario',message:'@user.Username recuperará acceso completo a la plataforma.',confirmText:'🔓 Desbanear',confirmColor:'#10b981',onConfirm:()=>window.location.href='@Url.Action("UnbanUser","Admin",new{id=user.Id})'})">
+    🔓 Desbanear
+</a>
                                     }
                                     else
                                     {
                                         if (isAdminUser && !isSuperAdmin)
                                         {
                                             <button class="ab da" onclick="mostrarWarn()">🔒 Desactivar</button>
-                                            <button class="ab wa" onclick="mostrarWarn()">🚫 Banear</button>
+                                          <a href="#" class="ab wa"
+   onclick="event.preventDefault(); showConfirm({icon:'🚫',title:'Banear usuario',message:'@user.Username perderá acceso permanentemente. Podrás desbanearlo después.',confirmText:'🚫 Banear',confirmColor:'#dc2626',onConfirm:()=>window.location.href='@Url.Action("BanUser","Admin",new{id=user.Id})'})">
+    🚫 Banear
+</a>
                                         }
                                         else
                                         {
                                             <button class="ab da" onclick="confirmDelete(@user.Id)">🔒 Desactivar</button>
-                                            <a asp-controller="Admin" asp-action="BanUser" asp-route-id="@user.Id" class="ab wa" onclick="return confirm('¿Banear?')">🚫 Banear</a>
+                                           <a href="#" class="ab wa"
+   onclick="event.preventDefault(); showConfirm({icon:'🚫',title:'Banear usuario',message:'@user.Username perderá acceso permanentemente. Podrás desbanearlo después.',confirmText:'🚫 Banear',confirmColor:'#dc2626',onConfirm:()=>window.location.href='@Url.Action("BanUser","Admin",new{id=user.Id})'})">
+    🚫 Banear
+</a>
                                         }
                                         @if (isSuperAdmin)
                                         {
-                                            <a asp-controller="Admin" asp-action="DeleteUserPermanently" asp-route-id="@user.Id" class="ab dl" onclick="return confirm('¿Eliminar permanentemente?')">💀 Eliminar</a>
+                                       <a href="#" class="ab dl"
+   onclick="event.preventDefault(); showConfirm({icon:'💀',title:'Eliminar permanentemente',message:'Se eliminarán TODOS los datos de @user.Username: publicaciones, hábitos, mensajes. Acción irreversible.',confirmText:'💀 Eliminar para siempre',confirmColor:'#7f1d1d',onConfirm:()=>window.location.href='@Url.Action("DeleteUserPermanently","Admin",new{id=user.Id})'})">
+    💀 Eliminar
+</a>
                                             if (user.Role == "Admin")
                                             { <a href="#" class="ab se" onclick="event.preventDefault();confirmRemoveAdmin(@user.Id)">⬇️ Quitar Admin</a> }
                                             else
-                                            { <a asp-controller="Admin" asp-action="MakeAdmin" asp-route-id="@user.Id" class="ab pr2" onclick="return confirm('¿Hacer Admin?')">⬆️ Hacer Admin</a> }
+                                            { <a href="#" class="ab pr2"
+   onclick="event.preventDefault(); showConfirm({icon:'⬆️',title:'Hacer Administrador',message:'@user.Username tendrá acceso al panel de administración.',confirmText:'⬆️ Sí, hacer Admin',confirmColor:'#6366f1',onConfirm:()=>window.location.href='@Url.Action("MakeAdmin","Admin",new{id=user.Id})'})">
+    ⬆️ Hacer Admin
+</a> }
                                             @if (user.IsIpBlocked)
                                             { <button class="ab ub2" onclick="desbloquearConexion(@user.Id,'@user.Username')" data-no-loader="true">🔓 Desbloquear conexión</button> }
                                             else
@@ -602,10 +623,13 @@ body.bg-dark .qb.n{background:#1e293b!important;color:#94a3b8!important;border-c
                         }
                         @if (isSuperAdmin && user.Id != myId)
                         {
-                            <form asp-controller="Admin" asp-action="ResetPassword" method="post" style="display:inline">
-                                <input type="hidden" name="userId" value="@user.Id"/>
-                                <button class="ab ne" onclick="return confirm('¿Resetear?')">🔑 Reset</button>
-                            </form>
+                           <form asp-controller="Admin" asp-action="ResetPassword" method="post" style="display:inline" id="resetPwForm-@user.Id">
+    <input type="hidden" name="userId" value="@user.Id"/>
+    <button type="button" class="ab ne"
+        onclick="showConfirm({icon:'🔑',title:'Resetear contraseña',message:'Se generará una nueva contraseña temporal para @user.Username.',confirmText:'🔑 Sí, resetear',confirmColor:'#f59e0b',onConfirm:()=>document.getElementById('resetPwForm-@user.Id').submit()})">
+        🔑 Reset
+    </button>
+</form>
                         }
                     }
                 </div>

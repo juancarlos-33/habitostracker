@@ -578,7 +578,7 @@ body.bg-dark .hx-btn.ghost{background:#111827!important;border-color:rgba(255,25
                                 <a href="/Habit/Complete/@habit.Id" class="hx-ha ok" title="Completar" onclick="playOk(event,this)">✔</a>
                                 <a href="/Habit/Fail/@habit.Id" class="hx-ha no" title="Fallar">✖</a>
                                 <a href="/Habit/Edit/@habit.Id" class="hx-ha ed" title="Editar">✏</a>
-                                <a href="/Habit/Delete/@habit.Id" class="hx-ha rm" data-no-loader="true" onclick="if(!confirm('¿Eliminar este hábito?'))return false;" title="Eliminar">🗑</a>
+                      <a href="#" class="hx-ha rm" data-no-loader="true" onclick="confirmarEliminarHabito('@habit.Id','@habit.Name'); return false;" title="Eliminar">🗑</a>
                             </div>
                         </div>
                         <div class="hx-cwrap" id="cw-@habit.Id">
@@ -773,5 +773,15 @@ document.addEventListener('DOMContentLoaded',()=>{
     if(!@(isGuest?"true":"false"))loadStories();
     if(document.referrer.includes('/Story/Create')){history.pushState(null,null,location.href);window.onpopstate=()=>history.go(1);}
 });
+function confirmarEliminarHabito(id, nombre) {
+    showConfirm({
+        icon: '🗑️',
+        title: '¿Eliminar hábito?',
+        message: `"${nombre}" será eliminado permanentemente junto con todo su historial y rachas.`,
+        confirmText: '🗑 Sí, eliminar',
+        confirmColor: '#ef4444',
+        onConfirm: () => window.location.href = '/Habit/Delete/' + id
+    });
+}
 </script>
 }

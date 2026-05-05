@@ -103,11 +103,10 @@
                            class="report-btn view">
                             👀 Ver post
                         </a>
-                        <a asp-controller="Post" asp-action="Delete" asp-route-id="@report.PostId"
-                           class="report-btn delete"
-                           onclick="return confirm('¿Seguro que quieres eliminar este post?')">
-                            🗑 Eliminar
-                        </a>
+                      <a href="#" class="report-btn delete"
+   onclick="event.preventDefault(); showConfirm({icon:'🗑️',title:'Eliminar publicación',message:'La publicación y todos sus comentarios serán eliminados permanentemente.',confirmText:'🗑 Eliminar',confirmColor:'#ef4444',onConfirm:()=>window.location.href='@Url.Action("Delete","Post",new{id=report.PostId})'})">
+    🗑 Eliminar
+</a>
                     </div>
 
                 </div>

@@ -70,20 +70,18 @@
                     @if (!p.IsApproved && !p.IsRejected)
                     {
                         <div class="payment-actions">
-                            <a asp-controller="Admin"
-                               asp-action="ApprovePayment"
-                               asp-route-id="@p.Id"
-                               class="payment-btn approve"
-                               onclick="return confirm('¿Aprobar este pago?')">
-                                ✅ Aprobar
-                            </a>
-                            <a asp-controller="Admin"
-                               asp-action="RejectPayment"
-                               asp-route-id="@p.Id"
-                               class="payment-btn reject"
-                               onclick="return confirm('¿Rechazar este pago?')">
-                                ❌ Rechazar
-                            </a>
+                          <a asp-controller="Admin" asp-action="ApprovePayment" asp-route-id="@p.Id"
+   class="payment-btn approve"
+   href="#"
+   onclick="event.preventDefault(); showConfirm({icon:'✅',title:'Aprobar pago',message:'Se otorgará el plan Premium al usuario. Esta acción no se puede deshacer.',confirmText:'✅ Sí, aprobar',confirmColor:'#10b981',onConfirm:()=>window.location.href='@Url.Action("ApprovePayment","Admin",new{id=p.Id})'})">
+    ✅ Aprobar
+</a>
+                           <a asp-controller="Admin" asp-action="RejectPayment" asp-route-id="@p.Id"
+   class="payment-btn reject"
+   href="#"
+   onclick="event.preventDefault(); showConfirm({icon:'❌',title:'Rechazar pago',message:'El comprobante será rechazado y el usuario no recibirá Premium.',confirmText:'❌ Sí, rechazar',confirmColor:'#ef4444',onConfirm:()=>window.location.href='@Url.Action("RejectPayment","Admin",new{id=p.Id})'})">
+    ❌ Rechazar
+</a>
                         </div>
                     }
 

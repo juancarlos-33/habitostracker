@@ -1112,7 +1112,56 @@ if ("Notification" in window) Notification.requestPermission();
     }
 })();
 </script>
+<!-- MODAL CONFIRMACIÓN GLOBAL -->
+<div id="confirmModal" style="display:none;position:fixed;inset:0;z-index:9999999;background:rgba(0,0,0,0.7);backdrop-filter:blur(10px);align-items:center;justify-content:center;padding:20px;">
+    <div style="background:linear-gradient(135deg,#0d1220,#111827);border:1px solid rgba(255,255,255,0.08);border-radius:24px;max-width:360px;width:100%;padding:28px 24px;box-shadow:0 30px 70px rgba(0,0,0,0.6);animation:cmIn 0.25s cubic-bezier(0.34,1.56,0.64,1);">
+        <div id="cmIcon" style="font-size:42px;text-align:center;margin-bottom:12px;"></div>
+        <div id="cmTitle" style="font-size:17px;font-weight:800;color:white;text-align:center;margin-bottom:6px;font-family:'Syne',sans-serif;"></div>
+        <div id="cmMsg" style="font-size:13px;color:rgba(255,255,255,0.45);text-align:center;margin-bottom:22px;line-height:1.6;"></div>
+        <div style="display:flex;gap:10px;">
+            <button id="cmCancel" style="flex:1;padding:12px;border-radius:13px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.05);color:rgba(255,255,255,0.5);font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;transition:0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='rgba(255,255,255,0.05)'">Cancelar</button>
+            <button id="cmConfirm" style="flex:2;padding:12px;border-radius:13px;border:none;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;transition:0.2s;"></button>
+        </div>
+    </div>
+</div>
+<style>
+@@keyframes cmIn{from{opacity:0;transform:scale(0.9) translateY(20px);}to{opacity:1;transform:scale(1) translateY(0);}}
+</style>
+<script>
+function showConfirm({icon='⚠️', title, message, confirmText='Confirmar', confirmColor='#ef4444', onConfirm}){
+    document.getElementById('cmIcon').textContent = icon;
+    document.getElementById('cmTitle').textContent = title;
+    document.getElementById('cmMsg').textContent = message;
+    const btn = document.getElementById('cmConfirm');
+    btn.textContent = confirmText;
+    btn.style.background = confirmColor;
+    btn.style.color = 'white';
+    btn.style.boxShadow = `0 4px 14px ${confirmColor}55`;
+    const modal = document.getElementById('confirmModal');
+    modal.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
 
+    // limpiar listeners anteriores
+    const newBtn = btn.cloneNode(true);
+    btn.parentNode.replaceChild(newBtn, btn);
+    const cancelBtn = document.getElementById('cmCancel');
+    const newCancel = cancelBtn.cloneNode(true);
+    cancelBtn.parentNode.replaceChild(newCancel, cancelBtn);
+
+    document.getElementById('cmConfirm').addEventListener('click', () => {
+        closeConfirm();
+        onConfirm();
+    });
+    document.getElementById('cmCancel').addEventListener('click', closeConfirm);
+    modal.addEventListener('click', function handler(e){
+        if(e.target === modal){ closeConfirm(); modal.removeEventListener('click', handler); }
+    });
+}
+function closeConfirm(){
+    document.getElementById('confirmModal').style.display = 'none';
+    document.body.style.overflow = '';
+}
+</script>
 
 </body>
 </html>
