@@ -2247,6 +2247,35 @@ namespace HabitTrackerApp.Controllers
             return View();
         }
 
+        [HttpPost]
+        public async Task<IActionResult> RequestAccountDeletion([FromBody] DeleteRequestDto dto)
+        {
+            var userId = int.Parse(User.FindFirst("UserId").Value);
+            var user = _context.Users.FirstOrDefault(u => u.Id == userId);
+            if (user == null) return Json(new { success = false });
+
+            // guardar en AdminLogs o enviar notificación a admins
+            _context.AdminLogs.Add(new AdminLog
+            {
+                Action = $"SOLICITUD ELIMINACIÓN — Motivo: {dto.Reason} | Detalle: {dto.Detail} | Contactar por: {dto.ContactMethod} — {dto.ContactValue}",
+                AdminId = userId,
+                AdminName = user.Username,
+                AdminProfileImage = user.ProfileImage ?? user.ProfilePicture ?? "",
+                TargetUserId = userId,
+                TargetUsername = user.Username,
+                CreatedAt = DateTime.UtcNow
+            });
+            await _context.SaveChangesAsync();
+            return Ok();
+        }
+
+        public class DeleteRequestDto
+        {
+            public string Reason { get; set; }
+            public string Detail { get; set; }
+            public string ContactMethod { get; set; }
+            public string ContactValue { get; set; }
+        }
 
         [HttpPost]
         [IgnoreAntiforgeryToken] // 🔥 Google OAuth rompe el token
