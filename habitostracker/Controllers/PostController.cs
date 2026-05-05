@@ -209,7 +209,7 @@ namespace HabitTrackerApp.Controllers
                 .ToDictionary(g => g.Key, g => g.Count());
 
             ViewBag.PostLikes = postLikes;
-
+            ViewBag.TotalPosts = posts.Count;
             return View(posts);
         }
 
