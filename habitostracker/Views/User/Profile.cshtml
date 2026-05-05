@@ -298,10 +298,7 @@ body:not(.bg-dark) .prof-empty-sub { color: #475569; }
                     { <button class="prof-btn ghost-yellow" disabled>⏳ Pendiente</button> }
                     else
                     {
-                        <form asp-action="SendFriendRequest" method="post">
-                            <input type="hidden" name="receiverId" value="@Model.Id" />
-                            <button class="prof-btn success">👤 Agregar</button>
-                        </form>
+                       <button class="prof-btn success" id="addFriendBtn" onclick="enviarSolicitudAmistad(event, @Model.Id)">👤 Agregar</button>
                     }
                     @if (canChat)
                     { <a href="/Message/Chat?userId=@Model.Id" class="prof-btn secondary">💬 Mensaje</a> }
@@ -799,6 +796,36 @@ async function toggleFollow(btn, userId, isFollowing) {
         showToast('❌ Error de conexión');
     }
     btn.disabled = false;
+}
+async function enviarSolicitudAmistad(e, userId) {
+    e.preventDefault();
+    const btn = document.getElementById('addFriendBtn');
+    const textoOriginal = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<span style="display:inline-flex;align-items:center;gap:6px;"><span style="width:14px;height:14px;border:2px solid rgba(255,255,255,0.4);border-top-color:white;border-radius:50%;animation:spinBtn 0.6s linear infinite;display:inline-block;"></span> Enviando...</span>';
+
+    try {
+        const formData = new FormData();
+        formData.append('receiverId', userId);
+        formData.append('__RequestVerificationToken', document.querySelector('input[name="__RequestVerificationToken"]')?.value ?? '');
+        
+        const res = await fetch('/User/SendFriendRequest', { method: 'POST', body: formData });
+        
+        if (res.ok) {
+            btn.innerHTML = '⏳ Pendiente';
+            btn.className = 'prof-btn ghost-yellow';
+            btn.disabled = true;
+            showToast('✅ Solicitud enviada');
+        } else {
+            btn.innerHTML = textoOriginal;
+            btn.disabled = false;
+            showToast('❌ Error al enviar solicitud');
+        }
+    } catch {
+        btn.innerHTML = textoOriginal;
+        btn.disabled = false;
+        showToast('❌ Error de conexión');
+    }
 }
 function confirmarEliminarAmigo() {
     if (!confirm("¿Eliminar a @Model.Username de tus amigos?")) return;
