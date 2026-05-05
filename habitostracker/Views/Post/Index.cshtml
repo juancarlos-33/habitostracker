@@ -16,8 +16,6 @@
     </a>
 </div>
 
-<div>Total posts: @ViewBag.TotalPosts</div>
-
 @if (!Model.Any())
 {
     <div class="feed-empty">
@@ -78,15 +76,12 @@
                         </div>
                <div class="post-time-wrap">
  <span class="post-time">@post.CreatedAt.ToString("dd MMM yyyy · hh:mm tt", new System.Globalization.CultureInfo("es-CO"))</span>
-    @if (post.UserId == currentUserId)
-    {
-        if (post.Privacy == "Friends")
-        { <span class="post-privacy-badge friends">👥 Amigos</span> }
-        else if (post.Privacy == "Private")
-        { <span class="post-privacy-badge private">🔒 Solo yo</span> }
-        else
-        { <span class="post-privacy-badge public">🌐 Público</span> }
-    }
+  @if (post.Privacy == "Friends")
+{ <span class="post-privacy-badge friends">👥 Amigos</span> }
+else if (post.Privacy == "Private")
+{ <span class="post-privacy-badge private">🔒 Solo yo</span> }
+else
+{ <span class="post-privacy-badge public">🌐 Público</span> }
 </div>
                     </div>
                 </div>
