@@ -778,17 +778,23 @@ async function toggleFollow(btn, userId, isFollowing) {
     
     try {
         const res = await fetch(url, { method: 'POST', body: formData });
-        if (res.ok) {
-            if (isFollowing) {
-                btn.textContent = '+ Seguir';
-                btn.className = 'prof-btn primary';
-                btn.onclick = () => toggleFollow(btn, userId, false);
-            } else {
-                btn.textContent = '✓ Siguiendo';
-                btn.className = 'prof-btn secondary';
-                btn.onclick = () => toggleFollow(btn, userId, true);
-            }
-        } else {
+   if (res.ok) {
+    if (isFollowing) {
+        btn.textContent = '+ Seguir';
+        btn.className = 'prof-btn primary';
+        btn.onclick = () => toggleFollow(btn, userId, false);
+        // restar seguidor
+        const statNum = document.querySelector('.prof-stat-num');
+        if (statNum) statNum.textContent = Math.max(0, parseInt(statNum.textContent) - 1);
+    } else {
+        btn.textContent = '✓ Siguiendo';
+        btn.className = 'prof-btn secondary';
+        btn.onclick = () => toggleFollow(btn, userId, true);
+        // sumar seguidor
+        const statNum = document.querySelector('.prof-stat-num');
+        if (statNum) statNum.textContent = parseInt(statNum.textContent) + 1;
+    }
+} else {
             btn.textContent = textoOriginal;
         }
     } catch {
