@@ -2255,6 +2255,14 @@ namespace HabitTrackerApp.Controllers
             if (user == null) return Json(new { success = false });
 
             // guardar en AdminLogs o enviar notificación a admins
+            // verificar si ya envió una solicitud
+            var yaEnvio = _context.AdminLogs.Any(l =>
+                l.TargetUserId == userId &&
+                l.Action.StartsWith("SOLICITUD ELIMINACIÓN"));
+
+            if (yaEnvio)
+                return BadRequest("Ya enviaste una solicitud de eliminación. Nuestro equipo la está revisando.");
+
             _context.AdminLogs.Add(new AdminLog
             {
                 Action = $"SOLICITUD ELIMINACIÓN — Motivo: {dto.Reason} | Detalle: {dto.Detail} | Contactar por: {dto.ContactMethod} — {dto.ContactValue}",

@@ -884,15 +884,28 @@ async function enviarSolicitudEliminacion() {
             })
         });
 
-        if (res.ok) {
-            document.getElementById('deleteRequestForm').style.display = 'none';
-            document.getElementById('deleteRequestSent').style.display = 'block';
-            mostrarToast('✅ Solicitud enviada correctamente');
-        } else {
-            btn.disabled = false;
-            btn.innerHTML = textoOriginal;
-            mostrarToast('❌ Error al enviar la solicitud. Intenta de nuevo.');
-        }
+    if (res.ok) {
+    document.getElementById('deleteRequestForm').style.display = 'none';
+    document.getElementById('deleteRequestSent').style.display = 'block';
+    mostrarToast('✅ Solicitud enviada correctamente');
+} else {
+    const msg = await res.text();
+    btn.disabled = false;
+    btn.innerHTML = textoOriginal;
+    if (res.status === 400 && msg.includes('Ya enviaste')) {
+        // ocultar form y mostrar estado ya enviado
+        document.getElementById('deleteRequestForm').style.display = 'none';
+        document.getElementById('deleteRequestSent').innerHTML = `
+            <div class="request-sent">
+                <span class="request-sent-icon">⏳</span>
+                <div class="request-sent-title">Solicitud ya enviada</div>
+                <div class="request-sent-sub">Ya tienes una solicitud en proceso. Nuestro equipo se comunicará contigo pronto.</div>
+            </div>`;
+        document.getElementById('deleteRequestSent').style.display = 'block';
+    } else {
+        mostrarToast('❌ Error al enviar la solicitud. Intenta de nuevo.');
+    }
+}
     } catch {
         btn.disabled = false;
         btn.innerHTML = textoOriginal;
