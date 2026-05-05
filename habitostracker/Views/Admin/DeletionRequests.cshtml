@@ -1,0 +1,45 @@
+﻿@model List<HabitTrackerApp.Models.AdminLog>
+@{
+    ViewData["Title"] = "Solicitudes de eliminación";
+}
+
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+<div style="max-width:800px;margin:0 auto;font-family:'Plus Jakarta Sans',sans-serif;padding-bottom:60px;">
+    <div style="background:linear-gradient(135deg,#0f172a,#1e293b);border-radius:24px;padding:28px 32px;margin-bottom:20px;border:1px solid rgba(249,115,22,0.2);">
+        <div style="font-size:22px;font-weight:800;color:white;margin-bottom:4px;">📝 Solicitudes de eliminación</div>
+        <div style="font-size:13px;color:rgba(255,255,255,0.4);">@Model.Count solicitud@(Model.Count != 1 ? "es" : "") recibida@(Model.Count != 1 ? "s" : "")</div>
+    </div>
+
+    @if (!Model.Any())
+    {
+        <div style="text-align:center;padding:60px 20px;background:#0f172a;border-radius:20px;border:1px solid rgba(255,255,255,0.06);">
+            <div style="font-size:48px;margin-bottom:12px;">✅</div>
+            <div style="font-size:16px;font-weight:700;color:#f1f5f9;">No hay solicitudes pendientes</div>
+            <div style="font-size:13px;color:rgba(255,255,255,0.3);margin-top:6px;">Todas las solicitudes han sido atendidas</div>
+        </div>
+    }
+    else
+    {
+        @foreach (var log in Model)
+        {
+            <div style="background:#0f172a;border-radius:18px;padding:20px 24px;margin-bottom:10px;border:1px solid rgba(249,115,22,0.15);">
+                <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
+                    <div style="width:40px;height:40px;border-radius:12px;background:rgba(249,115,22,0.1);display:flex;align-items:center;justify-content:center;font-size:18px;">📝</div>
+                    <div>
+                        <div style="font-size:14px;font-weight:700;color:#f1f5f9;">@log.TargetUsername</div>
+                        <div style="font-size:11px;color:rgba(255,255,255,0.3);">@log.CreatedAt.ToLocalTime().ToString("dd MMM yyyy · HH:mm")</div>
+                    </div>
+                    <a href="/User/Profile/@log.TargetUserId" style="margin-left:auto;padding:6px 14px;border-radius:10px;background:rgba(99,102,241,0.1);color:#818cf8;font-size:12px;font-weight:700;text-decoration:none;border:1px solid rgba(99,102,241,0.2);">Ver perfil →</a>
+                </div>
+                <div style="background:rgba(255,255,255,0.03);border-radius:12px;padding:12px 16px;border:1px solid rgba(255,255,255,0.05);font-size:13px;color:rgba(255,255,255,0.6);line-height:1.7;">
+                    @log.Action
+                </div>
+            </div>
+        }
+    }
+
+    <a asp-controller="Admin" asp-action="Index" style="display:inline-flex;align-items:center;gap:6px;margin-top:8px;padding:10px 20px;border-radius:12px;background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.6);font-size:13px;font-weight:700;text-decoration:none;border:1px solid rgba(255,255,255,0.08);">
+        ← Volver al panel
+    </a>
+</div>

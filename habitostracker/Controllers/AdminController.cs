@@ -390,6 +390,15 @@ namespace HabitTrackerApp.Controllers
 
             return RedirectToAction("Users");
         }
+        [HttpGet]
+        public IActionResult DeletionRequests()
+        {
+            var requests = _context.AdminLogs
+                .Where(l => l.Action.StartsWith("SOLICITUD ELIMINACIÓN"))
+                .OrderByDescending(l => l.CreatedAt)
+                .ToList();
+            return View(requests);
+        }
 
         [HttpPost]
         public async Task<IActionResult> BanAllFromIP(string ip)

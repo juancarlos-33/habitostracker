@@ -1,6 +1,12 @@
 ﻿@inject HabitTrackerApp.Data.HabitDbContext _context
 
 @{
+    var deletionRequests = _context.AdminLogs
+    .Where(l => l.Action.StartsWith("SOLICITUD ELIMINACIÓN"))
+    .OrderByDescending(l => l.CreatedAt)
+    .Take(10)
+    .ToList();
+var deletionCount = deletionRequests.Count;
     var block = Context.RequestServices
         .GetService<HabitTrackerApp.Data.HabitDbContext>()
         .ConnectionBlocks
@@ -551,6 +557,19 @@
             </div>
             <div class="ap-module-arrow">›</div>
         </a>
+        <a asp-controller="Admin" asp-action="DeletionRequests" class="ap-module" style="border-color:rgba(249,115,22,0.2);">
+    <div class="ap-module-stripe" style="background:linear-gradient(180deg,#ea580c,#f97316);"></div>
+    <div class="ap-module-icon" style="background:rgba(249,115,22,0.1);">📝</div>
+    <div class="ap-module-info">
+        <div class="ap-module-name">
+            Solicitudes de eliminación
+            @if (deletionCount > 0)
+            { <span class="ap-module-badge">@deletionCount</span> }
+        </div>
+        <div class="ap-module-desc">Usuarios que solicitan borrar su cuenta</div>
+    </div>
+    <div class="ap-module-arrow">›</div>
+</a>
     </div>
 
     <!-- ACTIVIDAD RECIENTE -->
@@ -592,6 +611,14 @@
                 <div class="ap-activity-time">Hoy</div>
             </div>
         }
+        @if (deletionCount > 0)
+{
+    <div class="ap-activity-item">
+        <div class="ap-activity-dot rose"></div>
+        <div class="ap-activity-text"><strong>@deletionCount</strong> solicitud@(deletionCount != 1 ? "es" : "") de eliminación de cuenta pendiente@(deletionCount != 1 ? "s" : "")</div>
+        <div class="ap-activity-time" style="color:#f87171;">⚠️ Pendiente</div>
+    </div>
+}
     </div>
 
     <!-- USUARIOS RECIENTES -->
