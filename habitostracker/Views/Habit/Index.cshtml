@@ -1,10 +1,8 @@
 ﻿@model List<HabitTrackerApp.Models.Habit>
 @inject HabitTrackerApp.Data.HabitDbContext _context
 
-@if (TempData["Error"] != null)
-{ <div class="ht-alert danger">@TempData["Error"]</div> }
-@if (TempData["Success"] != null)
-{ <div class="ht-alert success">@TempData["Success"]</div> }
+@if (TempData["Error"] != null) { <div class="hx-toast hx-toast-err">⚠ @TempData["Error"]</div> }
+@if (TempData["Success"] != null) { <div class="hx-toast hx-toast-ok">✓ @TempData["Success"]</div> }
 
 @{
     var username = User.Identity?.Name ?? "";
@@ -15,886 +13,627 @@
     int bestRecord = habits.Any() ? habits.Max(h => h.MaxStreak) : 0;
     int completedToday = habits.Count(h => h.LastCheckDate == DateTime.Today && h.Completed);
     int completionRate = totalHabits > 0 ? (int)((completedToday * 100.0) / totalHabits) : 0;
-    string welcomeMsg = user?.Gender?.ToLower() == "femenino"
-        ? $"Hola, {user.Username} ✨" : $"Hola, {user?.Username ?? username} 👋";
+    bool isPremium = user?.IsPremium == true;
+    bool isGuest = user?.Role == "Guest";
+    string firstName = (user?.Username ?? username).Split(' ')[0];
+    string greeting = DateTime.Now.Hour < 12 ? "Buenos días" : DateTime.Now.Hour < 18 ? "Buenas tardes" : "Buenas noches";
+    string greetEmoji = user?.Gender?.ToLower() == "femenino" ? "✨" : "👋";
     ViewData["Title"] = "HabitTracker Pro";
     var last7Days = Enumerable.Range(0, 7).Select(i => DateTime.Today.AddDays(-i)).Reverse().ToList();
     var habitIds = habits.Select(h => h.Id).ToList();
-    var histories = _context.HabitHistories
-        .Where(h => habitIds.Contains(h.HabitId) && h.Date >= DateTime.Today.AddDays(-6)).ToList();
+    var histories = _context.HabitHistories.Where(h => habitIds.Contains(h.HabitId) && h.Date >= DateTime.Today.AddDays(-6)).ToList();
     var dailyCompletion = last7Days.Select(date => {
         if (!habits.Any()) return 0;
         int c = histories.Count(h => h.Date.Date == date.Date && h.Completed);
-        int f = histories.Count(h => h.Date.Date == date.Date && !h.Completed);
-        int t = c + f;
+        int t = histories.Count(h => h.Date.Date == date.Date);
         return t > 0 ? (int)((c * 100.0) / t) : 0;
     }).ToList();
-    bool isGuest = user?.Role == "Guest";
     var pendingHabits = habits.Where(h => h.LastCheckDate != DateTime.Today).ToList();
     var completedHabits = habits.Where(h => h.LastCheckDate == DateTime.Today && h.Completed).ToList();
+    int avgStreak = totalHabits > 0 ? (int)(totalStreak / totalHabits) : 0;
 }
 
-<link href="https://fonts.googleapis.com/css2?family=Clash+Display:wght@400;500;600;700&family=Cabinet+Grotesk:wght@400;500;700;800&display=swap" rel="stylesheet">
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;500;600;700;800&family=Geist:wght@300;400;500;600&display=swap" rel="stylesheet">
 
 <style>
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 
-:root {
-    --ink: #060a12;
-    --surface: #f0f2f8;
-    --card: #ffffff;
-    --card2: #f8faff;
-    --border: rgba(0,0,0,0.07);
-    --border2: rgba(0,0,0,0.12);
-    --accent: #5b5ef4;
-    --accent2: #3730d9;
-    --accent-glow: rgba(91,94,244,0.3);
-    --green: #00c48c;
-    --orange: #ff7043;
-    --gold: #f59e0b;
-    --text: #0f172a;
-    --muted: #64748b;
-    --muted2: #94a3b8;
-    --radius: 22px;
-    --radius2: 16px;
-}
-
-body.bg-dark {
-    --ink: #f1f5f9;
-    --surface: #080c18;
-    --card: #0f172a;
-    --card2: #111827;
-    --border: rgba(255,255,255,0.06);
-    --border2: rgba(255,255,255,0.1);
-    --text: #f1f5f9;
-    --muted: #64748b;
-    --muted2: #475569;
+:root{
+    --bg:#07090f;
+    --s1:#0c1018;
+    --s2:#111827;
+    --s3:#1a2234;
+    --b1:rgba(255,255,255,0.05);
+    --b2:rgba(255,255,255,0.09);
+    --b3:rgba(255,255,255,0.14);
+    --a:#4f6ef7;
+    --a2:#3451e8;
+    --ag:rgba(79,110,247,0.25);
+    --grn:#10d48e;
+    --org:#ff6b35;
+    --gld:#f4bc2a;
+    --red:#f04e4e;
+    --txt:#f0f4ff;
+    --m1:#8899bb;
+    --m2:#4a5a7a;
+    --r1:20px;
+    --r2:14px;
+    --r3:10px;
 }
 
-/* ── ALERTS ── */
-.ht-alert { padding: 13px 18px; border-radius: 14px; margin-bottom: 16px; font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 8px; font-family: 'DM Sans', sans-serif; }
-.ht-alert.danger { background: rgba(239,68,68,0.08); color: #ef4444; border: 1px solid rgba(239,68,68,0.2); }
-.ht-alert.success { background: rgba(0,196,140,0.08); color: var(--green); border: 1px solid rgba(0,196,140,0.2); }
+body.bg-dark{--bg:#07090f;}
 
-/* ── MAIN PAGE ── */
-.ht-home {
-    max-width: 1100px; margin: 0 auto;
-    font-family: 'DM Sans', sans-serif; color: var(--text);
-    padding-bottom: 60px;
-}
+/* ── TOASTS ── */
+.hx-toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);padding:10px 20px;border-radius:30px;font-size:13px;font-weight:600;z-index:999999;animation:toastPop 0.3s ease;white-space:nowrap;font-family:'Geist',sans-serif;}
+.hx-toast-ok{background:rgba(16,212,142,0.15);color:var(--grn);border:1px solid rgba(16,212,142,0.3);}
+.hx-toast-err{background:rgba(240,78,78,0.12);color:var(--red);border:1px solid rgba(240,78,78,0.25);}
+@@keyframes toastPop{from{opacity:0;transform:translateX(-50%) translateY(-10px);}to{opacity:1;transform:translateX(-50%) translateY(0);}}
 
-/* ══════════════════════════════
-   HERO CINEMATIC
-══════════════════════════════ */
-.ht-hero {
-    position: relative; border-radius: 28px; overflow: hidden;
-    margin-bottom: 20px; min-height: 260px;
-    display: flex; flex-direction: column; justify-content: flex-end;
-    padding: 28px 30px 26px;
+/* ── PAGE ── */
+.hx{max-width:1080px;margin:0 auto;font-family:'Geist',sans-serif;color:var(--txt);padding-bottom:80px;}
+
+/* ══════════════════════════
+   HERO — CINEMATIC CARD
+══════════════════════════ */
+.hx-hero{
+    position:relative;border-radius:24px;overflow:hidden;
+    margin-bottom:16px;padding:0;
+    background:var(--s1);
+    border:1px solid var(--b2);
+    box-shadow:0 24px 80px rgba(0,0,0,0.5);
 }
-.ht-hero-bg {
-    position: absolute; inset: 0; z-index: 0;
+.hx-hero-canvas{
+    position:absolute;inset:0;z-index:0;overflow:hidden;
 }
-.ht-hero-bg-base {
-    position: absolute; inset: 0;
-    background: linear-gradient(135deg, #0a0e1f 0%, #1a1060 40%, #0d1f3c 70%, #060c18 100%);
+.hx-hero-canvas-bg{
+    position:absolute;inset:0;
+    background:linear-gradient(160deg,#050814 0%,#0d1535 35%,#091428 65%,#050a14 100%);
 }
-.ht-hero-mesh {
-    position: absolute; inset: 0;
+.hx-hero-canvas-mesh{
+    position:absolute;inset:0;
     background:
-        radial-gradient(ellipse 70% 60% at 80% 20%, rgba(91,94,244,0.35) 0%, transparent 55%),
-        radial-gradient(ellipse 50% 50% at 10% 80%, rgba(0,196,140,0.2) 0%, transparent 55%),
-        radial-gradient(ellipse 40% 40% at 50% 50%, rgba(255,112,67,0.12) 0%, transparent 60%);
+        radial-gradient(ellipse 80% 70% at 85% -10%,rgba(79,110,247,0.28) 0%,transparent 60%),
+        radial-gradient(ellipse 50% 60% at 5% 100%,rgba(16,212,142,0.18) 0%,transparent 55%),
+        radial-gradient(ellipse 40% 40% at 55% 50%,rgba(244,188,42,0.06) 0%,transparent 60%);
 }
-.ht-hero-grid {
-    position: absolute; inset: 0; opacity: 0.04;
-    background-image: linear-gradient(rgba(255,255,255,1) 1px, transparent 1px),
-                      linear-gradient(90deg, rgba(255,255,255,1) 1px, transparent 1px);
-    background-size: 40px 40px;
+.hx-hero-canvas-lines{
+    position:absolute;inset:0;opacity:0.03;
+    background-image:linear-gradient(rgba(255,255,255,1) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,1) 1px,transparent 1px);
+    background-size:36px 36px;
 }
-.ht-hero-noise {
-    position: absolute; inset: 0; opacity: 0.025;
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
-}
-.ht-hero-orbs {
-    position: absolute; inset: 0; pointer-events: none;
-}
-.ht-hero-orb {
-    position: absolute; border-radius: 50%;
-    filter: blur(60px); opacity: 0.4;
-}
-.ht-hero-orb-1 {
-    width: 300px; height: 300px;
-    background: radial-gradient(circle, #5b5ef4, transparent);
-    top: -80px; right: -60px;
-    animation: orbDrift1 8s ease-in-out infinite;
-}
-.ht-hero-orb-2 {
-    width: 200px; height: 200px;
-    background: radial-gradient(circle, #00c48c, transparent);
-    bottom: -40px; left: 10%;
-    animation: orbDrift2 10s ease-in-out infinite;
-}
-@@keyframes orbDrift1 { 0%,100%{transform:translate(0,0) scale(1);} 50%{transform:translate(-20px,20px) scale(1.1);} }
-@@keyframes orbDrift2 { 0%,100%{transform:translate(0,0) scale(1);} 50%{transform:translate(20px,-15px) scale(0.9);} }
+.hx-hero-orb{position:absolute;border-radius:50%;filter:blur(70px);pointer-events:none;}
+.hx-hero-orb-a{width:320px;height:320px;top:-100px;right:-80px;background:radial-gradient(circle,rgba(79,110,247,0.4),transparent);animation:hxOrb1 9s ease-in-out infinite;}
+.hx-hero-orb-b{width:220px;height:220px;bottom:-60px;left:5%;background:radial-gradient(circle,rgba(16,212,142,0.25),transparent);animation:hxOrb2 11s ease-in-out infinite;}
+@@keyframes hxOrb1{0%,100%{transform:translate(0,0)scale(1);}50%{transform:translate(-25px,18px)scale(1.08);}}
+@@keyframes hxOrb2{0%,100%{transform:translate(0,0);}50%{transform:translate(18px,-12px);}};
 
-.ht-hero-inner { position: relative; z-index: 1; }
-.ht-hero-top {
-    display: flex; align-items: center; justify-content: space-between;
-    margin-bottom: 22px; gap: 12px; flex-wrap: wrap;
-}
-.ht-hero-user { display: flex; align-items: center; gap: 14px; flex: 1; min-width: 0; }
-.ht-hero-avatar {
-    width: 52px; height: 52px; border-radius: 50%; flex-shrink: 0;
-    background: rgba(255,255,255,0.15); border: 2px solid rgba(255,255,255,0.3);
-    display: flex; align-items: center; justify-content: center;
-    font-family: 'Syne', sans-serif; font-size: 20px; font-weight: 800; color: white;
-    overflow: hidden; box-shadow: 0 0 0 4px rgba(255,255,255,0.08), 0 8px 24px rgba(0,0,0,0.3);
-    transition: 0.3s;
-}
-.ht-hero-avatar:hover { transform: scale(1.06); box-shadow: 0 0 0 4px rgba(91,94,244,0.4), 0 12px 32px rgba(0,0,0,0.4); }
-.ht-hero-avatar img { width: 100%; height: 100%; object-fit: cover; }
-.ht-hero-name {
-    font-family: 'Syne', sans-serif;
-    font-size: 20px; font-weight: 800; color: white; margin-bottom: 3px;
-    letter-spacing: -0.3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
-.ht-hero-sub { font-size: 12px; color: rgba(255,255,255,0.45); font-weight: 500; }
+/* HERO BODY */
+.hx-hero-body{position:relative;z-index:1;padding:22px 24px 20px;}
 
-.ht-hero-badges { display: flex; gap: 8px; align-items: center; flex-shrink: 0; flex-wrap: wrap; }
-.ht-plan-pill {
-    display: inline-flex; align-items: center; gap: 5px;
-    padding: 7px 14px; border-radius: 20px; font-size: 12px; font-weight: 700;
-    text-decoration: none; transition: 0.2s; white-space: nowrap;
+/* TOP ROW */
+.hx-hero-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:18px;}
+.hx-hero-id{display:flex;align-items:center;gap:12px;flex:1;min-width:0;}
+.hx-hero-av{
+    width:48px;height:48px;border-radius:50%;flex-shrink:0;
+    background:linear-gradient(135deg,var(--a),var(--a2));
+    border:2px solid rgba(255,255,255,0.2);
+    display:flex;align-items:center;justify-content:center;
+    font-family:'Bricolage Grotesque',sans-serif;font-size:18px;font-weight:800;color:white;
+    overflow:hidden;box-shadow:0 0 0 3px rgba(79,110,247,0.2),0 6px 20px rgba(0,0,0,0.4);
+    transition:0.25s;cursor:pointer;
 }
-.ht-plan-pill.free {
-    background: linear-gradient(135deg, var(--accent), var(--accent2));
-    color: white; box-shadow: 0 4px 14px rgba(91,94,244,0.5);
-}
-.ht-plan-pill.free:hover { transform: translateY(-1px); box-shadow: 0 8px 20px rgba(91,94,244,0.6); color: white; }
-.ht-plan-pill.premium {
-    background: rgba(245,158,11,0.15); color: #fcd34d;
-    border: 1px solid rgba(245,158,11,0.3); backdrop-filter: blur(8px);
-}
-.ht-weather-pill {
-    display: inline-flex; align-items: center; gap: 5px;
-    padding: 7px 12px; border-radius: 20px; font-size: 12px; font-weight: 600;
-    background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12);
-    color: rgba(255,255,255,0.8); backdrop-filter: blur(8px);
-    display: none;
-}
+.hx-hero-av:hover{transform:scale(1.06);box-shadow:0 0 0 3px rgba(79,110,247,0.4),0 8px 24px rgba(0,0,0,0.5);}
+.hx-hero-av img{width:100%;height:100%;object-fit:cover;}
+.hx-hero-text{min-width:0;flex:1;}
+.hx-hero-greet{font-size:11px;color:var(--m1);font-weight:500;margin-bottom:2px;letter-spacing:0.3px;}
+.hx-hero-name{font-family:'Bricolage Grotesque',sans-serif;font-size:19px;font-weight:800;color:white;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:-0.3px;}
+.hx-hero-badges{display:flex;gap:7px;align-items:center;flex-shrink:0;}
+.hx-pill{display:inline-flex;align-items:center;gap:5px;padding:6px 13px;border-radius:30px;font-size:11px;font-weight:700;white-space:nowrap;text-decoration:none;transition:0.2s;font-family:'Geist',sans-serif;}
+.hx-pill-premium{background:linear-gradient(135deg,var(--a),var(--a2));color:white;box-shadow:0 4px 14px rgba(79,110,247,0.45);}
+.hx-pill-premium:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(79,110,247,0.6);color:white;}
+.hx-pill-pro{background:rgba(244,188,42,0.12);color:var(--gld);border:1px solid rgba(244,188,42,0.25);}
+.hx-weather{display:none;align-items:center;gap:4px;padding:6px 11px;border-radius:30px;font-size:11px;font-weight:600;background:var(--b1);border:1px solid var(--b2);color:rgba(255,255,255,0.7);}
 
 /* STATS STRIP */
-.ht-hero-stats {
-    display: flex; align-items: stretch; gap: 0;
-    background: rgba(0,0,0,0.25); border-radius: 18px;
-    border: 1px solid rgba(255,255,255,0.08);
-    backdrop-filter: blur(20px); overflow: hidden;
+.hx-stats{
+    display:grid;grid-template-columns:repeat(4,1fr);
+    background:rgba(0,0,0,0.3);border-radius:16px;
+    border:1px solid var(--b1);overflow:hidden;
+    backdrop-filter:blur(16px);
 }
-.ht-hero-stat {
-    flex: 1; padding: 14px 12px; text-align: center; position: relative;
-    transition: 0.2s;
-}
-.ht-hero-stat:hover { background: rgba(255,255,255,0.04); }
-.ht-hero-stat:not(:last-child)::after {
-    content: ''; position: absolute; right: 0; top: 20%; height: 60%;
-    width: 1px; background: rgba(255,255,255,0.08);
-}
-.ht-hero-stat-val {
-    font-family: 'Syne', sans-serif;
-    font-size: 20px; font-weight: 800; color: white; line-height: 1; margin-bottom: 4px;
-    display: flex; align-items: center; justify-content: center; gap: 3px;
-}
-.ht-hero-stat-label {
-    font-size: 9px; color: rgba(255,255,255,0.4); text-transform: uppercase;
-    letter-spacing: 1px; font-weight: 700;
-}
+.hx-stat{padding:13px 8px;text-align:center;position:relative;transition:0.2s;}
+.hx-stat:hover{background:rgba(255,255,255,0.03);}
+.hx-stat:not(:last-child)::after{content:'';position:absolute;right:0;top:20%;height:60%;width:1px;background:var(--b1);}
+.hx-stat-val{font-family:'Bricolage Grotesque',sans-serif;font-size:18px;font-weight:800;color:white;line-height:1;margin-bottom:4px;display:flex;align-items:center;justify-content:center;gap:3px;}
+.hx-stat-lbl{font-size:8px;color:var(--m1);text-transform:uppercase;letter-spacing:1px;font-weight:700;}
+/* ring */
+.hx-stat.ring-stat{position:relative;}
+.hx-ring{position:absolute;top:8px;right:8px;width:22px;height:22px;transform:rotate(-90deg);}
+.hx-ring-bg{fill:none;stroke:rgba(255,255,255,0.08);stroke-width:3;}
+.hx-ring-fill{fill:none;stroke:var(--grn);stroke-width:3;stroke-linecap:round;transition:stroke-dashoffset 1.4s cubic-bezier(0.4,0,0.2,1);}
 
-/* PROGRESS RING */
-.ht-hero-stat.has-ring { position: relative; }
-.ht-ring-svg { position: absolute; top: 6px; right: 6px; width: 28px; height: 28px; transform: rotate(-90deg); }
-.ht-ring-bg { fill: none; stroke: rgba(255,255,255,0.1); stroke-width: 3; }
-.ht-ring-fill { fill: none; stroke: var(--green); stroke-width: 3; stroke-linecap: round; transition: stroke-dashoffset 1.5s cubic-bezier(0.4,0,0.2,1); }
+/* ══════════════════════════
+   STORIES BAR
+══════════════════════════ */
+.hx-stories{
+    background:var(--s1);border-radius:var(--r1);border:1px solid var(--b1);
+    margin-bottom:16px;overflow:hidden;
+}
+.hx-stories-inner{display:flex;overflow-x:auto;padding:14px 12px;gap:0;scrollbar-width:none;-webkit-overflow-scrolling:touch;}
+.hx-stories-inner::-webkit-scrollbar{display:none;}
+.hx-story-item{display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;flex-shrink:0;width:68px;padding:0 3px;transition:0.15s;}
+.hx-story-item:hover{transform:scale(1.04);}
+.hx-story-ring{width:56px;height:56px;border-radius:50%;padding:2.5px;position:relative;transition:0.2s;}
+.hx-story-ring.fresh{background:conic-gradient(#f97316,#ec4899,#8b5cf6,#f97316);}
+.hx-story-ring.mine{background:conic-gradient(var(--a),var(--a2),var(--a));}
+.hx-story-ring.seen{background:var(--b2);}
+.hx-story-inner{width:100%;height:100%;border-radius:50%;background:var(--s2);display:flex;align-items:center;justify-content:center;overflow:hidden;border:2px solid var(--s1);}
+.hx-story-inner img{width:100%;height:100%;object-fit:cover;}
+.hx-story-letter{width:100%;height:100%;border-radius:50%;background:linear-gradient(135deg,var(--a),var(--a2));color:white;display:flex;align-items:center;justify-content:center;font-family:'Bricolage Grotesque',sans-serif;font-size:18px;font-weight:800;}
+.hx-story-add-btn{position:absolute;bottom:-1px;right:-1px;width:18px;height:18px;border-radius:50%;background:var(--a);color:white;font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center;border:2px solid var(--s1);}
+.hx-story-name{font-size:10px;font-weight:600;color:var(--m1);text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:64px;}
 
-/* ══════════════════════════════
-   STORIES
-══════════════════════════════ */
-.ht-stories-wrap {
-    margin-bottom: 20px;
-    background: var(--card); border-radius: var(--radius);
-    border: 1px solid var(--border); overflow: hidden;
-}
-.ht-stories-inner {
-    display: flex; gap: 0; overflow-x: auto;
-    padding: 16px 14px; scrollbar-width: none;
-    -webkit-overflow-scrolling: touch;
-}
-.ht-stories-inner::-webkit-scrollbar { display: none; }
-.ht-story-item {
-    display: flex; flex-direction: column; align-items: center;
-    gap: 7px; cursor: pointer; flex-shrink: 0; width: 72px;
-    padding: 0 4px;
-}
-.ht-story-ring {
-    width: 62px; height: 62px; border-radius: 50%; position: relative;
-    padding: 3px;
-    background: conic-gradient(#f97316, #ec4899, #8b5cf6, #f97316);
-    transition: 0.2s;
-}
-.ht-story-ring.mine { background: conic-gradient(var(--accent), var(--accent2), var(--accent)); }
-.ht-story-ring.viewed { background: var(--border2); }
-.ht-story-ring:hover { transform: scale(1.06); }
-.ht-story-ring-inner {
-    width: 100%; height: 100%; border-radius: 50%;
-    background: var(--surface); display: flex; align-items: center; justify-content: center;
-    overflow: hidden; border: 2.5px solid var(--card);
-}
-.ht-story-ring-inner img { width: 100%; height: 100%; object-fit: cover; }
-.ht-story-letter {
-    width: 100%; height: 100%; border-radius: 50%;
-    background: linear-gradient(135deg, var(--accent), var(--accent2));
-    color: white; display: flex; align-items: center; justify-content: center;
-    font-family: 'Syne', sans-serif; font-size: 20px; font-weight: 800;
-}
-.ht-story-add {
-    position: absolute; bottom: 0; right: 0;
-    width: 20px; height: 20px; border-radius: 50%;
-    background: linear-gradient(135deg, var(--accent), var(--accent2));
-    color: white; font-size: 13px; font-weight: 800;
-    display: flex; align-items: center; justify-content: center;
-    border: 2px solid var(--card); box-shadow: 0 2px 8px rgba(91,94,244,0.4);
-}
-.ht-story-name {
-    font-size: 11px; font-weight: 600; color: var(--muted);
-    text-align: center; white-space: nowrap; overflow: hidden;
-    text-overflow: ellipsis; max-width: 68px;
-}
+/* ══════════════════════════
+   GRID LAYOUT
+══════════════════════════ */
+.hx-grid{display:grid;grid-template-columns:1fr 320px;gap:14px;align-items:start;}
+.hx-main{display:flex;flex-direction:column;gap:14px;}
+.hx-sidebar{display:flex;flex-direction:column;gap:14px;}
 
-/* ══════════════════════════════
-   TWO COLUMN DESKTOP LAYOUT
-══════════════════════════════ */
-.ht-body {
-    display: grid;
-    grid-template-columns: 1fr 340px;
-    gap: 18px;
-    align-items: start;
-}
-@@media(max-width:900px) {
-    .ht-body { grid-template-columns: 1fr; }
-}
+/* ══════════════════════════
+   CARDS BASE
+══════════════════════════ */
+.hx-card{background:var(--s1);border-radius:var(--r1);border:1px solid var(--b1);overflow:hidden;}
+.hx-card-hd{display:flex;align-items:center;justify-content:space-between;padding:16px 18px 0;}
+.hx-card-title{font-family:'Bricolage Grotesque',sans-serif;font-size:14px;font-weight:800;color:var(--txt);display:flex;align-items:center;gap:7px;}
+.hx-card-action{padding:5px 13px;border-radius:20px;border:none;background:linear-gradient(135deg,var(--a),var(--a2));color:white;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;transition:0.2s;text-decoration:none;display:inline-flex;align-items:center;gap:4px;box-shadow:0 3px 10px var(--ag);}
+.hx-card-action:hover{transform:translateY(-1px);color:white;}
 
-/* ── COLUMN LEFT ── */
-.ht-col-left { display: flex; flex-direction: column; gap: 16px; }
-.ht-col-right { display: flex; flex-direction: column; gap: 16px; }
-
-/* ══════════════════════════════
+/* ══════════════════════════
    QUOTE TICKER
-══════════════════════════════ */
-.ht-quote {
-    background: var(--card); border-radius: var(--radius2);
-    border: 1px solid var(--border);
-    padding: 14px 18px; display: flex; align-items: center; gap: 12px;
-    overflow: hidden; min-height: 52px;
-}
-.ht-quote-icon { font-size: 16px; flex-shrink: 0; }
-.ht-quote-text {
-    font-size: 13px; color: var(--muted); font-style: italic;
-    line-height: 1.6; margin: 0; flex: 1;
-    opacity: 0; transform: translateY(6px);
-    transition: opacity 0.5s, transform 0.5s;
-}
+══════════════════════════ */
+.hx-quote{background:var(--s1);border-radius:var(--r1);border:1px solid var(--b1);padding:13px 16px;display:flex;align-items:center;gap:10px;}
+.hx-quote-icon{font-size:15px;flex-shrink:0;}
+.hx-quote-txt{font-size:12px;color:var(--m1);font-style:italic;line-height:1.6;flex:1;opacity:0;transform:translateY(4px);transition:opacity 0.5s,transform 0.5s;}
 
-/* ══════════════════════════════
-   KPI GRID — PREMIUM
-══════════════════════════════ */
-.ht-kpi-grid {
-    display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px;
-}
-.ht-kpi {
-    background: var(--card); border-radius: var(--radius2);
-    border: 1px solid var(--border); padding: 18px 16px;
-    display: flex; align-items: center; gap: 14px;
-    text-decoration: none; color: var(--text); transition: 0.25s;
-    position: relative; overflow: hidden;
-}
-.ht-kpi::before {
-    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
-    border-radius: var(--radius2) var(--radius2) 0 0;
-}
-.ht-kpi.blue::before { background: linear-gradient(90deg, #3b82f6, #6366f1); }
-.ht-kpi.green::before { background: linear-gradient(90deg, #00c48c, #10b981); }
-.ht-kpi.orange::before { background: linear-gradient(90deg, #ff7043, #f59e0b); }
-.ht-kpi.gold::before { background: linear-gradient(90deg, #f59e0b, #fbbf24); }
-.ht-kpi:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 12px 32px rgba(0,0,0,0.1);
-    border-color: var(--border2);
-    color: var(--text);
-}
-.ht-kpi-icon {
-    width: 46px; height: 46px; border-radius: 14px; flex-shrink: 0;
-    display: flex; align-items: center; justify-content: center; font-size: 22px;
-}
-.ht-kpi.blue .ht-kpi-icon { background: rgba(59,130,246,0.1); }
-.ht-kpi.green .ht-kpi-icon { background: rgba(0,196,140,0.1); }
-.ht-kpi.orange .ht-kpi-icon { background: rgba(255,112,67,0.1); }
-.ht-kpi.gold .ht-kpi-icon { background: rgba(245,158,11,0.1); }
-.ht-kpi-val {
-    font-family: 'Syne', sans-serif;
-    font-size: 26px; font-weight: 800; line-height: 1; margin-bottom: 3px;
-}
-.ht-kpi.blue .ht-kpi-val { color: #3b82f6; }
-.ht-kpi.green .ht-kpi-val { color: var(--green); }
-.ht-kpi.orange .ht-kpi-val { color: var(--orange); }
-.ht-kpi.gold .ht-kpi-val { color: var(--gold); }
-.ht-kpi-lbl { font-size: 11px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+/* ══════════════════════════
+   ACTION STRIP
+══════════════════════════ */
+.hx-actions{display:flex;gap:7px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px;}
+.hx-actions::-webkit-scrollbar{display:none;}
+.hx-btn{display:inline-flex;align-items:center;gap:6px;padding:9px 16px;border-radius:24px;font-size:12px;font-weight:700;text-decoration:none;transition:0.2s;flex-shrink:0;font-family:inherit;border:none;cursor:pointer;white-space:nowrap;}
+.hx-btn-primary{background:linear-gradient(135deg,var(--a),var(--a2));color:white;box-shadow:0 4px 14px var(--ag);}
+.hx-btn-primary:hover{transform:translateY(-2px);box-shadow:0 7px 20px var(--ag);color:white;}
+.hx-btn-ghost{background:var(--s2);border:1px solid var(--b2);color:var(--m1);}
+.hx-btn-ghost:hover{border-color:var(--a);color:var(--a);}
+.hx-btn-locked{background:var(--s2);border:1px solid var(--b1);color:var(--m2);opacity:0.7;}
+.hx-btn-locked:hover{opacity:1;border-color:var(--gld);color:var(--gld);}
 
-/* ══════════════════════════════
-   QUICK ACTIONS
-══════════════════════════════ */
-.ht-actions {
-    display: flex; gap: 8px; flex-wrap: wrap;
-}
-.ht-action-btn {
-    display: inline-flex; align-items: center; gap: 7px;
-    padding: 10px 18px; border-radius: 24px;
-    font-size: 13px; font-weight: 700; text-decoration: none;
-    transition: 0.2s; flex-shrink: 0; font-family: inherit;
-    border: none; cursor: pointer;
-}
-.ht-action-btn.primary {
-    background: linear-gradient(135deg, var(--accent), var(--accent2));
-    color: white; box-shadow: 0 4px 16px var(--accent-glow);
-}
-.ht-action-btn.primary:hover { transform: translateY(-2px); box-shadow: 0 8px 24px var(--accent-glow); color: white; }
-.ht-action-btn.ghost {
-    background: var(--card); border: 1.5px solid var(--border2); color: var(--muted);
-}
-.ht-action-btn.ghost:hover { border-color: var(--accent); color: var(--accent); }
-.ht-action-btn.locked { background: var(--card2); border: 1.5px solid var(--border); color: var(--muted2); }
+/* ══════════════════════════
+   KPI GRID
+══════════════════════════ */
+.hx-kpi-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;}
+.hx-kpi{background:var(--s1);border-radius:var(--r1);border:1px solid var(--b1);padding:16px 14px;display:flex;align-items:center;gap:12px;text-decoration:none;color:var(--txt);transition:0.22s;position:relative;overflow:hidden;}
+.hx-kpi::after{content:'';position:absolute;top:0;left:0;right:0;height:2px;}
+.hx-kpi.k-blue::after{background:linear-gradient(90deg,#3b82f6,#6366f1);}
+.hx-kpi.k-grn::after{background:linear-gradient(90deg,var(--grn),#10b981);}
+.hx-kpi.k-org::after{background:linear-gradient(90deg,var(--org),var(--gld));}
+.hx-kpi.k-gld::after{background:linear-gradient(90deg,var(--gld),#fbbf24);}
+.hx-kpi:hover{transform:translateY(-3px);border-color:var(--b3);box-shadow:0 12px 32px rgba(0,0,0,0.3);color:var(--txt);}
+.hx-kpi-ico{width:42px;height:42px;border-radius:13px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:20px;}
+.hx-kpi.k-blue .hx-kpi-ico{background:rgba(59,130,246,0.12);}
+.hx-kpi.k-grn .hx-kpi-ico{background:rgba(16,212,142,0.12);}
+.hx-kpi.k-org .hx-kpi-ico{background:rgba(255,107,53,0.12);}
+.hx-kpi.k-gld .hx-kpi-ico{background:rgba(244,188,42,0.12);}
+.hx-kpi-val{font-family:'Bricolage Grotesque',sans-serif;font-size:24px;font-weight:800;line-height:1;margin-bottom:2px;}
+.hx-kpi.k-blue .hx-kpi-val{color:#60a5fa;}
+.hx-kpi.k-grn .hx-kpi-val{color:var(--grn);}
+.hx-kpi.k-org .hx-kpi-val{color:var(--org);}
+.hx-kpi.k-gld .hx-kpi-val{color:var(--gld);}
+.hx-kpi-lbl{font-size:10px;color:var(--m1);font-weight:600;text-transform:uppercase;letter-spacing:0.5px;}
+.hx-kpi.locked{opacity:0.5;}
+.hx-kpi.locked:hover{opacity:0.8;}
 
-/* ══════════════════════════════
-   HABIT LIST — REDESIGNED
-══════════════════════════════ */
-.ht-habits-card {
-    background: var(--card); border-radius: var(--radius);
-    border: 1px solid var(--border); overflow: hidden;
-}
-.ht-habits-header {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 18px 20px 0;
-}
-.ht-habits-title {
-    font-family: 'Syne', sans-serif;
-    font-size: 15px; font-weight: 800; color: var(--text);
-    display: flex; align-items: center; gap: 8px;
-}
-.ht-habits-count {
-    font-size: 11px; font-weight: 700; padding: 3px 9px;
-    border-radius: 20px; background: rgba(91,94,244,0.1); color: var(--accent);
-    border: 1px solid rgba(91,94,244,0.2);
-}
-.ht-habits-add {
-    padding: 7px 16px; border-radius: 20px; border: none;
-    background: linear-gradient(135deg, var(--accent), var(--accent2));
-    color: white; font-size: 12px; font-weight: 700;
-    text-decoration: none; cursor: pointer; transition: 0.2s;
-    box-shadow: 0 3px 10px var(--accent-glow);
-}
-.ht-habits-add:hover { transform: translateY(-1px); color: white; }
+/* ══════════════════════════
+   HABIT LIST
+══════════════════════════ */
+.hx-habit-filter{display:flex;gap:4px;padding:12px 16px 0;overflow-x:auto;scrollbar-width:none;}
+.hx-habit-filter::-webkit-scrollbar{display:none;}
+.hx-ftab{padding:5px 12px;border-radius:20px;font-size:11px;font-weight:700;cursor:pointer;border:none;font-family:inherit;transition:0.15s;background:transparent;color:var(--m1);white-space:nowrap;}
+.hx-ftab.on{background:rgba(79,110,247,0.15);color:var(--a);}
+.hx-ftab:hover:not(.on){color:var(--txt);}
 
-/* FILTER TABS */
-.ht-habits-tabs {
-    display: flex; gap: 4px; padding: 14px 20px 0;
-}
-.ht-habit-tab {
-    padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 700;
-    cursor: pointer; border: none; font-family: inherit; transition: 0.15s;
-    background: transparent; color: var(--muted);
-}
-.ht-habit-tab.active { background: rgba(91,94,244,0.1); color: var(--accent); }
-.ht-habit-tab:hover:not(.active) { color: var(--text); }
+.hx-habit-list{padding:10px 12px 12px;display:flex;flex-direction:column;gap:7px;}
 
-/* HABIT ITEMS */
-.ht-habits-list { padding: 12px 14px 14px; display: flex; flex-direction: column; gap: 8px; }
+.hx-habit{
+    display:flex;align-items:center;gap:11px;
+    padding:12px 14px;border-radius:14px;
+    background:var(--s2);border:1.5px solid var(--b1);
+    transition:0.18s;position:relative;overflow:hidden;
+}
+.hx-habit::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;border-radius:14px 0 0 14px;}
+.hx-habit.done::before{background:var(--grn);}
+.hx-habit.fail::before{background:var(--red);}
+.hx-habit.pend::before{background:var(--a);}
+.hx-habit:hover{border-color:var(--b2);transform:translateX(2px);}
 
-.ht-habit {
-    display: flex; align-items: center; gap: 14px;
-    padding: 14px 16px; border-radius: 16px;
-    background: var(--card2); border: 1.5px solid var(--border);
-    transition: 0.2s; position: relative; overflow: hidden;
-}
-.ht-habit::before {
-    content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px;
-    border-radius: 16px 0 0 16px;
-}
-.ht-habit.done::before { background: var(--green); }
-.ht-habit.failed::before { background: #ef4444; }
-.ht-habit.pending::before { background: var(--accent); }
-.ht-habit:hover { border-color: var(--border2); box-shadow: 0 4px 16px rgba(0,0,0,0.06); }
+.hx-habit-ico{width:34px;height:34px;border-radius:10px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:15px;}
+.hx-habit.done .hx-habit-ico{background:rgba(16,212,142,0.12);color:var(--grn);}
+.hx-habit.fail .hx-habit-ico{background:rgba(240,78,78,0.1);color:var(--red);}
+.hx-habit.pend .hx-habit-ico{background:rgba(79,110,247,0.1);color:var(--a);}
 
-.ht-habit-check {
-    width: 36px; height: 36px; border-radius: 12px; flex-shrink: 0;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 16px; transition: 0.2s; cursor: pointer;
-}
-.ht-habit.done .ht-habit-check { background: rgba(0,196,140,0.15); color: var(--green); }
-.ht-habit.failed .ht-habit-check { background: rgba(239,68,68,0.1); color: #ef4444; }
-.ht-habit.pending .ht-habit-check { background: rgba(91,94,244,0.1); color: var(--accent); }
-.ht-habit-check:hover { transform: scale(1.12); }
+.hx-habit-info{flex:1;min-width:0;}
+.hx-habit-name{font-size:13px;font-weight:700;color:var(--txt);text-decoration:none;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:2px;}
+.hx-habit-name:hover{color:var(--a);}
+.hx-habit.done .hx-habit-name{text-decoration:line-through;color:var(--m2);}
+.hx-habit-sub{display:flex;gap:8px;align-items:center;}
+.hx-habit-streak{font-size:11px;color:var(--org);font-weight:700;}
+.hx-habit-rec{font-size:10px;color:var(--m2);font-weight:600;}
 
-.ht-habit-info { flex: 1; min-width: 0; }
-.ht-habit-name {
-    font-size: 14px; font-weight: 700; color: var(--text);
-    text-decoration: none; display: block; margin-bottom: 3px;
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
-.ht-habit-name:hover { color: var(--accent); }
-.ht-habit.done .ht-habit-name { text-decoration: line-through; color: var(--muted); }
-.ht-habit-meta { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
-.ht-habit-streak { font-size: 12px; color: var(--orange); font-weight: 700; display: flex; align-items: center; gap: 3px; }
-.ht-habit-record { font-size: 11px; color: var(--muted2); font-weight: 600; }
+.hx-habit-badge{font-size:9px;font-weight:800;padding:2px 8px;border-radius:20px;white-space:nowrap;flex-shrink:0;}
+.hx-habit.done .hx-habit-badge{background:rgba(16,212,142,0.1);color:var(--grn);border:1px solid rgba(16,212,142,0.2);}
+.hx-habit.fail .hx-habit-badge{background:rgba(240,78,78,0.08);color:var(--red);border:1px solid rgba(240,78,78,0.15);}
+.hx-habit.pend .hx-habit-badge{background:rgba(79,110,247,0.08);color:var(--a);border:1px solid rgba(79,110,247,0.15);}
 
-.ht-habit-status {
-    font-size: 10px; font-weight: 800; padding: 3px 9px; border-radius: 20px; white-space: nowrap; flex-shrink: 0;
-}
-.ht-habit.done .ht-habit-status { background: rgba(0,196,140,0.1); color: var(--green); border: 1px solid rgba(0,196,140,0.2); }
-.ht-habit.failed .ht-habit-status { background: rgba(239,68,68,0.08); color: #ef4444; border: 1px solid rgba(239,68,68,0.15); }
-.ht-habit.pending .ht-habit-status { background: rgba(91,94,244,0.08); color: var(--accent); border: 1px solid rgba(91,94,244,0.15); }
+.hx-habit-acts{display:flex;gap:4px;flex-shrink:0;}
+.hx-ha{width:29px;height:29px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:12px;text-decoration:none;transition:0.15s;border:1px solid transparent;}
+.hx-ha.ok{background:rgba(16,212,142,0.1);color:var(--grn);border-color:rgba(16,212,142,0.2);}
+.hx-ha.ok:hover{background:var(--grn);color:white;}
+.hx-ha.no{background:rgba(240,78,78,0.08);color:var(--red);border-color:rgba(240,78,78,0.15);}
+.hx-ha.no:hover{background:var(--red);color:white;}
+.hx-ha.ed{background:rgba(244,188,42,0.08);color:var(--gld);border-color:rgba(244,188,42,0.15);}
+.hx-ha.ed:hover{background:var(--gld);color:white;}
+.hx-ha.rm{background:var(--b1);color:var(--m2);border-color:var(--b1);}
+.hx-ha.rm:hover{background:var(--red);color:white;border-color:var(--red);}
 
-.ht-habit-actions { display: flex; gap: 5px; flex-shrink: 0; }
-.ht-hab-btn {
-    width: 32px; height: 32px; border-radius: 10px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 13px; text-decoration: none; transition: 0.15s;
-    border: 1px solid transparent;
-}
-.ht-hab-btn.complete { background: rgba(0,196,140,0.1); color: var(--green); border-color: rgba(0,196,140,0.2); }
-.ht-hab-btn.complete:hover { background: var(--green); color: white; }
-.ht-hab-btn.fail { background: rgba(239,68,68,0.08); color: #ef4444; border-color: rgba(239,68,68,0.15); }
-.ht-hab-btn.fail:hover { background: #ef4444; color: white; }
-.ht-hab-btn.edit { background: rgba(245,158,11,0.1); color: var(--gold); border-color: rgba(245,158,11,0.2); }
-.ht-hab-btn.edit:hover { background: var(--gold); color: white; }
-.ht-hab-btn.del { background: rgba(100,116,139,0.08); color: var(--muted); border-color: rgba(100,116,139,0.15); }
-.ht-hab-btn.del:hover { background: #ef4444; color: white; border-color: #ef4444; }
+/* comment */
+.hx-comment-wrap{padding:0 12px 10px;}
+.hx-comment-form{display:flex;gap:6px;}
+.hx-comment-input{flex:1;padding:8px 13px;border-radius:20px;border:1px solid var(--b2);background:var(--s3);font-size:12px;font-family:inherit;outline:none;color:var(--txt);transition:0.2s;}
+.hx-comment-input:focus{border-color:var(--a);box-shadow:0 0 0 3px rgba(79,110,247,0.1);}
+.hx-comment-input::placeholder{color:var(--m2);}
+.hx-comment-item{font-size:11px;color:var(--m1);padding:3px 0;border-top:1px solid var(--b1);margin-top:5px;}
 
-/* COMMENT SECTION */
-.ht-habit-comment-wrap { padding: 0 14px 14px; }
-.ht-habit-comment-form { display: flex; gap: 8px; }
-.ht-habit-comment-input {
-    flex: 1; padding: 9px 14px; border-radius: 20px;
-    border: 1.5px solid var(--border); background: var(--card2);
-    font-size: 13px; font-family: inherit; outline: none; color: var(--text);
-    transition: 0.2s;
-}
-.ht-habit-comment-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(91,94,244,0.1); }
-.ht-habit-comment-input::placeholder { color: var(--muted2); }
-.ht-habit-comment-item { font-size: 12px; color: var(--muted); padding: 4px 0; border-top: 1px solid var(--border); margin-top: 6px; }
+/* empty */
+.hx-empty{padding:48px 20px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:10px;}
+.hx-empty-ico{width:68px;height:68px;border-radius:20px;background:rgba(79,110,247,0.08);border:1px solid rgba(79,110,247,0.15);display:flex;align-items:center;justify-content:center;font-size:28px;animation:emptyBob 3s ease-in-out infinite;}
+@@keyframes emptyBob{0%,100%{transform:translateY(0);}50%{transform:translateY(-7px);}}
+.hx-empty-title{font-family:'Bricolage Grotesque',sans-serif;font-size:17px;font-weight:800;color:var(--txt);}
+.hx-empty-sub{font-size:12px;color:var(--m1);max-width:220px;line-height:1.6;}
 
-/* EMPTY */
-.ht-habits-empty {
-    padding: 48px 24px; text-align: center;
-    display: flex; flex-direction: column; align-items: center; gap: 12px;
-}
-.ht-habits-empty-icon {
-    width: 72px; height: 72px; border-radius: 22px;
-    background: rgba(91,94,244,0.08); border: 1px solid rgba(91,94,244,0.15);
-    display: flex; align-items: center; justify-content: center;
-    font-size: 32px; animation: emptyFloat 3s ease-in-out infinite;
-}
-@@keyframes emptyFloat { 0%,100%{transform:translateY(0);} 50%{transform:translateY(-8px);} }
-.ht-habits-empty-title { font-family: 'Syne', sans-serif; font-size: 18px; font-weight: 800; color: var(--text); }
-.ht-habits-empty-sub { font-size: 13px; color: var(--muted); max-width: 240px; line-height: 1.6; }
+.hx-limit{margin:0 12px 10px;padding:9px 13px;border-radius:11px;background:rgba(240,78,78,0.06);border:1px solid rgba(240,78,78,0.15);font-size:12px;color:#f87171;font-weight:600;display:flex;align-items:center;gap:7px;}
+.hx-limit a{color:#fca5a5;font-weight:800;text-decoration:none;}
 
-/* LIMIT PILL */
-.ht-limit-pill {
-    margin: 0 14px 12px; padding: 10px 14px; border-radius: 12px;
-    background: rgba(239,68,68,0.06); border: 1px solid rgba(239,68,68,0.15);
-    font-size: 13px; color: #f87171; font-weight: 600; display: flex; align-items: center; gap: 8px;
-}
-.ht-limit-pill a { color: #fca5a5; font-weight: 800; text-decoration: none; }
+/* ══════════════════════════
+   SIDEBAR WIDGETS
+══════════════════════════ */
+.hx-prog-card{background:var(--s1);border-radius:var(--r1);border:1px solid var(--b1);padding:18px;}
+.hx-prog-title{font-family:'Bricolage Grotesque',sans-serif;font-size:13px;font-weight:800;color:var(--txt);margin-bottom:14px;}
+.hx-prog-item{margin-bottom:11px;}
+.hx-prog-item:last-child{margin-bottom:0;}
+.hx-prog-lbl{display:flex;justify-content:space-between;font-size:11px;color:var(--m1);font-weight:600;margin-bottom:5px;}
+.hx-prog-lbl span:last-child{font-weight:800;color:var(--txt);}
+.hx-prog-bar{height:5px;background:var(--b1);border-radius:10px;overflow:hidden;}
+.hx-prog-fill{height:100%;border-radius:10px;transition:width 1.4s cubic-bezier(0.4,0,0.2,1);}
+.hx-prog-fill.g{background:linear-gradient(90deg,var(--grn),#10b981);}
+.hx-prog-fill.b{background:linear-gradient(90deg,var(--a),#6366f1);}
+.hx-prog-fill.o{background:linear-gradient(90deg,var(--org),var(--gld));}
 
-/* ══════════════════════════════
-   RIGHT SIDEBAR
-══════════════════════════════ */
+.hx-chart-card{background:var(--s1);border-radius:var(--r1);border:1px solid var(--b1);padding:18px;}
+.hx-chart-title{font-family:'Bricolage Grotesque',sans-serif;font-size:13px;font-weight:800;color:var(--txt);margin-bottom:12px;}
+.hx-chart-wrap{position:relative;height:150px;}
 
-/* PROGRESS CARD */
-.ht-progress-card {
-    background: var(--card); border-radius: var(--radius);
-    border: 1px solid var(--border); padding: 20px;
-    display: flex; flex-direction: column; gap: 14px;
-}
-.ht-progress-title { font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 800; color: var(--text); margin-bottom: 2px; }
-.ht-progress-item { display: flex; flex-direction: column; gap: 5px; }
-.ht-progress-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); font-weight: 600; }
-.ht-progress-label span:last-child { font-weight: 800; color: var(--text); }
-.ht-progress-bar { height: 6px; background: var(--border); border-radius: 10px; overflow: hidden; }
-.ht-progress-fill { height: 100%; border-radius: 10px; transition: width 1.5s cubic-bezier(0.4,0,0.2,1); }
-.ht-progress-fill.green { background: linear-gradient(90deg, var(--green), #10b981); }
-.ht-progress-fill.blue { background: linear-gradient(90deg, var(--accent), #3b82f6); }
-.ht-progress-fill.orange { background: linear-gradient(90deg, var(--orange), var(--gold)); }
+.hx-cal-card{background:var(--s1);border-radius:var(--r1);border:1px solid var(--b1);padding:18px;}
+.hx-cal-title{font-family:'Bricolage Grotesque',sans-serif;font-size:13px;font-weight:800;color:var(--txt);margin-bottom:12px;}
+.hx-cal-hd{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-bottom:4px;}
+.hx-cal-hd span{text-align:center;font-size:8px;color:var(--m2);font-weight:700;text-transform:uppercase;}
+.hx-cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;}
+.hx-cal-day{aspect-ratio:1;border-radius:4px;}
+.hx-cal-day.e{background:rgba(255,255,255,0.04);}
+.hx-cal-day.d{background:var(--grn);box-shadow:0 0 6px rgba(16,212,142,0.3);}
+.hx-cal-day.p{background:rgba(16,212,142,0.35);}
+.hx-cal-day.f{background:rgba(240,78,78,0.25);}
 
-/* CHART CARD */
-.ht-chart-card {
-    background: var(--card); border-radius: var(--radius);
-    border: 1px solid var(--border); padding: 20px;
-}
-.ht-chart-title { font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 800; color: var(--text); margin-bottom: 14px; }
-.ht-chart-wrap { position: relative; height: 160px; }
+.hx-tip-card{background:linear-gradient(135deg,#080f28,#0f1a42);border-radius:var(--r1);border:1px solid rgba(79,110,247,0.15);padding:18px;position:relative;overflow:hidden;}
+.hx-tip-card::before{content:'';position:absolute;top:-20px;right:-20px;width:100px;height:100px;background:radial-gradient(circle,rgba(79,110,247,0.2),transparent);border-radius:50%;}
+.hx-tip-title{font-family:'Bricolage Grotesque',sans-serif;font-size:13px;font-weight:800;color:white;margin-bottom:10px;position:relative;z-index:1;}
+.hx-tip{display:flex;gap:8px;margin-bottom:9px;position:relative;z-index:1;}
+.hx-tip:last-child{margin-bottom:0;}
+.hx-tip-ico{font-size:13px;flex-shrink:0;margin-top:1px;}
+.hx-tip-txt{font-size:11px;color:rgba(255,255,255,0.55);line-height:1.6;}
+.hx-tip-txt strong{color:rgba(255,255,255,0.85);}
 
-/* STREAK CALENDAR */
-.ht-streak-card {
-    background: var(--card); border-radius: var(--radius);
-    border: 1px solid var(--border); padding: 20px;
-}
-.ht-streak-title { font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 800; color: var(--text); margin-bottom: 14px; }
-.ht-streak-grid {
-    display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px;
-}
-.ht-streak-day {
-    aspect-ratio: 1; border-radius: 5px; transition: 0.15s;
-    cursor: default;
-}
-.ht-streak-day.empty { background: var(--border); }
-.ht-streak-day.done { background: var(--green); box-shadow: 0 0 8px rgba(0,196,140,0.3); }
-.ht-streak-day.partial { background: rgba(0,196,140,0.4); }
-.ht-streak-day.failed { background: rgba(239,68,68,0.3); }
-.ht-streak-day-labels {
-    display: grid; grid-template-columns: repeat(7, 1fr);
-    gap: 4px; margin-bottom: 4px;
-}
-.ht-streak-day-label { text-align: center; font-size: 9px; color: var(--muted2); font-weight: 700; text-transform: uppercase; }
-
-/* TIPS CARD */
-.ht-tips-card {
-    background: linear-gradient(135deg, #0d1a3a, #1a1060);
-    border-radius: var(--radius); border: 1px solid rgba(91,94,244,0.2);
-    padding: 20px; position: relative; overflow: hidden;
-}
-.ht-tips-card::before {
-    content: ''; position: absolute; top: -30px; right: -30px;
-    width: 120px; height: 120px;
-    background: radial-gradient(circle, rgba(91,94,244,0.25), transparent);
-    border-radius: 50%;
-}
-.ht-tips-title { font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 800; color: white; margin-bottom: 12px; position: relative; z-index: 1; }
-.ht-tip-item { display: flex; align-items: flex-start; gap: 9px; margin-bottom: 10px; position: relative; z-index: 1; }
-.ht-tip-item:last-child { margin-bottom: 0; }
-.ht-tip-icon { font-size: 15px; flex-shrink: 0; margin-top: 1px; }
-.ht-tip-text { font-size: 12px; color: rgba(255,255,255,0.6); line-height: 1.6; }
-.ht-tip-text strong { color: rgba(255,255,255,0.9); }
-
-/* ══════════════════════════════
+/* ══════════════════════════
    STORY VIEWER
-══════════════════════════════ */
-.ht-story-viewer {
-    position: fixed; inset: 0; z-index: 99999;
-    display: flex; align-items: center; justify-content: center;
-}
-.ht-story-viewer-bg {
-    position: absolute; inset: 0; background: rgba(0,0,0,0.96);
-    backdrop-filter: blur(20px);
-}
-.ht-story-viewer-card {
-    position: relative; width: 100%; max-width: 420px;
-    height: 100vh; max-height: 820px; border-radius: 24px;
-    overflow: hidden; background: #000; z-index: 1;
-    box-shadow: 0 40px 100px rgba(0,0,0,0.8);
-}
-.ht-story-progress-bars {
-    position: absolute; top: calc(12px + env(safe-area-inset-top, 0px));
-    left: 10px; right: 10px; display: flex; gap: 3px; z-index: 10;
-}
-.ht-story-progress-bar { flex: 1; height: 3px; background: rgba(255,255,255,0.25); border-radius: 10px; overflow: hidden; }
-.ht-story-progress-fill { height: 100%; background: white; width: 0%; border-radius: 10px; }
-.ht-story-header {
-    position: absolute; top: calc(24px + env(safe-area-inset-top, 0px));
-    left: 10px; right: 10px; display: flex; align-items: center; justify-content: space-between; z-index: 10;
-}
-.ht-story-content { width: 100%; height: 100%; position: relative; }
-.ht-story-nav-left { position: absolute; left: 0; top: 0; width: 35%; height: 88%; z-index: 5; cursor: pointer; }
-.ht-story-nav-right { position: absolute; right: 0; top: 0; width: 35%; height: 88%; z-index: 5; cursor: pointer; }
-@@keyframes heartPop { 0%{transform:scale(0) rotate(-15deg);opacity:1;} 35%{transform:scale(1.5) rotate(8deg);opacity:1;} 65%{transform:scale(0.85) rotate(-4deg);opacity:1;} 100%{transform:scale(1.15) rotate(0);opacity:0;} }
+══════════════════════════ */
+.hx-sv{position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;}
+.hx-sv-bg{position:absolute;inset:0;background:rgba(0,0,0,0.96);backdrop-filter:blur(20px);}
+.hx-sv-card{position:relative;width:100%;max-width:420px;height:100vh;max-height:820px;border-radius:24px;overflow:hidden;background:#000;z-index:1;box-shadow:0 40px 100px rgba(0,0,0,0.8);}
+.hx-sv-bars{position:absolute;top:calc(12px + env(safe-area-inset-top,0px));left:10px;right:10px;display:flex;gap:3px;z-index:10;}
+.hx-sv-bar{flex:1;height:2.5px;background:rgba(255,255,255,0.2);border-radius:10px;overflow:hidden;}
+.hx-sv-bar-fill{height:100%;background:white;width:0%;border-radius:10px;}
+.hx-sv-hd{position:absolute;top:calc(22px + env(safe-area-inset-top,0px));left:10px;right:10px;display:flex;align-items:center;justify-content:space-between;z-index:10;}
+.hx-sv-content{width:100%;height:100%;position:relative;}
+.hx-sv-nav-l{position:absolute;left:0;top:0;width:35%;height:88%;z-index:5;cursor:pointer;}
+.hx-sv-nav-r{position:absolute;right:0;top:0;width:35%;height:88%;z-index:5;cursor:pointer;}
+@@keyframes svHeartPop{0%{transform:scale(0)rotate(-15deg);opacity:1;}35%{transform:scale(1.5)rotate(8deg);opacity:1;}65%{transform:scale(0.85)rotate(-4deg);opacity:1;}100%{transform:scale(1.15)rotate(0);opacity:0;}}
 
-/* ══════════════════════════════
+/* ══════════════════════════
    RESPONSIVE
-══════════════════════════════ */
-
-@@media(max-width:768px) {
-    .ht-home { padding: 0 0 80px; overflow-x: hidden; }
-    .ht-hero { min-height: auto; padding: 14px 12px 16px; border-radius: 16px; margin-bottom: 12px; width: 100%; }
-    .ht-hero-top { display: flex; flex-direction: row; align-items: center; justify-content: space-between; flex-wrap: nowrap; margin-bottom: 12px; gap: 6px; width: 100%; }
-    .ht-hero-user { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0; overflow: hidden; }
-    .ht-hero-avatar { width: 38px; height: 38px; font-size: 15px; flex-shrink: 0; }
-    .ht-hero-name { font-size: 13px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 140px; margin-bottom: 1px; }
-    .ht-hero-sub { font-size: 10px; display: none; }
-    .ht-plan-pill { font-size: 10px; padding: 4px 8px; white-space: nowrap; flex-shrink: 0; }
-    .ht-weather-pill { font-size: 10px; padding: 4px 7px; gap: 3px; white-space: nowrap; flex-shrink: 0; }
-    .ht-hero-stats { border-radius: 12px; }
-    .ht-hero-stat { padding: 10px 2px; }
-    .ht-hero-stat-val { font-size: 13px; }
-    .ht-hero-stat-label { font-size: 7px; letter-spacing: 0.2px; }
-    .ht-ring-svg { width: 18px; height: 18px; top: 3px; right: 2px; }
-    .ht-stories-wrap { border-radius: 14px; margin-bottom: 12px; }
-    .ht-stories-inner { padding: 10px 8px; }
-    .ht-story-item { width: 60px; padding: 0 2px; }
-    .ht-story-ring { width: 50px; height: 50px; }
-    .ht-story-name { font-size: 10px; max-width: 56px; }
-    .ht-kpi-grid { gap: 8px; }
-    .ht-kpi { padding: 12px 10px; gap: 8px; }
-    .ht-kpi-icon { width: 32px; height: 32px; border-radius: 9px; font-size: 15px; }
-    .ht-kpi-val { font-size: 19px; }
-    .ht-kpi-lbl { font-size: 9px; }
-    .ht-habits-card { border-radius: 16px; }
-    .ht-habits-header { padding: 14px 14px 0; }
-    .ht-habits-tabs { padding: 10px 14px 0; gap: 3px; overflow-x: auto; flex-wrap: nowrap; scrollbar-width: none; }
-    .ht-habits-tabs::-webkit-scrollbar { display: none; }
-    .ht-habit-tab { padding: 5px 10px; font-size: 11px; white-space: nowrap; }
-    .ht-habits-list { padding: 10px 10px 12px; gap: 6px; }
-    .ht-habit { padding: 10px; gap: 8px; }
-    .ht-habit-check { width: 28px; height: 28px; border-radius: 8px; font-size: 12px; }
-    .ht-habit-name { font-size: 13px; }
-    .ht-habit-status { display: none; }
-    .ht-hab-btn { width: 28px; height: 28px; border-radius: 8px; font-size: 12px; }
-    .ht-habit-actions { gap: 4px; }
-    .ht-quote { padding: 10px 12px; border-radius: 12px; }
-    .ht-quote-text { font-size: 12px; }
-    .ht-actions { flex-wrap: nowrap; overflow-x: auto; gap: 6px; scrollbar-width: none; padding-bottom: 2px; }
-    .ht-actions::-webkit-scrollbar { display: none; }
-    .ht-action-btn { padding: 8px 14px; font-size: 12px; white-space: nowrap; }
-    .ht-body { gap: 10px; }
-    .ht-progress-card, .ht-streak-card, .ht-tips-card, .ht-chart-card { display: none; }
-    .ht-story-viewer-card { border-radius: 0; max-height: 100vh; max-width: 100%; }
-    .ht-col-right { display: none; }
-}
-@@media(min-width:769px) {
-    .ht-story-viewer-card { max-height: 820px; }
+══════════════════════════ */
+@@media(max-width:900px){
+    .hx-grid{grid-template-columns:1fr;}
+    .hx-sidebar{display:none;}
 }
 
-/* DARK MODE EXTRAS */
-body.bg-dark .ht-habits-card,
-body.bg-dark .ht-progress-card,
-body.bg-dark .ht-chart-card,
-body.bg-dark .ht-streak-card,
-body.bg-dark .ht-stories-wrap,
-body.bg-dark .ht-quote { background: #0f172a !important; border-color: rgba(255,255,255,0.06) !important; }
-body.bg-dark .ht-habit { background: #111827 !important; border-color: rgba(255,255,255,0.05) !important; }
-body.bg-dark .ht-kpi { background: #0f172a !important; border-color: rgba(255,255,255,0.06) !important; }
-body.bg-dark .ht-kpi:hover { box-shadow: 0 12px 32px rgba(0,0,0,0.4) !important; }
-body.bg-dark .ht-habit-comment-input { background: #111827 !important; border-color: rgba(255,255,255,0.08) !important; }
-body.bg-dark .ht-story-ring-inner { border-color: #0f172a !important; }
-body.bg-dark .ht-story-ring.viewed { background: #2d3748 !important; }
-body.bg-dark .ht-streak-day.empty { background: rgba(255,255,255,0.05) !important; }
-body.bg-dark .ht-habits-tabs { background: transparent !important; }
-body.bg-dark .ht-habit-tab { color: #64748b !important; }
-body.bg-dark .ht-habit-tab.active { background: rgba(91,94,244,0.15) !important; color: #818cf8 !important; }
+@@media(max-width:768px){
+    .hx{padding-bottom:80px;overflow-x:hidden;}
+    /* HERO */
+    .hx-hero{border-radius:18px;margin-bottom:12px;}
+    .hx-hero-body{padding:14px 14px 14px;}
+    .hx-hero-top{margin-bottom:12px;flex-wrap:nowrap;align-items:center;}
+    .hx-hero-id{gap:9px;}
+    .hx-hero-av{width:40px;height:40px;font-size:15px;}
+    .hx-hero-greet{font-size:10px;}
+    .hx-hero-name{font-size:15px;}
+    .hx-hero-badges{gap:5px;}
+    .hx-pill{font-size:10px;padding:5px 10px;}
+    .hx-weather{font-size:10px;padding:5px 8px;}
+    /* STATS */
+    .hx-stats{border-radius:12px;}
+    .hx-stat{padding:10px 4px;}
+    .hx-stat-val{font-size:14px;}
+    .hx-stat-lbl{font-size:7px;letter-spacing:0.2px;}
+    .hx-ring{width:17px;height:17px;top:6px;right:5px;}
+    /* STORIES */
+    .hx-stories{border-radius:14px;margin-bottom:12px;}
+    .hx-stories-inner{padding:10px 8px;}
+    .hx-story-item{width:60px;}
+    .hx-story-ring{width:48px;height:48px;}
+    .hx-story-name{font-size:9px;max-width:56px;}
+    /* GRID */
+    .hx-grid{gap:10px;}
+    /* QUOTE */
+    .hx-quote{padding:10px 13px;border-radius:12px;}
+    .hx-quote-txt{font-size:11px;}
+    /* KPI */
+    .hx-kpi-grid{gap:8px;}
+    .hx-kpi{padding:13px 11px;gap:9px;}
+    .hx-kpi-ico{width:36px;height:36px;border-radius:11px;font-size:17px;}
+    .hx-kpi-val{font-size:20px;}
+    .hx-kpi-lbl{font-size:9px;}
+    /* HABITS */
+    .hx-card{border-radius:16px;}
+    .hx-card-hd{padding:13px 14px 0;}
+    .hx-habit-filter{padding:9px 12px 0;}
+    .hx-habit-list{padding:8px 10px 10px;gap:6px;}
+    .hx-habit{padding:10px 10px;gap:8px;}
+    .hx-habit-ico{width:30px;height:30px;border-radius:9px;font-size:14px;}
+    .hx-habit-name{font-size:12px;}
+    .hx-habit-badge{display:none;}
+    .hx-ha{width:27px;height:27px;border-radius:8px;font-size:11px;}
+    .hx-habit-acts{gap:3px;}
+    /* SIDEBAR hidden on mobile */
+    .hx-sidebar{display:none;}
+    /* STORY VIEWER */
+    .hx-sv-card{border-radius:0;max-width:100%;max-height:100vh;}
+}
 </style>
+<div class="hx">
 
-<div class="ht-home">
-
-<!-- ════════ HERO ════════ -->
-<div class="ht-hero">
-    <div class="ht-hero-bg">
-        <div class="ht-hero-bg-base"></div>
-        <div class="ht-hero-mesh"></div>
-        <div class="ht-hero-grid"></div>
-        <div class="ht-hero-noise"></div>
-        <div class="ht-hero-orbs">
-            <div class="ht-hero-orb ht-hero-orb-1"></div>
-            <div class="ht-hero-orb ht-hero-orb-2"></div>
-        </div>
+<!-- ═══ HERO ═══ -->
+<div class="hx-hero">
+    <div class="hx-hero-canvas">
+        <div class="hx-hero-canvas-bg"></div>
+        <div class="hx-hero-canvas-mesh"></div>
+        <div class="hx-hero-canvas-lines"></div>
+        <div class="hx-hero-orb hx-hero-orb-a"></div>
+        <div class="hx-hero-orb hx-hero-orb-b"></div>
     </div>
-<div class="ht-hero-inner">
-        <div class="ht-hero-top">
-            <div class="ht-hero-user">
-                <div class="ht-hero-avatar">
+    <div class="hx-hero-body">
+        <div class="hx-hero-top">
+            <div class="hx-hero-id">
+                <div class="hx-hero-av" onclick="window.location.href='/Account/Profile'">
                     @{ var profileImage = User.FindFirst("ProfileImage")?.Value; }
                     @if (!string.IsNullOrEmpty(profileImage))
                     { <img src="@profileImage" alt="avatar" /> }
-                    else
-                    { <span>@(username.Length > 0 ? username.Substring(0,1).ToUpper() : "?")</span> }
+                    else { <span>@(username.Length > 0 ? username.Substring(0,1).ToUpper() : "?")</span> }
                 </div>
-                <div style="min-width:0;">
-                    <div class="ht-hero-name">@welcomeMsg</div>
-                    <div class="ht-hero-sub">Disciplina diaria · Resultados reales</div>
+                <div class="hx-hero-text">
+                    <div class="hx-hero-greet">@greeting @greetEmoji</div>
+                    <div class="hx-hero-name">@firstName</div>
                 </div>
             </div>
-         <div style="display:flex;gap:6px;align-items:center;flex-shrink:0;flex-wrap:nowrap;">
-                <div class="ht-weather-pill" id="weatherPill">
+            <div class="hx-hero-badges">
+                <div class="hx-weather" id="weatherPill">
                     <span id="wIcon">⛅</span>
                     <span id="wTemp"></span>
-                    <span id="wCity" style="font-size:10px;opacity:0.7;"></span>
+                    <span id="wCity" style="font-size:9px;opacity:0.6;margin-left:2px;"></span>
                 </div>
-                @if (user != null && !user.IsPremium)
-                { <a href="/User/Pay" class="ht-plan-pill free">⚡ Premium</a> }
-                else if (user?.IsPremium == true)
-                { <div class="ht-plan-pill premium">👑 Pro</div> }
+                @if (isPremium)
+                { <div class="hx-pill hx-pill-pro">👑 Pro</div> }
+                else
+                { <a href="/User/Pay" class="hx-pill hx-pill-premium">⚡ Premium</a> }
             </div>
         </div>
-        <div class="ht-hero-stats">
-            <div class="ht-hero-stat">
-                <div class="ht-hero-stat-val">@completedToday/@totalHabits</div>
-                <div class="ht-hero-stat-label">Hoy</div>
+        <div class="hx-stats">
+            <div class="hx-stat">
+                <div class="hx-stat-val">@completedToday<span style="font-size:10px;opacity:0.5;">/@totalHabits</span></div>
+                <div class="hx-stat-lbl">Hoy</div>
             </div>
-            <div class="ht-hero-stat">
-                <div class="ht-hero-stat-val">@totalStreak <span style="font-size:14px;">🔥</span></div>
-                <div class="ht-hero-stat-label">Racha total</div>
+            <div class="hx-stat">
+                <div class="hx-stat-val">@totalStreak<span style="font-size:13px;">🔥</span></div>
+                <div class="hx-stat-lbl">Racha</div>
             </div>
-            <div class="ht-hero-stat has-ring">
-                <svg class="ht-ring-svg" viewBox="0 0 28 28">
-                    <circle class="ht-ring-bg" cx="14" cy="14" r="11"/>
-                    <circle class="ht-ring-fill" id="progressRing" cx="14" cy="14" r="11"
-                        stroke-dasharray="69.1" stroke-dashoffset="69.1"/>
+            <div class="hx-stat ring-stat">
+                <svg class="hx-ring" viewBox="0 0 22 22">
+                    <circle class="hx-ring-bg" cx="11" cy="11" r="8.5"/>
+                    <circle class="hx-ring-fill" id="progressRing" cx="11" cy="11" r="8.5" stroke-dasharray="53.4" stroke-dashoffset="53.4"/>
                 </svg>
-                <div class="ht-hero-stat-val">@completionRate<span style="font-size:12px;">%</span></div>
-                <div class="ht-hero-stat-label">Completado</div>
+                <div class="hx-stat-val">@completionRate<span style="font-size:10px;">%</span></div>
+                <div class="hx-stat-lbl">Tasa</div>
             </div>
-            <div class="ht-hero-stat">
-                <div class="ht-hero-stat-val">@bestRecord <span style="font-size:14px;">🏆</span></div>
-                <div class="ht-hero-stat-label">Récord</div>
+            <div class="hx-stat">
+                <div class="hx-stat-val">@bestRecord<span style="font-size:13px;">🏆</span></div>
+                <div class="hx-stat-lbl">Récord</div>
             </div>
         </div>
     </div>
 </div>
 
-<!-- ════════ STORIES ════════ -->
+<!-- ═══ STORIES ═══ -->
 @if (!isGuest)
 {
-    <div class="ht-stories-wrap">
-        <div class="ht-stories-inner" id="storiesBar">
-            <div class="ht-story-item" onclick="window.location.href='/Story/Create'">
-                <div class="ht-story-ring mine">
-                    <div class="ht-story-ring-inner">
+    <div class="hx-stories">
+        <div class="hx-stories-inner" id="storiesBar">
+            <div class="hx-story-item" onclick="window.location.href='/Story/Create'">
+                <div class="hx-story-ring mine">
+                    <div class="hx-story-inner">
                         @{ var myPic = User.FindFirst("ProfileImage")?.Value; var myUn = User.Identity?.Name ?? "Yo"; }
-                        @if (!string.IsNullOrEmpty(myPic))
-                        { <img src="@myPic" /> }
-                        else
-                        { <div class="ht-story-letter">@myUn.Substring(0,1).ToUpper()</div> }
+                        @if (!string.IsNullOrEmpty(myPic)) { <img src="@myPic" /> }
+                        else { <div class="hx-story-letter">@myUn.Substring(0,1).ToUpper()</div> }
                     </div>
-                    <div class="ht-story-add">+</div>
+                    <div class="hx-story-add-btn">+</div>
                 </div>
-                <div class="ht-story-name">Tu historia</div>
+                <div class="hx-story-name">Mi historia</div>
             </div>
             <div id="friendStories" style="display:contents;"></div>
         </div>
     </div>
 }
 
-<!-- ════════ BODY ════════ -->
-<div class="ht-body">
+<!-- ═══ GRID ═══ -->
+<div class="hx-grid">
 
-    <!-- COLUMNA IZQUIERDA -->
-    <div class="ht-col-left">
+    <!-- COLUMNA PRINCIPAL -->
+    <div class="hx-main">
 
         <!-- QUOTE -->
-        <div class="ht-quote">
-            <span class="ht-quote-icon">✨</span>
-            <p class="ht-quote-text" id="quoteText"></p>
+        <div class="hx-quote">
+            <span class="hx-quote-icon">✦</span>
+            <p class="hx-quote-txt" id="quoteText"></p>
         </div>
 
-        <!-- QUICK ACTIONS -->
-        <div class="ht-actions">
-            @if (user != null && (user.IsPremium || Model.Count < 5))
-            { <a href="/Habit/Create" class="ht-action-btn primary">➕ Nuevo hábito</a> }
+        <!-- ACTIONS -->
+        <div class="hx-actions">
+            @if (isPremium || Model.Count < 5)
+            { <a href="/Habit/Create" class="hx-btn hx-btn-primary">➕ Nuevo hábito</a> }
             else
-            { <a href="/User/Pay" class="ht-action-btn locked">🔒 Premium</a> }
-            <a href="/Habit/History" class="ht-action-btn ghost">📅 Historial</a>
-            <a href="/Habit/Calendar" class="ht-action-btn ghost">📆 Calendario</a>
-            @if (user?.IsPremium == true)
-            { <a href="/Habit/Statistics" class="ht-action-btn ghost">📈 Estadísticas</a> }
-            <a href="/Habit/Achievements" class="ht-action-btn ghost">🏆 Logros</a>
+            { <a href="/User/Pay" class="hx-btn hx-btn-locked">🔒 Nuevo hábito</a> }
+            <a href="/Habit/History" class="hx-btn hx-btn-ghost">📅 Historial</a>
+            <a href="/Habit/Calendar" class="hx-btn hx-btn-ghost">📆 Calendario</a>
+            @if (isPremium)
+            {
+                <a href="/Habit/Statistics" class="hx-btn hx-btn-ghost">📈 Estadísticas</a>
+                <a href="/Habit/Export" class="hx-btn hx-btn-ghost">📤 Exportar</a>
+            }
+            else
+            {
+                <a href="/User/Pay" class="hx-btn hx-btn-locked" title="Solo Premium">🔒 Estadísticas</a>
+                <a href="/User/Pay" class="hx-btn hx-btn-locked" title="Solo Premium">🔒 Exportar</a>
+            }
+            <a href="/Habit/Achievements" class="hx-btn hx-btn-ghost">🏆 Logros</a>
         </div>
 
-        <!-- KPI GRID -->
-        <div class="ht-kpi-grid">
-            <a href="/Habit/Index" class="ht-kpi blue">
-                <div class="ht-kpi-icon">📋</div>
-                <div><div class="ht-kpi-val">@totalHabits</div><div class="ht-kpi-lbl">Hábitos totales</div></div>
+        <!-- KPI -->
+        <div class="hx-kpi-grid">
+            <a href="/Habit/Index" class="hx-kpi k-blue">
+                <div class="hx-kpi-ico">📋</div>
+                <div><div class="hx-kpi-val">@totalHabits</div><div class="hx-kpi-lbl">Hábitos totales</div></div>
             </a>
-            <a href="/Habit/Statistics" class="ht-kpi green">
-                <div class="ht-kpi-icon">🔥</div>
-                <div><div class="ht-kpi-val">@totalStreak</div><div class="ht-kpi-lbl">Racha acumulada</div></div>
+            @if (isPremium)
+            {
+                <a href="/Habit/Statistics" class="hx-kpi k-grn">
+                    <div class="hx-kpi-ico">🔥</div>
+                    <div><div class="hx-kpi-val">@totalStreak</div><div class="hx-kpi-lbl">Racha acumulada</div></div>
+                </a>
+            }
+            else
+            {
+                <a href="/User/Pay" class="hx-kpi k-grn locked">
+                    <div class="hx-kpi-ico">🔒</div>
+                    <div><div class="hx-kpi-val" style="font-size:15px;">Premium</div><div class="hx-kpi-lbl">Estadísticas</div></div>
+                </a>
+            }
+            <a href="/Habit/Calendar" class="hx-kpi k-org">
+                <div class="hx-kpi-ico">⚡</div>
+                <div><div class="hx-kpi-val">@completionRate%</div><div class="hx-kpi-lbl">Completado hoy</div></div>
             </a>
-            <a href="/Habit/Calendar" class="ht-kpi orange">
-                <div class="ht-kpi-icon">⚡</div>
-                <div><div class="ht-kpi-val">@completionRate%</div><div class="ht-kpi-lbl">Hoy completado</div></div>
-            </a>
-            <a href="/Habit/Achievements" class="ht-kpi gold">
-                <div class="ht-kpi-icon">🏆</div>
-                <div><div class="ht-kpi-val">@bestRecord</div><div class="ht-kpi-lbl">Mejor racha</div></div>
+            <a href="/Habit/Achievements" class="hx-kpi k-gld">
+                <div class="hx-kpi-ico">🏆</div>
+                <div><div class="hx-kpi-val">@bestRecord</div><div class="hx-kpi-lbl">Mejor racha</div></div>
             </a>
         </div>
 
         <!-- HABITS CARD -->
-        <div class="ht-habits-card">
-            <div class="ht-habits-header">
-                <div class="ht-habits-title">
+        <div class="hx-card">
+            <div class="hx-card-hd">
+                <div class="hx-card-title">
                     Mis hábitos
                     @if (totalHabits > 0)
-                    { <span class="ht-habits-count">@totalHabits</span> }
+                    { <span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;background:rgba(79,110,247,0.12);color:var(--a);border:1px solid rgba(79,110,247,0.2);">@totalHabits</span> }
                 </div>
-                @if (user != null && (user.IsPremium || Model.Count < 5))
-                { <a href="/Habit/Create" class="ht-habits-add">+ Nuevo</a> }
+                @if (isPremium || Model.Count < 5)
+                { <a href="/Habit/Create" class="hx-card-action">+ Nuevo</a> }
             </div>
 
             @if (totalHabits > 0)
             {
-                <div class="ht-habits-tabs">
-                    <button class="ht-habit-tab active" onclick="filtrarHabits('todos', this)">Todos (@totalHabits)</button>
-                    <button class="ht-habit-tab" onclick="filtrarHabits('pendientes', this)">Pendientes (@pendingHabits.Count)</button>
-                    <button class="ht-habit-tab" onclick="filtrarHabits('completados', this)">Completados (@completedHabits.Count)</button>
+                <div class="hx-habit-filter">
+                    <button class="hx-ftab on" onclick="filterHabits('all',this)">Todos (@totalHabits)</button>
+                    <button class="hx-ftab" onclick="filterHabits('pend',this)">Pendientes (@pendingHabits.Count)</button>
+                    <button class="hx-ftab" onclick="filterHabits('done',this)">Completados (@completedHabits.Count)</button>
                 </div>
             }
 
-         
+            @if (!isPremium && Model.Count >= 5)
+            { <div class="hx-limit">🚫 Límite de 5 · <a href="/User/Pay">Hazte Premium 🔥</a></div> }
 
             @if (Model.Count == 0)
             {
-                <div class="ht-habits-empty">
-                    <div class="ht-habits-empty-icon">🌱</div>
-                    <div class="ht-habits-empty-title">Empieza hoy</div>
-                    <div class="ht-habits-empty-sub">Los grandes cambios nacen de pequeños hábitos diarios.</div>
-                    <a href="/Habit/Create" class="ht-action-btn primary" style="margin-top:4px;">➕ Crear mi primer hábito</a>
+                <div class="hx-empty">
+                    <div class="hx-empty-ico">🌱</div>
+                    <div class="hx-empty-title">Empieza hoy</div>
+                    <div class="hx-empty-sub">Los grandes cambios nacen de pequeños hábitos diarios.</div>
+                    <a href="/Habit/Create" class="hx-btn hx-btn-primary" style="margin-top:8px;">➕ Crear mi primer hábito</a>
                 </div>
             }
             else
             {
-                <div class="ht-habits-list" id="habitsList">
+                <div class="hx-habit-list" id="habitList">
                     @foreach (var habit in Model)
                     {
                         bool done = habit.LastCheckDate == DateTime.Today && habit.Completed;
                         bool failed = habit.LastCheckDate == DateTime.Today && !habit.Completed;
-                        string statusClass = done ? "done" : failed ? "failed" : "pending";
-                        string statusLabel = done ? "✔ Completado" : failed ? "✖ Fallado" : "⏳ Pendiente";
-                        string checkIcon = done ? "✔" : failed ? "✖" : "○";
-
-                        <div class="ht-habit @statusClass" data-status="@statusClass" id="habit-item-@habit.Id">
-                            <div class="ht-habit-check" title="Estado">@checkIcon</div>
-                            <div class="ht-habit-info">
-                                <a href="/Habit/Detail/@habit.Id" class="ht-habit-name">@habit.Name</a>
-                                <div class="ht-habit-meta">
-                                    <span class="ht-habit-streak">🔥 @habit.StreakDays días</span>
-                                    <span class="ht-habit-record">🏆 @habit.MaxStreak máx</span>
+                        string sc = done ? "done" : failed ? "fail" : "pend";
+                        string icon = done ? "✔" : failed ? "✖" : "○";
+                        string badge = done ? "✔ Completado" : failed ? "✖ Fallado" : "⏳ Pendiente";
+                        <div class="hx-habit @sc" data-s="@sc" id="hb-@habit.Id">
+                            <div class="hx-habit-ico">@icon</div>
+                            <div class="hx-habit-info">
+                                <a href="/Habit/Detail/@habit.Id" class="hx-habit-name">@habit.Name</a>
+                                <div class="hx-habit-sub">
+                                    <span class="hx-habit-streak">🔥 @habit.StreakDays días</span>
+                                    <span class="hx-habit-rec">🏆 @habit.MaxStreak máx</span>
                                 </div>
                             </div>
-                            <span class="ht-habit-status">@statusLabel</span>
-                            <div class="ht-habit-actions">
-                                <a href="/Habit/Complete/@habit.Id" class="ht-hab-btn complete" title="Completar" onclick="playComplete(event, this)">✔</a>
-                                <a href="/Habit/Fail/@habit.Id" class="ht-hab-btn fail" title="Fallar">✖</a>
-                                <a href="/Habit/Edit/@habit.Id" class="ht-hab-btn edit" title="Editar">✏</a>
-                                <a href="/Habit/Delete/@habit.Id" class="ht-hab-btn del" data-no-loader="true" onclick="if(!confirm('¿Eliminar este hábito?')) return false;" title="Eliminar">🗑</a>
+                            <span class="hx-habit-badge">@badge</span>
+                            <div class="hx-habit-acts">
+                                <a href="/Habit/Complete/@habit.Id" class="hx-ha ok" title="Completar" onclick="playOk(event,this)">✔</a>
+                                <a href="/Habit/Fail/@habit.Id" class="hx-ha no" title="Fallar">✖</a>
+                                <a href="/Habit/Edit/@habit.Id" class="hx-ha ed" title="Editar">✏</a>
+                                <a href="/Habit/Delete/@habit.Id" class="hx-ha rm" data-no-loader="true" onclick="if(!confirm('¿Eliminar?'))return false;" title="Eliminar">🗑</a>
                             </div>
                         </div>
-                        <div class="ht-habit-comment-wrap" id="comment-wrap-@habit.Id">
-                            <form asp-action="AddComment" method="post" class="ht-habit-comment-form">
+                        <div class="hx-comment-wrap" id="cw-@habit.Id">
+                            <form asp-action="AddComment" method="post" class="hx-comment-form">
                                 <input type="hidden" name="habitId" value="@habit.Id" />
-                                <input type="text" name="content" class="ht-habit-comment-input" placeholder="💬 Añade un comentario..." />
+                                <input type="text" name="content" class="hx-comment-input" placeholder="💬 Comentario..." />
                             </form>
-                            @if (habit.Comments != null && habit.Comments.Any())
+                            @if (habit.Comments?.Any() == true)
                             {
                                 @foreach (var c in habit.Comments.OrderByDescending(x => x.CreatedAt).Take(2))
-                                { <div class="ht-habit-comment-item"><b>@c.User.Username:</b> @c.Content</div> }
+                                { <div class="hx-comment-item"><b>@c.User.Username:</b> @c.Content</div> }
                             }
                         </div>
                     }
@@ -904,446 +643,163 @@ body.bg-dark .ht-habit-tab.active { background: rgba(91,94,244,0.15) !important;
 
     </div>
 
-    <!-- COLUMNA DERECHA (solo desktop) -->
-    <div class="ht-col-right">
-
-        <!-- PROGRESO HOY -->
-        <div class="ht-progress-card">
-            <div class="ht-progress-title">📊 Progreso de hoy</div>
-            <div class="ht-progress-item">
-                <div class="ht-progress-label"><span>Completados</span><span>@completedToday / @totalHabits</span></div>
-                <div class="ht-progress-bar"><div class="ht-progress-fill green" id="prog1" style="width:0%"></div></div>
+    <!-- SIDEBAR -->
+    <div class="hx-sidebar">
+        <div class="hx-prog-card">
+            <div class="hx-prog-title">📊 Progreso de hoy</div>
+            <div class="hx-prog-item">
+                <div class="hx-prog-lbl"><span>Completados</span><span>@completedToday / @totalHabits</span></div>
+                <div class="hx-prog-bar"><div class="hx-prog-fill g" id="prog1" style="width:0%"></div></div>
             </div>
-            <div class="ht-progress-item">
-                <div class="ht-progress-label"><span>Tasa de éxito</span><span>@completionRate%</span></div>
-                <div class="ht-progress-bar"><div class="ht-progress-fill blue" id="prog2" style="width:0%"></div></div>
+            <div class="hx-prog-item">
+                <div class="hx-prog-lbl"><span>Tasa de éxito</span><span>@completionRate%</span></div>
+                <div class="hx-prog-bar"><div class="hx-prog-fill b" id="prog2" style="width:0%"></div></div>
             </div>
-            <div class="ht-progress-item">
-                <div class="ht-progress-label"><span>Racha promedio</span><span>@(totalHabits > 0 ? (int)(totalStreak / totalHabits) : 0) días</span></div>
-                <div class="ht-progress-bar"><div class="ht-progress-fill orange" id="prog3" style="width:0%"></div></div>
+            <div class="hx-prog-item">
+                <div class="hx-prog-lbl"><span>Racha promedio</span><span>@avgStreak días</span></div>
+                <div class="hx-prog-bar"><div class="hx-prog-fill o" id="prog3" style="width:0%"></div></div>
             </div>
         </div>
-
-        <!-- CHART -->
-        <div class="ht-chart-card">
-            <div class="ht-chart-title">📈 Últimos 7 días</div>
-            <div class="ht-chart-wrap">
-                <canvas id="habitChart"></canvas>
-            </div>
+        <div class="hx-chart-card">
+            <div class="hx-chart-title">📈 Últimos 7 días</div>
+            <div class="hx-chart-wrap"><canvas id="habitChart"></canvas></div>
         </div>
-
-        <!-- STREAK CALENDAR -->
-        <div class="ht-streak-card">
-            <div class="ht-streak-title">📅 Actividad reciente</div>
-            <div class="ht-streak-day-labels">
+        <div class="hx-cal-card">
+            <div class="hx-cal-title">📅 Actividad reciente</div>
+            <div class="hx-cal-hd">
                 @foreach (var d in new[]{"D","L","M","M","J","V","S"})
-                { <div class="ht-streak-day-label">@d</div> }
+                { <span>@d</span> }
             </div>
-            <div class="ht-streak-grid" id="streakGrid"></div>
+            <div class="hx-cal-grid" id="calGrid"></div>
         </div>
-
-        <!-- TIPS -->
-        <div class="ht-tips-card">
-            <div class="ht-tips-title">💡 Consejos de hoy</div>
-            <div class="ht-tip-item">
-                <span class="ht-tip-icon">🎯</span>
-                <span class="ht-tip-text"><strong>Regla de los 2 minutos:</strong> Si un hábito toma menos de 2 minutos, hazlo ahora mismo.</span>
-            </div>
-            <div class="ht-tip-item">
-                <span class="ht-tip-icon">🔗</span>
-                <span class="ht-tip-text"><strong>Apilamiento de hábitos:</strong> Encadena un nuevo hábito después de uno ya establecido.</span>
-            </div>
-            <div class="ht-tip-item">
-                <span class="ht-tip-icon">🏆</span>
-                <span class="ht-tip-text"><strong>No rompas la cadena:</strong> Cada día que completas un hábito refuerza tu identidad.</span>
-            </div>
+        <div class="hx-tip-card">
+            <div class="hx-tip-title">💡 Tips del día</div>
+            <div class="hx-tip"><span class="hx-tip-ico">🎯</span><span class="hx-tip-txt"><strong>Regla de 2 min:</strong> Si tarda menos de 2 minutos, hazlo ahora.</span></div>
+            <div class="hx-tip"><span class="hx-tip-ico">🔗</span><span class="hx-tip-txt"><strong>Apilamiento:</strong> Encadena hábitos nuevos con rutinas existentes.</span></div>
+            <div class="hx-tip"><span class="hx-tip-ico">🏆</span><span class="hx-tip-txt"><strong>No rompas la cadena:</strong> Cada día refuerza tu identidad.</span></div>
         </div>
-
     </div>
-
+</div>
 </div>
 
-</div><!-- /.ht-home -->
-
-<!-- STORY VIEWER -->
-<div id="storyViewer" class="ht-story-viewer" style="display:none;">
-    <div class="ht-story-viewer-bg" onclick="closeStoryViewer()"></div>
-    <div class="ht-story-viewer-card">
-        <div class="ht-story-progress-bars" id="storyProgressBars"></div>
-        <div class="ht-story-header">
-            <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:0;">
-                <div style="position:relative;cursor:pointer;" onclick="goToProfile()">
-                    <img id="svAvatar" style="width:40px;height:40px;border-radius:50%;object-fit:cover;border:2px solid white;display:block;" onerror="this.style.display='none';document.getElementById('svAvatarLetter').style.display='flex';"/>
-                    <div id="svAvatarLetter" style="display:none;width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#5b5ef4,#3730d9);color:white;align-items:center;justify-content:center;font-weight:800;font-size:16px;border:2px solid white;flex-shrink:0;"></div>
+<!-- ═══ STORY VIEWER ═══ -->
+<div id="storyViewer" class="hx-sv" style="display:none;">
+    <div class="hx-sv-bg" onclick="closeSV()"></div>
+    <div class="hx-sv-card">
+        <div class="hx-sv-bars" id="svBars"></div>
+        <div class="hx-sv-hd">
+            <div style="display:flex;align-items:center;gap:9px;flex:1;min-width:0;">
+                <div onclick="goToProfile()" style="cursor:pointer;flex-shrink:0;">
+                    <img id="svAv" style="width:38px;height:38px;border-radius:50%;object-fit:cover;border:2px solid white;display:block;" onerror="this.style.display='none';document.getElementById('svAvL').style.display='flex';"/>
+                    <div id="svAvL" style="display:none;width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,#4f6ef7,#3451e8);color:white;align-items:center;justify-content:center;font-weight:800;font-size:15px;border:2px solid white;flex-shrink:0;"></div>
                 </div>
                 <div style="min-width:0;flex:1;">
-                    <div style="display:flex;align-items:center;gap:6px;">
-                        <div id="svUsername" style="font-size:13px;font-weight:700;color:white;cursor:pointer;" onclick="goToProfile()"></div>
-                        <div id="svVisibilityBadge" style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;display:none;backdrop-filter:blur(4px);"></div>
-                    </div>
-                    <div id="svTime" style="font-size:11px;color:rgba(255,255,255,0.5);margin-top:1px;"></div>
+                    <div id="svUser" style="font-size:12px;font-weight:700;color:white;cursor:pointer;" onclick="goToProfile()"></div>
+                    <div id="svTime" style="font-size:10px;color:rgba(255,255,255,0.45);margin-top:1px;"></div>
                 </div>
             </div>
-            <div style="display:flex;gap:4px;align-items:center;flex-shrink:0;">
-                <button id="svHighlight" onclick="toggleHighlight()" data-no-loader style="background:rgba(255,255,255,0.1);border:none;color:white;font-size:18px;cursor:pointer;padding:6px 8px;border-radius:10px;">☆</button>
-                <button id="svDelete" onclick="deleteCurrentStory()" data-no-loader style="display:none;background:rgba(239,68,68,0.2);border:none;color:white;font-size:16px;cursor:pointer;padding:6px 8px;border-radius:10px;">🗑</button>
-                <button onclick="closeStoryViewer()" data-no-loader style="background:rgba(255,255,255,0.1);border:none;color:white;font-size:18px;cursor:pointer;padding:6px 8px;border-radius:10px;">✕</button>
+            <div style="display:flex;gap:4px;flex-shrink:0;">
+                <button id="svHL" onclick="toggleHL()" data-no-loader style="background:rgba(255,255,255,0.1);border:none;color:white;font-size:17px;cursor:pointer;padding:5px 7px;border-radius:9px;">☆</button>
+                <button id="svDel" onclick="delStory()" data-no-loader style="display:none;background:rgba(240,78,78,0.2);border:none;color:white;font-size:15px;cursor:pointer;padding:5px 7px;border-radius:9px;">🗑</button>
+                <button onclick="closeSV()" data-no-loader style="background:rgba(255,255,255,0.1);border:none;color:white;font-size:17px;cursor:pointer;padding:5px 7px;border-radius:9px;">✕</button>
             </div>
         </div>
-        <div class="ht-story-content">
+        <div class="hx-sv-content">
             <img id="svImg" style="display:none;width:100%;height:100%;object-fit:cover;background:#000;"/>
-            <video id="svVideo" style="display:none;width:100%;height:100%;object-fit:contain;background:#000;" playsinline controls></video>
-            <div id="svText" style="display:none;width:100%;height:100%;align-items:center;justify-content:center;padding:40px;text-align:center;font-size:24px;font-weight:800;color:white;line-height:1.5;"></div>
+            <video id="svVid" style="display:none;width:100%;height:100%;object-fit:contain;background:#000;" playsinline controls></video>
+            <div id="svTxt" style="display:none;width:100%;height:100%;align-items:center;justify-content:center;padding:40px;text-align:center;font-size:22px;font-weight:800;color:white;line-height:1.5;"></div>
         </div>
-        <div class="ht-story-nav-left" onclick="prevStory()"></div>
-        <div class="ht-story-nav-right" onclick="nextStory()"></div>
-        <div id="svCaption" style="position:absolute;bottom:80px;left:16px;right:16px;z-index:10;font-size:13px;color:white;font-weight:600;text-shadow:0 2px 8px rgba(0,0,0,0.8);text-align:center;pointer-events:none;"></div>
-        <div style="position:absolute;bottom:0;left:0;right:0;z-index:10;padding:14px 16px 24px;background:linear-gradient(transparent,rgba(0,0,0,0.8));display:flex;align-items:center;gap:10px;">
-            <button id="svLikeBtn" onclick="toggleStoryLike()" data-no-loader style="background:none;border:none;color:white;font-size:32px;cursor:pointer;padding:0;transition:transform 0.2s;flex-shrink:0;line-height:1;">🤍</button>
-            <span id="svLikesCount" style="font-size:13px;color:rgba(255,255,255,0.85);font-weight:700;min-width:20px;"></span>
-            <div id="svViewsBar" style="display:none;cursor:pointer;flex:1;text-align:center;" onclick="openStoryViews()">
-                <span id="svViews" style="font-size:12px;color:rgba(255,255,255,0.85);font-weight:600;background:rgba(0,0,0,0.4);padding:5px 14px;border-radius:20px;backdrop-filter:blur(8px);">👁 0 vistas</span>
+        <div class="hx-sv-nav-l" onclick="prevS()"></div>
+        <div class="hx-sv-nav-r" onclick="nextS()"></div>
+        <div id="svCap" style="position:absolute;bottom:80px;left:16px;right:16px;z-index:10;font-size:12px;color:white;font-weight:600;text-shadow:0 2px 8px rgba(0,0,0,0.9);text-align:center;pointer-events:none;"></div>
+        <div style="position:absolute;bottom:0;left:0;right:0;z-index:10;padding:12px 16px 24px;background:linear-gradient(transparent,rgba(0,0,0,0.85));display:flex;align-items:center;gap:10px;">
+            <button id="svLikeBtn" onclick="toggleSVLike()" data-no-loader style="background:none;border:none;color:white;font-size:30px;cursor:pointer;padding:0;transition:transform 0.15s;flex-shrink:0;line-height:1;">🤍</button>
+            <span id="svLikeCnt" style="font-size:12px;color:rgba(255,255,255,0.8);font-weight:700;min-width:18px;"></span>
+            <div id="svViewsBar" style="display:none;cursor:pointer;flex:1;text-align:center;" onclick="openSVViews()">
+                <span id="svViews" style="font-size:11px;color:rgba(255,255,255,0.8);font-weight:600;background:rgba(0,0,0,0.4);padding:5px 14px;border-radius:20px;backdrop-filter:blur(8px);">👁 0 vistas</span>
             </div>
         </div>
-        <div id="svHeartAnim" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;z-index:20;opacity:0;">
-            <span style="font-size:100px;filter:drop-shadow(0 0 40px rgba(239,68,68,1));" id="svHeartAnimIcon">❤️</span>
+        <div id="svHeart" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;z-index:20;opacity:0;">
+            <span style="font-size:90px;filter:drop-shadow(0 0 40px rgba(240,78,78,1));">❤️</span>
         </div>
-        <div id="storyViewsModal" style="display:none;position:absolute;bottom:75px;left:12px;right:12px;background:rgba(8,12,24,0.98);border-radius:20px;padding:16px;z-index:30;max-height:260px;overflow-y:auto;backdrop-filter:blur(24px);border:1px solid rgba(255,255,255,0.07);"></div>
+        <div id="svViewsModal" style="display:none;position:absolute;bottom:75px;left:12px;right:12px;background:rgba(7,9,15,0.98);border-radius:18px;padding:14px;z-index:30;max-height:240px;overflow-y:auto;backdrop-filter:blur(24px);border:1px solid rgba(255,255,255,0.07);"></div>
     </div>
 </div>
 
-        @section Scripts {
+@section Scripts {
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-// ══ DATA ══
-const labels7 = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(last7Days.Select(d => d.ToString("dd/MM"))));
-const data7 = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(dailyCompletion));
-const completionRateVal = @completionRate;
-const totalHabitsVal = @totalHabits;
-const completedTodayVal = @completedToday;
-const totalStreakVal = @totalStreak;
-const avgStreak = totalHabitsVal > 0 ? Math.round(totalStreakVal / totalHabitsVal) : 0;
-const myUserId = @(int.Parse(User.FindFirst("UserId").Value));
+const labels7=@Html.Raw(System.Text.Json.JsonSerializer.Serialize(last7Days.Select(d=>d.ToString("dd/MM"))));
+const data7=@Html.Raw(System.Text.Json.JsonSerializer.Serialize(dailyCompletion));
+const compRate=@completionRate;
+const totH=@totalHabits;
+const compToday=@completedToday;
+const totStr=@totalStreak;
+const avgStr=@avgStreak;
+const myId=@(int.Parse(User.FindFirst("UserId").Value));
 
-// ══ PROGRESS RING ANIMATION ══
-window.addEventListener('load', () => {
-    const ring = document.getElementById('progressRing');
-    if (ring) {
-        const r = 11;
-        const circ = 2 * Math.PI * r;
-        const offset = circ - (completionRateVal / 100) * circ;
-        setTimeout(() => { ring.style.strokeDashoffset = offset; }, 400);
-    }
-
-    // Progress bars animation
-    setTimeout(() => {
-        const p1 = document.getElementById('prog1');
-        const p2 = document.getElementById('prog2');
-        const p3 = document.getElementById('prog3');
-        if (p1) p1.style.width = (totalHabitsVal > 0 ? (completedTodayVal / totalHabitsVal * 100) : 0) + '%';
-        if (p2) p2.style.width = completionRateVal + '%';
-        if (p3) p3.style.width = Math.min(avgStreak * 5, 100) + '%';
-    }, 600);
+// ── RING ──
+window.addEventListener('load',()=>{
+    const ring=document.getElementById('progressRing');
+    if(ring){const c=2*Math.PI*8.5;setTimeout(()=>{ring.style.strokeDashoffset=c-(compRate/100)*c;},400);}
+    setTimeout(()=>{
+        const p1=document.getElementById('prog1'),p2=document.getElementById('prog2'),p3=document.getElementById('prog3');
+        if(p1)p1.style.width=(totH>0?(compToday/totH*100):0)+'%';
+        if(p2)p2.style.width=compRate+'%';
+        if(p3)p3.style.width=Math.min(avgStr*5,100)+'%';
+    },600);
 });
 
-// ══ CHART ══
-const isDark = document.body.classList.contains('bg-dark');
-const gridColor = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)';
-const textColor = isDark ? '#475569' : '#94a3b8';
-new Chart(document.getElementById('habitChart'), {
-    type: 'bar',
-    data: {
-        labels: labels7,
-        datasets: [{
-            data: data7,
-            backgroundColor: data7.map(v => v >= 80 ? 'rgba(0,196,140,0.7)' : v >= 50 ? 'rgba(91,94,244,0.7)' : 'rgba(255,112,67,0.6)'),
-            borderRadius: 8, borderSkipped: false,
-            hoverBackgroundColor: data7.map(v => v >= 80 ? '#00c48c' : v >= 50 ? '#5b5ef4' : '#ff7043'),
-        }]
-    },
-    options: {
-        responsive: true, maintainAspectRatio: false,
-        plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ctx.parsed.y + '% completado' } } },
-        scales: {
-            y: { beginAtZero: true, max: 100, ticks: { color: textColor, callback: v => v + '%', font: { size: 10 } }, grid: { color: gridColor } },
-            x: { ticks: { color: textColor, font: { size: 10 } }, grid: { display: false } }
-        }
-    }
+// ── CHART ──
+new Chart(document.getElementById('habitChart'),{
+    type:'bar',
+    data:{labels:labels7,datasets:[{data:data7,backgroundColor:data7.map(v=>v>=80?'rgba(16,212,142,0.75)':v>=50?'rgba(79,110,247,0.75)':'rgba(255,107,53,0.65)'),borderRadius:7,borderSkipped:false,hoverBackgroundColor:data7.map(v=>v>=80?'#10d48e':v>=50?'#4f6ef7':'#ff6b35')}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.parsed.y+'% completado'}}},scales:{y:{beginAtZero:true,max:100,ticks:{color:'#4a5a7a',callback:v=>v+'%',font:{size:9}},grid:{color:'rgba(255,255,255,0.03)'}},x:{ticks:{color:'#4a5a7a',font:{size:9}},grid:{display:false}}}}
 });
 
-// ══ STREAK CALENDAR ══
-const grid = document.getElementById('streakGrid');
-if (grid) {
-    const today = new Date();
-    for (let i = 27; i >= 0; i--) {
-        const d = new Date(today); d.setDate(today.getDate() - i);
-        const cell = document.createElement('div');
-        cell.className = 'ht-streak-day';
-        const dayData = data7.find((_, idx) => {
-            const label = labels7[idx];
-            const dd = String(d.getDate()).padStart(2,'0');
-            const mm = String(d.getMonth()+1).padStart(2,'0');
-            return label === dd+'/'+mm;
-        });
-        if (dayData !== undefined) {
-            cell.classList.add(dayData >= 80 ? 'done' : dayData >= 40 ? 'partial' : 'failed');
-        } else { cell.classList.add('empty'); }
-        cell.title = d.toLocaleDateString('es-CO', { weekday:'short', month:'short', day:'numeric' });
-        grid.appendChild(cell);
-    }
-}
+// ── CALENDAR ──
+const calGrid=document.getElementById('calGrid');
+if(calGrid){const today=new Date();for(let i=27;i>=0;i--){const d=new Date(today);d.setDate(today.getDate()-i);const cell=document.createElement('div');cell.className='hx-cal-day';const dd=String(d.getDate()).padStart(2,'0'),mm=String(d.getMonth()+1).padStart(2,'0');const idx=labels7.indexOf(dd+'/'+mm);if(idx>=0){cell.classList.add(data7[idx]>=80?'d':data7[idx]>=40?'p':'f');}else{cell.classList.add('e');}cell.title=d.toLocaleDateString('es-CO',{weekday:'short',month:'short',day:'numeric'});calGrid.appendChild(cell);}}
 
-// ══ QUOTE ROTATOR ══
-const frases = [
-    "La disciplina es el puente entre metas y logros. 🚀",
-    "Los pequeños hábitos crean grandes cambios. 🌱",
-    "No necesitas ser perfecto, solo consistente. 🔥",
-    "Un hábito a la vez. Un día a la vez. ⚡",
-    "La constancia vence al talento. 🎯",
-    "Tu futuro depende de lo que hagas hoy. 💡",
-    "Primero forma el hábito, luego el hábito te forma. 🔄",
-    "El progreso, no la perfección, es el objetivo. 📊",
-    "Los hábitos son el interés compuesto del auto-mejoramiento. 📈",
-    "Sé la mejor versión de ti mismo, cada día. 🌟",
-    "Cae siete veces, levántate ocho. 🥊",
-    "La excelencia no es un acto, es un hábito. 👌"
-];
-let fi = Math.floor(Math.random() * frases.length);
-const qt = document.getElementById("quoteText");
-qt.textContent = frases[fi];
-setTimeout(() => { qt.style.opacity = "1"; qt.style.transform = "translateY(0)"; }, 200);
-setInterval(() => {
-    qt.style.opacity = "0"; qt.style.transform = "translateY(6px)";
-    setTimeout(() => {
-        fi = (fi + 1) % frases.length;
-        qt.textContent = frases[fi];
-        qt.style.opacity = "1"; qt.style.transform = "translateY(0)";
-    }, 500);
-}, 5000);
+// ── QUOTE ──
+const frases=["La disciplina es el puente entre metas y logros.","Los pequeños hábitos crean grandes cambios.","No necesitas ser perfecto, solo consistente.","La constancia vence al talento. Siempre.","Tu futuro depende de lo que hagas hoy.","Primero forma el hábito, luego el hábito te forma.","El progreso, no la perfección, es el objetivo.","Los hábitos son el interés compuesto del auto-mejoramiento.","Sé la mejor versión de ti mismo, cada día.","Cae siete veces, levántate ocho.","La excelencia no es un acto, es un hábito.","Un hábito a la vez. Un día a la vez."];
+let fi=Math.floor(Math.random()*frases.length);
+const qt=document.getElementById('quoteText');
+qt.textContent=frases[fi];
+setTimeout(()=>{qt.style.opacity='1';qt.style.transform='translateY(0)';},300);
+setInterval(()=>{qt.style.opacity='0';qt.style.transform='translateY(4px)';setTimeout(()=>{fi=(fi+1)%frases.length;qt.textContent=frases[fi];qt.style.opacity='1';qt.style.transform='translateY(0)';},500);},5000);
 
-// ══ WEATHER ══
-if (navigator.geolocation) {
-    navigator.geolocation.getCurrentPosition(pos => {
-        const { latitude: lat, longitude: lon } = pos.coords;
-        fetch('https://api.open-meteo.com/v1/forecast?latitude='+lat+'&longitude='+lon+'&current_weather=true&timezone=auto')
-            .then(r => r.json()).then(d => {
-                const code = d.current_weather.weathercode;
-                const icon = code >= 80 ? '🌧️' : code >= 61 ? '🌦️' : code >= 51 ? '🌦️' : code >= 45 ? '🌫️' : code >= 3 ? '⛅' : code >= 1 ? '🌤️' : '☀️';
-                document.getElementById('wIcon').textContent = icon;
-                document.getElementById('wTemp').textContent = Math.round(d.current_weather.temperature) + '°';
-                const pill = document.getElementById('weatherPill');
-                if (pill) pill.style.display = 'inline-flex';
-                fetch('https://nominatim.openstreetmap.org/reverse?format=json&lat='+lat+'&lon='+lon, { headers: { "Accept-Language": "es" } })
-                    .then(r => r.json()).then(g => {
-                        document.getElementById('wCity').textContent = g.address?.city || g.address?.town || '📍';
-                    }).catch(() => {});
-            }).catch(() => {});
-    }, () => {}, { timeout: 6000 });
-}
+// ── WEATHER ──
+if(navigator.geolocation){navigator.geolocation.getCurrentPosition(pos=>{const{latitude:lat,longitude:lon}=pos.coords;fetch('https://api.open-meteo.com/v1/forecast?latitude='+lat+'&longitude='+lon+'&current_weather=true&timezone=auto').then(r=>r.json()).then(d=>{const code=d.current_weather.weathercode;const icon=code>=80?'🌧️':code>=61?'🌦️':code>=45?'🌫️':code>=3?'⛅':code>=1?'🌤️':'☀️';document.getElementById('wIcon').textContent=icon;document.getElementById('wTemp').textContent=Math.round(d.current_weather.temperature)+'°';const pill=document.getElementById('weatherPill');if(pill)pill.style.display='inline-flex';fetch('https://nominatim.openstreetmap.org/reverse?format=json&lat='+lat+'&lon='+lon,{headers:{'Accept-Language':'es'}}).then(r=>r.json()).then(g=>{document.getElementById('wCity').textContent=g.address?.city||g.address?.town||'';}).catch(()=>{});}).catch(()=>{});},()=>{},{timeout:6000});}
 
-// ══ FILTER HABITS ══
-function filtrarHabits(tipo, btn) {
-    document.querySelectorAll('.ht-habit-tab').forEach(t => t.classList.remove('active'));
-    btn.classList.add('active');
-    document.querySelectorAll('.ht-habit').forEach(h => {
-        const status = h.getAttribute('data-status');
-        let show = true;
-        if (tipo === 'pendientes') show = status === 'pending';
-        else if (tipo === 'completados') show = status === 'done';
-        const id = h.id.replace('habit-item-', '');
-        const commentWrap = document.getElementById('comment-wrap-' + id);
-        h.style.display = show ? 'flex' : 'none';
-        if (commentWrap) commentWrap.style.display = show ? 'block' : 'none';
-    });
-}
+// ── FILTER ──
+function filterHabits(type,btn){document.querySelectorAll('.hx-ftab').forEach(t=>t.classList.remove('on'));btn.classList.add('on');document.querySelectorAll('.hx-habit').forEach(h=>{const s=h.getAttribute('data-s');const show=type==='all'||s===type;const id=h.id.replace('hb-','');h.style.display=show?'flex':'none';const cw=document.getElementById('cw-'+id);if(cw)cw.style.display=show?'block':'none';});}
 
-// ══ PLAY COMPLETE SOUND ══
-function playComplete(e, btn) {
-    e.preventDefault();
-    if (typeof HabitSounds !== 'undefined') HabitSounds.complete();
-    const href = btn.getAttribute('href');
-    setTimeout(() => window.location.href = href, 350);
-}
+// ── COMPLETE SOUND ──
+function playOk(e,btn){e.preventDefault();if(typeof HabitSounds!=='undefined')HabitSounds.complete();const href=btn.getAttribute('href');setTimeout(()=>window.location.href=href,320);}
 
-// ══ STORIES ══
-let currentUserStories = [], currentStoryIndex = 0, storyProgressInterval = null, currentStoryOwnerId = null, currentStoryUserId = null;
+// ── STORIES ──
+let svStories=[],svIdx=0,svInterval=null,svOwnerId=null,svUserId=null;
 
-async function loadFriendStories() {
-    try {
-        const res = await fetch('/Story/GetFriendsStories');
-        const data = await res.json();
-        const container = document.getElementById('friendStories');
-        if (!container) return;
-        container.innerHTML = '';
-        data.forEach(group => {
-            const pic = group.user.profileImage || group.user.profilePicture || '';
-            const item = document.createElement('div');
-            item.className = 'ht-story-item';
-            item.onclick = () => openStoryViewer(group);
-            const ring = document.createElement('div');
-            ring.className = 'ht-story-ring' + (group.hasUnviewed ? '' : ' viewed');
-            const inner = document.createElement('div');
-            inner.className = 'ht-story-ring-inner';
-            if (pic) {
-                inner.innerHTML = `<img src="${pic}" onerror="this.parentElement.innerHTML='<div class=ht-story-letter>${group.user.username.charAt(0).toUpperCase()}</div>'" />`;
-            } else {
-                inner.innerHTML = `<div class="ht-story-letter">${group.user.username.charAt(0).toUpperCase()}</div>`;
-            }
-            ring.appendChild(inner);
-            const name = document.createElement('div');
-            name.className = 'ht-story-name';
-            name.textContent = group.user.username;
-            item.appendChild(ring); item.appendChild(name);
-            container.appendChild(item);
-        });
-    } catch(e) { console.error(e); }
-}
+async function loadStories(){try{const res=await fetch('/Story/GetFriendsStories');const data=await res.json();const c=document.getElementById('friendStories');if(!c)return;c.innerHTML='';data.forEach(g=>{const pic=g.user.profileImage||g.user.profilePicture||'';const item=document.createElement('div');item.className='hx-story-item';item.onclick=()=>openSV(g);const ring=document.createElement('div');ring.className='hx-story-ring '+(g.hasUnviewed?'fresh':'seen');const inner=document.createElement('div');inner.className='hx-story-inner';if(pic){inner.innerHTML=`<img src="${pic}" onerror="this.parentElement.innerHTML='<div class=hx-story-letter>${g.user.username.charAt(0).toUpperCase()}</div>'" />`;}else{inner.innerHTML=`<div class="hx-story-letter">${g.user.username.charAt(0).toUpperCase()}</div>`;}ring.appendChild(inner);const name=document.createElement('div');name.className='hx-story-name';name.textContent=g.user.username;item.appendChild(ring);item.appendChild(name);c.appendChild(item);});}catch(e){console.error(e);}}
 
-function openStoryViewer(group) {
-    currentUserStories = group.stories;
-    currentStoryIndex = 0;
-    currentStoryOwnerId = group.user.id;
-    currentStoryUserId = group.user.id;
-    const pic = group.user.profileImage || group.user.profilePicture || '';
-    const avatarImg = document.getElementById('svAvatar');
-    const avatarLetter = document.getElementById('svAvatarLetter');
-    if (pic) { avatarImg.src = pic; avatarImg.style.display = 'block'; avatarLetter.style.display = 'none'; }
-    else { avatarImg.style.display = 'none'; avatarLetter.style.display = 'flex'; avatarLetter.textContent = group.user.username.charAt(0).toUpperCase(); }
-    document.getElementById('svUsername').textContent = group.user.username;
-    document.getElementById('svDelete').style.display = group.user.id === myUserId ? 'block' : 'none';
-    document.getElementById('storyViewer').style.display = 'flex';
-    document.body.style.overflow = 'hidden';
-    buildProgressBars(); showStory(0);
-}
+function openSV(g){svStories=g.stories;svIdx=0;svOwnerId=g.user.id;svUserId=g.user.id;const pic=g.user.profileImage||g.user.profilePicture||'';const av=document.getElementById('svAv'),avL=document.getElementById('svAvL');if(pic){av.src=pic;av.style.display='block';avL.style.display='none';}else{av.style.display='none';avL.style.display='flex';avL.textContent=g.user.username.charAt(0).toUpperCase();}document.getElementById('svUser').textContent=g.user.username;document.getElementById('svDel').style.display=g.user.id===myId?'block':'none';document.getElementById('storyViewer').style.display='flex';document.body.style.overflow='hidden';buildBars();showS(0);}
+function goToProfile(){if(svUserId)window.location.href='/User/Profile/'+svUserId;}
+function buildBars(){const b=document.getElementById('svBars');b.innerHTML='';svStories.forEach((_,i)=>{const bar=document.createElement('div');bar.className='hx-sv-bar';bar.innerHTML=`<div class="hx-sv-bar-fill" id="svfill-${i}"></div>`;b.appendChild(bar);});}
+function showS(idx){if(idx>=svStories.length){closeSV();return;}if(idx<0){closeSV();return;}svIdx=idx;const s=svStories[idx];fetch('/Story/View',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(s.id)});['svImg','svVid','svTxt','svViewsModal'].forEach(id=>document.getElementById(id).style.display='none');if(s.type==='image'){const img=document.getElementById('svImg');img.src=s.mediaUrl;img.style.display='block';}else if(s.type==='video'){const v=document.getElementById('svVid');v.src=s.mediaUrl;v.style.display='block';v.play();v.onended=()=>{clearInterval(svInterval);showS(svIdx+1);};}else{const t=document.getElementById('svTxt');t.textContent=s.textContent;t.style.background=s.bgColor||'#4f6ef7';t.style.display='flex';}document.getElementById('svTime').textContent=timeAgo(new Date(s.createdAt+'Z'));document.getElementById('svCap').textContent=s.caption||'';document.getElementById('svHL').textContent=s.isHighlight?'★':'☆';const isOwner=svOwnerId===myId;const vb=document.getElementById('svViewsBar');vb.style.display=isOwner?'block':'none';if(isOwner)document.getElementById('svViews').textContent='👁 '+(s.views||0)+' vistas';const lb=document.getElementById('svLikeBtn');lb.textContent=s.liked?'❤️':'🤍';lb.style.filter=s.liked?'drop-shadow(0 0 8px rgba(240,78,78,0.9))':'none';document.getElementById('svLikeCnt').textContent=isOwner&&s.likes>0?s.likes+' ❤️':'';svStories.forEach((_,i)=>{const f=document.getElementById('svfill-'+i);if(f)f.style.width=i<idx?'100%':'0%';});startBar(idx,s.duration*1000);}
+function startBar(idx,dur){clearInterval(svInterval);const f=document.getElementById('svfill-'+idx);if(!f)return;let el=0;svInterval=setInterval(()=>{el+=50;f.style.width=Math.min(el/dur*100,100)+'%';if(el>=dur){clearInterval(svInterval);showS(svIdx+1);}},50);}
+function nextS(){clearInterval(svInterval);showS(svIdx+1);}
+function prevS(){clearInterval(svInterval);showS(svIdx-1);}
+function closeSV(){clearInterval(svInterval);document.getElementById('storyViewer').style.display='none';document.body.style.overflow='';const v=document.getElementById('svVid');v.pause();v.src='';}
+async function toggleSVLike(){const s=svStories[svIdx];const btn=document.getElementById('svLikeBtn');const h=document.getElementById('svHeart');h.style.opacity='1';document.getElementById('svHeart').firstElementChild.style.animation='none';document.getElementById('svHeart').firstElementChild.offsetHeight;document.getElementById('svHeart').firstElementChild.style.animation='svHeartPop 0.7s ease forwards';setTimeout(()=>h.style.opacity='0',800);btn.style.transform='scale(1.6)';setTimeout(()=>btn.style.transform='scale(1)',300);try{const res=await fetch('/Story/ToggleLike',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(s.id)});const d=await res.json();s.liked=d.liked;s.likes=d.liked?(s.likes||0)+1:Math.max(0,(s.likes||0)-1);btn.textContent=d.liked?'❤️':'🤍';btn.style.filter=d.liked?'drop-shadow(0 0 8px rgba(240,78,78,0.9))':'none';const isO=svOwnerId===myId;document.getElementById('svLikeCnt').textContent=isO&&s.likes>0?s.likes+' ❤️':'';}catch(e){}}
+async function toggleHL(){const s=svStories[svIdx];try{const res=await fetch('/Story/ToggleHighlight',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(s.id)});const d=await res.json();s.isHighlight=d.isHighlight;document.getElementById('svHL').textContent=d.isHighlight?'★':'☆';}catch(e){}}
+async function delStory(){if(!confirm('¿Eliminar esta historia?'))return;const s=svStories[svIdx];try{const res=await fetch('/Story/Delete',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(s.id)});if(!res.ok){alert('Error');return;}svStories.splice(svIdx,1);if(!svStories.length){closeSV();await loadStories();return;}buildBars();showS(Math.min(svIdx,svStories.length-1));await loadStories();}catch(e){console.error(e);}}
+async function openSVViews(){const s=svStories[svIdx];const m=document.getElementById('svViewsModal');if(m.style.display==='block'){m.style.display='none';return;}m.innerHTML='<div style="color:rgba(255,255,255,0.3);font-size:11px;text-align:center;padding:14px;">Cargando...</div>';m.style.display='block';try{const res=await fetch('/Story/GetViews?storyId='+s.id);const data=await res.json();if(!data.length){m.innerHTML='<div style="color:rgba(255,255,255,0.3);font-size:12px;text-align:center;padding:16px;">Nadie ha visto tu historia aún</div>';return;}m.innerHTML='<div style="font-size:10px;font-weight:700;color:rgba(255,255,255,0.3);margin-bottom:10px;text-transform:uppercase;letter-spacing:1px;">👁 Visto por</div>'+data.map(v=>`<div style="display:flex;align-items:center;gap:9px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.05);">${v.profileImage?`<img src="${v.profileImage}" style="width:32px;height:32px;border-radius:50%;object-fit:cover;flex-shrink:0;"/>`:`<div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#4f6ef7,#3451e8);color:white;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:12px;flex-shrink:0;">${v.username.charAt(0).toUpperCase()}</div>`}<div style="flex:1;min-width:0;"><div style="font-size:12px;font-weight:700;color:white;">${v.username}</div><div style="font-size:10px;color:rgba(255,255,255,0.35);margin-top:1px;">${v.viewedAt}</div></div>${v.liked?'<span style="font-size:16px;">❤️</span>':''}</div>`).join('');}catch(e){m.innerHTML='<div style="color:var(--red);font-size:11px;text-align:center;">Error al cargar</div>';}}
+function timeAgo(d){const diff=Math.floor((Date.now()-d)/60000);if(diff<1)return'ahora';if(diff<60)return'hace '+diff+' min';if(diff<1440)return'hace '+Math.floor(diff/60)+'h';return'hace '+Math.floor(diff/1440)+'d';}
 
-function goToProfile() { if (currentStoryUserId) window.location.href = '/User/Profile/' + currentStoryUserId; }
-
-function buildProgressBars() {
-    const bars = document.getElementById('storyProgressBars'); bars.innerHTML = '';
-    currentUserStories.forEach((_, i) => {
-        const bar = document.createElement('div'); bar.className = 'ht-story-progress-bar';
-        bar.innerHTML = `<div class="ht-story-progress-fill" id="progress-${i}"></div>`;
-        bars.appendChild(bar);
-    });
-}
-
-function showStory(index) {
-    if (index >= currentUserStories.length) { closeStoryViewer(); return; }
-    if (index < 0) { closeStoryViewer(); return; }
-    currentStoryIndex = index;
-    const story = currentUserStories[index];
-    fetch('/Story/View', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(story.id) });
-    document.getElementById('svImg').style.display = 'none';
-    document.getElementById('svVideo').style.display = 'none';
-    document.getElementById('svText').style.display = 'none';
-    document.getElementById('storyViewsModal').style.display = 'none';
-    if (story.type === 'image') { const img = document.getElementById('svImg'); img.src = story.mediaUrl; img.style.display = 'block'; }
-    else if (story.type === 'video') { const vid = document.getElementById('svVideo'); vid.src = story.mediaUrl; vid.style.display = 'block'; vid.play(); vid.onended = () => { clearInterval(storyProgressInterval); showStory(currentStoryIndex + 1); }; }
-    else { const txt = document.getElementById('svText'); txt.textContent = story.textContent; txt.style.background = story.bgColor || '#5b5ef4'; txt.style.display = 'flex'; }
-    document.getElementById('svTime').textContent = getTimeAgo(new Date(story.createdAt + 'Z'));
-    document.getElementById('svCaption').textContent = story.caption || '';
-    document.getElementById('svHighlight').textContent = story.isHighlight ? '★' : '☆';
-    const badge = document.getElementById('svVisibilityBadge');
-    const visMap = { private: ['🔒 Privado', 'rgba(100,116,139,0.85)'], friends: ['👥 Amigos', 'rgba(91,94,244,0.85)'], public: ['🌍 Público', 'rgba(0,196,140,0.85)'] };
-    if (visMap[story.visibility]) { badge.textContent = visMap[story.visibility][0]; badge.style.background = visMap[story.visibility][1]; badge.style.color = 'white'; badge.style.display = 'inline-block'; } else { badge.style.display = 'none'; }
-    const isOwner = currentStoryOwnerId === myUserId;
-    const viewsBar = document.getElementById('svViewsBar'); viewsBar.style.display = isOwner ? 'block' : 'none';
-    if (isOwner) document.getElementById('svViews').textContent = '👁 ' + (story.views || 0) + ' vistas';
-    const likeBtn = document.getElementById('svLikeBtn');
-    likeBtn.textContent = story.liked ? '❤️' : '🤍';
-    likeBtn.style.filter = story.liked ? 'drop-shadow(0 0 8px rgba(239,68,68,0.9))' : 'none';
-    document.getElementById('svLikesCount').textContent = isOwner && story.likes > 0 ? story.likes + ' ❤️' : '';
-    currentUserStories.forEach((_, i) => { const fill = document.getElementById('progress-' + i); if (fill) fill.style.width = i < index ? '100%' : '0%'; });
-    startProgress(index, story.duration * 1000);
-}
-
-function startProgress(index, duration) {
-    clearInterval(storyProgressInterval);
-    const fill = document.getElementById('progress-' + index); if (!fill) return;
-    let elapsed = 0;
-    storyProgressInterval = setInterval(() => {
-        elapsed += 50; fill.style.width = Math.min((elapsed / duration * 100), 100) + '%';
-        if (elapsed >= duration) { clearInterval(storyProgressInterval); showStory(currentStoryIndex + 1); }
-    }, 50);
-}
-
-function nextStory() { clearInterval(storyProgressInterval); showStory(currentStoryIndex + 1); }
-function prevStory() { clearInterval(storyProgressInterval); showStory(currentStoryIndex - 1); }
-function closeStoryViewer() {
-    clearInterval(storyProgressInterval);
-    document.getElementById('storyViewer').style.display = 'none';
-    document.body.style.overflow = '';
-    const vid = document.getElementById('svVideo'); vid.pause(); vid.src = '';
-}
-
-async function toggleStoryLike() {
-    const story = currentUserStories[currentStoryIndex];
-    const btn = document.getElementById('svLikeBtn');
-    const anim = document.getElementById('svHeartAnim');
-    const icon = document.getElementById('svHeartAnimIcon');
-    anim.style.opacity = '1'; icon.style.animation = 'none'; icon.offsetHeight;
-    icon.style.animation = 'heartPop 0.7s ease forwards';
-    setTimeout(() => { anim.style.opacity = '0'; }, 800);
-    btn.style.transform = 'scale(1.6)'; setTimeout(() => { btn.style.transform = 'scale(1)'; }, 300);
-    try {
-        const res = await fetch('/Story/ToggleLike', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(story.id) });
-        const data = await res.json();
-        story.liked = data.liked; story.likes = data.liked ? (story.likes || 0) + 1 : Math.max(0, (story.likes || 0) - 1);
-        btn.textContent = data.liked ? '❤️' : '🤍'; btn.style.filter = data.liked ? 'drop-shadow(0 0 8px rgba(239,68,68,0.9))' : 'none';
-        const isOwner = currentStoryOwnerId === myUserId;
-        document.getElementById('svLikesCount').textContent = isOwner && story.likes > 0 ? story.likes + ' ❤️' : '';
-    } catch(e) {}
-}
-
-async function toggleHighlight() {
-    const story = currentUserStories[currentStoryIndex];
-    try { const res = await fetch('/Story/ToggleHighlight', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(story.id) }); const data = await res.json(); story.isHighlight = data.isHighlight; document.getElementById('svHighlight').textContent = data.isHighlight ? '★' : '☆'; } catch(e) {}
-}
-
-async function deleteCurrentStory() {
-    if (!confirm('¿Eliminar esta historia?')) return;
-    const story = currentUserStories[currentStoryIndex];
-    try {
-        const res = await fetch('/Story/Delete', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(story.id) });
-        if (!res.ok) { alert('Error al eliminar'); return; }
-        currentUserStories.splice(currentStoryIndex, 1);
-        if (!currentUserStories.length) { closeStoryViewer(); await loadFriendStories(); return; }
-        buildProgressBars(); showStory(Math.min(currentStoryIndex, currentUserStories.length - 1));
-        await loadFriendStories();
-    } catch(e) { console.error(e); }
-}
-
-async function openStoryViews() {
-    const story = currentUserStories[currentStoryIndex];
-    const modal = document.getElementById('storyViewsModal');
-    if (modal.style.display === 'block') { modal.style.display = 'none'; return; }
-    modal.innerHTML = '<div style="color:rgba(255,255,255,0.35);font-size:12px;text-align:center;padding:14px;">Cargando...</div>';
-    modal.style.display = 'block';
-    try {
-        const res = await fetch('/Story/GetViews?storyId=' + story.id);
-        const data = await res.json();
-        if (!data.length) { modal.innerHTML = '<div style="color:rgba(255,255,255,0.3);font-size:13px;text-align:center;padding:18px;">Nadie ha visto tu historia aún</div>'; return; }
-        modal.innerHTML = '<div style="font-size:11px;font-weight:700;color:rgba(255,255,255,0.3);margin-bottom:12px;text-transform:uppercase;letter-spacing:1px;">👁 Visto por</div>' + data.map(v =>
-            `<div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid rgba(255,255,255,0.05);">
-            ${v.profileImage ? `<img src="${v.profileImage}" style="width:34px;height:34px;border-radius:50%;object-fit:cover;flex-shrink:0;"/>` : `<div style="width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#5b5ef4,#3730d9);color:white;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;flex-shrink:0;">${v.username.charAt(0).toUpperCase()}</div>`}
-            <div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:700;color:white;">${v.username}</div><div style="font-size:11px;color:rgba(255,255,255,0.35);margin-top:1px;">${v.viewedAt}</div></div>
-            ${v.liked ? '<span style="font-size:18px;flex-shrink:0;filter:drop-shadow(0 0 4px rgba(239,68,68,0.6));">❤️</span>' : ''}</div>`
-        ).join('');
-    } catch(e) { modal.innerHTML = '<div style="color:#ef4444;font-size:12px;text-align:center;">Error al cargar</div>'; }
-}
-
-function getTimeAgo(date) {
-    const diff = Math.floor((Date.now() - date) / 60000);
-    if (diff < 1) return 'ahora'; if (diff < 60) return 'hace ' + diff + ' min';
-    if (diff < 1440) return 'hace ' + Math.floor(diff/60) + 'h'; return 'hace ' + Math.floor(diff/1440) + 'd';
-}
-
-document.addEventListener('DOMContentLoaded', function() {
-    if (!@(isGuest ? "true" : "false")) loadFriendStories();
-    if (document.referrer.includes('/Story/Create')) {
-        history.pushState(null, null, location.href);
-        window.onpopstate = () => history.go(1);
-    }
+document.addEventListener('DOMContentLoaded',()=>{
+    if(!@(isGuest?"true":"false"))loadStories();
+    if(document.referrer.includes('/Story/Create')){history.pushState(null,null,location.href);window.onpopstate=()=>history.go(1);}
 });
 </script>
 }
