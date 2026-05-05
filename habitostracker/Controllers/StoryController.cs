@@ -222,6 +222,22 @@ namespace HabitTrackerApp.Controllers
             else if (type == "video")
             {
                 story.Duration = (int)Math.Min(trimEnd, 30);
+
+                // 🔥 moderación IA via thumbnail
+                if (!string.IsNullOrEmpty(mediaUrl))
+                {
+                    var thumbnailUrl = System.Text.RegularExpressions.Regex.Replace(
+                        mediaUrl, @"\.(mp4|webm|mov|avi)$", ".jpg",
+                        System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+
+                    var modResult = await _cloudinary.CheckImageModeration(thumbnailUrl);
+                    if (modResult == "explicit")
+                    {
+                        await _cloudinary.DeleteImageAsync(mediaUrl);
+                        return BadRequest("El video contiene contenido explícito y no puede publicarse.");
+                    }
+                    story.IsSensitive = modResult == "sensitive";
+                }
             }
             else
             {

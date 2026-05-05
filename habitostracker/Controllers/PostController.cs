@@ -315,13 +315,29 @@ namespace HabitTrackerApp.Controllers
                     return RedirectToAction("Create");
                 }
 
-                if (!isVideo && mediaPath != null)
+                if (mediaPath != null)
                 {
-                    var modResult = await _cloudinaryService.CheckImageModeration(mediaPath);
+                    string thumbnailUrl = mediaPath;
+
+                    // si es video, obtener thumbnail
+                    if (isVideo)
+                    {
+                        thumbnailUrl = System.Text.RegularExpressions.Regex.Replace(
+                            mediaPath, @"\.(mp4|webm|mov|avi)$", ".jpg",
+                            System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+                    }
+
+                    var modResult = await _cloudinaryService.CheckImageModeration(thumbnailUrl);
                     if (modResult == "explicit")
                     {
-                        await _cloudinaryService.DeleteImageAsync(mediaPath);
-                        TempData["Error"] = "La imagen contiene contenido explícito y no puede publicarse.";
+                        if (isVideo)
+                            await _cloudinaryService.DeleteImageAsync(mediaPath);
+                        else
+                            await _cloudinaryService.DeleteImageAsync(mediaPath);
+
+                        TempData["Error"] = isVideo
+                            ? "El video contiene contenido explícito y no puede publicarse."
+                            : "La imagen contiene contenido explícito y no puede publicarse.";
                         return RedirectToAction("Create");
                     }
                     isSensitive = modResult == "sensitive";
