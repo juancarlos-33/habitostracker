@@ -216,11 +216,29 @@ namespace HabitTrackerApp.Controllers
             };
 
             if (type == "text")
+            {
                 story.Duration = 7;
+            }
             else if (type == "video")
+            {
                 story.Duration = (int)Math.Min(trimEnd, 30);
+            }
             else
+            {
                 story.Duration = 7;
+
+                // 🔥 moderación IA para imágenes
+                if (!string.IsNullOrEmpty(mediaUrl))
+                {
+                    var modResult = await _cloudinary.CheckImageModeration(mediaUrl);
+                    if (modResult == "explicit")
+                    {
+                        await _cloudinary.DeleteImageAsync(mediaUrl);
+                        return BadRequest("La imagen contiene contenido explícito y no puede publicarse.");
+                    }
+                    story.IsSensitive = modResult == "sensitive";
+                }
+            }
 
             _context.Stories.Add(story);
             await _context.SaveChangesAsync();

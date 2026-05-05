@@ -222,12 +222,15 @@ async function submitStory() {
             body: payload
         });
 
-        if (saveRes.ok) {
-            window.location.href = '/Habit/Index';
-        } else {
-            const txt = await saveRes.text();
-            throw new Error('Error al guardar: ' + saveRes.status);
-        }
+      if (saveRes.ok) {
+    window.location.href = '/Habit/Index';
+} else {
+    const txt = await saveRes.text();
+    if (saveRes.status === 400) {
+        throw new Error('🚫 ' + txt);
+    }
+    throw new Error('Error al guardar: ' + saveRes.status);
+}
     } catch(err) {
         btn.disabled = false;
         btn.textContent = '📤 Publicar historia';
