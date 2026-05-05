@@ -7,525 +7,685 @@
     var isMuted = (bool)(ViewBag.IsMuted ?? false);
     var members = Model.Members?.Where(m => m.IsActive).ToList() ?? new();
     var isCreator = Model.CreatorId == currentUserId;
+    var isMember = (bool)(ViewBag.IsMember ?? true);
+    var totalMembers = members.Count;
+    var adminCount = members.Count(m => m.Role == "Admin");
 }
 
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-.grp-details-page {
-    max-width: 600px; margin: 0 auto;
-    font-family: 'Plus Jakarta Sans', sans-serif;
-    padding-bottom: 60px;
+:root {
+    --bg: #070b14;
+    --s1: #0d1220;
+    --s2: #111827;
+    --s3: #1e293b;
+    --border: rgba(255,255,255,0.06);
+    --border2: rgba(255,255,255,0.1);
+    --accent: #6366f1;
+    --accent2: #4f46e5;
+    --green: #22c55e;
+    --text: #f1f5f9;
+    --muted: rgba(255,255,255,0.35);
 }
 
-/* ── HERO BANNER ── */
-.grp-hero {
-    position: relative; overflow: hidden;
-    background: linear-gradient(135deg, #1e293b, #0f172a);
-    border-radius: 28px; margin-bottom: 16px;
-    border: 1px solid rgba(255,255,255,0.06);
+.gd-page {
+    max-width: 620px; margin: 0 auto;
+    font-family: 'DM Sans', sans-serif;
+    padding-bottom: 80px; color: var(--text);
 }
-.grp-hero-bg {
-    position: absolute; inset: 0;
-    background: radial-gradient(ellipse at 30% 0%, rgba(99,102,241,0.25), transparent 60%),
-                radial-gradient(ellipse at 80% 100%, rgba(34,197,94,0.12), transparent 50%);
+
+/* ── HERO ── */
+.gd-hero {
+    position: relative; border-radius: 28px;
+    overflow: hidden; margin-bottom: 14px;
+    background: var(--s1); border: 1px solid var(--border2);
+    box-shadow: 0 20px 60px rgba(0,0,0,0.4);
 }
-.grp-hero-cover {
-    height: 140px; width: 100%; object-fit: cover; opacity: 0.3;
-    display: block;
+.gd-hero-cover {
+    height: 160px; position: relative; overflow: hidden;
+    background: linear-gradient(135deg, #0d1220, #1e1b4b, #0d1220);
 }
-.grp-hero-cover-placeholder {
-    height: 140px;
-    background: linear-gradient(135deg, rgba(99,102,241,0.15), rgba(37,99,235,0.1));
+.gd-hero-cover::before {
+    content: ''; position: absolute; inset: 0;
+    background:
+        radial-gradient(ellipse 80% 100% at 20% 0%, rgba(99,102,241,0.3), transparent 60%),
+        radial-gradient(ellipse 60% 80% at 80% 100%, rgba(34,197,94,0.15), transparent 60%);
 }
-.grp-hero-body {
-    padding: 0 24px 28px; position: relative; z-index: 1;
-    margin-top: -48px;
+.gd-hero-cover-grid {
+    position: absolute; inset: 0; opacity: 0.04;
+    background-image: linear-gradient(rgba(255,255,255,1) 1px, transparent 1px),
+                      linear-gradient(90deg, rgba(255,255,255,1) 1px, transparent 1px);
+    background-size: 32px 32px;
 }
-.grp-hero-avatar-wrap {
-    position: relative; display: inline-block; margin-bottom: 14px;
+.gd-hero-cover img {
+    width: 100%; height: 100%; object-fit: cover; opacity: 0.4;
 }
-.grp-hero-avatar {
-    width: 90px; height: 90px; border-radius: 24px;
-    background: linear-gradient(135deg, #6366f1, #2563eb);
+.gd-back-btn {
+    position: absolute; top: 14px; left: 14px; z-index: 10;
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 7px 14px; border-radius: 20px;
+    background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.15);
+    color: white; font-size: 13px; font-weight: 600;
+    text-decoration: none; backdrop-filter: blur(8px); transition: 0.2s;
+}
+.gd-back-btn:hover { background: rgba(0,0,0,0.6); color: white; }
+.gd-type-badge {
+    position: absolute; top: 14px; right: 14px; z-index: 10;
+    padding: 5px 12px; border-radius: 20px; font-size: 11px; font-weight: 700;
+    backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,0.15);
+}
+.gd-type-badge.private { background: rgba(99,102,241,0.3); color: #a5b4fc; }
+.gd-type-badge.public { background: rgba(34,197,94,0.3); color: #86efac; }
+.gd-type-badge.channel { background: rgba(245,158,11,0.3); color: #fcd34d; }
+
+.gd-hero-body {
+    padding: 0 24px 26px; margin-top: -50px; position: relative; z-index: 1;
+}
+.gd-avatar-zone { display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 16px; }
+.gd-avatar-wrap { position: relative; }
+.gd-avatar {
+    width: 88px; height: 88px; border-radius: 24px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
     display: flex; align-items: center; justify-content: center;
-    font-size: 38px; color: white; font-weight: 800;
+    font-size: 36px; color: white; font-weight: 800;
+    overflow: hidden; border: 3px solid var(--s1);
     box-shadow: 0 8px 32px rgba(99,102,241,0.5);
-    overflow: hidden; cursor: @(isAdmin ? "pointer" : "default");
-    border: 3px solid #0f172a; transition: 0.2s;
+    cursor: pointer; transition: 0.2s;
 }
-.grp-hero-avatar img { width: 100%; height: 100%; object-fit: cover; }
-.grp-hero-avatar:hover { @(isAdmin ? "transform: scale(1.04);" : "") }
-.grp-hero-edit-badge {
+.gd-avatar:hover { transform: scale(1.04); }
+.gd-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.gd-avatar-edit {
     position: absolute; bottom: -4px; right: -4px;
     width: 28px; height: 28px; border-radius: 50%;
-    background: #6366f1; color: white;
-    border: 2px solid #0f172a;
+    background: var(--accent); color: white;
+    border: 2px solid var(--s1);
     display: flex; align-items: center; justify-content: center;
     font-size: 12px; cursor: pointer; transition: 0.2s;
-    box-shadow: 0 2px 8px rgba(99,102,241,0.4);
+    box-shadow: 0 2px 10px rgba(99,102,241,0.5);
 }
-.grp-hero-edit-badge:hover { background: #4f46e5; transform: scale(1.1); }
+.gd-avatar-edit:hover { background: var(--accent2); transform: scale(1.1); }
 
-.grp-hero-name {
+.gd-hero-actions { display: flex; gap: 8px; }
+.gd-hero-action-btn {
+    padding: 8px 16px; border-radius: 12px; font-size: 13px; font-weight: 700;
+    cursor: pointer; border: none; font-family: inherit; transition: 0.2s;
+    display: inline-flex; align-items: center; gap: 6px;
+}
+.gd-hero-action-btn.primary {
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    color: white; box-shadow: 0 4px 14px rgba(99,102,241,0.4);
+    text-decoration: none;
+}
+.gd-hero-action-btn.primary:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(99,102,241,0.55); }
+.gd-hero-action-btn.secondary {
+    background: rgba(255,255,255,0.06); border: 1px solid var(--border2);
+    color: var(--muted);
+}
+.gd-hero-action-btn.secondary:hover { background: rgba(255,255,255,0.1); color: var(--text); }
+
+.gd-hero-name {
+    font-family: 'Syne', sans-serif;
     font-size: 22px; font-weight: 800; color: white;
-    margin-bottom: 4px; letter-spacing: -0.3px;
+    margin-bottom: 5px; letter-spacing: -0.3px;
 }
-.grp-hero-desc {
-    font-size: 13px; color: rgba(255,255,255,0.45);
-    margin-bottom: 10px; line-height: 1.5;
-}
-.grp-hero-meta {
-    display: flex; align-items: center; gap: 16px;
-    flex-wrap: wrap;
-}
-.grp-hero-meta-item {
+.gd-hero-desc { font-size: 13px; color: var(--muted); margin-bottom: 14px; line-height: 1.6; }
+.gd-hero-meta { display: flex; gap: 14px; flex-wrap: wrap; margin-bottom: 16px; }
+.gd-hero-meta-item {
     display: flex; align-items: center; gap: 5px;
-    font-size: 12px; color: rgba(255,255,255,0.35); font-weight: 600;
+    font-size: 12px; color: var(--muted); font-weight: 600;
 }
 
-/* STATS ROW */
-.grp-stats {
+/* STATS */
+.gd-stats {
     display: flex; gap: 0;
     background: rgba(255,255,255,0.04);
-    border: 1px solid rgba(255,255,255,0.07);
-    border-radius: 18px; overflow: hidden;
-    margin: 14px 0 0;
+    border: 1px solid var(--border); border-radius: 18px; overflow: hidden;
 }
-.grp-stat {
+.gd-stat {
     flex: 1; padding: 14px 10px; text-align: center; position: relative;
 }
-.grp-stat:not(:last-child)::after {
+.gd-stat:not(:last-child)::after {
     content: ''; position: absolute; right: 0; top: 20%; height: 60%;
-    width: 1px; background: rgba(255,255,255,0.07);
+    width: 1px; background: var(--border);
 }
-.grp-stat-num {
-    font-size: 20px; font-weight: 800; color: white; display: block; line-height: 1; margin-bottom: 3px;
-}
-.grp-stat-label {
-    font-size: 10px; color: rgba(255,255,255,0.3);
-    font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;
-}
-
-/* BACK BTN */
-.grp-back-btn {
-    display: inline-flex; align-items: center; gap: 6px;
-    padding: 7px 14px; border-radius: 12px;
-    background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.1);
-    color: rgba(255,255,255,0.7); font-size: 13px; font-weight: 600;
-    text-decoration: none; transition: 0.2s;
-    position: absolute; top: 16px; left: 16px; z-index: 10;
-}
-.grp-back-btn:hover { background: rgba(255,255,255,0.14); color: white; }
-
-/* CHAT BTN */
-.grp-chat-btn {
-    display: inline-flex; align-items: center; gap: 7px;
-    padding: 10px 20px; border-radius: 14px; border: none;
-    background: linear-gradient(135deg, #6366f1, #2563eb);
-    color: white; font-size: 14px; font-weight: 700;
-    text-decoration: none; cursor: pointer; transition: 0.2s;
-    box-shadow: 0 4px 16px rgba(99,102,241,0.4);
-    font-family: inherit; margin-top: 16px;
-}
-.grp-chat-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(99,102,241,0.5); }
+.gd-stat-num { font-family: 'Syne', sans-serif; font-size: 20px; font-weight: 800; color: white; display: block; line-height: 1; margin-bottom: 3px; }
+.gd-stat-label { font-size: 10px; color: var(--muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
 
 /* ── CARDS ── */
-.grp-card {
-    background: white; border-radius: 22px; padding: 20px 22px;
-    margin-bottom: 12px; border: 1px solid rgba(0,0,0,0.05);
-    box-shadow: 0 2px 12px rgba(0,0,0,0.05);
+.gd-card {
+    background: var(--s1); border-radius: 22px; padding: 20px 22px;
+    margin-bottom: 12px; border: 1px solid var(--border);
+    transition: border-color 0.2s;
 }
-.grp-card-header {
+.gd-card:hover { border-color: var(--border2); }
+.gd-card-hd {
     display: flex; align-items: center; justify-content: space-between;
     margin-bottom: 16px;
 }
-.grp-card-title {
-    font-size: 11px; font-weight: 800; color: #6b7280;
-    text-transform: uppercase; letter-spacing: 0.8px;
+.gd-card-title {
+    font-size: 11px; font-weight: 800; color: var(--muted);
+    text-transform: uppercase; letter-spacing: 1px;
 }
-.grp-card-action-btn {
+.gd-card-btn {
     padding: 6px 14px; border-radius: 10px; border: none;
-    background: linear-gradient(135deg, #6366f1, #2563eb);
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
     color: white; font-size: 12px; font-weight: 700;
     cursor: pointer; font-family: inherit; transition: 0.2s;
-    display: flex; align-items: center; gap: 5px;
     box-shadow: 0 2px 8px rgba(99,102,241,0.3);
+    display: inline-flex; align-items: center; gap: 5px;
 }
-.grp-card-action-btn:hover { transform: translateY(-1px); }
+.gd-card-btn:hover { transform: translateY(-1px); }
 
-/* ── EDIT FIELDS ── */
-.grp-edit-row { display: flex; gap: 8px; margin-bottom: 10px; }
-.grp-edit-input {
-    flex: 1; padding: 10px 14px; border: 1.5px solid #e5e7eb;
+/* EDIT INPUT */
+.gd-edit-row { display: flex; gap: 8px; margin-bottom: 10px; }
+.gd-edit-input {
+    flex: 1; padding: 10px 14px; border: 1.5px solid var(--border2);
     border-radius: 12px; font-size: 14px; font-family: inherit;
-    outline: none; transition: 0.2s; color: #111827; background: #f9fafb;
+    outline: none; transition: 0.2s;
+    background: rgba(255,255,255,0.04); color: var(--text);
 }
-.grp-edit-input:focus { border-color: #6366f1; background: white; box-shadow: 0 0 0 3px rgba(99,102,241,0.1); }
-.grp-edit-btn {
+.gd-edit-input:focus { border-color: var(--accent); background: rgba(99,102,241,0.05); box-shadow: 0 0 0 3px rgba(99,102,241,0.1); }
+.gd-edit-input::placeholder { color: var(--muted); }
+.gd-edit-btn {
     padding: 10px 18px; border-radius: 12px; border: none;
-    background: linear-gradient(135deg, #6366f1, #2563eb);
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
     color: white; font-size: 13px; font-weight: 700;
     cursor: pointer; font-family: inherit; transition: 0.2s;
-    white-space: nowrap;
 }
-.grp-edit-btn:hover { transform: translateY(-1px); }
+.gd-edit-btn:hover { transform: translateY(-1px); }
 
-/* ── MEMBERS ── */
-.grp-member-row {
+/* SEARCH */
+.gd-search-wrap { position: relative; margin-bottom: 14px; }
+.gd-search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); font-size: 14px; color: var(--muted); }
+.gd-search-input {
+    width: 100%; padding: 10px 14px 10px 36px;
+    border: 1.5px solid var(--border2); border-radius: 12px;
+    font-size: 13px; font-family: inherit; outline: none; transition: 0.2s;
+    background: rgba(255,255,255,0.04); color: var(--text);
+}
+.gd-search-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(99,102,241,0.1); }
+.gd-search-input::placeholder { color: var(--muted); }
+
+/* MEMBERS */
+.gd-member {
     display: flex; align-items: center; gap: 12px;
-    padding: 11px 0; border-bottom: 1px solid #f3f4f6;
-    transition: 0.15s;
+    padding: 11px 10px; border-radius: 14px; transition: 0.15s;
+    cursor: default;
 }
-.grp-member-row:last-child { border-bottom: none; padding-bottom: 0; }
-.grp-member-row:hover { background: #fafafa; border-radius: 12px; padding-left: 8px; padding-right: 8px; margin: 0 -8px; }
-.grp-member-avatar {
-    width: 44px; height: 44px; border-radius: 50%; flex-shrink: 0;
-    background: linear-gradient(135deg, #6366f1, #2563eb);
+.gd-member:hover { background: rgba(255,255,255,0.04); }
+.gd-member-avatar {
+    width: 46px; height: 46px; border-radius: 14px; flex-shrink: 0;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
     display: flex; align-items: center; justify-content: center;
-    color: white; font-size: 16px; font-weight: 800; overflow: hidden;
-    text-decoration: none; position: relative;
+    color: white; font-size: 17px; font-weight: 800; overflow: hidden;
+    text-decoration: none; position: relative; transition: 0.2s;
+    border: 2px solid transparent;
 }
-.grp-member-avatar img { width: 100%; height: 100%; object-fit: cover; }
-.grp-member-online {
-    position: absolute; bottom: 1px; right: 1px;
-    width: 11px; height: 11px; border-radius: 50%;
-    background: #22c55e; border: 2px solid white;
+.gd-member-avatar:hover { border-color: var(--accent); transform: scale(1.05); }
+.gd-member-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.gd-member-online-dot {
+    position: absolute; bottom: -1px; right: -1px;
+    width: 12px; height: 12px; border-radius: 50%;
+    background: var(--green); border: 2px solid var(--s1);
 }
-.grp-member-info { flex: 1; min-width: 0; }
-.grp-member-name {
-    font-size: 14px; font-weight: 700; color: #111827;
+.gd-member-info { flex: 1; min-width: 0; }
+.gd-member-name {
+    font-size: 14px; font-weight: 700; color: var(--text);
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    display: flex; align-items: center; gap: 5px; flex-wrap: wrap;
 }
-.grp-member-role {
-    font-size: 11px; color: #9ca3af; margin-top: 1px;
-    display: flex; align-items: center; gap: 4px;
+.gd-member-sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
+.gd-badge {
+    font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 20px;
 }
-.grp-member-badge {
-    display: inline-flex; align-items: center; gap: 3px;
-    font-size: 10px; font-weight: 700; padding: 2px 8px;
-    border-radius: 20px;
-}
-.grp-member-badge.admin { background: #ede9fe; color: #6366f1; }
-.grp-member-badge.creator { background: #111827; color: #fbbf24; }
-.grp-member-badge.me { background: #dcfce7; color: #16a34a; }
+.gd-badge.creator { background: rgba(251,191,36,0.15); color: #fbbf24; border: 1px solid rgba(251,191,36,0.25); }
+.gd-badge.admin { background: rgba(99,102,241,0.15); color: #818cf8; border: 1px solid rgba(99,102,241,0.25); }
+.gd-badge.me { background: rgba(34,197,94,0.15); color: #4ade80; border: 1px solid rgba(34,197,94,0.25); }
 
-.grp-member-actions { display: flex; gap: 5px; flex-shrink: 0; }
-.grp-member-btn {
-    width: 30px; height: 30px; border-radius: 9px;
+.gd-member-btns { display: flex; gap: 5px; flex-shrink: 0; }
+.gd-mbtn {
+    width: 32px; height: 32px; border-radius: 10px;
     border: none; cursor: pointer; font-size: 13px;
     display: flex; align-items: center; justify-content: center;
-    transition: 0.15s; font-family: inherit;
+    transition: 0.15s; font-family: inherit; border: 1px solid transparent;
 }
-.grp-member-btn.remove { background: #fef2f2; color: #dc2626; }
-.grp-member-btn.remove:hover { background: #dc2626; color: white; }
-.grp-member-btn.promote { background: #fef9c3; color: #d97706; }
-.grp-member-btn.promote:hover { background: #f59e0b; color: white; }
-.grp-member-btn.demote { background: #ede9fe; color: #6366f1; }
-.grp-member-btn.demote:hover { background: #6366f1; color: white; }
-.grp-member-btn.msg { background: #f0f9ff; color: #2563eb; }
-.grp-member-btn.msg:hover { background: #2563eb; color: white; }
+.gd-mbtn.msg { background: rgba(37,99,235,0.1); color: #60a5fa; border-color: rgba(37,99,235,0.2); }
+.gd-mbtn.msg:hover { background: #2563eb; color: white; border-color: #2563eb; }
+.gd-mbtn.promote { background: rgba(245,158,11,0.1); color: #fbbf24; border-color: rgba(245,158,11,0.2); }
+.gd-mbtn.promote:hover { background: #f59e0b; color: white; }
+.gd-mbtn.demote { background: rgba(99,102,241,0.1); color: #818cf8; border-color: rgba(99,102,241,0.2); }
+.gd-mbtn.demote:hover { background: var(--accent); color: white; }
+.gd-mbtn.remove { background: rgba(239,68,68,0.1); color: #f87171; border-color: rgba(239,68,68,0.2); }
+.gd-mbtn.remove:hover { background: #ef4444; color: white; }
 
-/* SEARCH MEMBERS */
-.grp-search-wrap { position: relative; margin-bottom: 14px; }
-.grp-search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); font-size: 14px; }
-.grp-search-input {
-    width: 100%; padding: 9px 14px 9px 34px;
-    border: 1.5px solid #e5e7eb; border-radius: 12px;
-    font-size: 13px; font-family: inherit; outline: none;
-    transition: 0.2s; color: #111827; background: #f9fafb;
+/* MEMBERS COUNT BADGE */
+.gd-members-count-bar {
+    display: flex; align-items: center; gap: 10px; padding: 10px 14px;
+    background: rgba(255,255,255,0.03); border-radius: 12px;
+    border: 1px solid var(--border); margin-bottom: 12px;
+    font-size: 12px; color: var(--muted);
 }
-.grp-search-input:focus { border-color: #6366f1; background: white; box-shadow: 0 0 0 3px rgba(99,102,241,0.1); }
+.gd-members-count-bar strong { color: var(--text); }
 
-/* ── ACTIONS ── */
-.grp-action-list { display: flex; flex-direction: column; gap: 6px; }
-.grp-action-item {
+/* ACTION LIST */
+.gd-action-list { display: flex; flex-direction: column; gap: 6px; }
+.gd-action-item {
     display: flex; align-items: center; gap: 12px;
-    padding: 13px 14px; border-radius: 14px;
-    background: #f9fafb; cursor: pointer; transition: 0.15s;
-    font-size: 14px; font-weight: 600; color: #111827;
-    border: 1.5px solid transparent; width: 100%;
-    text-align: left; font-family: inherit;
+    padding: 13px 14px; border-radius: 16px;
+    background: rgba(255,255,255,0.03); cursor: pointer; transition: 0.15s;
+    font-size: 14px; font-weight: 600; color: var(--text);
+    border: 1.5px solid var(--border); width: 100%;
+    text-align: left; font-family: inherit; text-decoration: none;
+    display: flex;
 }
-.grp-action-item:hover { background: #f3f4f6; border-color: #e5e7eb; }
-.grp-action-item.danger { color: #dc2626; }
-.grp-action-item.danger:hover { background: #fef2f2; border-color: #fecaca; }
-.grp-action-item.active-mute { color: #f59e0b; background: rgba(245,158,11,0.06); border-color: rgba(245,158,11,0.2); }
-.grp-action-icon {
+.gd-action-item:hover { background: rgba(255,255,255,0.06); border-color: var(--border2); }
+.gd-action-item.danger { color: #f87171; }
+.gd-action-item.danger:hover { background: rgba(239,68,68,0.08); border-color: rgba(239,68,68,0.2); }
+.gd-action-item.active-mute { color: #fbbf24; background: rgba(245,158,11,0.06); border-color: rgba(245,158,11,0.2); }
+.gd-action-icon {
     width: 38px; height: 38px; border-radius: 11px;
     display: flex; align-items: center; justify-content: center;
     font-size: 18px; flex-shrink: 0;
 }
-.grp-action-icon.blue { background: rgba(37,99,235,0.1); }
-.grp-action-icon.red { background: rgba(239,68,68,0.1); }
-.grp-action-icon.orange { background: rgba(249,115,22,0.1); }
-.grp-action-icon.purple { background: rgba(99,102,241,0.1); }
-.grp-action-icon.green { background: rgba(34,197,94,0.1); }
-.grp-action-icon.yellow { background: rgba(234,179,8,0.1); }
-.grp-action-chevron { margin-left: auto; color: #9ca3af; font-size: 14px; }
-.grp-action-sub { font-size: 11px; color: #9ca3af; font-weight: 500; margin-top: 1px; }
+.gd-action-icon.blue { background: rgba(37,99,235,0.1); }
+.gd-action-icon.red { background: rgba(239,68,68,0.1); }
+.gd-action-icon.orange { background: rgba(249,115,22,0.1); }
+.gd-action-icon.purple { background: rgba(99,102,241,0.1); }
+.gd-action-icon.green { background: rgba(34,197,94,0.1); }
+.gd-action-icon.yellow { background: rgba(245,158,11,0.1); }
+.gd-action-icon.cyan { background: rgba(6,182,212,0.1); }
+.gd-action-sub { font-size: 11px; color: var(--muted); font-weight: 500; margin-top: 2px; }
+.gd-action-chevron { margin-left: auto; color: var(--muted); font-size: 14px; flex-shrink: 0; }
 
-/* ── MODALES ── */
-.grp-modal {
-    display: none; position: fixed; inset: 0;
-    background: rgba(0,0,0,0.65); z-index: 99999;
-    align-items: center; justify-content: center;
-    backdrop-filter: blur(8px); padding: 20px;
+/* TOGGLE SWITCH */
+.gd-toggle-wrap { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+.gd-toggle {
+    width: 40px; height: 22px; border-radius: 11px;
+    background: rgba(255,255,255,0.1); position: relative;
+    cursor: pointer; transition: 0.3s; flex-shrink: 0;
+    border: 1px solid var(--border2);
 }
-.grp-modal.open { display: flex; }
-.grp-modal-card {
-    background: #0f172a; border-radius: 26px; padding: 28px;
-    max-width: 400px; width: 100%;
-    border: 1px solid rgba(255,255,255,0.08);
+.gd-toggle.on { background: var(--accent); border-color: var(--accent); }
+.gd-toggle::after {
+    content: ''; position: absolute; width: 16px; height: 16px;
+    border-radius: 50%; background: white; top: 2px; left: 2px;
+    transition: 0.3s; box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+.gd-toggle.on::after { left: 20px; }
+
+/* INFO CARD */
+.gd-info-grid { display: flex; flex-direction: column; gap: 6px; }
+.gd-info-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 10px 14px; background: rgba(255,255,255,0.03);
+    border-radius: 12px; border: 1px solid var(--border);
+}
+.gd-info-label { font-size: 12px; color: var(--muted); font-weight: 500; }
+.gd-info-value { font-size: 12px; font-weight: 700; color: var(--text); }
+
+/* INVITE CODE */
+.gd-invite-box {
+    background: rgba(99,102,241,0.06); border: 1px solid rgba(99,102,241,0.2);
+    border-radius: 14px; padding: 14px 16px; margin-bottom: 12px;
+}
+.gd-invite-label { font-size: 11px; font-weight: 700; color: #818cf8; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
+.gd-invite-code {
+    font-size: 18px; font-weight: 800; color: white; letter-spacing: 3px;
+    font-family: 'Syne', monospace; margin-bottom: 10px;
+}
+.gd-invite-link { font-size: 12px; color: var(--muted); word-break: break-all; margin-bottom: 12px; line-height: 1.5; }
+.gd-invite-btns { display: flex; gap: 8px; }
+.gd-invite-btn {
+    flex: 1; padding: 9px; border-radius: 11px; border: none;
+    font-size: 12px; font-weight: 700; cursor: pointer; font-family: inherit; transition: 0.2s;
+}
+.gd-invite-btn.copy { background: var(--accent); color: white; box-shadow: 0 2px 8px rgba(99,102,241,0.3); }
+.gd-invite-btn.copy:hover { transform: translateY(-1px); }
+.gd-invite-btn.reset { background: rgba(255,255,255,0.06); color: var(--muted); border: 1px solid var(--border2); }
+.gd-invite-btn.reset:hover { background: rgba(255,255,255,0.1); color: var(--text); }
+.gd-invite-btn.share { background: rgba(34,197,94,0.1); color: #4ade80; border: 1px solid rgba(34,197,94,0.2); }
+.gd-invite-btn.share:hover { background: #22c55e; color: white; }
+
+/* MODALES */
+.gd-modal {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.7); z-index: 99999;
+    align-items: center; justify-content: center;
+    backdrop-filter: blur(10px); padding: 20px;
+}
+.gd-modal.open { display: flex; }
+.gd-modal-card {
+    background: linear-gradient(135deg, #0d1220, #111827);
+    border-radius: 26px; padding: 28px;
+    max-width: 420px; width: 100%;
+    border: 1px solid var(--border2);
     box-shadow: 0 30px 70px rgba(0,0,0,0.6);
     animation: modalIn 0.3s cubic-bezier(0.34,1.56,0.64,1);
 }
 @@keyframes modalIn { from{opacity:0;transform:scale(0.9) translateY(20px);} to{opacity:1;transform:scale(1) translateY(0);} }
-.grp-modal-title { font-size: 18px; font-weight: 800; color: white; margin-bottom: 4px; }
-.grp-modal-sub { font-size: 13px; color: rgba(255,255,255,0.4); margin-bottom: 18px; }
-.grp-modal-search {
+.gd-modal-icon { font-size: 40px; text-align: center; margin-bottom: 12px; display: block; }
+.gd-modal-title { font-family: 'Syne', sans-serif; font-size: 18px; font-weight: 800; color: white; margin-bottom: 4px; text-align: center; }
+.gd-modal-sub { font-size: 13px; color: var(--muted); margin-bottom: 18px; text-align: center; line-height: 1.5; }
+.gd-modal-search {
     width: 100%; padding: 11px 14px; border-radius: 12px;
-    border: 1.5px solid rgba(255,255,255,0.1);
-    background: rgba(255,255,255,0.05); color: white;
-    font-size: 14px; font-family: inherit; outline: none; margin-bottom: 12px;
-    transition: 0.2s;
+    border: 1.5px solid var(--border2);
+    background: rgba(255,255,255,0.04); color: var(--text);
+    font-size: 14px; font-family: inherit; outline: none; margin-bottom: 12px; transition: 0.2s;
 }
-.grp-modal-search:focus { border-color: #6366f1; }
-.grp-modal-search::placeholder { color: rgba(255,255,255,0.25); }
-.grp-modal-list { max-height: 260px; overflow-y: auto; margin-bottom: 16px; }
-.grp-modal-list::-webkit-scrollbar { width: 4px; }
-.grp-modal-list::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
-.grp-modal-item {
+.gd-modal-search:focus { border-color: var(--accent); }
+.gd-modal-search::placeholder { color: var(--muted); }
+.gd-modal-list { max-height: 260px; overflow-y: auto; margin-bottom: 16px; }
+.gd-modal-list::-webkit-scrollbar { width: 4px; }
+.gd-modal-list::-webkit-scrollbar-thumb { background: var(--s3); border-radius: 10px; }
+.gd-modal-item {
     display: flex; align-items: center; gap: 10px;
     padding: 10px 12px; border-radius: 12px; cursor: pointer;
     transition: 0.15s; border: 1.5px solid transparent; margin-bottom: 4px;
 }
-.grp-modal-item:hover { background: rgba(99,102,241,0.08); border-color: rgba(99,102,241,0.2); }
-.grp-modal-item.selected { background: rgba(99,102,241,0.12); border-color: #6366f1; }
-.grp-modal-avatar {
+.gd-modal-item:hover { background: rgba(99,102,241,0.08); border-color: rgba(99,102,241,0.2); }
+.gd-modal-item.selected { background: rgba(99,102,241,0.12); border-color: var(--accent); }
+.gd-modal-avatar {
     width: 38px; height: 38px; border-radius: 50%; flex-shrink: 0;
-    background: linear-gradient(135deg, #6366f1, #2563eb);
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
     display: flex; align-items: center; justify-content: center;
     color: white; font-size: 14px; font-weight: 800; overflow: hidden;
 }
-.grp-modal-avatar img { width: 100%; height: 100%; object-fit: cover; }
-.grp-modal-name { font-size: 14px; font-weight: 600; color: white; flex: 1; }
-.grp-modal-check { color: #6366f1; font-size: 16px; display: none; }
-.grp-modal-item.selected .grp-modal-check { display: block; }
-.grp-modal-empty { text-align: center; padding: 24px; color: rgba(255,255,255,0.3); font-size: 13px; }
-.grp-modal-btns { display: flex; gap: 10px; }
-.grp-modal-cancel {
+.gd-modal-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.gd-modal-name { font-size: 14px; font-weight: 600; color: var(--text); flex: 1; }
+.gd-modal-check { color: var(--accent); font-size: 16px; display: none; }
+.gd-modal-item.selected .gd-modal-check { display: block; }
+.gd-modal-empty { text-align: center; padding: 24px; color: var(--muted); font-size: 13px; }
+.gd-modal-btns { display: flex; gap: 10px; }
+.gd-modal-cancel {
     flex: 1; padding: 12px; border-radius: 13px;
-    border: 1px solid rgba(255,255,255,0.1);
-    background: rgba(255,255,255,0.04); color: rgba(255,255,255,0.5);
-    font-size: 13px; font-weight: 700; cursor: pointer; font-family: inherit;
-    transition: 0.2s;
+    border: 1px solid var(--border2);
+    background: rgba(255,255,255,0.04); color: var(--muted);
+    font-size: 13px; font-weight: 700; cursor: pointer; font-family: inherit; transition: 0.2s;
 }
-.grp-modal-cancel:hover { background: rgba(255,255,255,0.08); }
-.grp-modal-confirm {
+.gd-modal-cancel:hover { background: rgba(255,255,255,0.08); color: var(--text); }
+.gd-modal-confirm {
     flex: 2; padding: 12px; border-radius: 13px; border: none;
-    background: linear-gradient(135deg, #6366f1, #2563eb);
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
     color: white; font-size: 13px; font-weight: 700;
     cursor: pointer; font-family: inherit; transition: 0.2s;
     box-shadow: 0 4px 14px rgba(99,102,241,0.4);
 }
-.grp-modal-confirm:hover { transform: translateY(-1px); }
-.grp-modal-confirm:disabled { background: #334155; cursor: not-allowed; transform: none; box-shadow: none; }
+.gd-modal-confirm:hover { transform: translateY(-1px); }
+.gd-modal-confirm:disabled { background: var(--s3); cursor: not-allowed; transform: none; box-shadow: none; }
+.gd-modal-confirm.danger-confirm { background: linear-gradient(135deg, #dc2626, #b91c1c); box-shadow: 0 4px 14px rgba(220,38,38,0.3); }
+
+/* REASON BTNS */
+.gd-reason-btn {
+    display: block; width: 100%; padding: 11px 14px; border-radius: 12px;
+    border: 1.5px solid var(--border); background: rgba(255,255,255,0.03);
+    color: var(--muted); font-size: 13px; font-weight: 600;
+    cursor: pointer; text-align: left; font-family: inherit; transition: 0.15s; margin-bottom: 6px;
+}
+.gd-reason-btn:hover { border-color: var(--border2); color: var(--text); background: rgba(255,255,255,0.06); }
+.gd-reason-btn.selected { border-color: var(--accent); color: #818cf8; background: rgba(99,102,241,0.1); }
+
+/* PHOTO OVERLAY */
+.gd-photo-overlay {
+    display: none; position: fixed; inset: 0; z-index: 999999;
+    background: rgba(0,0,0,0.85); backdrop-filter: blur(12px);
+    align-items: center; justify-content: center; padding: 20px;
+    cursor: pointer;
+}
+.gd-photo-overlay.open { display: flex; }
 
 /* TOAST */
-.grp-toast {
+.gd-toast {
     position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%);
-    background: #1e293b; color: white; padding: 10px 22px;
-    border-radius: 20px; font-size: 13px; font-weight: 600;
-    z-index: 999999; box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-    animation: toastIn 0.3s ease; font-family: 'Plus Jakarta Sans', sans-serif;
+    background: var(--s2); color: var(--text); padding: 10px 22px;
+    border-radius: 24px; font-size: 13px; font-weight: 600;
+    z-index: 999999; box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    animation: toastIn 0.3s ease; font-family: inherit;
     white-space: nowrap; pointer-events: none;
+    border: 1px solid var(--border2);
 }
-@@keyframes toastIn { from{opacity:0;transform:translateX(-50%) translateY(10px);} to{opacity:1;transform:translateX(-50%) translateY(0);} }
+@@keyframes toastIn { from{opacity:0;transform:translateX(-50%) translateY(8px);} to{opacity:1;transform:translateX(-50%) translateY(0);} }
 
-/* DARK */
-body.bg-dark .grp-card { background: #1e293b !important; border-color: #2d3748 !important; }
-body.bg-dark .grp-card-title { color: #64748b !important; }
-body.bg-dark .grp-action-item { background: #2d3748 !important; color: #f1f5f9 !important; }
-body.bg-dark .grp-action-item:hover { background: #334155 !important; }
-body.bg-dark .grp-action-item.danger { color: #f87171 !important; }
-body.bg-dark .grp-action-item.danger:hover { background: rgba(220,38,38,0.15) !important; }
-body.bg-dark .grp-member-name { color: #f1f5f9 !important; }
-body.bg-dark .grp-member-row { border-color: #2d3748 !important; }
-body.bg-dark .grp-member-row:hover { background: #2d3748 !important; }
-body.bg-dark .grp-edit-input { background: #2d3748 !important; border-color: #3d4d60 !important; color: #f1f5f9 !important; }
-body.bg-dark .grp-search-input { background: #2d3748 !important; border-color: #3d4d60 !important; color: #f1f5f9 !important; }
+@@media(max-width:640px){
+    .gd-hero-body { padding: 0 16px 22px; }
+    .gd-card { padding: 16px; border-radius: 18px; }
+    .gd-avatar { width: 72px; height: 72px; border-radius: 18px; font-size: 28px; }
+    .gd-hero-name { font-size: 18px; }
+    .gd-member-avatar { width: 40px; height: 40px; border-radius: 12px; }
+}
 </style>
 
+<!-- INPUTS OCULTOS -->
 <input type="file" id="groupImageInput" accept="image/*" style="display:none;" onchange="uploadGroupImage(this)" />
+@Html.AntiForgeryToken()
+
+<!-- PHOTO OVERLAY -->
+<div class="gd-photo-overlay" id="photoOverlay" onclick="cerrarFoto()">
+    <div style="display:flex;flex-direction:column;align-items:center;gap:16px;" onclick="event.stopPropagation()">
+        <img id="photoOverlayImg" src="" style="width:260px;height:260px;border-radius:28px;object-fit:cover;border:3px solid rgba(255,255,255,0.15);box-shadow:0 20px 60px rgba(0,0,0,0.6);" />
+        <button onclick="cerrarFoto()" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);color:white;padding:8px 24px;border-radius:20px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;">✕ Cerrar</button>
+    </div>
+</div>
 
 <!-- MODAL AÑADIR MIEMBRO -->
-<div class="grp-modal" id="addMemberModal">
-    <div class="grp-modal-card">
-        <div class="grp-modal-title">➕ Añadir miembros</div>
-        <div class="grp-modal-sub">Selecciona amigos para agregar al grupo</div>
-        <input type="text" class="grp-modal-search" placeholder="🔍 Buscar amigos..."
-               oninput="filtrarAmigosModal(this.value)" id="addMemberSearch" />
-        <div class="grp-modal-list" id="addMemberList">
-            <div class="grp-modal-empty">Cargando...</div>
-        </div>
-        <div class="grp-modal-btns">
-            <button class="grp-modal-cancel" onclick="closeAddMember()">Cancelar</button>
-            <button class="grp-modal-confirm" id="addMemberConfirm" onclick="confirmarAgregar()" disabled>Agregar</button>
+<div class="gd-modal" id="addMemberModal">
+    <div class="gd-modal-card">
+        <span class="gd-modal-icon">➕</span>
+        <div class="gd-modal-title">Añadir miembros</div>
+        <div class="gd-modal-sub">Selecciona personas para agregar al grupo</div>
+        <input type="text" class="gd-modal-search" placeholder="🔍 Buscar..." oninput="filtrarAmigosModal(this.value)" id="addMemberSearch" />
+        <div class="gd-modal-list" id="addMemberList"><div class="gd-modal-empty">Cargando...</div></div>
+        <div class="gd-modal-btns">
+            <button class="gd-modal-cancel" onclick="closeModal('addMemberModal')">Cancelar</button>
+            <button class="gd-modal-confirm" id="addMemberConfirm" onclick="confirmarAgregar()" disabled>Agregar</button>
         </div>
     </div>
 </div>
 
 <!-- MODAL SALIR -->
-<div class="grp-modal" id="leaveModal">
-    <div class="grp-modal-card" style="text-align:center;">
-        <div style="font-size:44px;margin-bottom:14px;">🚪</div>
-        <div class="grp-modal-title" style="justify-content:center;">¿Salir del grupo?</div>
-        <div class="grp-modal-sub" style="text-align:center;margin-bottom:22px;">Podrás ver el historial pero no podrás escribir.</div>
-        <div class="grp-modal-btns">
-            <button class="grp-modal-cancel" onclick="closeModal('leaveModal')">Cancelar</button>
+<div class="gd-modal" id="leaveModal">
+    <div class="gd-modal-card">
+        <span class="gd-modal-icon">🚪</span>
+        <div class="gd-modal-title">¿Salir del grupo?</div>
+        <div class="gd-modal-sub">Podrás ver el historial pero no podrás escribir ni recibir nuevos mensajes.</div>
+        <div class="gd-modal-btns">
+            <button class="gd-modal-cancel" onclick="closeModal('leaveModal')">Cancelar</button>
             <form asp-controller="Group" asp-action="Leave" method="post" style="flex:2;">
                 @Html.AntiForgeryToken()
                 <input type="hidden" name="groupId" value="@Model.Id" />
-                <button type="submit" style="width:100%;padding:12px;border-radius:13px;border:none;background:#dc2626;color:white;font-weight:700;font-size:13px;cursor:pointer;font-family:inherit;">
-                    Sí, salir
-                </button>
+                <button type="submit" class="gd-modal-confirm danger-confirm" style="width:100%;">Sí, salir</button>
             </form>
         </div>
     </div>
 </div>
 
+<!-- MODAL ELIMINAR -->
+<div class="gd-modal" id="deleteModal">
+    <div class="gd-modal-card">
+        <span class="gd-modal-icon">🗑️</span>
+        <div class="gd-modal-title">¿Eliminar el grupo?</div>
+        <div class="gd-modal-sub">Esta acción es <strong style="color:#f87171;">permanente e irreversible</strong>. Todos los mensajes e historial serán eliminados.</div>
+        <div style="background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);border-radius:12px;padding:12px 14px;margin-bottom:16px;font-size:13px;color:#fca5a5;line-height:1.6;">
+            ⚠️ Escribe <strong style="color:white;">ELIMINAR</strong> para confirmar
+        </div>
+        <input type="text" id="deleteConfirmInput" class="gd-modal-search" placeholder="Escribe ELIMINAR" />
+        <div class="gd-modal-btns">
+            <button class="gd-modal-cancel" onclick="closeModal('deleteModal')">Cancelar</button>
+            <button class="gd-modal-confirm danger-confirm" id="deleteConfirmBtn" onclick="confirmarEliminar()" disabled>Eliminar grupo</button>
+        </div>
+    </div>
+</div>
+
 <!-- MODAL REPORTAR -->
-<div class="grp-modal" id="reportModal">
-    <div class="grp-modal-card">
-        <div style="text-align:center;font-size:36px;margin-bottom:12px;">🚩</div>
-        <div class="grp-modal-title" style="text-align:center;">Reportar grupo</div>
-        <div class="grp-modal-sub" style="text-align:center;margin-bottom:16px;">¿Por qué reportas este grupo?</div>
-        <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:18px;">
-            @foreach (var motivo in new[]{"Contenido inapropiado","Spam o publicidad","Acoso o intimidación","Lenguaje ofensivo","Desinformación","Otro"})
+<div class="gd-modal" id="reportModal">
+    <div class="gd-modal-card">
+        <span class="gd-modal-icon">🚩</span>
+        <div class="gd-modal-title">Reportar grupo</div>
+        <div class="gd-modal-sub">¿Por qué reportas este grupo?</div>
+        <div style="margin-bottom:16px;">
+            @foreach (var motivo in new[]{"Contenido inapropiado","Spam o publicidad","Acoso o intimidación","Lenguaje ofensivo","Desinformación","Actividad ilegal","Otro"})
             {
-                <button onclick="seleccionarMotivo(this, '@motivo')"
-                        style="padding:11px 14px;border-radius:12px;border:1.5px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.04);color:#94a3b8;font-size:13px;font-weight:600;cursor:pointer;text-align:left;font-family:inherit;transition:0.15s;">
-                    @motivo
-                </button>
+                <button class="gd-reason-btn" onclick="seleccionarMotivo(this, '@motivo')">@motivo</button>
             }
         </div>
-        <div class="grp-modal-btns">
-            <button class="grp-modal-cancel" onclick="closeModal('reportModal')">Cancelar</button>
-            <button id="sendReportBtn" onclick="enviarReporte()" class="grp-modal-confirm" disabled>Reportar</button>
+        <div class="gd-modal-btns">
+            <button class="gd-modal-cancel" onclick="closeModal('reportModal')">Cancelar</button>
+            <button id="sendReportBtn" onclick="enviarReporte()" class="gd-modal-confirm" disabled>🚩 Reportar</button>
         </div>
     </div>
 </div>
-<!-- MODAL ENLACE -->
-<div class="grp-modal" id="inviteModal">
-    <div class="grp-modal-card">
-        <div style="text-align:center;font-size:36px;margin-bottom:12px;">🔗</div>
-        <div class="grp-modal-title" style="text-align:center;">Enlace de invitación</div>
-        <div class="grp-modal-sub" style="text-align:center;margin-bottom:16px;">
-            Comparte este enlace para que otros se unan al grupo
-        </div>
-        <div id="inviteLinkWrap" style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:14px 16px;margin-bottom:16px;word-break:break-all;font-size:13px;color:#818cf8;font-weight:600;min-height:44px;display:flex;align-items:center;">
-            ⏳ Generando enlace...
-        </div>
-        <div class="grp-modal-btns">
-            <button class="grp-modal-cancel" onclick="closeModal('inviteModal')">Cerrar</button>
-            <button class="grp-modal-confirm" onclick="copiarEnlace()">📋 Copiar</button>
-            <button class="grp-modal-confirm" style="background:rgba(255,255,255,0.1);box-shadow:none;" onclick="resetEnlace()">🔄 Nuevo</button>
-        </div>
-    </div>
-</div>
-<div class="grp-details-page">
 
-    <!-- MODAL FOTO GRUPO -->
-<div id="photoGroupOverlay" onclick="cerrarFotoGrupo()" style="display:none;position:fixed;inset:0;z-index:999999;background:rgba(0,0,0,0.85);backdrop-filter:blur(12px);display:none;align-items:center;justify-content:center;padding:20px;">
-    <div style="position:relative;display:flex;flex-direction:column;align-items:center;gap:16px;">
-        <img id="photoGroupImg" src="" style="width:260px;height:260px;border-radius:32px;object-fit:cover;border:4px solid rgba(255,255,255,0.15);box-shadow:0 20px 60px rgba(0,0,0,0.6);"/>
-        <button onclick="cerrarFotoGrupo()" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);color:white;padding:8px 24px;border-radius:20px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;">
-            ✕ Cerrar
-        </button>
+<!-- MODAL ADMIN ONLY -->
+<div class="gd-modal" id="adminOnlyModal">
+    <div class="gd-modal-card">
+        <span class="gd-modal-icon">🔒</span>
+        <div class="gd-modal-title">Modo solo admins</div>
+        <div class="gd-modal-sub">Cuando está activo, solo administradores pueden enviar mensajes. Los miembros solo pueden leer.</div>
+        <div class="gd-modal-btns">
+            <button class="gd-modal-cancel" onclick="closeModal('adminOnlyModal')">Cancelar</button>
+            <button class="gd-modal-confirm" onclick="confirmarAdminOnly()">@(Model.IsAdminOnly ? "Desactivar" : "Activar")</button>
+        </div>
     </div>
 </div>
+
+<div class="gd-page">
 
     <!-- HERO -->
-    <div class="grp-hero">
-        <a asp-controller="Group" asp-action="Chat" asp-route-id="@Model.Id" class="grp-back-btn">← Chat</a>
-        <div class="grp-hero-cover-placeholder"></div>
-        <div class="grp-hero-bg"></div>
-        <div class="grp-hero-body">
-            <div class="grp-hero-avatar-wrap">
-              <div class="grp-hero-avatar" id="groupAvatarEl"
-     onclick="abrirFotoGrupo()">
-                    @if (!string.IsNullOrEmpty(Model.ImageUrl))
-                    { <img src="@Model.ImageUrl" id="groupAvatarImg" /> }
-                    else
-                    { <span id="groupAvatarLetter">@Model.Name.Substring(0, 1).ToUpper()</span> }
+    <div class="gd-hero">
+        <div class="gd-hero-cover">
+            <div class="gd-hero-cover-grid"></div>
+            @if (!string.IsNullOrEmpty(Model.ImageUrl))
+            { <img src="@Model.ImageUrl" /> }
+        </div>
+        <a asp-controller="Group" asp-action="Chat" asp-route-id="@Model.Id" class="gd-back-btn">← Chat</a>
+        <div class="gd-type-badge @Model.Type">
+            @(Model.Type == "channel" ? "📢 Canal" : Model.Type == "public" ? "🌍 Público" : "🔒 Privado")
+        </div>
+        <div class="gd-hero-body">
+            <div class="gd-avatar-zone">
+                <div class="gd-avatar-wrap">
+                    <div class="gd-avatar" id="groupAvatarEl" onclick="abrirFoto()">
+                        @if (!string.IsNullOrEmpty(Model.ImageUrl))
+                        { <img src="@Model.ImageUrl" id="groupAvatarImg" /> }
+                        else
+                        { <span id="groupAvatarLetter">@Model.Name.Substring(0, 1).ToUpper()</span> }
+                    </div>
+                    @if (isAdmin)
+                    { <div class="gd-avatar-edit" onclick="document.getElementById('groupImageInput').click()">📷</div> }
                 </div>
-                @if (isAdmin)
-                {
-                    <div class="grp-hero-edit-badge" onclick="document.getElementById('groupImageInput').click()">📷</div>
-                }
+                <div class="gd-hero-actions">
+                    <a asp-controller="Group" asp-action="Chat" asp-route-id="@Model.Id" class="gd-hero-action-btn primary">💬 Chat</a>
+                    <button class="gd-hero-action-btn secondary" onclick="compartirGrupo()">↗️ Compartir</button>
+                </div>
             </div>
-            <div class="grp-hero-name" id="groupNameDisplay">@Model.Name</div>
+            <div class="gd-hero-name" id="groupNameDisplay">@Model.Name</div>
             @if (!string.IsNullOrEmpty(Model.Description))
-            { <div class="grp-hero-desc">@Model.Description</div> }
-            <div class="grp-hero-meta">
-                <div class="grp-hero-meta-item">👥 @members.Count miembro@(members.Count != 1 ? "s" : "")</div>
-                <div class="grp-hero-meta-item">👑 @(Model.Creator?.Username ?? "?")</div>
-                <div class="grp-hero-meta-item">📅 @Model.CreatedAt.ToString("MMM yyyy")</div>
+            { <div class="gd-hero-desc">@Model.Description</div> }
+            <div class="gd-hero-meta">
+                <div class="gd-hero-meta-item">👥 @totalMembers miembro@(totalMembers != 1 ? "s" : "")</div>
+                <div class="gd-hero-meta-item">👑 @(Model.Creator?.Username ?? "?")</div>
+                <div class="gd-hero-meta-item">📅 @Model.CreatedAt.ToString("MMM yyyy")</div>
+                @if (Model.IsAdminOnly)
+                { <div class="gd-hero-meta-item" style="color:#f59e0b;">🔒 Solo admins</div> }
             </div>
-            <div class="grp-stats">
-                <div class="grp-stat">
-                    <span class="grp-stat-num">@members.Count</span>
-                    <span class="grp-stat-label">Miembros</span>
+            <div class="gd-stats">
+                <div class="gd-stat">
+                    <span class="gd-stat-num">@totalMembers</span>
+                    <span class="gd-stat-label">Miembros</span>
                 </div>
-                <div class="grp-stat">
-                    <span class="grp-stat-num">@(members.Count(m => m.Role == "Admin"))</span>
-                    <span class="grp-stat-label">Admins</span>
+                <div class="gd-stat">
+                    <span class="gd-stat-num">@adminCount</span>
+                    <span class="gd-stat-label">Admins</span>
                 </div>
-                <div class="grp-stat">
-                    <span class="grp-stat-num">@(isAdmin ? "✓" : "—")</span>
-                    <span class="grp-stat-label">Tu rol</span>
+                <div class="gd-stat">
+                    <span class="gd-stat-num">@(isAdmin ? "Admin" : "Miembro")</span>
+                    <span class="gd-stat-label">Tu rol</span>
                 </div>
             </div>
-            <a asp-controller="Group" asp-action="Chat" asp-route-id="@Model.Id" class="grp-chat-btn">
-                💬 Ir al chat
-            </a>
         </div>
     </div>
 
+    <!-- EDITAR (solo admin) -->
     @if (isAdmin)
     {
-        <div class="grp-card">
-            <div class="grp-card-header">
-                <div class="grp-card-title">✏️ Editar grupo</div>
+        <div class="gd-card">
+            <div class="gd-card-hd">
+                <div class="gd-card-title">✏️ Editar grupo</div>
             </div>
-            <div class="grp-edit-row">
-                <input type="text" id="newGroupName" class="grp-edit-input"
-                       placeholder="Nombre del grupo..." value="@Model.Name" />
-                <button class="grp-edit-btn" onclick="updateName()">Guardar</button>
+            <div class="gd-edit-row">
+                <input type="text" id="newGroupName" class="gd-edit-input" placeholder="Nombre del grupo..." value="@Model.Name" />
+                <button class="gd-edit-btn" onclick="updateName()">Guardar</button>
+            </div>
+        </div>
+
+        <!-- ENLACE DE INVITACIÓN -->
+        <div class="gd-card">
+            <div class="gd-card-hd">
+                <div class="gd-card-title">🔗 Enlace de invitación</div>
+                <button class="gd-card-btn" onclick="generarEnlace()">Generar</button>
+            </div>
+            <div id="inviteSection" style="display:none;">
+                <div class="gd-invite-box">
+                    <div class="gd-invite-label">Código</div>
+                    <div class="gd-invite-code" id="inviteCode">—</div>
+                    <div class="gd-invite-link" id="inviteLink">—</div>
+                    <div class="gd-invite-btns">
+                        <button class="gd-invite-btn copy" onclick="copiarEnlace()">📋 Copiar</button>
+                        <button class="gd-invite-btn share" onclick="compartirEnlace()">↗️ Compartir</button>
+                        <button class="gd-invite-btn reset" onclick="resetEnlace()">🔄 Nuevo</button>
+                    </div>
+                </div>
             </div>
         </div>
     }
 
+    <!-- INFO DEL GRUPO -->
+    <div class="gd-card">
+        <div class="gd-card-hd">
+            <div class="gd-card-title">ℹ️ Información</div>
+        </div>
+        <div class="gd-info-grid">
+            <div class="gd-info-row">
+                <span class="gd-info-label">Tipo de grupo</span>
+                <span class="gd-info-value">@(Model.Type == "channel" ? "📢 Canal" : Model.Type == "public" ? "🌍 Público" : "🔒 Privado")</span>
+            </div>
+            <div class="gd-info-row">
+                <span class="gd-info-label">Creado por</span>
+                <span class="gd-info-value">@(Model.Creator?.Username ?? "?")</span>
+            </div>
+            <div class="gd-info-row">
+                <span class="gd-info-label">Fecha de creación</span>
+                <span class="gd-info-value">@Model.CreatedAt.ToString("dd MMM yyyy")</span>
+            </div>
+            <div class="gd-info-row">
+                <span class="gd-info-label">Modo escritura</span>
+                <span class="gd-info-value">@(Model.IsAdminOnly ? "Solo admins" : "Todos los miembros")</span>
+            </div>
+            <div class="gd-info-row">
+                <span class="gd-info-label">Tu rol</span>
+                <span class="gd-info-value">@(isCreator ? "👑 Creador" : isAdmin ? "⭐ Admin" : "👤 Miembro")</span>
+            </div>
+        </div>
+    </div>
+
     <!-- MIEMBROS -->
-    <div class="grp-card">
-        <div class="grp-card-header">
-            <div class="grp-card-title">👥 Miembros (@members.Count)</div>
+    <div class="gd-card">
+        <div class="gd-card-hd">
+            <div class="gd-card-title">👥 Miembros (@totalMembers)</div>
             @if (isAdmin)
-            {
-                <button class="grp-card-action-btn" onclick="openAddMember()">➕ Añadir</button>
-            }
+            { <button class="gd-card-btn" onclick="openAddMember()">➕ Añadir</button> }
         </div>
-
-        <!-- Buscador de miembros -->
-        <div class="grp-search-wrap">
-            <span class="grp-search-icon">🔍</span>
-            <input type="text" class="grp-search-input" placeholder="Buscar miembro..."
-                   oninput="filtrarMiembros(this.value)" />
+        <div class="gd-members-count-bar">
+            <span>👑 <strong>@adminCount</strong> admin@(adminCount != 1 ? "s" : "")</span>
+            <span style="color:var(--border2);">·</span>
+            <span>👤 <strong>@(totalMembers - adminCount)</strong> miembro@((totalMembers - adminCount) != 1 ? "s" : "")</span>
         </div>
-
+        <div class="gd-search-wrap">
+            <span class="gd-search-icon">🔍</span>
+            <input type="text" class="gd-search-input" placeholder="Buscar miembro..." oninput="filtrarMiembros(this.value)" />
+        </div>
         <div id="membersList">
             @foreach (var m in members.OrderByDescending(m => m.UserId == Model.CreatorId).ThenByDescending(m => m.Role == "Admin"))
             {
@@ -535,43 +695,37 @@ body.bg-dark .grp-search-input { background: #2d3748 !important; border-color: #
                 var isMemberCreator = m.UserId == Model.CreatorId;
                 var isMemberAdmin = m.Role == "Admin";
 
-                <div class="grp-member-row" id="member-row-@m.UserId" data-name="@m.User?.Username?.ToLower()">
-                    <a asp-controller="User" asp-action="Profile" asp-route-id="@m.UserId" class="grp-member-avatar">
+                <div class="gd-member" id="member-row-@m.UserId" data-name="@m.User?.Username?.ToLower()">
+                    <a asp-controller="User" asp-action="Profile" asp-route-id="@m.UserId" class="gd-member-avatar">
                         @if (!string.IsNullOrEmpty(img)) { <img src="@img" /> }
                         else { @letter }
                     </a>
-                    <div class="grp-member-info">
-                        <div class="grp-member-name">
+                    <div class="gd-member-info">
+                        <div class="gd-member-name">
                             @m.User?.Username
-                            @if (isMe) { <span class="grp-member-badge me" style="margin-left:4px;">Tú</span> }
-                            @if (isMemberCreator) { <span class="grp-member-badge creator" style="margin-left:4px;">👑 Creador</span> }
-                            else if (isMemberAdmin) { <span class="grp-member-badge admin" style="margin-left:4px;">⭐ Admin</span> }
+                            @if (isMe) { <span class="gd-badge me">Tú</span> }
+                            @if (isMemberCreator) { <span class="gd-badge creator">👑 Creador</span> }
+                            else if (isMemberAdmin) { <span class="gd-badge admin">⭐ Admin</span> }
                         </div>
-                        <div class="grp-member-role">
-                            @if (isMemberCreator) { <text>Fundador del grupo</text> }
-                            else if (isMemberAdmin) { <text>Administrador</text> }
-                            else { <text>Miembro</text> }
+                        <div class="gd-member-sub">
+                            @if (isMemberCreator) { <text>Fundador · desde @m.JoinedAt.ToString("MMM yyyy")</text> }
+                            else if (isMemberAdmin) { <text>Administrador · desde @m.JoinedAt.ToString("MMM yyyy")</text> }
+                            else { <text>Miembro · desde @m.JoinedAt.ToString("MMM yyyy")</text> }
                         </div>
                     </div>
-                    <div class="grp-member-actions">
+                    <div class="gd-member-btns">
                         @if (!isMe && !isMemberCreator)
                         {
-                            <a href="/Message/Chat/@m.UserId" class="grp-member-btn msg" title="Mensaje privado">💬</a>
+                            <a href="/Message/Chat/@m.UserId" class="gd-mbtn msg" title="Mensaje privado">💬</a>
                             @if (isCreator)
                             {
                                 @if (!isMemberAdmin)
-                                {
-                                    <button class="grp-member-btn promote" onclick="promoverAdmin(@m.UserId, '@m.User?.Username')" title="Dar admin">⭐</button>
-                                }
+                                { <button class="gd-mbtn promote" onclick="promoverAdmin(@m.UserId, '@m.User?.Username')" title="Dar admin">⭐</button> }
                                 else
-                                {
-                                    <button class="grp-member-btn demote" onclick="quitarAdmin(@m.UserId, '@m.User?.Username')" title="Quitar admin">↓</button>
-                                }
+                                { <button class="gd-mbtn demote" onclick="quitarAdmin(@m.UserId, '@m.User?.Username')" title="Quitar admin">↓</button> }
                             }
                             @if (isAdmin && (isCreator || !isMemberAdmin))
-                            {
-                                <button class="grp-member-btn remove" onclick="removeMember(@m.UserId, '@m.User?.Username')" title="Eliminar">✕</button>
-                            }
+                            { <button class="gd-mbtn remove" onclick="removeMember(@m.UserId, '@m.User?.Username')" title="Eliminar">✕</button> }
                         }
                     </div>
                 </div>
@@ -580,114 +734,130 @@ body.bg-dark .grp-search-input { background: #2d3748 !important; border-color: #
     </div>
 
     <!-- OPCIONES -->
-    <div class="grp-card">
-        <div class="grp-card-header">
-            <div class="grp-card-title">⚙️ Opciones</div>
+    <div class="gd-card">
+        <div class="gd-card-hd">
+            <div class="gd-card-title">⚙️ Opciones</div>
         </div>
-        <div class="grp-action-list">
-            <button class="grp-action-item @(isMuted ? "active-mute" : "")" id="muteActionBtn" onclick="toggleMute()">
-                <div class="grp-action-icon orange"><span id="muteIcon">@(isMuted ? "🔕" : "🔔")</span></div>
-                <div>
-                    <div id="muteLabel">@(isMuted ? "Notificaciones silenciadas" : "Silenciar notificaciones")</div>
-                    <div class="grp-action-sub">@(isMuted ? "Toca para activar" : "No recibirás alertas de mensajes")</div>
+        <div class="gd-action-list">
+            <button class="gd-action-item @(isMuted ? "active-mute" : "")" id="muteBtn" onclick="toggleMute()">
+                <div class="gd-action-icon orange"><span id="muteIcon">@(isMuted ? "🔕" : "🔔")</span></div>
+                <div style="flex:1;">
+                    <div id="muteLabel">@(isMuted ? "Silenciado" : "Silenciar notificaciones")</div>
+                    <div class="gd-action-sub">@(isMuted ? "Toca para activar" : "No recibirás alertas")</div>
                 </div>
-                <span class="grp-action-chevron">›</span>
+                <div class="gd-toggle @(isMuted ? "on" : "")" id="muteToggle"></div>
             </button>
 
             @if (isAdmin)
-{
-    <button class="grp-action-item" onclick="generarEnlace()">
-        <div class="grp-action-icon green">🔗</div>
-        <div>
-            <div>Enlace de invitación</div>
-            <div class="grp-action-sub">Comparte para que otros se unan</div>
-        </div>
-        <span class="grp-action-chevron">›</span>
-    </button>
+            {
+                <button class="gd-action-item" onclick="openModal('adminOnlyModal')">
+                    <div class="gd-action-icon cyan">🔒</div>
+                    <div style="flex:1;">
+                        <div>Solo admins pueden escribir</div>
+                        <div class="gd-action-sub">@(Model.IsAdminOnly ? "Activo — miembros en modo lectura" : "Desactivado — todos pueden escribir")</div>
+                    </div>
+                    <div class="gd-toggle @(Model.IsAdminOnly ? "on" : "")" id="adminOnlyToggle"></div>
+                </button>
 
-    @if (Model.Type == "public")
-    {
-        <a href="/Group/JoinRequests/@Model.Id" class="grp-action-item" style="text-decoration:none;">
-            <div class="grp-action-icon purple">📩</div>
-            <div>
-                <div>Solicitudes de unión</div>
-                <div class="grp-action-sub">Aprobar o rechazar solicitudes pendientes</div>
-            </div>
-            <span class="grp-action-chevron">›</span>
-        </a>
-    }
-}
-            <button class="grp-action-item" onclick="reportarGrupo()">
-                <div class="grp-action-icon purple">🚩</div>
-                <div>
-                    <div>Reportar grupo</div>
-                    <div class="grp-action-sub">Ayúdanos a mantener la comunidad segura</div>
+                @if (Model.Type == "public")
+                {
+                    <a href="/Group/JoinRequests/@Model.Id" class="gd-action-item" style="text-decoration:none;">
+                        <div class="gd-action-icon purple">📩</div>
+                        <div style="flex:1;">
+                            <div>Solicitudes de unión</div>
+                            <div class="gd-action-sub">Aprobar o rechazar solicitudes</div>
+                        </div>
+                        <span class="gd-action-chevron">›</span>
+                    </a>
+                }
+            }
+
+            <button class="gd-action-item" onclick="compartirGrupo()">
+                <div class="gd-action-icon green">↗️</div>
+                <div style="flex:1;">
+                    <div>Compartir grupo</div>
+                    <div class="gd-action-sub">Invita a personas al grupo</div>
                 </div>
-                <span class="grp-action-chevron">›</span>
+                <span class="gd-action-chevron">›</span>
             </button>
 
-            <button class="grp-action-item danger" onclick="openModal('leaveModal')">
-                <div class="grp-action-icon red">🚪</div>
-                <div>
-                    <div>Salir del grupo</div>
-                    <div class="grp-action-sub" style="color:#fca5a5;">Dejarás de participar en el chat</div>
+            <button class="gd-action-item" onclick="reportarGrupo()">
+                <div class="gd-action-icon purple">🚩</div>
+                <div style="flex:1;">
+                    <div>Reportar grupo</div>
+                    <div class="gd-action-sub">Ayúdanos a mantener la comunidad segura</div>
                 </div>
-                <span class="grp-action-chevron">›</span>
+                <span class="gd-action-chevron">›</span>
+            </button>
+
+            <button class="gd-action-item danger" onclick="openModal('leaveModal')">
+                <div class="gd-action-icon red">🚪</div>
+                <div style="flex:1;">
+                    <div>Salir del grupo</div>
+                    <div class="gd-action-sub" style="color:rgba(248,113,113,0.6);">Dejarás de participar en el chat</div>
+                </div>
+                <span class="gd-action-chevron">›</span>
             </button>
 
             @if (isCreator)
             {
-                <button class="grp-action-item danger" onclick="eliminarGrupo()">
-                    <div class="grp-action-icon red">🗑️</div>
-                    <div>
+                <button class="gd-action-item danger" onclick="openModal('deleteModal')">
+                    <div class="gd-action-icon red">🗑️</div>
+                    <div style="flex:1;">
                         <div>Eliminar grupo</div>
-                        <div class="grp-action-sub" style="color:#fca5a5;">Esta acción no se puede deshacer</div>
+                        <div class="gd-action-sub" style="color:rgba(248,113,113,0.6);">Acción permanente e irreversible</div>
                     </div>
-                    <span class="grp-action-chevron">›</span>
+                    <span class="gd-action-chevron">›</span>
                 </button>
             }
         </div>
     </div>
+
 </div>
 
-@Html.AntiForgeryToken()
-
-<script>
+                <script>
 const groupId = @Model.Id;
 const isCreator = @isCreator.ToString().ToLower();
+const isAdmin = @isAdmin.ToString().ToLower();
 let isMuted = @isMuted.ToString().ToLower();
+let isAdminOnly = @Model.IsAdminOnly.ToString().ToLower();
 let selectedReason = null;
 let selectedMembers = new Set();
 let allFriends = [];
+let currentInviteLink = '';
 
 const token = () => document.querySelector('input[name="__RequestVerificationToken"]')?.value ?? "";
 
+// ── TOAST ──
 function showToast(msg) {
-    const existing = document.querySelector('.grp-toast');
-    if (existing) existing.remove();
+    document.querySelectorAll('.gd-toast').forEach(t => t.remove());
     const t = document.createElement("div");
-    t.className = "grp-toast"; t.textContent = msg;
+    t.className = "gd-toast"; t.textContent = msg;
     document.body.appendChild(t);
-    setTimeout(() => { t.style.transition = "opacity 0.3s"; t.style.opacity = "0"; setTimeout(() => t.remove(), 300); }, 3000);
+    setTimeout(() => { t.style.opacity = "0"; t.style.transition = "opacity 0.3s"; setTimeout(() => t.remove(), 300); }, 3000);
 }
 
+// ── MODALES ──
 function openModal(id) { document.getElementById(id).classList.add('open'); }
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
-
-document.querySelectorAll('.grp-modal').forEach(m => {
+document.querySelectorAll('.gd-modal').forEach(m => {
     m.addEventListener('click', function(e) { if (e.target === this) this.classList.remove('open'); });
 });
 
-// ── BUSCAR MIEMBROS ──
-function filtrarMiembros(q) {
-    q = q.toLowerCase().trim();
-    document.querySelectorAll('#membersList .grp-member-row').forEach(row => {
-        const name = row.getAttribute('data-name') || '';
-        row.style.display = !q || name.includes(q) ? '' : 'none';
-    });
+// ── FOTO ──
+function abrirFoto() {
+    const img = document.getElementById('groupAvatarImg');
+    if (!img) return;
+    document.getElementById('photoOverlayImg').src = img.src;
+    document.getElementById('photoOverlay').classList.add('open');
+    document.body.style.overflow = 'hidden';
+}
+function cerrarFoto() {
+    document.getElementById('photoOverlay').classList.remove('open');
+    document.body.style.overflow = '';
 }
 
-// ── FOTO GRUPO ──
+// ── SUBIR IMAGEN ──
 async function uploadGroupImage(input) {
     const file = input.files[0]; if (!file) return;
     showToast("⏳ Subiendo imagen...");
@@ -704,8 +874,8 @@ async function uploadGroupImage(input) {
             if (!img) { img = document.createElement("img"); img.id = "groupAvatarImg"; el.appendChild(img); }
             img.src = data.imageUrl;
             showToast("✅ Foto actualizada");
-        }
-    } catch { showToast("❌ Error al subir"); }
+        } else showToast("❌ Error al subir");
+    } catch { showToast("❌ Error de conexión"); }
 }
 
 // ── NOMBRE ──
@@ -722,6 +892,15 @@ async function updateName() {
     else showToast("❌ No se pudo actualizar");
 }
 
+// ── BUSCAR MIEMBROS ──
+function filtrarMiembros(q) {
+    q = q.toLowerCase().trim();
+    document.querySelectorAll('#membersList .gd-member').forEach(row => {
+        const name = row.getAttribute('data-name') || '';
+        row.style.display = !q || name.includes(q) ? '' : 'none';
+    });
+}
+
 // ── ELIMINAR MIEMBRO ──
 async function removeMember(userId, username) {
     if (!confirm(`¿Eliminar a ${username} del grupo?`)) return;
@@ -734,66 +913,10 @@ async function removeMember(userId, username) {
     if (data.success) {
         showToast(`✅ ${username} eliminado`);
         const row = document.getElementById("member-row-" + userId);
-        if (row) { row.style.opacity = "0"; row.style.transition = "0.3s"; setTimeout(() => row.remove(), 300); }
+        if (row) { row.style.opacity = "0"; row.style.transition = "0.4s"; setTimeout(() => row.remove(), 400); }
     } else showToast("❌ " + (data.message ?? "Error"));
 }
-// ── ENLACE DE INVITACIÓN ──
-let currentInviteLink = '';
 
-async function generarEnlace() {
-    openModal('inviteModal');
-    document.getElementById('inviteLinkWrap').textContent = '⏳ Generando...';
-    try {
-        const res = await fetch('/Group/GenerateInviteCode', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: `groupId=${groupId}&__RequestVerificationToken=${encodeURIComponent(token())}`
-        });
-        const data = await res.json();
-        if (data.success) {
-            currentInviteLink = data.link;
-            document.getElementById('inviteLinkWrap').textContent = data.link;
-        } else {
-            document.getElementById('inviteLinkWrap').textContent = '❌ Error al generar enlace';
-        }
-    } catch {
-        document.getElementById('inviteLinkWrap').textContent = '❌ Error de conexión';
-    }
-}
-
-async function resetEnlace() {
-    document.getElementById('inviteLinkWrap').textContent = '⏳ Generando nuevo enlace...';
-    try {
-        const res = await fetch('/Group/ResetInviteCode', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: `groupId=${groupId}&__RequestVerificationToken=${encodeURIComponent(token())}`
-        });
-        const data = await res.json();
-        if (data.success) {
-            currentInviteLink = data.link;
-            document.getElementById('inviteLinkWrap').textContent = data.link;
-            showToast('🔄 Enlace renovado');
-        }
-    } catch {
-        showToast('❌ Error al renovar');
-    }
-}
-
-function copiarEnlace() {
-    if (!currentInviteLink) return;
-    navigator.clipboard.writeText(currentInviteLink)
-        .then(() => showToast('✅ Enlace copiado'))
-        .catch(() => {
-            const input = document.createElement('input');
-            input.value = currentInviteLink;
-            document.body.appendChild(input);
-            input.select();
-            document.execCommand('copy');
-            input.remove();
-            showToast('✅ Enlace copiado');
-        });
-}
 // ── PROMOVER ──
 async function promoverAdmin(userId, username) {
     if (!confirm(`¿Dar permisos de admin a ${username}?`)) return;
@@ -805,20 +928,6 @@ async function promoverAdmin(userId, username) {
     const data = await res.json();
     if (data.success) { showToast(`⭐ ${username} ahora es admin`); setTimeout(() => location.reload(), 1200); }
     else showToast("❌ " + (data.message ?? "Error"));
-}
-// ── VER FOTO GRUPO ──
-function abrirFotoGrupo() {
-    const img = document.getElementById('groupAvatarImg');
-    if (!img) return; // si no tiene foto, no hacer nada
-    const overlay = document.getElementById('photoGroupOverlay');
-    document.getElementById('photoGroupImg').src = img.src;
-    overlay.style.display = 'flex';
-    document.body.style.overflow = 'hidden';
-}
-
-function cerrarFotoGrupo() {
-    document.getElementById('photoGroupOverlay').style.display = 'none';
-    document.body.style.overflow = '';
 }
 
 // ── QUITAR ADMIN ──
@@ -845,9 +954,93 @@ async function toggleMute() {
     if (data.success) {
         isMuted = data.isMuted;
         document.getElementById("muteIcon").textContent = isMuted ? "🔕" : "🔔";
-        document.getElementById("muteLabel").textContent = isMuted ? "Notificaciones silenciadas" : "Silenciar notificaciones";
-        document.getElementById("muteActionBtn").classList.toggle("active-mute", isMuted);
-        showToast(isMuted ? "🔕 Silenciadas" : "🔔 Activadas");
+        document.getElementById("muteLabel").textContent = isMuted ? "Silenciado" : "Silenciar notificaciones";
+        document.getElementById("muteBtn").classList.toggle("active-mute", isMuted);
+        document.getElementById("muteToggle").classList.toggle("on", isMuted);
+        showToast(isMuted ? "🔕 Notificaciones silenciadas" : "🔔 Notificaciones activadas");
+    }
+}
+
+// ── ADMIN ONLY ──
+async function confirmarAdminOnly() {
+    closeModal('adminOnlyModal');
+    // toggle via update — por ahora recargar
+    showToast("⏳ Actualizando...");
+    // Necesitas un endpoint ToggleAdminOnly en GroupController
+    try {
+        const res = await fetch("/Group/ToggleAdminOnly", {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: `groupId=${groupId}&__RequestVerificationToken=${encodeURIComponent(token())}`
+        });
+        const data = await res.json();
+        if (data.success) {
+            showToast(data.isAdminOnly ? "🔒 Modo solo admins activado" : "🔓 Todos pueden escribir");
+            setTimeout(() => location.reload(), 1000);
+        } else showToast("❌ Error");
+    } catch { showToast("❌ Error de conexión"); }
+}
+
+// ── ENLACE INVITACIÓN ──
+async function generarEnlace() {
+    document.getElementById('inviteSection').style.display = 'block';
+    document.getElementById('inviteCode').textContent = '⏳';
+    document.getElementById('inviteLink').textContent = 'Generando...';
+    try {
+        const res = await fetch('/Group/GenerateInviteCode', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: `groupId=${groupId}&__RequestVerificationToken=${encodeURIComponent(token())}`
+        });
+        const data = await res.json();
+        if (data.success) {
+            currentInviteLink = data.link;
+            document.getElementById('inviteCode').textContent = data.code;
+            document.getElementById('inviteLink').textContent = data.link;
+        }
+    } catch { showToast("❌ Error al generar"); }
+}
+
+async function resetEnlace() {
+    document.getElementById('inviteCode').textContent = '⏳';
+    try {
+        const res = await fetch('/Group/ResetInviteCode', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: `groupId=${groupId}&__RequestVerificationToken=${encodeURIComponent(token())}`
+        });
+        const data = await res.json();
+        if (data.success) {
+            currentInviteLink = data.link;
+            document.getElementById('inviteCode').textContent = data.code ?? '';
+            document.getElementById('inviteLink').textContent = data.link;
+            showToast('🔄 Enlace renovado');
+        }
+    } catch { showToast("❌ Error"); }
+}
+
+function copiarEnlace() {
+    if (!currentInviteLink) return;
+    navigator.clipboard.writeText(currentInviteLink)
+        .then(() => showToast('📋 Enlace copiado'))
+        .catch(() => { const i = document.createElement('input'); i.value = currentInviteLink; document.body.appendChild(i); i.select(); document.execCommand('copy'); i.remove(); showToast('📋 Enlace copiado'); });
+}
+
+function compartirEnlace() {
+    if (!currentInviteLink) return;
+    if (navigator.share) {
+        navigator.share({ title: '@Model.Name', text: 'Únete al grupo en HabitTracker', url: currentInviteLink });
+    } else {
+        copiarEnlace();
+    }
+}
+
+function compartirGrupo() {
+    const url = window.location.origin + '/Group/Chat/@Model.Id';
+    if (navigator.share) {
+        navigator.share({ title: '@Model.Name', text: 'Mira este grupo en HabitTracker', url });
+    } else {
+        navigator.clipboard.writeText(url).then(() => showToast('📋 Link copiado'));
     }
 }
 
@@ -858,23 +1051,23 @@ async function openAddMember() {
     document.getElementById("addMemberConfirm").disabled = true;
     document.getElementById("addMemberConfirm").textContent = "Agregar";
     openModal('addMemberModal');
-    document.getElementById("addMemberList").innerHTML = '<div class="grp-modal-empty">Cargando...</div>';
+    document.getElementById("addMemberList").innerHTML = '<div class="gd-modal-empty">⏳ Cargando...</div>';
     try {
         const res = await fetch(`/Group/GetFriendsToAdd?groupId=${groupId}`);
         allFriends = await res.json();
         renderFriendsList(allFriends);
-    } catch { document.getElementById("addMemberList").innerHTML = '<div class="grp-modal-empty">Error al cargar</div>'; }
+    } catch { document.getElementById("addMemberList").innerHTML = '<div class="gd-modal-empty">❌ Error al cargar</div>'; }
 }
 
 function renderFriendsList(friends) {
     const list = document.getElementById("addMemberList");
-    if (!friends.length) { list.innerHTML = '<div class="grp-modal-empty">No hay amigos disponibles</div>'; return; }
+    if (!friends.length) { list.innerHTML = '<div class="gd-modal-empty">Sin amigos disponibles para agregar</div>'; return; }
     list.innerHTML = friends.map(f => {
-        const avatarHTML = f.img ? `<img src="${f.img}" style="width:100%;height:100%;object-fit:cover;" />` : f.username.charAt(0).toUpperCase();
-        return `<div class="grp-modal-item ${selectedMembers.has(f.id) ? 'selected' : ''}" id="friend-item-${f.id}" onclick="toggleSelectFriend(${f.id})">
-            <div class="grp-modal-avatar">${avatarHTML}</div>
-            <div class="grp-modal-name">${f.username}</div>
-            <span class="grp-modal-check">✓</span>
+        const avatar = f.img ? `<img src="${f.img}" style="width:100%;height:100%;object-fit:cover;" />` : f.username.charAt(0).toUpperCase();
+        return `<div class="gd-modal-item ${selectedMembers.has(f.id) ? 'selected' : ''}" id="friend-item-${f.id}" onclick="toggleSelectFriend(${f.id})">
+            <div class="gd-modal-avatar">${avatar}</div>
+            <div class="gd-modal-name">${f.username}</div>
+            <span class="gd-modal-check">✓</span>
         </div>`;
     }).join("");
 }
@@ -907,30 +1100,24 @@ async function confirmarAgregar() {
                 body: `groupId=${groupId}&newUserId=${memberId}&__RequestVerificationToken=${encodeURIComponent(token())}`
             });
             const data = await res.json();
-            if (data.success) ok++; else fail++;
+            data.success ? ok++ : fail++;
         } catch { fail++; }
     }
-    closeAddMember();
+    closeModal('addMemberModal');
     if (ok > 0) { showToast(`✅ ${ok} miembro${ok !== 1 ? "s" : ""} agregado${ok !== 1 ? "s" : ""}`); setTimeout(() => location.reload(), 1200); }
     if (fail > 0) showToast(`⚠️ ${fail} no se pudo agregar`);
 }
-
-function closeAddMember() { closeModal('addMemberModal'); selectedMembers.clear(); }
 
 // ── REPORTAR ──
 function reportarGrupo() {
     selectedReason = null;
     document.getElementById("sendReportBtn").disabled = true;
-    document.querySelectorAll("#reportModal button[onclick^='seleccionar']").forEach(b => {
-        b.style.borderColor = "rgba(255,255,255,0.08)"; b.style.color = "#94a3b8";
-    });
+    document.querySelectorAll('.gd-reason-btn').forEach(b => b.classList.remove('selected'));
     openModal('reportModal');
 }
 function seleccionarMotivo(btn, motivo) {
-    document.querySelectorAll("#reportModal button[onclick^='seleccionar']").forEach(b => {
-        b.style.borderColor = "rgba(255,255,255,0.08)"; b.style.color = "#94a3b8";
-    });
-    btn.style.borderColor = "#6366f1"; btn.style.color = "#818cf8";
+    document.querySelectorAll('.gd-reason-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
     selectedReason = motivo;
     document.getElementById("sendReportBtn").disabled = false;
 }
@@ -943,17 +1130,20 @@ async function enviarReporte() {
         body: JSON.stringify({ groupId, reason: selectedReason })
     });
     const data = await res.json();
-    showToast(data.success ? "✅ Reporte enviado" : "⚠️ " + (data.message ?? "Error"));
+    showToast(data.success ? "✅ Reporte enviado. Lo revisaremos pronto." : "⚠️ " + (data.message ?? "Error"));
 }
 
-// ── ELIMINAR GRUPO ──
-async function eliminarGrupo() {
-    if (!confirm("¿Eliminar este grupo permanentemente? Esta acción no se puede deshacer.")) return;
+// ── ELIMINAR GRUPO CON CONFIRMACIÓN ESCRITA ──
+document.getElementById('deleteConfirmInput')?.addEventListener('input', function() {
+    document.getElementById('deleteConfirmBtn').disabled = this.value.trim().toUpperCase() !== 'ELIMINAR';
+});
+
+function confirmarEliminar() {
     const form = document.createElement("form");
     form.method = "POST"; form.action = "/Group/Delete";
-    const input = document.createElement("input"); input.type = "hidden"; input.name = "groupId"; input.value = groupId;
+    const inp = document.createElement("input"); inp.type = "hidden"; inp.name = "groupId"; inp.value = groupId;
     const tok = document.createElement("input"); tok.type = "hidden"; tok.name = "__RequestVerificationToken"; tok.value = token();
-    form.appendChild(input); form.appendChild(tok);
+    form.appendChild(inp); form.appendChild(tok);
     document.body.appendChild(form); form.submit();
 }
 </script>

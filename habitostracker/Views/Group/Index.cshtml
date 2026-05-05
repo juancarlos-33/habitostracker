@@ -5,6 +5,8 @@
     var db = Context.RequestServices.GetService<HabitTrackerApp.Data.HabitDbContext>();
     var myId = int.Parse(User.FindFirst("UserId").Value);
     var totalGroups = Model?.Count ?? 0;
+    var unreadByGroup = ViewBag.UnreadByGroup as Dictionary<int, int> ?? new Dictionary<int, int>();
+    var totalUnread = unreadByGroup.Values.Sum();
     var bannerColors = new[]{ "#6366f1","#ec4899","#10b981","#f59e0b","#8b5cf6","#06b6d4","#f97316","#14b8a6" };
     var avatarGradients = new[]{
         "linear-gradient(135deg,#6366f1,#4f46e5)",
@@ -19,462 +21,698 @@
     int idx = 0;
 }
 
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 
 <style>
-*, *::before, *::after { box-sizing: border-box; }
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-.grp-page {
-    max-width: 680px; margin: 0 auto;
-    font-family: 'Plus Jakarta Sans', sans-serif;
-    padding-bottom: 50px;
+:root {
+    --s1: #080c14;
+    --s2: #0d1220;
+    --s3: #111827;
+    --s4: #1e293b;
+    --border: rgba(255,255,255,0.06);
+    --border2: rgba(255,255,255,0.1);
+    --accent: #6366f1;
+    --accent2: #4f46e5;
+    --green: #22c55e;
+    --text: #f1f5f9;
+    --muted: rgba(255,255,255,0.35);
 }
 
-/* ── HERO ── */
-.grp-hero {
-    background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
-    border-radius: 26px; padding: 28px 28px 24px;
-    margin-bottom: 16px; position: relative; overflow: hidden;
-    border: 1px solid rgba(255,255,255,0.06);
+/* ── LAYOUT SPLIT ── */
+.grp-layout {
+    display: flex;
+    height: calc(100vh - 80px);
+    max-width: 1200px;
+    margin: 0 auto;
+    font-family: 'DM Sans', sans-serif;
+    gap: 0;
+    border-radius: 24px;
+    overflow: hidden;
+    border: 1px solid var(--border2);
+    box-shadow: 0 20px 60px rgba(0,0,0,0.4);
 }
-.grp-hero::before {
-    content:""; position:absolute; top:-60px; right:-40px;
-    width:220px; height:220px;
-    background: radial-gradient(circle, rgba(99,102,241,0.22), transparent 70%);
-    border-radius:50%; pointer-events:none;
+
+/* ── LEFT PANEL ── */
+.grp-left {
+    width: 340px;
+    flex-shrink: 0;
+    background: var(--s2);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
 }
-.grp-hero::after {
-    content:""; position:absolute; bottom:-40px; left:40px;
-    width:160px; height:160px;
-    background: radial-gradient(circle, rgba(37,99,235,0.14), transparent 70%);
-    border-radius:50%; pointer-events:none;
+
+/* ── RIGHT PANEL ── */
+.grp-right {
+    flex: 1;
+    background: var(--s3);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    position: relative;
 }
-.grp-hero-top {
+
+/* ── LEFT HEADER ── */
+.grp-left-header {
+    padding: 20px 16px 14px;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+}
+.grp-left-header-top {
     display: flex; align-items: center; justify-content: space-between;
-    gap: 14px; position: relative; z-index: 1;
+    margin-bottom: 14px;
 }
-.grp-hero-left { display: flex; align-items: center; gap: 16px; }
-.grp-hero-icon {
-    width: 52px; height: 52px; border-radius: 16px;
-    background: linear-gradient(135deg, #6366f1, #2563eb);
-    display: flex; align-items: center; justify-content: center;
-    font-size: 26px; flex-shrink: 0;
-    box-shadow: 0 8px 20px rgba(99,102,241,0.45);
+.grp-left-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 20px; font-weight: 800; color: var(--text);
+    display: flex; align-items: center; gap: 10px;
 }
-.grp-hero-title { font-size: 20px; font-weight: 800; color: white; margin: 0 0 3px; }
-.grp-hero-sub { font-size: 12px; color: rgba(255,255,255,0.38); margin: 0; }
-
+.grp-left-title-badge {
+    font-size: 11px; font-weight: 700; padding: 3px 9px;
+    border-radius: 20px; background: rgba(99,102,241,0.15);
+    color: #818cf8; border: 1px solid rgba(99,102,241,0.25);
+}
 .grp-create-btn {
-    padding: 11px 20px; border-radius: 14px; border: none;
-    background: linear-gradient(135deg, #6366f1, #4f46e5);
-    color: white; font-size: 13px; font-weight: 700;
-    cursor: pointer; text-decoration: none;
-    display: flex; align-items: center; gap: 7px;
-    position: relative; z-index: 1;
-    box-shadow: 0 6px 18px rgba(99,102,241,0.4); transition: 0.2s;
-    font-family: inherit; white-space: nowrap;
+    width: 36px; height: 36px; border-radius: 11px; border: none;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    color: white; font-size: 18px; cursor: pointer; transition: 0.2s;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 4px 12px rgba(99,102,241,0.4);
+    text-decoration: none;
 }
-.group-name {
-    white-space: normal;
-    word-break: break-word;
-    overflow-wrap: break-word;
-}
+.grp-create-btn:hover { transform: scale(1.08); box-shadow: 0 6px 16px rgba(99,102,241,0.55); }
 
-/* Para que en escritorio se vea bien, puedes limitar el ancho máximo */
-@@media (min-width: 769px) {
-    .group-name {
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        max-width: 200px;
-    }
-}
-
-@@media (max-width: 768px) {
-    .group-name {
-        white-space: normal;
-        font-size: 14px;
-        line-height: 1.3;
-        margin-bottom: 4px;
-    }
-}
-.grp-create-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 24px rgba(99,102,241,0.5); color: white; }
-
-/* ── TABS ── */
-.grp-tabs {
-    display: flex; gap: 6px; margin-top: 16px;
-    background: rgba(255,255,255,0.05);
-    border-radius: 14px; padding: 5px;
-    position: relative; z-index: 1;
-}
-.grp-tab {
-    flex: 1; padding: 9px 10px; border-radius: 10px;
-    border: none; background: transparent;
-    color: rgba(255,255,255,0.45); font-size: 12px;
-    font-weight: 700; cursor: pointer; transition: 0.2s;
-    font-family: inherit; white-space: nowrap;
-}
-.grp-tab.active { background: rgba(99,102,241,0.25); color: #818cf8; }
-.grp-tab:hover:not(.active) { color: rgba(255,255,255,0.7); }
-
-/* CONTADOR */
-.grp-hero-counter {
-    display: flex; align-items: center; gap: 8px;
-    position: relative; z-index: 1; margin-top: 18px;
-    padding: 10px 16px;
-    background: rgba(255,255,255,0.05);
-    border: 1px solid rgba(255,255,255,0.07);
-    border-radius: 14px; width: fit-content;
-}
-.grp-hero-counter-num { font-size: 22px; font-weight: 800; color: white; line-height: 1; }
-.grp-hero-counter-text { font-size: 13px; color: rgba(255,255,255,0.45); font-weight: 600; }
-.grp-hero-counter-dot {
-    width: 6px; height: 6px; border-radius: 50%;
-    background: #6366f1; box-shadow: 0 0 6px rgba(99,102,241,0.6);
-}
-
-/* ── SEARCH ── */
-.grp-search-wrap { position: relative; margin-bottom: 16px; }
+/* SEARCH */
+.grp-search-wrap { position: relative; }
 .grp-search-icon {
-    position: absolute; left: 16px; top: 50%; transform: translateY(-50%);
-    font-size: 15px; pointer-events: none; color: #9ca3af;
+    position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
+    font-size: 14px; color: var(--muted); pointer-events: none;
 }
 .grp-search {
-    width: 100%; padding: 12px 18px 12px 44px;
-    border: 1.5px solid #e5e7eb; border-radius: 50px;
-    font-size: 14px; background: white; outline: none;
-    transition: 0.2s; font-family: inherit; color: #111827;
+    width: 100%; padding: 9px 12px 9px 36px;
+    border: 1.5px solid var(--border2); border-radius: 12px;
+    font-size: 13px; background: rgba(255,255,255,0.04);
+    outline: none; transition: 0.2s; font-family: inherit; color: var(--text);
 }
-.grp-search:focus { border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99,102,241,0.1); }
+.grp-search:focus { border-color: var(--accent); background: rgba(99,102,241,0.05); }
+.grp-search::placeholder { color: var(--muted); }
 
-/* ── SECTION LABEL ── */
-.grp-section-label {
-    font-size: 11px; font-weight: 700; color: #9ca3af;
-    text-transform: uppercase; letter-spacing: 0.8px;
-    margin-bottom: 10px; display: flex; align-items: center; gap: 8px;
+/* TABS */
+.grp-tabs {
+    display: flex; gap: 4px; margin-top: 12px;
+    background: rgba(255,255,255,0.04);
+    border-radius: 10px; padding: 4px;
 }
-.grp-section-label::after { content:""; flex:1; height:1px; background:#f1f5f9; }
+.grp-tab {
+    flex: 1; padding: 7px 6px; border-radius: 8px;
+    border: none; background: transparent;
+    color: var(--muted); font-size: 11px;
+    font-weight: 700; cursor: pointer; transition: 0.2s;
+    font-family: inherit; white-space: nowrap;
+    display: flex; align-items: center; justify-content: center; gap: 4px;
+}
+.grp-tab.active { background: rgba(99,102,241,0.2); color: #818cf8; }
+.grp-tab:hover:not(.active) { color: var(--text); }
+.grp-tab-badge {
+    font-size: 9px; font-weight: 800; padding: 1px 5px;
+    border-radius: 20px; background: #ef4444; color: white;
+}
 
-/* ── GRUPO CARD ── */
-.grp-card {
-    background: white; border-radius: 20px; margin-bottom: 10px;
-    border: 1px solid rgba(0,0,0,0.05);
-    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-    display: flex; align-items: stretch; gap: 0;
-    text-decoration: none; transition: all 0.22s cubic-bezier(0.4,0,0.2,1);
-    cursor: pointer; overflow: hidden; position: relative;
+/* ── GROUP LIST ── */
+.grp-list-wrap {
+    flex: 1; overflow-y: auto; padding: 8px 0;
 }
-.grp-card:hover {
-    box-shadow: 0 8px 28px rgba(0,0,0,0.1);
-    transform: translateY(-2px);
-    border-color: rgba(99,102,241,0.15);
+.grp-list-wrap::-webkit-scrollbar { width: 4px; }
+.grp-list-wrap::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
+
+.grp-list-section-label {
+    font-size: 10px; font-weight: 800; color: var(--muted);
+    text-transform: uppercase; letter-spacing: 1px;
+    padding: 8px 16px 4px; display: flex; align-items: center; gap: 8px;
 }
-@@media (max-width: 768px) {
-    .group-card .group-name,
-    .group-item .group-name,
-    .grupo-nombre /* usa la clase real que tengas */ {
-        white-space: normal !important;
-        overflow: visible !important;
-        text-overflow: unset !important;
-        word-break: break-word;
-    }
+.grp-list-section-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+/* GROUP ITEM */
+.grp-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 14px; cursor: pointer; transition: 0.15s;
+    border-radius: 14px; margin: 1px 8px;
+    text-decoration: none; position: relative;
+    border: 1.5px solid transparent;
 }
-.grp-card:active { transform: translateY(0); }
-.grp-card-banner { width: 5px; flex-shrink: 0; }
-.grp-card-inner {
-    display: flex; align-items: center; gap: 14px;
-    flex: 1; padding: 15px 16px 15px 14px;
-}
-.grp-avatar {
-    width: 50px; height: 50px; border-radius: 15px; flex-shrink: 0;
+.grp-item:hover { background: rgba(255,255,255,0.04); border-color: var(--border); }
+.grp-item.active { background: rgba(99,102,241,0.1); border-color: rgba(99,102,241,0.2); }
+.grp-item.active .grp-item-name { color: #818cf8; }
+
+.grp-item-avatar {
+    width: 48px; height: 48px; border-radius: 14px; flex-shrink: 0;
     display: flex; align-items: center; justify-content: center;
-    font-size: 21px; color: white; font-weight: 800; overflow: hidden;
-    box-shadow: 0 3px 10px rgba(0,0,0,0.15);
+    font-size: 20px; color: white; font-weight: 800; overflow: hidden;
+    position: relative;
 }
-.grp-avatar img { width: 100%; height: 100%; object-fit: cover; }
-.grp-info { flex: 1; min-width: 0; }
-.grp-name {
-    font-size: 15px; font-weight: 800; color: #111827;
-    margin: 0 0 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+.grp-item-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.grp-item-online {
+    position: absolute; bottom: -1px; right: -1px;
+    width: 12px; height: 12px; border-radius: 50%;
+    background: var(--green); border: 2px solid var(--s2);
 }
-.grp-last-msg {
-    font-size: 12px; color: #9ca3af; margin: 0;
+
+.grp-item-info { flex: 1; min-width: 0; }
+.grp-item-name {
+    font-size: 14px; font-weight: 700; color: var(--text);
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-    max-width: 260px;
+    margin-bottom: 2px;
 }
-.grp-last-msg.unread { color: #374151; font-weight: 600; }
-.grp-card-right {
+.grp-item-preview {
+    font-size: 12px; color: var(--muted);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.grp-item-preview.unread { color: #94a3b8; font-weight: 600; }
+
+.grp-item-right {
     display: flex; flex-direction: column; align-items: flex-end;
     gap: 5px; flex-shrink: 0;
 }
-.grp-time { font-size: 11px; color: #9ca3af; font-weight: 600; }
-.grp-role-badge {
-    font-size: 10px; font-weight: 700; padding: 3px 9px;
-    border-radius: 20px; white-space: nowrap;
+.grp-item-time { font-size: 11px; color: var(--muted); font-weight: 600; }
+.grp-item-time.unread { color: var(--accent); font-weight: 700; }
+.grp-item-badge {
+    background: var(--accent); color: white;
+    font-size: 10px; font-weight: 800;
+    padding: 2px 7px; border-radius: 20px; min-width: 20px; text-align: center;
 }
-.grp-role-badge.admin { background: rgba(251,191,36,0.12); color: #d97706; border: 1px solid rgba(251,191,36,0.25); }
-.grp-role-badge.member { background: rgba(99,102,241,0.08); color: #6366f1; border: 1px solid rgba(99,102,241,0.15); }
-.grp-card-chevron { color: #d1d5db; font-size: 16px; margin-top: 2px; }
 
-/* ── DISCOVER FRAMES ── */
-.grp-discover-frame { display: none; margin-top: 8px; }
-.grp-discover-frame.active { display: block; }
-
-/* ── EMPTY ── */
-.grp-empty {
-    text-align: center; padding: 70px 20px;
-    background: white; border-radius: 24px;
-    border: 1px solid rgba(0,0,0,0.05);
-    box-shadow: 0 2px 12px rgba(0,0,0,0.05);
+/* ── RIGHT PANEL STATES ── */
+.grp-right-welcome {
+    flex: 1; display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 16px; text-align: center; padding: 40px;
 }
-.grp-empty-icon { font-size: 56px; margin-bottom: 16px; animation: floatEmpty 3s ease-in-out infinite; }
-@@keyframes floatEmpty { 0%,100%{transform:translateY(0);} 50%{transform:translateY(-8px);} }
-.grp-empty-title { font-size: 18px; font-weight: 800; color: #111827; margin: 0 0 8px; }
-.grp-empty-sub { font-size: 13px; color: #9ca3af; margin: 0 0 24px; line-height: 1.6; }
+.grp-right-welcome-orb {
+    width: 100px; height: 100px; border-radius: 30px;
+    background: linear-gradient(135deg, rgba(99,102,241,0.15), rgba(37,99,235,0.1));
+    border: 1px solid rgba(99,102,241,0.2);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 44px; animation: orbFloat 4s ease-in-out infinite;
+    box-shadow: 0 0 60px rgba(99,102,241,0.1);
+}
+@@keyframes orbFloat { 0%,100%{transform:translateY(0);} 50%{transform:translateY(-8px);} }
+.grp-right-welcome-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 22px; font-weight: 800; color: var(--text);
+}
+.grp-right-welcome-sub { font-size: 14px; color: var(--muted); max-width: 280px; line-height: 1.6; }
+.grp-right-welcome-hint {
+    display: flex; align-items: center; gap: 8px;
+    padding: 10px 18px; border-radius: 14px;
+    background: rgba(255,255,255,0.04); border: 1px solid var(--border);
+    font-size: 13px; color: var(--muted);
+}
+
+/* IFRAME CHAT */
+.grp-chat-frame {
+    flex: 1; width: 100%; height: 100%; border: none;
+    display: none;
+}
+
+/* ── DISCOVER CONTENT ── */
+.grp-discover-wrap {
+    flex: 1; overflow-y: auto; padding: 16px;
+    display: none;
+}
+.grp-discover-wrap.active { display: block; }
+.grp-discover-wrap::-webkit-scrollbar { width: 4px; }
+.grp-discover-wrap::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
+
+/* ── LEFT FOOTER ── */
+.grp-left-footer {
+    padding: 12px 16px;
+    border-top: 1px solid var(--border);
+    flex-shrink: 0;
+}
+.grp-stats-mini {
+    display: flex; gap: 0;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--border); border-radius: 12px; overflow: hidden;
+}
+.grp-stat-mini {
+    flex: 1; padding: 9px 6px; text-align: center; position: relative;
+}
+.grp-stat-mini:not(:last-child)::after {
+    content: ''; position: absolute; right: 0; top: 20%; height: 60%;
+    width: 1px; background: var(--border);
+}
+.grp-stat-mini-num { font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 800; color: var(--text); display: block; }
+.grp-stat-mini-label { font-size: 9px; color: var(--muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+
+/* ── EMPTY STATE ── */
+.grp-empty-state {
+    display: flex; flex-direction: column; align-items: center;
+    justify-content: center; gap: 12px; padding: 40px 20px;
+    text-align: center;
+}
+.grp-empty-icon { font-size: 48px; animation: orbFloat 3s ease-in-out infinite; }
+.grp-empty-title { font-size: 16px; font-weight: 700; color: var(--text); }
+.grp-empty-sub { font-size: 13px; color: var(--muted); line-height: 1.6; }
 .grp-empty-btn {
-    display: inline-flex; align-items: center; gap: 8px;
-    padding: 12px 24px; border-radius: 14px; border: none;
-    background: linear-gradient(135deg, #6366f1, #4f46e5);
-    color: white; font-size: 14px; font-weight: 700;
-    text-decoration: none; cursor: pointer; transition: 0.2s;
-    box-shadow: 0 6px 18px rgba(99,102,241,0.35);
+    padding: 10px 20px; border-radius: 12px; border: none;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    color: white; font-size: 13px; font-weight: 700;
+    cursor: pointer; font-family: inherit; transition: 0.2s;
+    text-decoration: none; display: inline-flex; align-items: center; gap: 6px;
+    box-shadow: 0 4px 14px rgba(99,102,241,0.35);
 }
 .grp-empty-btn:hover { transform: translateY(-2px); color: white; }
 
-/* ── DARK ── */
-body.bg-dark .grp-card { background: #1e293b !important; border-color: #2d3748 !important; }
-body.bg-dark .grp-name { color: #f1f5f9 !important; }
-body.bg-dark .grp-search { background: #1e293b !important; border-color: #2d3748 !important; color: #f1f5f9 !important; }
-body.bg-dark .grp-empty { background: #1e293b !important; border-color: #2d3748 !important; }
-body.bg-dark .grp-empty-title { color: #f1f5f9 !important; }
-body.bg-dark .grp-section-label { color: #475569 !important; }
-body.bg-dark .grp-section-label::after { background: #2d3748 !important; }
-body.bg-dark .grp-card-chevron { color: #334155 !important; }
-body.bg-dark .grp-last-msg { color: #64748b !important; }
-body.bg-dark .grp-last-msg.unread { color: #94a3b8 !important; }
-
-@@media (max-width: 640px) {
-    .grp-hero { padding: 20px 18px; }
-    .grp-hero-counter { width: 100%; }
-    .grp-create-btn span { display: none; }
-    .grp-tab { font-size: 11px; padding: 8px 6px; }
+/* ── MOBILE ── */
+@@media (max-width: 768px) {
+    .grp-layout {
+        height: calc(100vh - 70px);
+        border-radius: 0;
+        border: none;
+        box-shadow: none;
+    }
+    .grp-left {
+        width: 100%;
+        display: flex;
+    }
+    .grp-right {
+        display: none !important;
+    }
+    .grp-item {
+        text-decoration: none;
+    }
 }
+
+@@media (min-width: 769px) {
+    .grp-item {
+        cursor: pointer;
+    }
+}
+
+/* ── LOADING SKELETON ── */
+.grp-skeleton {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 14px; margin: 1px 8px;
+}
+.grp-skeleton-avatar {
+    width: 48px; height: 48px; border-radius: 14px;
+    background: linear-gradient(90deg, rgba(255,255,255,0.04) 25%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.04) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite; flex-shrink: 0;
+}
+.grp-skeleton-lines { flex: 1; display: flex; flex-direction: column; gap: 7px; }
+.grp-skeleton-line {
+    height: 10px; border-radius: 6px;
+    background: linear-gradient(90deg, rgba(255,255,255,0.04) 25%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.04) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+}
+.grp-skeleton-line.short { width: 60%; }
+@@keyframes shimmer { 0%{background-position:200% 0;} 100%{background-position:-200% 0;} }
+
+/* NOTIF BANNER */
+.grp-notif-banner {
+    margin: 8px 16px; padding: 10px 14px;
+    background: rgba(99,102,241,0.08);
+    border: 1px solid rgba(99,102,241,0.2);
+    border-radius: 12px; font-size: 12px; color: #818cf8;
+    font-weight: 600; display: flex; align-items: center; gap: 8px;
+    cursor: pointer; transition: 0.15s;
+}
+.grp-notif-banner:hover { background: rgba(99,102,241,0.12); }
+
+/* REQUEST NOTIF */
+.grp-join-request-banner {
+    margin: 8px 16px; padding: 10px 14px;
+    background: rgba(245,158,11,0.08);
+    border: 1px solid rgba(245,158,11,0.2);
+    border-radius: 12px; font-size: 12px; color: #fbbf24;
+    font-weight: 600; display: flex; align-items: center; gap: 8px;
+    cursor: pointer; transition: 0.15s; text-decoration: none;
+}
+.grp-join-request-banner:hover { background: rgba(245,158,11,0.12); }
 </style>
 
-<div class="grp-page">
+<div class="grp-layout">
 
-    <!-- HERO -->
-    <div class="grp-hero">
-        <div class="grp-hero-top">
-            <div class="grp-hero-left">
-                <div class="grp-hero-icon">👥</div>
-                <div>
-                    <div class="grp-hero-title">Grupos</div>
-                    <div class="grp-hero-sub">Grupos, canales y comunidades</div>
+    <!-- ═══ LEFT PANEL ═══ -->
+    <div class="grp-left">
+
+        <!-- HEADER -->
+        <div class="grp-left-header">
+            <div class="grp-left-header-top">
+                <div class="grp-left-title">
+                    Grupos
+                    @if (totalUnread > 0)
+                    {
+                        <span class="grp-left-title-badge">@totalUnread nuevo@(totalUnread != 1 ? "s" : "")</span>
+                    }
                 </div>
+                <a asp-controller="Group" asp-action="Create" class="grp-create-btn" title="Crear grupo">➕</a>
             </div>
-            <a asp-controller="Group" asp-action="Create" class="grp-create-btn">
-                ➕ <span>Crear</span>
-            </a>
-        </div>
-
-        <div class="grp-tabs">
-            <button class="grp-tab active" onclick="switchTab('mis', this)">💬 Mis grupos</button>
-            <button class="grp-tab" onclick="switchTab('descubrir', this)">🌍 Descubrir</button>
-            <button class="grp-tab" onclick="switchTab('canales', this)">📢 Canales</button>
-        </div>
-
-        <div class="grp-hero-counter">
-            <div class="grp-hero-counter-dot"></div>
-            <div class="grp-hero-counter-num">@totalGroups</div>
-            <div class="grp-hero-counter-text">grupo@(totalGroups != 1 ? "s" : "") activo@(totalGroups != 1 ? "s" : "")</div>
-        </div>
-    </div>
-
-    <!-- MIS GRUPOS -->
-    <div id="section-mis">
-        @if (Model == null || !Model.Any())
-        {
-            <div class="grp-empty">
-                <div class="grp-empty-icon">👥</div>
-                <div class="grp-empty-title">No tienes grupos todavía</div>
-                <div class="grp-empty-sub">Crea un grupo para chatear con varios amigos a la vez.<br>¡Invita a tus amigos y empieza la conversación!</div>
-                <a asp-controller="Group" asp-action="Create" class="grp-empty-btn">➕ Crear primer grupo</a>
-            </div>
-        }
-        else
-        {
             <div class="grp-search-wrap">
                 <span class="grp-search-icon">🔍</span>
-                <input type="text" class="grp-search" placeholder="Buscar grupos..."
-                       oninput="filtrarGrupos(this.value)" />
+                <input type="text" class="grp-search" placeholder="Buscar grupos..." oninput="filtrarGrupos(this.value)" />
             </div>
+            <div class="grp-tabs">
+                <button class="grp-tab active" onclick="switchTab('mis', this)" data-tab="mis">
+                    💬 Míos
+                    @if (totalUnread > 0)
+                    { <span class="grp-tab-badge">@totalUnread</span> }
+                </button>
+                <button class="grp-tab" onclick="switchTab('descubrir', this)" data-tab="descubrir">🌍 Explorar</button>
+                <button class="grp-tab" onclick="switchTab('canales', this)" data-tab="canales">📢 Canales</button>
+            </div>
+        </div>
 
-            <div class="grp-section-label">@totalGroups grupo@(totalGroups != 1 ? "s" : "")</div>
-
-            <div id="gruposList">
-                @foreach (var g in Model)
-                {
-                    var memberCount = g.Members?.Count(m => m.IsActive) ?? 0;
-                    var firstLetter = g.Name.Substring(0, 1).ToUpper();
-                    var isAdmin = g.CreatorId == myId || (g.Members?.Any(m => m.UserId == myId && m.Role == "Admin" && m.IsActive) ?? false);
-                    var bannerColor = bannerColors[idx % bannerColors.Length];
-                    var avatarGrad = avatarGradients[idx % avatarGradients.Length];
-
-                    var lastMsg = db.GroupMessages
-                        .Where(m => m.GroupId == g.Id && !m.IsDeleted)
-                        .OrderByDescending(m => m.SentAt)
-                        .Select(m => new { m.Content, m.SentAt, m.IsSystem, m.SenderId, m.FileUrl })
-                        .FirstOrDefault();
-
-                    string lastMsgText = "Toca para abrir el chat";
-                    if (lastMsg != null)
-                    {
-                        if (lastMsg.IsSystem)
-                            lastMsgText = lastMsg.Content ?? "";
-                        else if (!string.IsNullOrEmpty(lastMsg.Content) &&
-                                 (lastMsg.Content.Contains("cloudinary") || lastMsg.Content.EndsWith(".webm")))
-                            lastMsgText = "🎤 Mensaje de voz";
-                        else if (!string.IsNullOrEmpty(lastMsg.FileUrl) && lastMsg.FileUrl.Contains("/image/upload/"))
-                            lastMsgText = "📷 Imagen";
-                        else if (!string.IsNullOrEmpty(lastMsg.FileUrl) && lastMsg.FileUrl.Contains("/video/upload/"))
-                            lastMsgText = "🎥 Video";
-                        else
-                            lastMsgText = lastMsg.Content?.Length > 45
-                                ? lastMsg.Content.Substring(0, 45) + "..." : lastMsg.Content ?? "";
+        <!-- MIS GRUPOS LIST -->
+        <div class="grp-list-wrap" id="section-mis">
+            @if (Model == null || !Model.Any())
+            {
+                <div class="grp-empty-state">
+                    <div class="grp-empty-icon">👥</div>
+                    <div class="grp-empty-title">Sin grupos todavía</div>
+                    <div class="grp-empty-sub">Crea un grupo o únete a uno para empezar a chatear</div>
+                    <a asp-controller="Group" asp-action="Create" class="grp-empty-btn">➕ Crear grupo</a>
+                </div>
+            }
+            else
+            {
+                <div id="gruposList">
+                    @{
+                        var misGrupos = Model.Where(g => g.Type == "private").ToList();
+                        var publicosUnido = Model.Where(g => g.Type == "public").ToList();
+                        var canales = Model.Where(g => g.Type == "channel").ToList();
                     }
 
-                    string timeLabel = "";
-                    if (lastMsg != null)
+                    @if (misGrupos.Any())
                     {
-                        var diff = DateTime.UtcNow - lastMsg.SentAt;
-                        if (diff.TotalMinutes < 1) timeLabel = "ahora";
-                        else if (diff.TotalMinutes < 60) timeLabel = $"{(int)diff.TotalMinutes}m";
-                        else if (diff.TotalHours < 24) timeLabel = $"{(int)diff.TotalHours}h";
-                        else if (diff.TotalDays < 7) timeLabel = lastMsg.SentAt.ToLocalTime().ToString("ddd");
-                        else timeLabel = lastMsg.SentAt.ToLocalTime().ToString("dd MMM");
+                        <div class="grp-list-section-label">Privados</div>
+                        @foreach (var g in misGrupos)
+                        {
+                            var firstLetter = g.Name.Substring(0, 1).ToUpper();
+                            var isAdminG = g.CreatorId == myId || (g.Members?.Any(m => m.UserId == myId && m.Role == "Admin" && m.IsActive) ?? false);
+                            var avatarGrad = avatarGradients[idx % avatarGradients.Length];
+                            var unreadCount = unreadByGroup.ContainsKey(g.Id) ? unreadByGroup[g.Id] : 0;
+                            var lastMsg = db.GroupMessages.Where(m => m.GroupId == g.Id && !m.IsDeleted).OrderByDescending(m => m.SentAt).Select(m => new { m.Content, m.SentAt, m.IsSystem, m.SenderId, m.FileUrl }).FirstOrDefault();
+                            string previewText = "Toca para abrir";
+                            if (lastMsg != null) {
+                                if (lastMsg.IsSystem) previewText = lastMsg.Content ?? "";
+                                else if (!string.IsNullOrEmpty(lastMsg.FileUrl) && lastMsg.FileUrl.Contains("/image/upload/")) previewText = "📷 Imagen";
+                                else if (!string.IsNullOrEmpty(lastMsg.FileUrl) && lastMsg.FileUrl.Contains("/video/upload/")) previewText = "🎥 Video";
+                                else if (!string.IsNullOrEmpty(lastMsg.Content) && (lastMsg.Content.Contains("cloudinary") || lastMsg.Content.EndsWith(".webm"))) previewText = "🎤 Audio";
+                                else previewText = (lastMsg.SenderId == myId ? "Tú: " : "") + (lastMsg.Content?.Length > 40 ? lastMsg.Content.Substring(0, 40) + "..." : lastMsg.Content ?? "");
+                            }
+                            string timeLabel = "";
+                            if (lastMsg != null) { var diff = DateTime.UtcNow - lastMsg.SentAt; timeLabel = diff.TotalMinutes < 1 ? "ahora" : diff.TotalMinutes < 60 ? $"{(int)diff.TotalMinutes}m" : diff.TotalHours < 24 ? $"{(int)diff.TotalHours}h" : diff.TotalDays < 7 ? lastMsg.SentAt.ToLocalTime().ToString("ddd") : lastMsg.SentAt.ToLocalTime().ToString("dd MMM"); }
+                            idx++;
+                            <div class="grp-item" id="grp-item-@g.Id" data-name="@g.Name.ToLower()" data-id="@g.Id" onclick="abrirGrupo(@g.Id, this)">
+                                <div class="grp-item-avatar" style="background:@avatarGrad;">
+                                    @if (!string.IsNullOrEmpty(g.ImageUrl)) { <img src="@g.ImageUrl" /> }
+                                    else { @firstLetter }
+                                </div>
+                                <div class="grp-item-info">
+                                    <div class="grp-item-name">@g.Name @(isAdminG ? "👑" : "")</div>
+                                    <div class="grp-item-preview @(unreadCount > 0 ? "unread" : "")">@previewText</div>
+                                </div>
+                                <div class="grp-item-right">
+                                    @if (!string.IsNullOrEmpty(timeLabel))
+                                    { <span class="grp-item-time @(unreadCount > 0 ? "unread" : "")">@timeLabel</span> }
+                                    @if (unreadCount > 0)
+                                    { <span class="grp-item-badge">@(unreadCount > 99 ? "99+" : unreadCount.ToString())</span> }
+                                </div>
+                            </div>
+                        }
                     }
 
-                    bool isMine = lastMsg?.SenderId == myId;
-                    string typeBadge = g.Type == "channel" ? "📢" : g.Type == "public" ? "🌍" : "";
-                  
-                    idx++;
-var unreadByGroup2 = ViewBag.UnreadByGroup as Dictionary<int, int> ?? new Dictionary<int, int>();
-var unreadCount = unreadByGroup2.ContainsKey(g.Id) ? unreadByGroup2[g.Id] : 0;
+                    @if (publicosUnido.Any())
+                    {
+                        <div class="grp-list-section-label">Públicos</div>
+                        @foreach (var g in publicosUnido)
+                        {
+                            var firstLetter = g.Name.Substring(0, 1).ToUpper();
+                            var avatarGrad = avatarGradients[idx % avatarGradients.Length];
+                            var unreadCount = unreadByGroup.ContainsKey(g.Id) ? unreadByGroup[g.Id] : 0;
+                            var lastMsg = db.GroupMessages.Where(m => m.GroupId == g.Id && !m.IsDeleted).OrderByDescending(m => m.SentAt).Select(m => new { m.Content, m.SentAt, m.IsSystem, m.SenderId, m.FileUrl }).FirstOrDefault();
+                            string previewText = "Toca para abrir";
+                            if (lastMsg != null) { if (lastMsg.IsSystem) previewText = lastMsg.Content ?? ""; else if (!string.IsNullOrEmpty(lastMsg.FileUrl) && lastMsg.FileUrl.Contains("/image/upload/")) previewText = "📷 Imagen"; else previewText = (lastMsg.Content?.Length > 40 ? lastMsg.Content.Substring(0, 40) + "..." : lastMsg.Content ?? ""); }
+                            string timeLabel = "";
+                            if (lastMsg != null) { var diff = DateTime.UtcNow - lastMsg.SentAt; timeLabel = diff.TotalMinutes < 1 ? "ahora" : diff.TotalMinutes < 60 ? $"{(int)diff.TotalMinutes}m" : diff.TotalHours < 24 ? $"{(int)diff.TotalHours}h" : lastMsg.SentAt.ToLocalTime().ToString("ddd"); }
+                            idx++;
+                            <div class="grp-item" id="grp-item-@g.Id" data-name="@g.Name.ToLower()" data-id="@g.Id" onclick="abrirGrupo(@g.Id, this)">
+                                <div class="grp-item-avatar" style="background:@avatarGrad;">
+                                    @if (!string.IsNullOrEmpty(g.ImageUrl)) { <img src="@g.ImageUrl" /> }
+                                    else { <text>🌍</text> }
+                                </div>
+                                <div class="grp-item-info">
+                                    <div class="grp-item-name">@g.Name</div>
+                                    <div class="grp-item-preview @(unreadCount > 0 ? "unread" : "")">@previewText</div>
+                                </div>
+                                <div class="grp-item-right">
+                                    @if (!string.IsNullOrEmpty(timeLabel))
+                                    { <span class="grp-item-time @(unreadCount > 0 ? "unread" : "")">@timeLabel</span> }
+                                    @if (unreadCount > 0)
+                                    { <span class="grp-item-badge">@(unreadCount > 99 ? "99+" : unreadCount.ToString())</span> }
+                                </div>
+                            </div>
+                        }
+                    }
 
-                    <a asp-controller="Group" asp-action="Chat" asp-route-id="@g.Id"
-                       class="grp-card" data-name="@g.Name.ToLower()">
-                        <div class="grp-card-banner" style="background:@bannerColor;"></div>
-                        <div class="grp-card-inner">
-                            <div class="grp-avatar" style="background:@avatarGrad;">
-                                @if (!string.IsNullOrEmpty(g.ImageUrl))
-                                { <img src="@g.ImageUrl" /> }
-                                else { @firstLetter }
-                            </div>
-                            <div class="grp-info">
-                                <div class="grp-name">
-                                    @if (!string.IsNullOrEmpty(typeBadge))
-                                    { <span style="margin-right:4px;">@typeBadge</span> }
-                                    @g.Name
+                    @if (canales.Any())
+                    {
+                        <div class="grp-list-section-label">Canales</div>
+                        @foreach (var g in canales)
+                        {
+                            var firstLetter = g.Name.Substring(0, 1).ToUpper();
+                            var avatarGrad = avatarGradients[idx % avatarGradients.Length];
+                            var unreadCount = unreadByGroup.ContainsKey(g.Id) ? unreadByGroup[g.Id] : 0;
+                            var lastMsg = db.GroupMessages.Where(m => m.GroupId == g.Id && !m.IsDeleted).OrderByDescending(m => m.SentAt).Select(m => new { m.Content, m.SentAt, m.IsSystem, m.SenderId, m.FileUrl }).FirstOrDefault();
+                            string previewText = "Canal oficial";
+                            if (lastMsg != null) { previewText = lastMsg.Content?.Length > 40 ? lastMsg.Content.Substring(0, 40) + "..." : lastMsg.Content ?? ""; }
+                            string timeLabel = "";
+                            if (lastMsg != null) { var diff = DateTime.UtcNow - lastMsg.SentAt; timeLabel = diff.TotalMinutes < 60 ? $"{(int)diff.TotalMinutes}m" : $"{(int)diff.TotalHours}h"; }
+                            idx++;
+                            <div class="grp-item" id="grp-item-@g.Id" data-name="@g.Name.ToLower()" data-id="@g.Id" onclick="abrirGrupo(@g.Id, this)">
+                                <div class="grp-item-avatar" style="background:linear-gradient(135deg,#f59e0b,#d97706);">
+                                    @if (!string.IsNullOrEmpty(g.ImageUrl)) { <img src="@g.ImageUrl" /> }
+                                    else { <text>📢</text> }
                                 </div>
-                             <div class="grp-last-msg @(unreadCount > 0 ? "unread" : "")">
-                                    @if (isMine && lastMsg != null && !lastMsg.IsSystem) { <text>Tú: </text> }
-                                    @lastMsgText
+                                <div class="grp-item-info">
+                                    <div class="grp-item-name">@g.Name</div>
+                                    <div class="grp-item-preview">@previewText</div>
+                                </div>
+                                <div class="grp-item-right">
+                                    @if (!string.IsNullOrEmpty(timeLabel))
+                                    { <span class="grp-item-time">@timeLabel</span> }
+                                    @if (unreadCount > 0)
+                                    { <span class="grp-item-badge">@(unreadCount > 99 ? "99+" : unreadCount.ToString())</span> }
                                 </div>
                             </div>
-             
-<div class="grp-card-right">
-    @if (!string.IsNullOrEmpty(timeLabel))
-    { <span class="grp-time" style="@(unreadCount > 0 ? "color:#6366f1;font-weight:700;" : "")">@timeLabel</span> }
-    @if (unreadCount > 0)
-    {
-        <span style="background:#6366f1;color:white;font-size:11px;font-weight:800;padding:2px 8px;border-radius:20px;min-width:20px;text-align:center;">
-            @(unreadCount > 99 ? "99+" : unreadCount.ToString())
-        </span>
-    }
-    else if (isAdmin)
-    { <span class="grp-role-badge admin">👑 Admin</span> }
-    else
-    { <span class="grp-role-badge member">💬 Miembro</span> }
-    <span class="grp-card-chevron">›</span>
-</div>
-                        </div>
-                    </a>
-                }
+                        }
+                    }
+                </div>
+            }
+        </div>
+
+        <!-- DESCUBRIR -->
+        <div class="grp-list-wrap" id="section-descubrir" style="display:none;">
+            <div id="tab-descubrir-content" style="padding:8px;">
+                <div style="text-align:center;padding:40px 20px;color:var(--muted);font-size:14px;">⏳ Cargando...</div>
             </div>
-        }
+        </div>
+
+        <!-- CANALES -->
+        <div class="grp-list-wrap" id="section-canales" style="display:none;">
+            <div id="tab-canales-content" style="padding:8px;">
+                <div style="text-align:center;padding:40px 20px;color:var(--muted);font-size:14px;">⏳ Cargando...</div>
+            </div>
+        </div>
+
+        <!-- FOOTER STATS -->
+        <div class="grp-left-footer">
+            <div class="grp-stats-mini">
+                <div class="grp-stat-mini">
+                    <span class="grp-stat-mini-num">@totalGroups</span>
+                    <span class="grp-stat-mini-label">Grupos</span>
+                </div>
+                <div class="grp-stat-mini">
+                    <span class="grp-stat-mini-num">@totalUnread</span>
+                    <span class="grp-stat-mini-label">No leídos</span>
+                </div>
+                <div class="grp-stat-mini">
+                    <span class="grp-stat-mini-num">@(Model?.Count(g => g.CreatorId == myId) ?? 0)</span>
+                    <span class="grp-stat-mini-label">Creados</span>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <!-- DESCUBRIR -->
-    <div class="grp-discover-frame" id="tab-descubrir"></div>
+    <!-- ═══ RIGHT PANEL ═══ -->
+    <div class="grp-right" id="grpRight">
 
-    <!-- CANALES -->
-    <div class="grp-discover-frame" id="tab-canales"></div>
+        <!-- WELCOME STATE -->
+        <div class="grp-right-welcome" id="grpWelcome">
+            <div class="grp-right-welcome-orb">💬</div>
+            <div class="grp-right-welcome-title">Selecciona un grupo</div>
+            <div class="grp-right-welcome-sub">Elige un grupo de la lista para empezar a chatear o explorar.</div>
+            <div class="grp-right-welcome-hint">
+                <span>💡</span>
+                <span>También puedes crear un nuevo grupo con el botón ➕</span>
+            </div>
+            @if (totalUnread > 0)
+            {
+                <div style="background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.2);border-radius:14px;padding:12px 18px;font-size:13px;color:#818cf8;font-weight:600;">
+                    📩 Tienes @totalUnread mensaje@(totalUnread != 1 ? "s" : "") sin leer
+                </div>
+            }
+        </div>
+
+        <!-- IFRAME PARA CHAT -->
+        <iframe id="grpChatFrame" class="grp-chat-frame" src="" frameborder="0"></iframe>
+
+    </div>
 
 </div>
 
-<script>
+<!-- ANUNCIO PRIMERA VEZ -->
+<div id="welcomeGroupsOverlay" style="display:none;position:fixed;inset:0;z-index:999999;background:rgba(0,0,0,0.75);backdrop-filter:blur(8px);align-items:center;justify-content:center;padding:20px;">
+    <div style="background:linear-gradient(135deg,#0f172a,#1e293b);border:1px solid rgba(255,255,255,0.08);border-radius:28px;max-width:420px;width:100%;padding:36px 32px;box-shadow:0 30px 80px rgba(0,0,0,0.6);position:relative;">
+        <div style="font-size:48px;text-align:center;margin-bottom:16px;">👥</div>
+        <h3 style="color:white;font-size:20px;font-weight:800;text-align:center;margin:0 0 8px;font-family:'Syne',sans-serif;">Bienvenido a Grupos</h3>
+        <p style="color:rgba(255,255,255,0.45);font-size:13px;text-align:center;margin:0 0 24px;line-height:1.6;">Los grupos son espacios para conectar con otros. Úsalos con responsabilidad.</p>
+        <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:28px;">
+            <div style="display:flex;align-items:flex-start;gap:12px;background:rgba(255,255,255,0.04);padding:12px 14px;border-radius:14px;border:1px solid rgba(255,255,255,0.06);">
+                <span style="font-size:18px;flex-shrink:0;">⚠️</span>
+                <span style="color:rgba(255,255,255,0.7);font-size:13px;line-height:1.5;">No compartas información personal como dirección, teléfono o datos bancarios en grupos.</span>
+            </div>
+            <div style="display:flex;align-items:flex-start;gap:12px;background:rgba(255,255,255,0.04);padding:12px 14px;border-radius:14px;border:1px solid rgba(255,255,255,0.06);">
+                <span style="font-size:18px;flex-shrink:0;">🚫</span>
+                <span style="color:rgba(255,255,255,0.7);font-size:13px;line-height:1.5;">Nadie del equipo de HabitTracker pedirá contraseñas. Repórtalo si sucede.</span>
+            </div>
+            <div style="display:flex;align-items:flex-start;gap:12px;background:rgba(99,102,241,0.08);padding:12px 14px;border-radius:14px;border:1px solid rgba(99,102,241,0.2);">
+                <span style="font-size:18px;flex-shrink:0;">🤖</span>
+                <span style="color:rgba(255,255,255,0.7);font-size:13px;line-height:1.5;">Contamos con <strong style="color:#818cf8;">IA y moderadores</strong> monitoreando los grupos activamente.</span>
+            </div>
+        </div>
+        <button onclick="cerrarAnuncioGrupos()" style="width:100%;padding:14px;border-radius:14px;border:none;background:linear-gradient(135deg,#6366f1,#2563eb);color:white;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;">
+            ✅ Entendido, continuar
+        </button>
+    </div>
+</div>
+
+                <script>
+const myId = @myId;
+let activeGroupId = null;
+let discoverLoaded = false;
+let canalesLoaded = false;
+const isMobile = window.innerWidth <= 768;
+
+// ── ABRIR GRUPO ──
+function abrirGrupo(groupId, el) {
+    if (isMobile) {
+        // en móvil navegar directamente
+        window.location.href = '/Group/Chat/' + groupId;
+        return;
+    }
+
+    // marcar activo
+    document.querySelectorAll('.grp-item').forEach(i => i.classList.remove('active'));
+    if (el) el.classList.add('active');
+    activeGroupId = groupId;
+
+    // ocultar welcome, mostrar iframe
+    document.getElementById('grpWelcome').style.display = 'none';
+    const frame = document.getElementById('grpChatFrame');
+    frame.style.display = 'block';
+    frame.src = '/Group/Chat/' + groupId + '?embedded=true';
+
+    // limpiar badge de no leídos del item
+    const badge = el?.querySelector('.grp-item-badge');
+    if (badge) badge.remove();
+    const timeEl = el?.querySelector('.grp-item-time');
+    if (timeEl) timeEl.classList.remove('unread');
+    const preview = el?.querySelector('.grp-item-preview');
+    if (preview) preview.classList.remove('unread');
+}
+
+// ── FILTRAR GRUPOS ──
 function filtrarGrupos(q) {
     q = q.toLowerCase().trim();
     let visible = 0;
-    document.querySelectorAll(".grp-card").forEach(card => {
-        const name = card.getAttribute("data-name") ?? "";
+    document.querySelectorAll('.grp-item').forEach(item => {
+        const name = item.getAttribute('data-name') || '';
         const show = !q || name.includes(q);
-        card.style.display = show ? "flex" : "none";
+        item.style.display = show ? 'flex' : 'none';
         if (show) visible++;
     });
-    let empty = document.getElementById("grpSearchEmpty");
+    document.querySelectorAll('.grp-list-section-label').forEach(l => {
+        l.style.display = q ? 'none' : '';
+    });
+    let empty = document.getElementById('grpSearchEmpty');
     if (visible === 0 && q) {
         if (!empty) {
-            empty = document.createElement("div");
-            empty.id = "grpSearchEmpty";
-            empty.style.cssText = "text-align:center;padding:40px 20px;color:#9ca3af;font-family:'Plus Jakarta Sans',sans-serif;";
-            empty.innerHTML = `<div style="font-size:36px;margin-bottom:10px;">🔍</div><div style="font-weight:700;color:#374151;font-size:15px;">Sin resultados para "${q}"</div>`;
-            document.getElementById("gruposList")?.appendChild(empty);
+            empty = document.createElement('div');
+            empty.id = 'grpSearchEmpty';
+            empty.className = 'grp-empty-state';
+            empty.innerHTML = `<div class="grp-empty-icon">🔍</div><div class="grp-empty-title">Sin resultados</div><div class="grp-empty-sub">No hay grupos que coincidan con "${q}"</div>`;
+            document.getElementById('gruposList')?.appendChild(empty);
         }
     } else { empty?.remove(); }
 }
 
-let discoverLoaded = false;
-let canalesLoaded = false;
-
+// ── SWITCH TABS ──
 function switchTab(tab, btn) {
     document.querySelectorAll('.grp-tab').forEach(t => t.classList.remove('active'));
     btn.classList.add('active');
 
-    const sectionMis = document.getElementById('section-mis');
-    const tabDescubrir = document.getElementById('tab-descubrir');
-    const tabCanales = document.getElementById('tab-canales');
-
-    sectionMis.style.display = 'none';
-    tabDescubrir.classList.remove('active');
-    tabCanales.classList.remove('active');
+    // ocultar todas las secciones del left
+    document.getElementById('section-mis').style.display = 'none';
+    document.getElementById('section-descubrir').style.display = 'none';
+    document.getElementById('section-canales').style.display = 'none';
 
     if (tab === 'mis') {
-        sectionMis.style.display = 'block';
+        document.getElementById('section-mis').style.display = 'flex';
+        document.getElementById('section-mis').style.flexDirection = 'column';
+
     } else if (tab === 'descubrir') {
-        tabDescubrir.classList.add('active');
+        document.getElementById('section-descubrir').style.display = 'block';
         if (!discoverLoaded) {
             discoverLoaded = true;
-            tabDescubrir.innerHTML = '<div style="text-align:center;padding:40px;color:#9ca3af;font-size:14px;">⏳ Cargando...</div>';
             fetch('/Group/DiscoverPartial?type=public')
                 .then(r => r.text())
-                .then(html => { tabDescubrir.innerHTML = html; });
+                .then(html => { document.getElementById('tab-descubrir-content').innerHTML = html; });
         }
+        // en desktop mostrar en panel derecho
+        if (!isMobile) {
+            document.getElementById('grpWelcome').style.display = 'flex';
+            document.getElementById('grpChatFrame').style.display = 'none';
+        }
+
     } else if (tab === 'canales') {
-        tabCanales.classList.add('active');
+        document.getElementById('section-canales').style.display = 'block';
         if (!canalesLoaded) {
             canalesLoaded = true;
-            tabCanales.innerHTML = '<div style="text-align:center;padding:40px;color:#9ca3af;font-size:14px;">⏳ Cargando...</div>';
             fetch('/Group/DiscoverPartial?type=channel')
                 .then(r => r.text())
-                .then(html => { tabCanales.innerHTML = html; });
+                .then(html => { document.getElementById('tab-canales-content').innerHTML = html; });
+        }
+        if (!isMobile) {
+            document.getElementById('grpWelcome').style.display = 'flex';
+            document.getElementById('grpChatFrame').style.display = 'none';
         }
     }
 }
+
+// inicializar section-mis visible
+document.getElementById('section-mis').style.display = 'flex';
+document.getElementById('section-mis').style.flexDirection = 'column';
+
+// ── SOLICITAR UNIRSE (para discover) ──
 async function solicitarUnirse(groupId, btn) {
-    btn.disabled = true;
-    btn.textContent = '⏳';
+    btn.disabled = true; btn.textContent = '⏳';
     try {
         const res = await fetch('/Group/RequestJoin', {
             method: 'POST',
@@ -484,61 +722,76 @@ async function solicitarUnirse(groupId, btn) {
         const data = await res.json();
         if (data.success) {
             if (data.joined) {
-                btn.outerHTML = '<a href="/Group/Chat/' + groupId + '" style="display:inline-flex;align-items:center;gap:5px;padding:9px 16px;border-radius:12px;background:rgba(99,102,241,0.15);color:#818cf8;font-size:12px;font-weight:700;text-decoration:none;border:1px solid rgba(99,102,241,0.2);">💬 Abrir</a>';
+                btn.outerHTML = `<button onclick="abrirGrupo(${groupId}, null)" style="padding:9px 16px;border-radius:12px;background:rgba(99,102,241,0.15);color:#818cf8;font-size:12px;font-weight:700;border:1px solid rgba(99,102,241,0.2);cursor:pointer;">💬 Abrir</button>`;
             } else {
                 btn.outerHTML = '<button disabled style="padding:9px 16px;border-radius:12px;background:rgba(251,191,36,0.1);color:#fbbf24;font-size:12px;font-weight:700;border:1px solid rgba(251,191,36,0.2);cursor:not-allowed;">⏳ Pendiente</button>';
             }
         } else {
             alert(data.error ?? 'Error al enviar solicitud');
-            btn.disabled = false;
-            btn.textContent = '✋ Solicitar';
+            btn.disabled = false; btn.textContent = '✋ Solicitar';
         }
-    } catch(e) {
-        btn.disabled = false;
-        btn.textContent = '✋ Solicitar';
+    } catch {
+        btn.disabled = false; btn.textContent = '✋ Solicitar';
     }
 }
-// ══ ANUNCIO PRIMERA VEZ GRUPOS ══
+
+// ── ANUNCIO PRIMERA VEZ ──
 (function() {
     const key = 'ht_groups_welcome_seen_@(User.FindFirst("UserId")?.Value ?? "0")';
     if (localStorage.getItem(key)) return;
-
-    const overlay = document.createElement('div');
-    overlay.id = 'welcomeGroupsOverlay';
-    overlay.style.cssText = 'position:fixed;inset:0;z-index:999999;background:rgba(0,0,0,0.75);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;padding:20px;';
-
-    overlay.innerHTML = `
-        <div style="background:linear-gradient(135deg,#0f172a,#1e293b);border:1px solid rgba(255,255,255,0.08);border-radius:28px;max-width:420px;width:100%;padding:36px 32px;box-shadow:0 30px 80px rgba(0,0,0,0.6);position:relative;">
-            <div style="font-size:48px;text-align:center;margin-bottom:16px;">👥</div>
-            <h3 style="color:white;font-size:20px;font-weight:800;text-align:center;margin:0 0 8px;">Bienvenido a Grupos</h3>
-            <p style="color:rgba(255,255,255,0.45);font-size:13px;text-align:center;margin:0 0 24px;line-height:1.6;">Los grupos son espacios para conectar con otros. Úsalos con responsabilidad.</p>
-            <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:28px;">
-                <div style="display:flex;align-items:flex-start;gap:12px;background:rgba(255,255,255,0.04);padding:12px 14px;border-radius:14px;border:1px solid rgba(255,255,255,0.06);">
-                    <span style="font-size:18px;flex-shrink:0;">⚠️</span>
-                    <span style="color:rgba(255,255,255,0.7);font-size:13px;line-height:1.5;">Ten cuidado con grupos de personas que no conoces. No compartas información personal como dirección, teléfono o datos bancarios.</span>
-                </div>
-                <div style="display:flex;align-items:flex-start;gap:12px;background:rgba(255,255,255,0.04);padding:12px 14px;border-radius:14px;border:1px solid rgba(255,255,255,0.06);">
-                    <span style="font-size:18px;flex-shrink:0;">🚫</span>
-                    <span style="color:rgba(255,255,255,0.7);font-size:13px;line-height:1.5;">Nadie del equipo de HabitTracker te pedirá contraseñas o datos sensibles por un grupo. Si alguien lo hace, repórtalo inmediatamente.</span>
-                </div>
-                <div style="display:flex;align-items:flex-start;gap:12px;background:rgba(255,255,255,0.04);padding:12px 14px;border-radius:14px;border:1px solid rgba(255,255,255,0.06);">
-                    <span style="font-size:18px;flex-shrink:0;">🤝</span>
-                    <span style="color:rgba(255,255,255,0.7);font-size:13px;line-height:1.5;">Mantén un ambiente respetuoso. El acoso, spam o contenido inapropiado puede resultar en la suspensión de tu cuenta.</span>
-                </div>
-             
-            </div>
-            <button onclick="cerrarAnuncioGrupos()" style="width:100%;padding:14px;border-radius:14px;border:none;background:linear-gradient(135deg,#6366f1,#2563eb);color:white;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;">
-                ✅ Entendido, continuar
-            </button>
-        </div>
-    `;
-
-    document.body.appendChild(overlay);
-
-    window.cerrarAnuncioGrupos = function() {
-        localStorage.setItem(key, '1');
-        const el = document.getElementById('welcomeGroupsOverlay');
-        if (el) { el.style.opacity='0'; el.style.transition='opacity 0.3s'; setTimeout(() => el.remove(), 300); }
-    };
+    document.getElementById('welcomeGroupsOverlay').style.display = 'flex';
 })();
+
+window.cerrarAnuncioGrupos = function() {
+    const key = 'ht_groups_welcome_seen_@(User.FindFirst("UserId")?.Value ?? "0")';
+    localStorage.setItem(key, '1');
+    const el = document.getElementById('welcomeGroupsOverlay');
+    if (el) { el.style.opacity = '0'; el.style.transition = 'opacity 0.3s'; setTimeout(() => el.style.display = 'none', 300); }
+};
+
+// ── ABRIR PRIMER GRUPO CON NO LEÍDOS AL CARGAR ──
+document.addEventListener('DOMContentLoaded', () => {
+    if (isMobile) return;
+    // auto-abrir el grupo con más no leídos si hay
+    const itemConBadge = document.querySelector('.grp-item .grp-item-badge');
+    if (itemConBadge) {
+        const item = itemConBadge.closest('.grp-item');
+        const id = item?.getAttribute('data-id');
+        if (id) {
+            setTimeout(() => abrirGrupo(parseInt(id), item), 300);
+        }
+    }
+});
+
+// ── ESCUCHAR MENSAJES DEL IFRAME ──
+window.addEventListener('message', function(e) {
+    if (e.data?.type === 'newMessage' && e.data.groupId) {
+        const item = document.getElementById('grp-item-' + e.data.groupId);
+        if (item && e.data.groupId !== activeGroupId) {
+            // actualizar preview
+            const preview = item.querySelector('.grp-item-preview');
+            if (preview && e.data.content) {
+                preview.textContent = e.data.content;
+                preview.classList.add('unread');
+            }
+        }
+    }
+    if (e.data?.type === 'groupLeft') {
+        // salió del grupo desde el iframe
+        document.getElementById('grpWelcome').style.display = 'flex';
+        document.getElementById('grpChatFrame').style.display = 'none';
+        document.getElementById('grpChatFrame').src = '';
+        document.querySelectorAll('.grp-item').forEach(i => i.classList.remove('active'));
+        location.reload();
+    }
+});
+
+// ── RESIZE HANDLER ──
+window.addEventListener('resize', () => {
+    const mobile = window.innerWidth <= 768;
+    if (mobile && activeGroupId) {
+        // si achica la pantalla y hay un chat abierto, navegar a él
+        window.location.href = '/Group/Chat/' + activeGroupId;
+    }
+});
 </script>

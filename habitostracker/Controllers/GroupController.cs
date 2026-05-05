@@ -84,6 +84,26 @@ namespace HabitTrackerApp.Controllers
          link);
         }
 
+        [HttpPost]
+        public async Task<IActionResult> ToggleAdminOnly(int groupId)
+        {
+            var userId = int.Parse(User.FindFirst("UserId").Value);
+
+            var group = _context.Groups.FirstOrDefault(g => g.Id == groupId && g.IsActive);
+            if (group == null) return Json(new { success = false });
+
+            var isAdmin = _context.GroupMembers
+                .Any(m => m.GroupId == groupId && m.UserId == userId && m.Role == "Admin" && m.IsActive);
+
+            if (!isAdmin && group.CreatorId != userId)
+                return Json(new { success = false, error = "Sin permisos." });
+
+            group.IsAdminOnly = !group.IsAdminOnly;
+            await _context.SaveChangesAsync();
+
+            return Json(new { success = true, isAdminOnly = group.IsAdminOnly });
+        }
+
         [HttpGet]
         public IActionResult Index()
         {
