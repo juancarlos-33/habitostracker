@@ -268,7 +268,22 @@ else
                      ontouchend="cancelLongPress()"
                      ontouchmove="cancelLongPress()">
                     <div class="msg-content-wrap">
-                        <div class="msg-bubble @(isMe ? "bubble-mine" : "bubble-theirs")">
+                        <div class="msg-bubble @(isMe ? "bubble-mine" : "bubble-theirs")"
+                             data-msg-id="@msg.Id"
+                             data-sender-name="@(msg.Sender?.Username ?? "")"
+                             data-content-preview="@(msg.Content?.Length > 80 ? msg.Content.Substring(0,80) + "…" : msg.Content ?? "")">
+                            @if (msg.ReplyToMessageId.HasValue && msg.ReplyToMessage != null)
+                            {
+                                var replyText = !string.IsNullOrEmpty(msg.ReplyToMessage.FileUrl)
+                                    ? (msg.ReplyToMessage.FileUrl.Contains("/video/upload/") ? "🎥 Video" : "📷 Foto")
+                                    : (msg.ReplyToMessage.Content?.Length > 80
+                                        ? msg.ReplyToMessage.Content.Substring(0, 80) + "…"
+                                        : msg.ReplyToMessage.Content ?? "");
+                                <div class="msg-reply" onclick="scrollToMsg(@msg.ReplyToMessageId)">
+                                    <div class="msg-reply-name">@msg.ReplyToMessage.Sender?.Username</div>
+                                    <div class="msg-reply-text">@replyText</div>
+                                </div>
+                            }
                             @if (!string.IsNullOrEmpty(msg.Content))
                             {
                                 if (msg.Content.EndsWith(".jpg") || msg.Content.EndsWith(".png") || msg.Content.EndsWith(".jpeg"))
@@ -335,10 +350,19 @@ else
         </div>
     </div>
 
+    <div id="dmReplyPreview">
+        <div class="dm-reply-pv-content">
+            <div class="dm-reply-pv-name" id="dmReplyName"></div>
+            <div class="dm-reply-pv-text" id="dmReplyText"></div>
+        </div>
+        <button type="button" class="dm-reply-pv-close" onclick="cancelarReplyDM()" aria-label="Cancelar respuesta">✕</button>
+    </div>
+
     <form id="chatForm" asp-controller="Message" asp-action="Send" method="post"
           enctype="multipart/form-data" data-no-loader="true">
         @Html.AntiForgeryToken()
         <input type="hidden" name="receiverId" value="@ViewBag.OtherUserId" />
+        <input type="hidden" name="replyToMessageId" id="dmReplyToMessageId" value="" />
         <input type="file" name="file" id="fileInput" style="display:none;" accept="image/*,video/*" />
 
         <div id="previewContainer" style="display:none;" class="preview-container">
@@ -478,9 +502,28 @@ else
 .msg-content-wrap { display: flex; flex-direction: column; }
 .msg-mine .msg-content-wrap { align-items: flex-end; }
 .msg-theirs .msg-content-wrap { align-items: flex-start; }
-.msg-bubble { padding: 10px 14px 6px; border-radius: 18px; font-size: 14px; line-height: 1.55; word-break: break-word; max-width: min(320px, 74vw); position: relative; }
+.msg-bubble { padding: 10px 14px 6px; border-radius: 18px; font-size: 14px; line-height: 1.55; word-break: break-word; max-width: min(320px, 74vw); position: relative; transition: transform 0.18s ease; }
 .bubble-mine { background: linear-gradient(135deg, #6366f1, #4f46e5); color: white; border-bottom-right-radius: 4px; box-shadow: 0 2px 12px rgba(99,102,241,0.3); }
 .bubble-theirs { background: white; color: #1e293b; border-bottom-left-radius: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+
+.msg-reply { padding: 6px 10px; margin: 0 0 6px; border-left: 3px solid currentColor; border-radius: 9px; cursor: pointer; opacity: 0.95; max-width: 100%; overflow: hidden; }
+.bubble-mine .msg-reply { background: rgba(255,255,255,0.18); }
+.bubble-theirs .msg-reply { background: rgba(99,102,241,0.08); border-left-color: #6366f1; }
+.msg-reply-name { font-size: 11px; font-weight: 800; margin-bottom: 1px; }
+.bubble-mine .msg-reply-name { color: rgba(255,255,255,0.95); }
+.bubble-theirs .msg-reply-name { color: #4338ca; }
+.msg-reply-text { font-size: 12px; opacity: 0.85; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+#dmReplyPreview { display: none; align-items: center; gap: 10px; padding: 8px 12px; background: rgba(99,102,241,0.08); border-left: 3px solid #6366f1; margin: 0 8px; border-radius: 10px 10px 0 0; }
+#dmReplyPreview.show { display: flex; }
+.dm-reply-pv-content { flex: 1; min-width: 0; }
+.dm-reply-pv-name { font-size: 11.5px; font-weight: 800; color: #4338ca; }
+.dm-reply-pv-text { font-size: 12px; color: #475569; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dm-reply-pv-close { background: rgba(99,102,241,0.12); border: none; width: 26px; height: 26px; border-radius: 50%; cursor: pointer; color: #4338ca; font-size: 13px; flex-shrink: 0; }
+body.bg-dark #dmReplyPreview { background: rgba(99,102,241,0.18); }
+body.bg-dark .dm-reply-pv-text { color: #cbd5e1; }
+body.bg-dark .bubble-theirs .msg-reply { background: rgba(255,255,255,0.06); }
+body.bg-dark .bubble-theirs .msg-reply-name { color: #818cf8; }
 .msg-text { display: block; }
 .msg-footer { display: flex; align-items: center; justify-content: flex-end; gap: 4px; margin-top: 4px; }
 .msg-time { font-size: 10px; }
@@ -800,8 +843,18 @@ document.getElementById("chatForm").addEventListener("submit", async function(e)
         else if (file.type.startsWith("video")) mediaHTML = `<video controls class="msg-media"><source src="${url}" /></video>`;
     }
 
+    const replyId = document.getElementById('dmReplyToMessageId').value;
+    const replyName = document.getElementById('dmReplyName').textContent;
+    const replyText = document.getElementById('dmReplyText').textContent;
+    let replyHTML = "";
+    if (replyId) {
+        replyHTML = `<div class="msg-reply"><div class="msg-reply-name">${escapeHtmlDM(replyName)}</div><div class="msg-reply-text">${escapeHtmlDM(replyText)}</div></div>`;
+    }
+
+    const previewC = (content && content.length > 80) ? content.substring(0,80)+'…' : (content||'');
     wrap.innerHTML = `
-        <div class="msg-content-wrap"><div class="msg-bubble bubble-mine">
+        <div class="msg-content-wrap"><div class="msg-bubble bubble-mine" data-msg-id="${tempId}" data-sender-name="@(ViewBag.MyUsername ?? "Yo")" data-content-preview="${escapeHtmlDM(previewC)}">
+            ${replyHTML}
             ${content ? `<span class="msg-text">${content}</span>` : ""}${mediaHTML}
             <div class="msg-footer"><span class="msg-time">${makeTime()}</span><span class="msg-check pending" id="check-${tempId}">🕐</span></div>
         </div></div>`;
@@ -820,7 +873,9 @@ document.getElementById("chatForm").addEventListener("submit", async function(e)
     formData.append("receiverId", receiverId);
     if (content) formData.append("content", content);
     if (file) formData.append("file", file);
+    if (replyId) formData.append("replyToMessageId", replyId);
     formData.append("__RequestVerificationToken", document.querySelector('input[name="__RequestVerificationToken"]').value);
+    cancelarReplyDM();
 
     try {
         const res = await fetch('/Message/Send', { method: 'POST', body: formData });
@@ -836,6 +891,8 @@ document.getElementById("chatForm").addEventListener("submit", async function(e)
                 }
             }
             wrap.id = "msg-" + data.messageId;
+            const bubbleEl = wrap.querySelector('.msg-bubble');
+            if (bubbleEl) bubbleEl.setAttribute('data-msg-id', data.messageId);
             if (data.filePath && data.filePath !== "") {
                 const mediaEl = wrap.querySelector(".msg-media");
                 if (mediaEl) {
@@ -847,8 +904,10 @@ document.getElementById("chatForm").addEventListener("submit", async function(e)
     } catch (err) { wrap.remove(); alert("Error de conexión"); }
 });
 
+function escapeHtmlDM(s){ return (s||'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
 // 🔥 SIGNALR LISTENERS
-chatConnection.on("ReceiveMessage", (senderId, rcvId, senderName, message, fileUrl) => {
+chatConnection.on("ReceiveMessage", (senderId, rcvId, senderName, message, fileUrl, msgId, replyId, replySender, replyContent) => {
     if (String(senderId) !== String(receiverId) && String(rcvId) !== String(receiverId)) return;
     if (String(senderId) === String(myId)) return;
     document.getElementById("typingIndicator").style.display = "none";
@@ -861,10 +920,18 @@ chatConnection.on("ReceiveMessage", (senderId, rcvId, senderName, message, fileU
         else if (isVid) mediaHTML = `<video controls class="msg-media"><source src="${fileUrl}" /></video>`;
     }
 
+    let replyHTML = "";
+    if (replyId && replyId > 0) {
+        replyHTML = `<div class="msg-reply" onclick="scrollToMsg(${replyId})"><div class="msg-reply-name">${escapeHtmlDM(replySender||'')}</div><div class="msg-reply-text">${escapeHtmlDM(replyContent||'')}</div></div>`;
+    }
+
+    const previewC = (message && message.length > 80) ? message.substring(0,80)+'…' : (message||'');
     const wrap = document.createElement("div");
     wrap.className = "msg-wrap msg-theirs";
+    if (msgId) wrap.id = "msg-" + msgId;
     wrap.innerHTML = `
-        <div class="msg-content-wrap"><div class="msg-bubble bubble-theirs">
+        <div class="msg-content-wrap"><div class="msg-bubble bubble-theirs" data-msg-id="${msgId||''}" data-sender-name="${escapeHtmlDM(senderName||'')}" data-content-preview="${escapeHtmlDM(previewC)}">
+            ${replyHTML}
             ${(message && message.trim() !== "") ? `<span class="msg-text">${message}</span>` : ""}${mediaHTML}
             <div class="msg-footer"><span class="msg-time">${makeTime()}</span></div>
         </div></div>`;
@@ -1506,4 +1573,128 @@ function reactToMessage(messageId, reaction) {
         if (el) { el.textContent = reaction; el.style.display = "block"; }
     });
 }
+
+/* ═════════ REPLY EN DM (estilo WhatsApp) ═════════ */
+function responderMensajeDM(msgId, senderName, content){
+    document.getElementById('dmReplyToMessageId').value = msgId;
+    document.getElementById('dmReplyName').textContent = senderName || 'Mensaje';
+    document.getElementById('dmReplyText').textContent = content || '';
+    document.getElementById('dmReplyPreview').classList.add('show');
+    const inp = document.getElementById('messageInput');
+    if (inp) inp.focus();
+}
+function cancelarReplyDM(){
+    document.getElementById('dmReplyToMessageId').value = '';
+    document.getElementById('dmReplyName').textContent = '';
+    document.getElementById('dmReplyText').textContent = '';
+    document.getElementById('dmReplyPreview').classList.remove('show');
+}
+function scrollToMsg(id){
+    const el = document.getElementById('msg-' + id);
+    if(!el) return;
+    el.scrollIntoView({behavior:'smooth', block:'center'});
+    el.style.transition='background 0.3s';
+    el.style.background='rgba(99,102,241,0.10)';
+    setTimeout(()=>el.style.background='', 1200);
+}
+
+/* ═════════ SWIPE-TO-REPLY (móvil) ═════════ */
+(function(){
+    const THRESHOLD = 60, MAX = 80, RATIO = 1.4;
+    if (!('ontouchstart' in window) && !navigator.maxTouchPoints) return;
+    let active = null;
+
+    function getInfo(bubble){
+        return {
+            id: bubble.getAttribute('data-msg-id'),
+            sender: bubble.getAttribute('data-sender-name') || '',
+            content: bubble.getAttribute('data-content-preview') || ''
+        };
+    }
+    function ensureInd(bubble){
+        let el = bubble.querySelector(':scope > .dm-swipe-ind');
+        if(el) return el;
+        el = document.createElement('div');
+        el.className = 'dm-swipe-ind';
+        el.textContent = '↩';
+        el.style.cssText='position:absolute;top:50%;width:36px;height:36px;border-radius:50%;background:#6366f1;color:white;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800;opacity:0;pointer-events:none;transition:opacity 0.12s;z-index:5;transform:translateY(-50%);';
+        bubble.appendChild(el);
+        return el;
+    }
+    function start(e, bubble){
+        if(!bubble.getAttribute('data-msg-id')) return;
+        if(e.touches && e.touches.length>1) return;
+        const t = e.touches[0];
+        active = { bubble, sx:t.clientX, sy:t.clientY, dx:0, dy:0, locked:false, ind: ensureInd(bubble) };
+        const wrap = bubble.closest('.msg-wrap');
+        const isMine = wrap && wrap.classList.contains('msg-mine');
+        active.ind.style.left = isMine ? 'auto' : '-44px';
+        active.ind.style.right = isMine ? '-44px' : 'auto';
+        bubble.style.transition = 'transform 0s';
+    }
+    function move(e){
+        if(!active) return;
+        const t = e.touches[0];
+        active.dx = t.clientX - active.sx;
+        active.dy = t.clientY - active.sy;
+        const wrap = active.bubble.closest('.msg-wrap');
+        const isMine = wrap && wrap.classList.contains('msg-mine');
+        const dir = isMine ? -1 : 1;
+        const horizontal = active.dx * dir;
+
+        if(!active.locked){
+            if(Math.abs(active.dx) < 6 && Math.abs(active.dy) < 6) return;
+            if(Math.abs(active.dx) > Math.abs(active.dy)*RATIO && horizontal > 0){
+                active.locked = true;
+            } else {
+                active = null;
+                return;
+            }
+        }
+        if(e.cancelable) e.preventDefault();
+        const clamped = Math.max(0, Math.min(horizontal, MAX));
+        active.bubble.style.transform = 'translateX(' + (dir * clamped) + 'px)';
+        active.ind.style.opacity = Math.min(1, clamped / THRESHOLD).toFixed(2);
+        active.ind.style.transform = 'translateY(-50%) scale(' + (0.6 + 0.4*Math.min(1, clamped/THRESHOLD)).toFixed(2) + ')';
+    }
+    function end(){
+        if(!active) return;
+        const wrap = active.bubble.closest('.msg-wrap');
+        const isMine = wrap && wrap.classList.contains('msg-mine');
+        const horizontal = active.dx * (isMine ? -1 : 1);
+        active.bubble.style.transition = 'transform 0.18s ease';
+        active.bubble.style.transform = '';
+        active.ind.style.opacity = '0';
+        if(active.locked && horizontal >= THRESHOLD){
+            const info = getInfo(active.bubble);
+            if(info.id) {
+                responderMensajeDM(parseInt(info.id,10), info.sender, info.content);
+                if(navigator.vibrate) navigator.vibrate(15);
+            }
+        }
+        active = null;
+    }
+    function attach(b){
+        if(b._swipeAttached) return;
+        b._swipeAttached = true;
+        b.addEventListener('touchstart', e => start(e, b), {passive:true});
+        b.addEventListener('touchmove', move, {passive:false});
+        b.addEventListener('touchend', end);
+        b.addEventListener('touchcancel', end);
+    }
+    function attachAll(){ document.querySelectorAll('.msg-bubble[data-msg-id]').forEach(attach); }
+    attachAll();
+    const cb = document.getElementById('chatBox');
+    if(cb){ new MutationObserver(()=>attachAll()).observe(cb,{childList:true,subtree:true}); }
+})();
+
+/* Doble-click en bubble = reply en desktop */
+document.addEventListener('dblclick', function(e){
+    const b = e.target.closest('.msg-bubble[data-msg-id]');
+    if(!b) return;
+    const id = b.getAttribute('data-msg-id');
+    const sender = b.getAttribute('data-sender-name') || '';
+    const content = b.getAttribute('data-content-preview') || '';
+    responderMensajeDM(parseInt(id,10), sender, content);
+});
 </script>

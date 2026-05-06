@@ -213,9 +213,17 @@ body.bg-dark .hx-sinner{background:#1e293b;border-color:var(--card);}
 .hx-hname{font-size:13px;font-weight:700;color:var(--text);text-decoration:none;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:3px;}
 .hx-hname:hover{color:var(--accent);}
 .hx-habit.done .hx-hname{text-decoration:line-through;color:var(--muted);}
-.hx-hmeta{display:flex;gap:9px;}
+.hx-hmeta{display:flex;gap:9px;flex-wrap:wrap;}
 .hx-hstreak{font-size:11px;color:var(--orange);font-weight:700;}
 .hx-hrec{font-size:10px;color:var(--muted2);font-weight:600;}
+.hx-hage{display:inline-flex;align-items:center;gap:3px;margin-top:4px;padding:3px 9px;border-radius:999px;background:linear-gradient(135deg,rgba(91,94,244,0.10),rgba(0,196,140,0.10));border:1px solid rgba(91,94,244,0.18);font-size:10.5px;font-weight:700;color:var(--accent);letter-spacing:0.2px;font-variant-numeric:tabular-nums;line-height:1;width:fit-content;box-shadow:0 1px 3px rgba(91,94,244,0.06);}
+.hx-hage-ico{font-size:11px;margin-right:2px;}
+.hx-hage-num{font-weight:800;color:var(--text);}
+.hx-hage-unit{color:var(--muted2);margin-right:3px;font-size:9.5px;font-weight:700;}
+.hx-hage-unit:last-child{margin-right:0;}
+.hx-habit.done .hx-hage{background:linear-gradient(135deg,rgba(0,196,140,0.10),rgba(0,196,140,0.04));border-color:rgba(0,196,140,0.22);color:var(--green);}
+body.bg-dark .hx-hage{background:linear-gradient(135deg,rgba(91,94,244,0.18),rgba(0,196,140,0.10))!important;border-color:rgba(129,140,248,0.25)!important;}
+body.bg-dark .hx-hage-num{color:#e2e8f0!important;}
 
 .hx-hstatus{font-size:9px;font-weight:800;padding:3px 8px;border-radius:20px;white-space:nowrap;flex-shrink:0;}
 .hx-habit.done .hx-hstatus{background:rgba(0,196,140,0.1);color:var(--green);border:1px solid rgba(0,196,140,0.2);}
@@ -364,14 +372,26 @@ body.bg-dark .hx-btn.ghost{background:#111827!important;border-color:rgba(255,25
     /* HABITS */
     .hx-hcard{border-radius:16px;}
     .hx-hcard-hd{padding:13px 14px 0;}
-    .hx-htabs{padding:9px 12px 0;}
-    .hx-hlist{padding:8px 10px 10px;gap:6px;}
-    .hx-habit{padding:10px 10px;gap:8px;}
-    .hx-hico{width:30px;height:30px;border-radius:9px;font-size:13px;}
-    .hx-hname{font-size:12px;}
+    .hx-htabs{padding:9px 12px 0;overflow-x:auto;flex-wrap:nowrap;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
+    .hx-htabs::-webkit-scrollbar{display:none;}
+    .hx-htab{flex-shrink:0;}
+    .hx-hlist{padding:8px 10px 10px;gap:7px;}
+    .hx-habit{padding:11px 10px;gap:9px;align-items:flex-start;}
+    .hx-hico{width:32px;height:32px;border-radius:10px;font-size:14px;flex-shrink:0;margin-top:1px;}
+    .hx-hinfo{min-width:0;flex:1;}
+    .hx-hname{font-size:13px;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+    .hx-hmeta{gap:7px;margin-top:2px;}
+    .hx-hstreak{font-size:10.5px;}
+    .hx-hrec{font-size:10px;}
+    .hx-hage{font-size:10px;padding:2.5px 7px;margin-top:3px;}
+    .hx-hage-ico{font-size:10px;}
+    .hx-hage-unit{font-size:9px;}
     .hx-hstatus{display:none;}
-    .hx-ha{width:28px;height:28px;border-radius:8px;font-size:11px;}
-    .hx-hacts{gap:3px;}
+    .hx-hacts{gap:5px;flex-shrink:0;align-self:center;}
+    .hx-ha{width:34px;height:34px;border-radius:10px;font-size:14px;}
+    .hx-cwrap{padding:8px 11px 9px;}
+    .hx-cinput{font-size:13px;padding:8px 11px;}
+    .hx-citem{font-size:11px;}
 
     /* SV */
     .hx-svcard{border-radius:0;max-width:100%;max-height:100vh;}
@@ -572,13 +592,17 @@ body.bg-dark .hx-btn.ghost{background:#111827!important;border-color:rgba(255,25
                                     <span class="hx-hstreak">🔥 @habit.StreakDays días</span>
                                     <span class="hx-hrec">🏆 @habit.MaxStreak máx</span>
                                 </div>
+                                <div class="hx-hage" data-created="@habit.CreatedDate.ToString("yyyy-MM-ddTHH:mm:ssZ")">
+                                    <span class="hx-hage-ico">⏱</span>
+                                    <span class="hx-hage-num" data-part="d">0</span><span class="hx-hage-unit">d</span>
+                                    <span class="hx-hage-num" data-part="h">0</span><span class="hx-hage-unit">h</span>
+                                    <span class="hx-hage-num" data-part="m">0</span><span class="hx-hage-unit">m</span>
+                                </div>
                             </div>
                             <span class="hx-hstatus">@badge</span>
                             <div class="hx-hacts">
-                                <a href="/Habit/Complete/@habit.Id" class="hx-ha ok" title="Completar" onclick="playOk(event,this)">✔</a>
-                                <a href="/Habit/Fail/@habit.Id" class="hx-ha no" title="Fallar">✖</a>
-                                <a href="/Habit/Edit/@habit.Id" class="hx-ha ed" title="Editar">✏</a>
-                      <a href="#" class="hx-ha rm" data-no-loader="true" onclick="confirmarEliminarHabito('@habit.Id','@habit.Name'); return false;" title="Eliminar">🗑</a>
+                                <a href="#" class="hx-ha ed" data-no-loader="true" onclick="confirmarEditarHabito('@habit.Id','@habit.Name'); return false;" title="Editar">✏</a>
+                                <a href="#" class="hx-ha rm" data-no-loader="true" onclick="confirmarEliminarHabito('@habit.Id','@habit.Name'); return false;" title="Eliminar">🗑</a>
                             </div>
                         </div>
                         <div class="hx-cwrap" id="cw-@habit.Id">
@@ -743,8 +767,26 @@ if(navigator.geolocation){navigator.geolocation.getCurrentPosition(pos=>{const{l
 // ── FILTER ──
 function filtH(tipo,btn){document.querySelectorAll('.hx-htab').forEach(t=>t.classList.remove('on'));btn.classList.add('on');document.querySelectorAll('.hx-habit').forEach(h=>{const s=h.getAttribute('data-status');const show=tipo==='todos'||(tipo==='pendientes'&&s==='pending')||(tipo==='completados'&&s==='done');const id=h.id.replace('hb-','');h.style.display=show?'flex':'none';const cw=document.getElementById('cw-'+id);if(cw)cw.style.display=show?'block':'none';});}
 
-// ── COMPLETE ──
-function playOk(e,btn){e.preventDefault();if(typeof HabitSounds!=='undefined')HabitSounds.complete();setTimeout(()=>window.location.href=btn.getAttribute('href'),320);}
+// ── HABIT AGE COUNTER (live) ──
+function updateHabitAges(){
+    const now=Date.now();
+    document.querySelectorAll('.hx-hage').forEach(el=>{
+        const created=el.getAttribute('data-created');if(!created)return;
+        const start=new Date(created).getTime();if(isNaN(start))return;
+        let diff=Math.max(0,Math.floor((now-start)/1000));
+        const d=Math.floor(diff/86400);diff-=d*86400;
+        const h=Math.floor(diff/3600);diff-=h*3600;
+        const m=Math.floor(diff/60);
+        const dEl=el.querySelector('[data-part="d"]');
+        const hEl=el.querySelector('[data-part="h"]');
+        const mEl=el.querySelector('[data-part="m"]');
+        if(dEl)dEl.textContent=d;
+        if(hEl)hEl.textContent=String(h).padStart(2,'0');
+        if(mEl)mEl.textContent=String(m).padStart(2,'0');
+    });
+}
+updateHabitAges();
+setInterval(updateHabitAges,30000);
 
 // ── STORIES ──
 let svStories=[],svIdx=0,svInt=null,svOwner=null,svUser=null;
@@ -781,6 +823,16 @@ function confirmarEliminarHabito(id, nombre) {
         confirmText: '🗑 Sí, eliminar',
         confirmColor: '#ef4444',
         onConfirm: () => window.location.href = '/Habit/Delete/' + id
+    });
+}
+function confirmarEditarHabito(id, nombre) {
+    showConfirm({
+        icon: '✏️',
+        title: '¿Editar hábito?',
+        message: `Vas a modificar "${nombre}". Tu progreso, racha y contador no se reinician.`,
+        confirmText: '✏ Editar',
+        confirmColor: '#5b5ef4',
+        onConfirm: () => window.location.href = '/Habit/Edit/' + id
     });
 }
 </script>

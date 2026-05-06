@@ -60,15 +60,29 @@ namespace HabitTrackerApp
                 options.LoginPath = "/Account/Login";
                 options.SlidingExpiration = true;
                 options.ExpireTimeSpan = TimeSpan.FromHours(1);
+                // 🔒 hardening de cookies de auth
+                options.Cookie.HttpOnly = true;
+                options.Cookie.SameSite = Microsoft.AspNetCore.Http.SameSiteMode.Lax;
+                options.Cookie.SecurePolicy = builder.Environment.IsProduction()
+                    ? Microsoft.AspNetCore.Http.CookieSecurePolicy.Always
+                    : Microsoft.AspNetCore.Http.CookieSecurePolicy.SameAsRequest;
             })
             .AddGoogle(options =>
             {
-                options.ClientId = builder.Configuration["Google:ClientId"];
-                options.ClientSecret = builder.Configuration["Google:ClientSecret"];
+                options.ClientId = builder.Configuration["Google:ClientId"] ?? "";
+                options.ClientSecret = builder.Configuration["Google:ClientSecret"] ?? "";
                 options.SignInScheme = "Cookies";
             })
             .AddJwtBearer(JwtBearerDefaults.AuthenticationScheme, options =>
             {
+                var jwtKey = builder.Configuration["Jwt:Key"];
+                if (string.IsNullOrWhiteSpace(jwtKey) || jwtKey.Length < 32)
+                {
+                    Console.WriteLine("⚠️  Jwt:Key no configurada o muy corta. Configura una clave fuerte (>=32 chars) en appsettings.Development.json (dev), User Secrets, o env var Jwt__Key (prod).");
+                    // placeholder para que la app arranque; los JWT no funcionarán hasta que configures la clave real
+                    jwtKey = "DEV_PLACEHOLDER_NO_USAR_EN_PROD_" + Guid.NewGuid().ToString("N");
+                }
+
                 options.TokenValidationParameters = new TokenValidationParameters
                 {
                     ValidateIssuer = true,
@@ -77,8 +91,7 @@ namespace HabitTrackerApp
                     ValidateIssuerSigningKey = true,
                     ValidIssuer = builder.Configuration["Jwt:Issuer"],
                     ValidAudience = builder.Configuration["Jwt:Audience"],
-                    IssuerSigningKey = new SymmetricSecurityKey(
-                        Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]))
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey))
                 };
             });
 

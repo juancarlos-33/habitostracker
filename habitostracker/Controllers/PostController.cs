@@ -1,4 +1,5 @@
 ﻿using HabitTrackerApp.Data;
+using HabitTrackerApp.Helpers;
 using HabitTrackerApp.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -301,7 +302,14 @@ namespace HabitTrackerApp.Controllers
 
             if (image != null && image.Length > 0)
             {
-                bool isVideo = image.ContentType.StartsWith("video");
+                // 🔒 validación real (extensión + magic bytes + tamaño)
+                var v = FileValidator.Validate(image, FileValidator.FileKind.ImageOrVideo);
+                if (!v.IsValid)
+                {
+                    TempData["Error"] = v.Error;
+                    return RedirectToAction("Create");
+                }
+                bool isVideo = v.IsVideo;
                 try
                 {
                     if (isVideo)
@@ -369,6 +377,8 @@ namespace HabitTrackerApp.Controllers
 
             return RedirectToAction("Index");
         }
+        [HttpPost]
+        [ValidateAntiForgeryToken]
         public IActionResult Delete(int id)
         {
             var post = _context.Posts.FirstOrDefault(p => p.Id == id);

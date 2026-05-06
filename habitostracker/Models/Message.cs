@@ -1,4 +1,5 @@
-﻿using System;
+using System;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace HabitTrackerApp.Models
 {
@@ -22,6 +23,11 @@ namespace HabitTrackerApp.Models
         public DateTime SentAt { get; set; } = DateTime.Now;
 
         public bool IsRead { get; set; } = false;
+
+        public int? ReplyToMessageId { get; set; }
+
+        [ForeignKey(nameof(ReplyToMessageId))]
+        public Message? ReplyToMessage { get; set; }
 
         public User Sender { get; set; }
 

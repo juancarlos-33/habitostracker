@@ -93,9 +93,11 @@ else
                     }
                     @if (post.UserId == currentUserId)
                     {
-                        <a asp-controller="Post" asp-action="Delete" asp-route-id="@post.Id"
-                           class="delete-btn" data-no-loader="true"
-                           onclick="return confirm('¿Eliminar esta publicación?')">🗑</a>
+                        <form method="post" asp-controller="Post" asp-action="Delete" asp-route-id="@post.Id" style="display:inline;margin:0;">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="delete-btn" data-no-loader="true"
+                                    onclick="event.preventDefault();showConfirm({icon:'🗑️',title:'¿Eliminar publicación?',message:'La publicación se eliminará permanentemente, junto con sus comentarios y reacciones.',confirmText:'🗑 Eliminar',confirmColor:'#ef4444',onConfirm:()=>this.closest('form').submit()});return false;">🗑</button>
+                        </form>
                     }
                 </div>
             </div>
@@ -123,7 +125,7 @@ else
     var isBlurred = post.IsSensitive || post.IsUnderWarning;
     var blurMessage = post.IsUnderWarning ? "⚠️ Publicación sospechosa - Incumple normas" : "⚠️ Contenido sensible";
 
-    <div class="post-media-wrap @(isVideo ? "video-wrap" : "") @(isBlurred ? "blurred-wrap" : "")">
+    <div class="post-media-wrap @(isVideo ? "video-wrap" : "") @(isBlurred ? "blurred-wrap" : "")" data-post-id="@post.Id" ondblclick="dblTapLike(@post.Id, event)">
         @if (isVideo)
         {
             <video controls class="post-media" preload="metadata">
@@ -146,6 +148,7 @@ else
         {
             <img src="@post.ImagePath" class="post-media" onclick="abrirFotoPost(this.src)" />
         }
+        <div class="dbltap-heart" id="dbltap-heart-@post.Id">❤</div>
     </div>
 }
 
@@ -468,10 +471,29 @@ body.bg-dark .post-privacy-badge.public { background:rgba(21,128,61,0.2); color:
 .post-media-wrap {
     border-radius: 16px; overflow: hidden; margin-bottom: 12px;
     background: #000; position: relative;
+    user-select: none; -webkit-user-select: none;
 }
 
 .post-media { width: 100%; max-height: 520px; object-fit: cover; display: block; }
 .video-wrap .post-media { object-fit: contain; background: #000; }
+
+/* ❤️ Doble-tap to like (Instagram style) */
+.dbltap-heart {
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0);
+    font-size: 110px; color: white; pointer-events: none; opacity: 0;
+    text-shadow: 0 6px 30px rgba(0,0,0,0.6); z-index: 5;
+    filter: drop-shadow(0 0 20px rgba(239,68,68,0.8));
+}
+.dbltap-heart.animate {
+    animation: dbltapHeartPop 0.95s ease forwards;
+}
+@@keyframes dbltapHeartPop {
+    0%   { transform: translate(-50%, -50%) scale(0)   rotate(-12deg); opacity: 0; }
+    18%  { transform: translate(-50%, -50%) scale(1.25) rotate(8deg);  opacity: 1; }
+    35%  { transform: translate(-50%, -50%) scale(1)   rotate(0);    opacity: 1; }
+    70%  { transform: translate(-50%, -50%) scale(1)   rotate(0);    opacity: 1; }
+    100% { transform: translate(-50%, -50%) scale(1.6) rotate(0);    opacity: 0; }
+}
 
 .video-badge {
     position: absolute; top: 10px; left: 10px;
@@ -638,6 +660,40 @@ function revealSensitive(postId) {
     if (img) img.classList.remove('sensitive-blurred');
     if (overlay) { overlay.style.opacity = '0'; overlay.style.pointerEvents = 'none'; }
 }
+
+// ❤️ Double-tap to like (Instagram style)
+const dblTapState = new Map();
+function dblTapLike(postId, e) {
+    // animación de corazón gigante en el media
+    const heart = document.getElementById('dbltap-heart-' + postId);
+    if (heart) {
+        heart.classList.remove('animate');
+        void heart.offsetWidth;
+        heart.classList.add('animate');
+    }
+    // dar like solo si NO estaba dado (no quitar al doble-tap, igual que Instagram)
+    const btn = document.getElementById('like-btn-' + postId);
+    if (btn && !btn.classList.contains('liked')) {
+        toggleLike(postId, btn);
+    }
+    if (navigator.vibrate) try { navigator.vibrate(15); } catch(_){}
+}
+
+// Soporte de doble-tap en móvil (touchend pares con < 300ms)
+document.addEventListener('touchend', function(e){
+    const wrap = e.target.closest('.post-media-wrap[data-post-id]');
+    if (!wrap) return;
+    const postId = wrap.getAttribute('data-post-id');
+    const now = Date.now();
+    const last = dblTapState.get(postId) || 0;
+    if (now - last < 320) {
+        dblTapLike(parseInt(postId, 10), e);
+        dblTapState.set(postId, 0);
+        e.preventDefault();
+    } else {
+        dblTapState.set(postId, now);
+    }
+}, {passive: false});
 
 function toggleLike(postId, element) {
     const icon = document.getElementById('like-icon-' + postId);

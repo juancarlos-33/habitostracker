@@ -1643,4 +1643,84 @@ function actualizarReacciones(msgId, reactions) {
         }
     };
 })();
+
+/* ═════════ SWIPE-TO-REPLY (móvil, estilo WhatsApp) ═════════ */
+(function(){
+    const THRESHOLD = 60, MAX_TRANSLATE = 80, RATIO = 1.4;
+    if (!('ontouchstart' in window) && !navigator.maxTouchPoints) return;
+
+    function parseReplyArgs(bubble){
+        const handler = bubble.getAttribute('ondblclick') || '';
+        const m = handler.match(/responderMensaje\((\d+)\s*,\s*'([^']*)'\s*,\s*'((?:[^'\\]|\\.)*)'\)/);
+        if(!m) return null;
+        return { id: parseInt(m[1],10), sender: m[2], content: m[3].replace(/\\'/g,"'") };
+    }
+    function ensureIndicator(bubble){
+        let el = bubble.querySelector(':scope > .grp-swipe-ind');
+        if(el) return el;
+        el = document.createElement('div');
+        el.className = 'grp-swipe-ind';
+        el.textContent = '↩';
+        el.style.cssText='position:absolute;top:50%;width:36px;height:36px;border-radius:50%;background:#6366f1;color:white;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800;opacity:0;pointer-events:none;transition:opacity 0.12s;z-index:5;transform:translateY(-50%);';
+        bubble.appendChild(el);
+        return el;
+    }
+    let active = null;
+    function start(e, bubble){
+        if(!parseReplyArgs(bubble)) return;
+        if(e.touches && e.touches.length > 1) return;
+        const t = e.touches[0];
+        active = { bubble, sx:t.clientX, sy:t.clientY, dx:0, dy:0, locked:false, ind: ensureIndicator(bubble) };
+        const isMine = bubble.closest('.grp-msg-row.mine');
+        active.ind.style.left = isMine ? 'auto' : '-44px';
+        active.ind.style.right = isMine ? '-44px' : 'auto';
+        bubble.style.transition = 'transform 0s';
+    }
+    function move(e){
+        if(!active) return;
+        const t = e.touches[0];
+        active.dx = t.clientX - active.sx;
+        active.dy = t.clientY - active.sy;
+        const isMine = active.bubble.closest('.grp-msg-row.mine');
+        const dir = isMine ? -1 : 1;
+        const horizontal = active.dx * dir;
+        if(!active.locked){
+            if(Math.abs(active.dx) < 6 && Math.abs(active.dy) < 6) return;
+            if(Math.abs(active.dx) > Math.abs(active.dy)*RATIO && horizontal > 0){
+                active.locked = true;
+            } else { active = null; return; }
+        }
+        if(e.cancelable) e.preventDefault();
+        const c = Math.max(0, Math.min(horizontal, MAX_TRANSLATE));
+        active.bubble.style.transform = 'translateX(' + (dir*c) + 'px)';
+        active.ind.style.opacity = Math.min(1, c/THRESHOLD).toFixed(2);
+        active.ind.style.transform = 'translateY(-50%) scale(' + (0.6 + 0.4*Math.min(1, c/THRESHOLD)).toFixed(2) + ')';
+    }
+    function end(){
+        if(!active) return;
+        const isMine = active.bubble.closest('.grp-msg-row.mine');
+        const horizontal = active.dx * (isMine ? -1 : 1);
+        const args = parseReplyArgs(active.bubble);
+        active.bubble.style.transition = 'transform 0.18s ease';
+        active.bubble.style.transform = '';
+        active.ind.style.opacity = '0';
+        if(active.locked && horizontal >= THRESHOLD && args && typeof responderMensaje === 'function'){
+            try { responderMensaje(args.id, args.sender, args.content); } catch(e){}
+            if(navigator.vibrate) navigator.vibrate(15);
+        }
+        active = null;
+    }
+    function attach(bubble){
+        if(bubble._swipeAttached) return;
+        bubble._swipeAttached = true;
+        bubble.addEventListener('touchstart', e => start(e, bubble), {passive:true});
+        bubble.addEventListener('touchmove', move, {passive:false});
+        bubble.addEventListener('touchend', end);
+        bubble.addEventListener('touchcancel', end);
+    }
+    function attachAll(){ document.querySelectorAll('.grp-msg-bubble[ondblclick*="responderMensaje"]').forEach(attach); }
+    attachAll();
+    const cb = document.querySelector('.grp-chat-box');
+    if(cb){ new MutationObserver(()=>attachAll()).observe(cb,{childList:true,subtree:true}); }
+})();
 </script>

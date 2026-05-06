@@ -1,328 +1,341 @@
-﻿@model List<HabitTrackerApp.Models.AdminLog>
+@model List<HabitTrackerApp.Models.AdminLog>
+@{
+    var users = ViewBag.Users as List<HabitTrackerApp.Models.User>;
+    var totalLogs = Model.Count;
+    var bans = Model.Count(x => x.Action.Contains("Banear", StringComparison.OrdinalIgnoreCase));
+    var deactivations = Model.Count(x => x.Action.Contains("Desactivar", StringComparison.OrdinalIgnoreCase));
+    var reactivations = Model.Count(x => x.Action.Contains("Reactivar", StringComparison.OrdinalIgnoreCase));
+    var blocks = Model.Count(x => x.Action.Contains("loque", StringComparison.OrdinalIgnoreCase));
+    var resets = Model.Count(x => x.Action.Contains("contraseña", StringComparison.OrdinalIgnoreCase));
+    var adminChanges = Model.Count(x => x.Action.Contains("administrador", StringComparison.OrdinalIgnoreCase) || x.Action.Contains("admin", StringComparison.OrdinalIgnoreCase));
+    var deletions = Model.Count(x => x.Action.Contains("eliminar", StringComparison.OrdinalIgnoreCase));
+}
 
-<div class="logs-page">
-
-    <div class="logs-header">
-        <h2 class="logs-title">📜 Historial de administración</h2>
-        <p class="logs-subtitle">Registro de todas las acciones realizadas por administradores</p>
-    </div>
-
-    <!-- STATS -->
-    <div class="logs-stats">
-        <div class="log-stat red">
-            <div class="log-stat-icon">🚫</div>
-            <div class="log-stat-value">@Model.Count(x => x.Action.Contains("Banear"))</div>
-            <div class="log-stat-label">Baneos</div>
-        </div>
-        <div class="log-stat green">
-            <div class="log-stat-icon">🔓</div>
-            <div class="log-stat-value">@Model.Count(x => x.Action.Contains("Reactivar"))</div>
-            <div class="log-stat-label">Reactivados</div>
-        </div>
-        <div class="log-stat yellow">
-            <div class="log-stat-icon">⚠️</div>
-            <div class="log-stat-value">@Model.Count(x => x.Action.Contains("Desactivar"))</div>
-            <div class="log-stat-label">Desactivados</div>
-        </div>
-        <div class="log-stat blue">
-            <div class="log-stat-icon">👑</div>
-            <div class="log-stat-value">@Model.Count(x => x.Action.Contains("administrador"))</div>
-            <div class="log-stat-label">Admins creados</div>
+<div class="al-page">
+    <div class="al-hero">
+        <div class="al-hero-bg"></div>
+        <div class="al-hero-inner">
+            <div class="al-hero-tag">📜 AUDITORÍA</div>
+            <h1 class="al-hero-title">Historial de acciones</h1>
+            <p class="al-hero-sub">Registro permanente de cada operación administrativa.</p>
         </div>
     </div>
 
-    <!-- BUSCADOR -->
-    <div class="logs-search-wrap">
-        <span class="search-icon">🔍</span>
-        <input type="text"
-               id="logSearch"
-               class="logs-search"
-               placeholder="Buscar administrador, acción o usuario..." />
+    <div class="al-stats">
+        <div class="al-stat" data-filter="all">
+            <div class="al-stat-ico">📊</div>
+            <div class="al-stat-num">@totalLogs</div>
+            <div class="al-stat-lbl">Total</div>
+        </div>
+        <div class="al-stat red" data-filter="ban">
+            <div class="al-stat-ico">🚫</div>
+            <div class="al-stat-num">@bans</div>
+            <div class="al-stat-lbl">Baneos</div>
+        </div>
+        <div class="al-stat amber" data-filter="desactivar">
+            <div class="al-stat-ico">⚠️</div>
+            <div class="al-stat-num">@deactivations</div>
+            <div class="al-stat-lbl">Desactivar</div>
+        </div>
+        <div class="al-stat green" data-filter="reactivar">
+            <div class="al-stat-ico">🔓</div>
+            <div class="al-stat-num">@reactivations</div>
+            <div class="al-stat-lbl">Reactivar</div>
+        </div>
+        <div class="al-stat orange" data-filter="loque">
+            <div class="al-stat-ico">🔌</div>
+            <div class="al-stat-num">@blocks</div>
+            <div class="al-stat-lbl">Bloqueos</div>
+        </div>
+        <div class="al-stat cyan" data-filter="contraseña">
+            <div class="al-stat-ico">🔑</div>
+            <div class="al-stat-num">@resets</div>
+            <div class="al-stat-lbl">Resets</div>
+        </div>
+        <div class="al-stat purple" data-filter="admin">
+            <div class="al-stat-ico">👑</div>
+            <div class="al-stat-num">@adminChanges</div>
+            <div class="al-stat-lbl">Admins</div>
+        </div>
+        <div class="al-stat dark" data-filter="eliminar">
+            <div class="al-stat-ico">🗑</div>
+            <div class="al-stat-num">@deletions</div>
+            <div class="al-stat-lbl">Eliminados</div>
+        </div>
     </div>
 
-    <!-- TABLA -->
-    <div class="logs-table-wrap">
-        @if (!Model.Any())
-        {
-            <div class="empty-state">
-                <div class="empty-icon">📜</div>
-                <h5>Sin registros</h5>
-                <p>No hay acciones registradas aún.</p>
-            </div>
-        }
-        else
-        {
-            <table class="logs-table" id="adminLogsTable">
-                <thead>
-                    <tr>
-                        <th>Administrador</th>
-                        <th>Acción</th>
-                        <th>Usuario afectado</th>
-                        <th>Fecha</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var log in Model)
-                    {
-                        <tr class="logRow">
-                            <td>
-                                <div class="user-cell">
-                                    @{
-                                        var profileImage = log.AdminProfileImage;
-                                        if (string.IsNullOrEmpty(profileImage))
-                                        {
-                                            var allUsers = ViewBag.Users as List<HabitTrackerApp.Models.User>;
-                                            var admin = allUsers?.FirstOrDefault(u => u.Id == log.AdminId);
-                                            profileImage = admin?.ProfileImage ?? admin?.ProfilePicture;
-                                        }
-                                    }
-                                    @if (!string.IsNullOrEmpty(profileImage))
-                                    {
-                                        <img src="@profileImage" class="log-avatar" />
-                                    }
-                                    else
-                                    {
-                                        <div class="log-avatar-letter" style="background:#2563eb;">
-                                            @log.AdminName.Substring(0,1).ToUpper()
-                                        </div>
-                                    }
-                                    <span class="log-username">@log.AdminName</span>
-                                </div>
-                            </td>
+    <div class="al-toolbar">
+        <div class="al-search">
+            <span class="al-search-ico">🔍</span>
+            <input type="text" id="alSearch" placeholder="Buscar admin, acción o usuario afectado..." />
+            <button type="button" class="al-clear" id="alClear" aria-label="Limpiar">✕</button>
+        </div>
+        <div class="al-active-filter" id="alActiveFilter" style="display:none;">
+            <span id="alActiveFilterLabel"></span>
+            <button type="button" id="alResetFilter" aria-label="Quitar filtro">✕</button>
+        </div>
+    </div>
 
-                            <td>
-                                @if (log.Action.Contains("Banear"))
-                                {
-                                    <span class="action-badge danger">🚫 @log.Action</span>
-                                }
-                                else if (log.Action.Contains("Reactivar"))
-                                {
-                                    <span class="action-badge success">🔓 @log.Action</span>
-                                }
-                                else if (log.Action.Contains("Desactivar"))
-                                {
-                                    <span class="action-badge warning">⚠️ @log.Action</span>
-                                }
-                                else if (log.Action.Contains("administrador"))
-                                {
-                                    <span class="action-badge primary">👑 @log.Action</span>
-                                }
+    @if (!Model.Any())
+    {
+        <div class="al-empty">
+            <div class="al-empty-ico">📭</div>
+            <h3>Sin registros aún</h3>
+            <p>Cuando un admin realice una acción aparecerá aquí automáticamente.</p>
+        </div>
+    }
+    else
+    {
+        <div class="al-list" id="alList">
+            @foreach (var log in Model)
+            {
+                var profileImage = log.AdminProfileImage;
+                if (string.IsNullOrEmpty(profileImage))
+                {
+                    var admin = users?.FirstOrDefault(u => u.Id == log.AdminId);
+                    profileImage = admin?.ProfileImage ?? admin?.ProfilePicture;
+                }
+                var targetUser = users?.FirstOrDefault(u => u.Id == log.TargetUserId);
+                var targetImg = targetUser?.ProfileImage ?? targetUser?.ProfilePicture;
+
+                string actionClass = "neutral";
+                string actionIco = "📌";
+                var lower = log.Action.ToLower();
+                if (lower.Contains("banear")) { actionClass = "red"; actionIco = "🚫"; }
+                else if (lower.Contains("reactivar")) { actionClass = "green"; actionIco = "🔓"; }
+                else if (lower.Contains("desactivar")) { actionClass = "amber"; actionIco = "⚠️"; }
+                else if (lower.Contains("eliminar")) { actionClass = "dark"; actionIco = "🗑"; }
+                else if (lower.Contains("contraseña")) { actionClass = "cyan"; actionIco = "🔑"; }
+                else if (lower.Contains("bloqueo global")) { actionClass = "orange"; actionIco = "🌐"; }
+                else if (lower.Contains("bloqu")) { actionClass = "orange"; actionIco = "🔌"; }
+                else if (lower.Contains("desbloqu")) { actionClass = "green"; actionIco = "🔓"; }
+                else if (lower.Contains("admin")) { actionClass = "purple"; actionIco = "👑"; }
+
+                var diff = DateTime.Now - log.CreatedAt;
+                string timeAgo = diff.TotalMinutes < 1 ? "ahora" :
+                                 diff.TotalMinutes < 60 ? $"hace {(int)diff.TotalMinutes} min" :
+                                 diff.TotalHours < 24 ? $"hace {(int)diff.TotalHours} h" :
+                                 diff.TotalDays < 7 ? $"hace {(int)diff.TotalDays} d" :
+                                 log.CreatedAt.ToString("dd/MM/yyyy");
+
+                <article class="al-card al-row-@actionClass" data-action="@lower" data-search="@(log.AdminName + " " + log.Action + " " + log.TargetUsername)">
+                    <div class="al-card-ico al-ico-@actionClass">@actionIco</div>
+
+                    <div class="al-card-body">
+                        <div class="al-card-action">
+                            <span class="al-action-badge al-badge-@actionClass">@log.Action</span>
+                        </div>
+
+                        <div class="al-card-people">
+                            <div class="al-person">
+                                @if (!string.IsNullOrEmpty(profileImage))
+                                { <img src="@profileImage" alt="" class="al-av" /> }
                                 else
-                                {
-                                    <span class="action-badge neutral">@log.Action</span>
-                                }
-                            </td>
-
-                            <td>
-                                <div class="user-cell">
-                                    @{
-                                        var users = ViewBag.Users as List<HabitTrackerApp.Models.User>;
-                                        var targetUser = users?.FirstOrDefault(u => u.Id == log.TargetUserId);
-                                        var targetImg = targetUser?.ProfileImage ?? targetUser?.ProfilePicture;
-                                    }
-                                    @if (!string.IsNullOrEmpty(targetImg))
-                                    {
-                                        <img src="@targetImg" class="log-avatar" />
-                                    }
-                                    else
-                                    {
-                                        <div class="log-avatar-letter" style="background:#64748b;">
-                                            @log.TargetUsername.Substring(0,1).ToUpper()
-                                        </div>
-                                    }
-                                    <span class="log-username">@log.TargetUsername</span>
+                                { <div class="al-av al-av-letter">@(string.IsNullOrEmpty(log.AdminName) ? "?" : log.AdminName.Substring(0,1).ToUpper())</div> }
+                                <div class="al-person-txt">
+                                    <div class="al-person-role">Admin</div>
+                                    <div class="al-person-name">@log.AdminName</div>
                                 </div>
-                            </td>
+                            </div>
 
-                            <td>
-                                @{
-                                    var diff = DateTime.Now - log.CreatedAt;
-                                }
-                                <span class="log-time">
-                                    @if (diff.TotalMinutes < 1)
-                                    { <text>Hace unos segundos</text> }
-                                    else if (diff.TotalMinutes < 60)
-                                    { <text>Hace @((int)Math.Floor(diff.TotalMinutes)) min</text> }
-                                    else if (diff.TotalHours < 24)
-                                    { <text>Hace @((int)Math.Floor(diff.TotalHours)) horas</text> }
-                                    else
-                                    { @log.CreatedAt.ToString("dd/MM/yyyy HH:mm") }
-                                </span>
-                            </td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
-        }
-    </div>
+                            <div class="al-arrow">→</div>
+
+                            <div class="al-person">
+                                @if (!string.IsNullOrEmpty(targetImg))
+                                { <img src="@targetImg" alt="" class="al-av" /> }
+                                else if (log.TargetUserId > 0 && !string.IsNullOrEmpty(log.TargetUsername))
+                                { <div class="al-av al-av-letter al-av-target">@log.TargetUsername.Substring(0,1).ToUpper()</div> }
+                                else
+                                { <div class="al-av al-av-letter al-av-target">—</div> }
+                                <div class="al-person-txt">
+                                    <div class="al-person-role">Objetivo</div>
+                                    <div class="al-person-name">@(string.IsNullOrEmpty(log.TargetUsername) ? "Sistema" : log.TargetUsername)</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="al-card-time" title="@log.CreatedAt.ToString("dd/MM/yyyy HH:mm:ss")">
+                        <div class="al-time-rel">@timeAgo</div>
+                        <div class="al-time-abs">@log.CreatedAt.ToString("HH:mm")</div>
+                    </div>
+                </article>
+            }
+        </div>
+        <div class="al-noresults" id="alNoResults" style="display:none;">
+            <div class="al-empty-ico">🔎</div>
+            <h3>Sin resultados</h3>
+            <p>Probá con otra palabra o quita el filtro activo.</p>
+        </div>
+    }
 </div>
 
 <style>
-.logs-page { max-width: 1100px; margin: 0 auto; }
+.al-page{max-width:1200px;margin:0 auto;padding:18px 14px 80px;}
+.al-hero{position:relative;border-radius:22px;overflow:hidden;margin-bottom:18px;background:linear-gradient(135deg,#0f172a,#1e293b);color:white;}
+.al-hero-bg{position:absolute;inset:0;background:radial-gradient(700px 220px at 110% -10%,rgba(91,94,244,0.45),transparent 60%),radial-gradient(500px 200px at -10% 110%,rgba(0,196,140,0.30),transparent 60%);opacity:.85;}
+.al-hero-inner{position:relative;padding:26px 26px 28px;}
+.al-hero-tag{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:2.4px;padding:5px 11px;border-radius:999px;background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.18);}
+.al-hero-title{margin:10px 0 4px;font-size:26px;font-weight:900;letter-spacing:-0.4px;}
+.al-hero-sub{margin:0;font-size:13px;opacity:.75;}
 
-.logs-header { margin-bottom: 24px; }
-.logs-title { font-size: 24px; font-weight: 800; color: #111827; margin: 0 0 4px; }
-.logs-subtitle { font-size: 14px; color: #9ca3af; margin: 0; }
+.al-stats{display:grid;grid-template-columns:repeat(8,1fr);gap:9px;margin-bottom:14px;}
+.al-stat{cursor:pointer;background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:11px 8px;text-align:center;transition:.2s;user-select:none;}
+.al-stat:hover{transform:translateY(-2px);box-shadow:0 6px 18px rgba(15,23,42,0.08);border-color:#d1d5db;}
+.al-stat.active{box-shadow:0 0 0 2px currentColor inset,0 6px 18px rgba(15,23,42,0.10);}
+.al-stat-ico{font-size:20px;}
+.al-stat-num{font-size:18px;font-weight:900;margin-top:2px;letter-spacing:-.5px;}
+.al-stat-lbl{font-size:9.5px;font-weight:700;color:#64748b;letter-spacing:.6px;text-transform:uppercase;margin-top:1px;}
+.al-stat.red{color:#dc2626;}.al-stat.red .al-stat-num{color:#dc2626;}
+.al-stat.amber{color:#d97706;}.al-stat.amber .al-stat-num{color:#d97706;}
+.al-stat.green{color:#059669;}.al-stat.green .al-stat-num{color:#059669;}
+.al-stat.orange{color:#ea580c;}.al-stat.orange .al-stat-num{color:#ea580c;}
+.al-stat.cyan{color:#0891b2;}.al-stat.cyan .al-stat-num{color:#0891b2;}
+.al-stat.purple{color:#7c3aed;}.al-stat.purple .al-stat-num{color:#7c3aed;}
+.al-stat.dark{color:#1e293b;}.al-stat.dark .al-stat-num{color:#1e293b;}
 
-.logs-stats {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-    gap: 14px;
-    margin-bottom: 20px;
+.al-toolbar{display:flex;gap:10px;align-items:center;margin-bottom:14px;flex-wrap:wrap;}
+.al-search{flex:1;min-width:240px;position:relative;}
+.al-search input{width:100%;padding:13px 42px 13px 42px;border-radius:14px;border:1.5px solid #e5e7eb;background:#fff;font-size:14px;font-weight:500;transition:.2s;}
+.al-search input:focus{outline:none;border-color:#5b5ef4;box-shadow:0 0 0 4px rgba(91,94,244,0.10);}
+.al-search-ico{position:absolute;left:14px;top:50%;transform:translateY(-50%);font-size:15px;opacity:.55;}
+.al-clear{position:absolute;right:8px;top:50%;transform:translateY(-50%);width:28px;height:28px;border-radius:50%;border:none;background:#f1f5f9;cursor:pointer;font-size:12px;color:#475569;display:none;}
+.al-clear.show{display:block;}
+.al-active-filter{display:flex;align-items:center;gap:6px;background:#5b5ef4;color:white;padding:6px 6px 6px 14px;border-radius:999px;font-size:12px;font-weight:700;}
+.al-active-filter button{background:rgba(255,255,255,.18);border:none;color:white;width:24px;height:24px;border-radius:50%;cursor:pointer;font-size:11px;}
+
+.al-list{display:flex;flex-direction:column;gap:10px;}
+.al-card{display:grid;grid-template-columns:auto 1fr auto;gap:14px;align-items:center;background:#fff;border:1px solid #e5e7eb;border-radius:16px;padding:14px 16px;transition:.18s;border-left:4px solid #cbd5e1;}
+.al-card:hover{box-shadow:0 6px 18px rgba(15,23,42,0.06);transform:translateY(-1px);}
+.al-row-red{border-left-color:#dc2626;}.al-row-amber{border-left-color:#d97706;}.al-row-green{border-left-color:#059669;}.al-row-orange{border-left-color:#ea580c;}.al-row-cyan{border-left-color:#0891b2;}.al-row-purple{border-left-color:#7c3aed;}.al-row-dark{border-left-color:#1e293b;}
+
+.al-card-ico{width:46px;height:46px;border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:22px;background:#f1f5f9;flex-shrink:0;}
+.al-ico-red{background:rgba(220,38,38,.10);}.al-ico-amber{background:rgba(217,119,6,.10);}.al-ico-green{background:rgba(5,150,105,.10);}.al-ico-orange{background:rgba(234,88,12,.10);}.al-ico-cyan{background:rgba(8,145,178,.10);}.al-ico-purple{background:rgba(124,58,237,.10);}.al-ico-dark{background:rgba(30,41,59,.08);}
+
+.al-card-body{min-width:0;display:flex;flex-direction:column;gap:8px;}
+.al-action-badge{display:inline-flex;align-items:center;font-size:12.5px;font-weight:800;padding:5px 11px;border-radius:999px;background:#f1f5f9;color:#475569;letter-spacing:.1px;}
+.al-badge-red{background:rgba(220,38,38,.10);color:#b91c1c;}
+.al-badge-amber{background:rgba(217,119,6,.12);color:#b45309;}
+.al-badge-green{background:rgba(5,150,105,.10);color:#047857;}
+.al-badge-orange{background:rgba(234,88,12,.12);color:#c2410c;}
+.al-badge-cyan{background:rgba(8,145,178,.10);color:#0e7490;}
+.al-badge-purple{background:rgba(124,58,237,.10);color:#6d28d9;}
+.al-badge-dark{background:rgba(30,41,59,.08);color:#1e293b;}
+
+.al-card-people{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.al-person{display:flex;align-items:center;gap:8px;min-width:0;}
+.al-av{width:30px;height:30px;border-radius:50%;object-fit:cover;flex-shrink:0;border:2px solid #fff;box-shadow:0 0 0 1px #e5e7eb;}
+.al-av-letter{display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#5b5ef4,#3730d9);color:white;font-weight:900;font-size:12px;}
+.al-av-target{background:linear-gradient(135deg,#64748b,#334155);}
+.al-person-txt{min-width:0;}
+.al-person-role{font-size:9px;font-weight:800;letter-spacing:1px;color:#94a3b8;text-transform:uppercase;}
+.al-person-name{font-size:13px;font-weight:700;color:#0f172a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:180px;}
+.al-arrow{color:#cbd5e1;font-weight:700;font-size:16px;flex-shrink:0;}
+
+.al-card-time{text-align:right;flex-shrink:0;}
+.al-time-rel{font-size:11.5px;font-weight:700;color:#64748b;}
+.al-time-abs{font-size:10px;color:#94a3b8;font-variant-numeric:tabular-nums;}
+
+.al-empty,.al-noresults{text-align:center;padding:50px 20px;background:#fff;border:1px solid #e5e7eb;border-radius:18px;color:#64748b;}
+.al-empty-ico{font-size:48px;margin-bottom:6px;}
+.al-empty h3,.al-noresults h3{font-size:17px;font-weight:800;color:#0f172a;margin:6px 0 4px;}
+.al-empty p,.al-noresults p{font-size:13px;margin:0;}
+
+body.bg-dark .al-stat,body.bg-dark .al-search input,body.bg-dark .al-card,body.bg-dark .al-empty,body.bg-dark .al-noresults{background:#111827;border-color:rgba(255,255,255,.06);color:#e2e8f0;}
+body.bg-dark .al-stat-lbl{color:#94a3b8;}
+body.bg-dark .al-person-name{color:#f1f5f9;}
+body.bg-dark .al-card-ico{background:rgba(255,255,255,.04);}
+body.bg-dark .al-action-badge{background:rgba(255,255,255,.06);color:#e2e8f0;}
+body.bg-dark .al-clear{background:rgba(255,255,255,.06);color:#cbd5e1;}
+body.bg-dark .al-arrow{color:#475569;}
+
+@@media(max-width:1024px){
+    .al-stats{grid-template-columns:repeat(4,1fr);}
 }
 
-.log-stat {
-    background: white;
-    border-radius: 18px;
-    padding: 20px 16px;
-    text-align: center;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.06);
-    border: 1px solid rgba(0,0,0,0.04);
-    transition: 0.2s;
+@@media(max-width:640px){
+    .al-page{padding:12px 10px 90px;}
+    .al-hero{border-radius:18px;margin-bottom:14px;}
+    .al-hero-inner{padding:20px 18px 22px;}
+    .al-hero-title{font-size:21px;}
+    .al-hero-sub{font-size:12px;}
+    .al-stats{grid-template-columns:repeat(4,1fr);gap:7px;}
+    .al-stat{padding:9px 5px;border-radius:12px;}
+    .al-stat-ico{font-size:17px;}
+    .al-stat-num{font-size:15px;}
+    .al-stat-lbl{font-size:8.5px;letter-spacing:.4px;}
+    .al-toolbar{flex-direction:column;align-items:stretch;}
+    .al-search input{padding:11px 38px 11px 38px;font-size:13.5px;}
+    .al-card{grid-template-columns:auto 1fr;grid-template-rows:auto auto;gap:9px 11px;padding:11px 12px;border-radius:14px;}
+    .al-card-time{grid-column:2;justify-self:end;text-align:right;}
+    .al-card-ico{grid-row:1 / span 2;width:40px;height:40px;font-size:19px;border-radius:11px;}
+    .al-action-badge{font-size:11.5px;padding:4px 9px;}
+    .al-card-people{gap:6px;}
+    .al-person-name{max-width:100px;font-size:12px;}
+    .al-arrow{font-size:13px;}
+    .al-av{width:26px;height:26px;}
+    .al-av-letter{font-size:10.5px;}
+    .al-time-rel{font-size:10.5px;}
+    .al-time-abs{font-size:9.5px;}
 }
-
-.log-stat:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.1); }
-
-.log-stat-icon { font-size: 24px; margin-bottom: 8px; }
-.log-stat-value { font-size: 32px; font-weight: 900; line-height: 1; margin-bottom: 4px; }
-.log-stat-label { font-size: 12px; color: #9ca3af; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
-
-.log-stat.red .log-stat-value { color: #dc2626; }
-.log-stat.green .log-stat-value { color: #16a34a; }
-.log-stat.yellow .log-stat-value { color: #d97706; }
-.log-stat.blue .log-stat-value { color: #2563eb; }
-
-.logs-search-wrap {
-    position: relative;
-    margin-bottom: 16px;
-}
-
-.search-icon {
-    position: absolute;
-    left: 14px;
-    top: 50%;
-    transform: translateY(-50%);
-    font-size: 16px;
-}
-
-.logs-search {
-    width: 100%;
-    padding: 12px 16px 12px 44px;
-    border: 1px solid #e5e7eb;
-    border-radius: 12px;
-    font-size: 14px;
-    outline: none;
-    transition: 0.2s;
-    background: white;
-    color: #111827;
-}
-
-.logs-search:focus {
-    border-color: #2563eb;
-    box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
-}
-
-.logs-table-wrap {
-    background: white;
-    border-radius: 20px;
-    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
-    border: 1px solid rgba(0,0,0,0.04);
-    overflow-x: auto;
-}
-
-.logs-table { width: 100%; border-collapse: collapse; }
-
-.logs-table thead th {
-    font-size: 11px;
-    font-weight: 700;
-    color: #9ca3af;
-    letter-spacing: 0.8px;
-    text-transform: uppercase;
-    padding: 16px 16px 14px;
-    border-bottom: 1px solid #f3f4f6;
-    white-space: nowrap;
-}
-
-.logRow { transition: background 0.15s; }
-.logRow:hover { background: #f9fafb; }
-
-.logs-table td {
-    padding: 14px 16px;
-    font-size: 14px;
-    border-bottom: 1px solid #f9fafb;
-    vertical-align: middle;
-}
-
-.user-cell { display: flex; align-items: center; gap: 10px; }
-
-.log-avatar {
-    width: 36px; height: 36px;
-    border-radius: 50%;
-    object-fit: cover;
-    border: 2px solid #e5e7eb;
-    flex-shrink: 0;
-}
-
-.log-avatar-letter {
-    width: 36px; height: 36px;
-    border-radius: 50%;
-    color: white;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: 800;
-    font-size: 14px;
-    flex-shrink: 0;
-}
-
-.log-username { font-weight: 600; color: #111827; }
-
-.action-badge {
-    display: inline-flex;
-    align-items: center;
-    padding: 4px 10px;
-    border-radius: 20px;
-    font-size: 12px;
-    font-weight: 600;
-    white-space: nowrap;
-}
-
-.action-badge.danger { background: #fee2e2; color: #dc2626; }
-.action-badge.success { background: #dcfce7; color: #16a34a; }
-.action-badge.warning { background: #fef3c7; color: #d97706; }
-.action-badge.primary { background: #eff6ff; color: #2563eb; }
-.action-badge.neutral { background: #f3f4f6; color: #6b7280; }
-
-.log-time { font-size: 12px; color: #9ca3af; white-space: nowrap; }
-
-.empty-state {
-    text-align: center;
-    padding: 60px 20px;
-}
-
-.empty-icon { font-size: 48px; margin-bottom: 14px; }
-.empty-state h5 { font-size: 18px; font-weight: 700; color: #111827; margin-bottom: 8px; }
-.empty-state p { font-size: 14px; color: #9ca3af; margin: 0; }
-
-/* DARK MODE */
-body.bg-dark .logs-title { color: #f1f5f9 !important; }
-body.bg-dark .log-stat,
-body.bg-dark .logs-table-wrap { background: #1e1e2e !important; border-color: #2d2d3d !important; }
-body.bg-dark .logs-search { background: #1e1e2e !important; border-color: #2d2d3d !important; color: #f1f5f9 !important; }
-body.bg-dark .logs-search::placeholder { color: #64748b !important; }
-body.bg-dark .logs-table thead th { color: #64748b !important; border-color: #2d2d3d !important; }
-body.bg-dark .logs-table td { border-color: #2d2d3d !important; }
-body.bg-dark .logRow:hover { background: #2d2d3d !important; }
-body.bg-dark .log-username { color: #f1f5f9 !important; }
-body.bg-dark .log-stat-label { color: #64748b !important; }
-body.bg-dark .empty-state h5 { color: #f1f5f9 !important; }
 </style>
 
 <script>
-document.getElementById("logSearch").addEventListener("keyup", function() {
-    const value = this.value.toLowerCase();
-    document.querySelectorAll("#adminLogsTable tbody tr").forEach(row => {
-        row.style.display = row.innerText.toLowerCase().includes(value) ? "" : "none";
+(function(){
+    const list=document.getElementById('alList');
+    const search=document.getElementById('alSearch');
+    const clearBtn=document.getElementById('alClear');
+    const stats=document.querySelectorAll('.al-stat');
+    const filterChip=document.getElementById('alActiveFilter');
+    const filterLbl=document.getElementById('alActiveFilterLabel');
+    const resetFilter=document.getElementById('alResetFilter');
+    const noResults=document.getElementById('alNoResults');
+    let activeFilter='all';
+
+    function applyFilters(){
+        if(!list)return;
+        const term=(search.value||'').toLowerCase().trim();
+        let shown=0;
+        list.querySelectorAll('.al-card').forEach(c=>{
+            const data=(c.getAttribute('data-search')||'').toLowerCase();
+            const action=(c.getAttribute('data-action')||'').toLowerCase();
+            const matchesText=!term||data.includes(term);
+            const matchesFilter=activeFilter==='all'||action.includes(activeFilter);
+            const visible=matchesText&&matchesFilter;
+            c.style.display=visible?'':'none';
+            if(visible)shown++;
+        });
+        if(noResults)noResults.style.display=shown===0?'block':'none';
+        if(clearBtn)clearBtn.classList.toggle('show',!!term);
+    }
+
+    if(search)search.addEventListener('input',applyFilters);
+    if(clearBtn)clearBtn.addEventListener('click',()=>{search.value='';applyFilters();search.focus();});
+
+    stats.forEach(s=>{
+        s.addEventListener('click',()=>{
+            const f=s.getAttribute('data-filter');
+            if(activeFilter===f&&f!=='all'){
+                activeFilter='all';
+            } else {
+                activeFilter=f;
+            }
+            stats.forEach(x=>x.classList.toggle('active',x.getAttribute('data-filter')===activeFilter));
+            if(activeFilter==='all'){
+                filterChip.style.display='none';
+            } else {
+                filterChip.style.display='inline-flex';
+                filterLbl.textContent='Filtro: '+s.querySelector('.al-stat-lbl').textContent;
+            }
+            applyFilters();
+        });
     });
-});
+
+    if(resetFilter)resetFilter.addEventListener('click',()=>{
+        activeFilter='all';
+        stats.forEach(x=>x.classList.remove('active'));
+        filterChip.style.display='none';
+        applyFilters();
+    });
+})();
 </script>

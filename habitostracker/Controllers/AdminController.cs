@@ -26,6 +26,30 @@ namespace HabitTrackerApp.Controllers
             _emailService = emailService;
         }
 
+        private void LogAdminAction(string action, int? targetUserId = null, string targetUsername = null)
+        {
+            try
+            {
+                var idClaim = User.FindFirst("UserId")?.Value;
+                if (string.IsNullOrEmpty(idClaim)) return;
+                var adminId = int.Parse(idClaim);
+                var admin = _context.Users.FirstOrDefault(u => u.Id == adminId);
+                if (admin == null) return;
+
+                _context.AdminLogs.Add(new AdminLog
+                {
+                    AdminId = admin.Id,
+                    AdminName = admin.Username,
+                    AdminProfileImage = admin.ProfileImage,
+                    TargetUserId = targetUserId ?? 0,
+                    TargetUsername = targetUsername ?? "—",
+                    Action = action,
+                    CreatedAt = DateTime.Now
+                });
+            }
+            catch { /* logging never blocks the admin action */ }
+        }
+
         public IActionResult Index()
         {
             var totalUsers = _context.Users.Count();
@@ -170,6 +194,8 @@ namespace HabitTrackerApp.Controllers
 
             // encriptar contraseña
             user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(newPassword);
+
+            LogAdminAction("Restablecer contraseña", user.Id, user.Username);
 
             _context.SaveChanges();
 
@@ -768,6 +794,8 @@ namespace HabitTrackerApp.Controllers
                 block.UpdatedAt = DateTime.Now;
             }
 
+            LogAdminAction(block.IsBlocked ? "Bloqueo global activado" : "Bloqueo global desactivado");
+
             _context.SaveChanges();
 
             // 🚨 EXPULSAR A TODOS
@@ -813,14 +841,12 @@ namespace HabitTrackerApp.Controllers
             return View(activities);
         }
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> BlockIP(string ip)
         {
-            // 🔥 PROTECCIÓN TOTAL
+            // El [Authorize(Roles="Admin,SuperAdmin")] de la clase + antiforgery ya protegen.
+            // (Antes había un check de Referer que era seguridad teatro y se removió.)
             if (string.IsNullOrEmpty(ip))
-                return RedirectToAction("Users");
-
-            // 🔥 SOLO permitir si viene del botón
-            if (!Request.Headers["Referer"].ToString().Contains("/Admin/Users"))
                 return RedirectToAction("Users");
 
             var exists = _context.BlockedIPs.FirstOrDefault(x => x.IpAddress == ip);
@@ -834,9 +860,6 @@ namespace HabitTrackerApp.Controllers
                 };
 
                 _context.BlockedIPs.Add(blocked);
-                _context.SaveChanges();
-
-                Console.WriteLine("🔥 IP BLOQUEADA MANUALMENTE: " + ip);
 
                 var users = _context.Users
                     .Where(u => u.LastIp == ip)
@@ -847,6 +870,9 @@ namespace HabitTrackerApp.Controllers
                 {
                     u.IsIpBlocked = true;
                 }
+
+                var targetNames = users.Count > 0 ? string.Join(", ", users.Select(u => u.Username)) : ip;
+                LogAdminAction($"Bloquear IP {ip}", users.FirstOrDefault()?.Id, targetNames);
 
                 _context.SaveChanges(); // 🔥 IMPORTANTE
 
@@ -879,6 +905,9 @@ namespace HabitTrackerApp.Controllers
                 {
                     u.IsIpBlocked = false;
                 }
+
+                var targetNames = users.Count > 0 ? string.Join(", ", users.Select(u => u.Username)) : ip;
+                LogAdminAction($"Desbloquear IP {ip}", users.FirstOrDefault()?.Id, targetNames);
 
                 _context.SaveChanges();
             }
@@ -959,6 +988,7 @@ namespace HabitTrackerApp.Controllers
             if (user == null) return Json(new { success = false });
 
             user.IsIpBlocked = true;
+            LogAdminAction("Bloquear conexión", user.Id, user.Username);
             await _context.SaveChangesAsync();
 
             // Notificar por grupo Y por userId
@@ -979,6 +1009,7 @@ namespace HabitTrackerApp.Controllers
             if (user == null) return Json(new { success = false });
 
             user.IsIpBlocked = false;
+            LogAdminAction("Desbloquear conexión", user.Id, user.Username);
             await _context.SaveChangesAsync();
 
             return Json(new { success = true });

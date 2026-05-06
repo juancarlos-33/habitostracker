@@ -3,6 +3,15 @@
 ##
 ## Get latest from https://github.com/github/gitignore/blob/master/VisualStudio.gitignore
 
+# Secrets locales — nunca commitearlos.
+# IMPORTANTE: si appsettings.Development.json ya está trackeado, ejecuta:
+#   git rm --cached habitostracker/appsettings.Development.json
+appsettings.Development.json
+appsettings.Local.json
+appsettings.*.local.json
+.env
+.env.*
+
 # User-specific files
 *.rsuser
 *.suo

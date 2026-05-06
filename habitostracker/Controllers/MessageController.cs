@@ -1,4 +1,5 @@
 ﻿using HabitTrackerApp.Data;
+using HabitTrackerApp.Helpers;
 using HabitTrackerApp.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
@@ -144,6 +145,7 @@ namespace HabitTrackerApp.Controllers
                 .Where(m => (m.SenderId == myId && m.ReceiverId == userId) ||
                             (m.SenderId == userId && m.ReceiverId == myId))
                 .Include(m => m.Sender)
+                .Include(m => m.ReplyToMessage).ThenInclude(r => r.Sender)
                 .OrderBy(m => m.SentAt)
                 .ToList();
 
@@ -328,7 +330,7 @@ namespace HabitTrackerApp.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> Send(int receiverId, string content, IFormFile file)
+        public async Task<IActionResult> Send(int receiverId, string content, IFormFile file, int? replyToMessageId = null)
         {
             var currentUser = GetCurrentUser();
             if (currentUser.Role == "Guest")
@@ -351,15 +353,39 @@ namespace HabitTrackerApp.Controllers
             string filePath = null;
             if (file != null && file.Length > 0)
             {
-                var ext = Path.GetExtension(file.FileName).ToLower();
-                var videoExts = new[] { ".mp4", ".webm", ".mov", ".avi" };
-                filePath = videoExts.Contains(ext)
+                // 🔒 validación real: extensión + magic bytes + tamaño
+                var v = FileValidator.Validate(file, FileValidator.FileKind.ImageOrVideo);
+                if (!v.IsValid)
+                    return Json(new { success = false, error = v.Error });
+
+                filePath = v.IsVideo
                     ? await _cloudinaryService.UploadVideoAsync(file)
                     : await _cloudinaryService.UploadImageAsync(file, "habitostracker/messages");
             }
 
             if (string.IsNullOrWhiteSpace(content) && file == null)
                 return Json(new { success = false });
+
+            // Validar que el reply apunta a una conversación entre estos dos usuarios
+            int? safeReplyId = null;
+            string replySender = "";
+            string replyContent = "";
+            if (replyToMessageId.HasValue && replyToMessageId.Value > 0)
+            {
+                var orig = await _context.Messages
+                    .Include(m => m.Sender)
+                    .FirstOrDefaultAsync(m => m.Id == replyToMessageId.Value);
+                if (orig != null &&
+                    ((orig.SenderId == senderId && orig.ReceiverId == receiverId) ||
+                     (orig.SenderId == receiverId && orig.ReceiverId == senderId)))
+                {
+                    safeReplyId = orig.Id;
+                    replySender = orig.Sender?.Username ?? "";
+                    replyContent = !string.IsNullOrEmpty(orig.FileUrl)
+                        ? (orig.FileUrl.Contains("/video/upload/") ? "🎥 Video" : "📷 Foto")
+                        : (orig.Content?.Length > 80 ? orig.Content.Substring(0, 80) + "…" : (orig.Content ?? ""));
+                }
+            }
 
             var message = new Message
             {
@@ -368,7 +394,8 @@ namespace HabitTrackerApp.Controllers
                 Content = content ?? "",
                 SentAt = DateTime.Now,
                 IsRead = false,
-                FileUrl = filePath
+                FileUrl = filePath,
+                ReplyToMessageId = safeReplyId
             };
             _context.Messages.Add(message);
 
@@ -391,7 +418,8 @@ namespace HabitTrackerApp.Controllers
             await _context.SaveChangesAsync();
 
             await _hubContext.Clients.Group(receiverId.ToString())
-                .SendAsync("ReceiveMessage", senderId, receiverId, senderName, content ?? "", filePath ?? "");
+                .SendAsync("ReceiveMessage", senderId, receiverId, senderName, content ?? "", filePath ?? "",
+                    message.Id, safeReplyId ?? 0, replySender, replyContent);
 
             var receiverOnline = _onlineUsers.IsOnline(receiverId.ToString());
             var receiverInChat = _onlineUsers.IsInChatWith(receiverId.ToString(), senderId.ToString());
@@ -487,6 +515,15 @@ namespace HabitTrackerApp.Controllers
         {
             var senderId = int.Parse(User.FindFirst("UserId").Value);
             if (audio == null || audio.Length == 0) return BadRequest();
+
+            // 🔒 validación de audio (acepta también webm porque MediaRecorder graba .webm/audio)
+            var av = FileValidator.Validate(audio, FileValidator.FileKind.Audio);
+            if (!av.IsValid)
+            {
+                // fallback: aceptar webm/video como audio si está bajo umbral pequeño
+                var alt = FileValidator.Validate(audio, FileValidator.FileKind.ImageOrVideo, 25);
+                if (!alt.IsValid) return BadRequest(new { error = av.Error });
+            }
 
             string audioUrl;
             try { audioUrl = await _cloudinaryService.UploadVideoAsync(audio); }

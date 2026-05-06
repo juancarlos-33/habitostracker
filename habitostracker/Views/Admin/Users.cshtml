@@ -522,7 +522,7 @@ body.bg-dark .qb.n{background:#1e293b!important;color:#94a3b8!important;border-c
                                     {
                                         <form asp-controller="Admin" asp-action="ResetPassword" method="post" style="display:inline">
                                             <input type="hidden" name="userId" value="@user.Id"/>
-                                            <button class="ab ne" onclick="return confirm('¿Resetear contraseña?')">🔑 Reset</button>
+                                            <button type="button" class="ab ne" onclick="event.preventDefault();showConfirm({icon:'🔑',title:'Resetear contraseña',message:'Se generará una nueva contraseña temporal para @user.Username y se enviará por correo.',confirmText:'🔑 Sí, resetear',confirmColor:'#f59e0b',onConfirm:()=>this.closest('form').submit()})">🔑 Reset</button>
                                         </form>
                                     }
                                 }
@@ -593,9 +593,9 @@ body.bg-dark .qb.n{background:#1e293b!important;color:#94a3b8!important;border-c
                     else
                     {
                         if (!user.IsActive)
-                        { <a asp-controller="Admin" asp-action="ReactivateUser" asp-route-id="@user.Id" class="ab su" onclick="return confirm('¿Reactivar?')">🔓 Reactivar</a> }
+                        { <a asp-controller="Admin" asp-action="ReactivateUser" asp-route-id="@user.Id" class="ab su" onclick="event.preventDefault();showConfirm({icon:'🔓',title:'Reactivar cuenta',message:'@user.Username podrá volver a acceder a la plataforma.',confirmText:'🔓 Reactivar',confirmColor:'#10b981',onConfirm:()=>window.location.href='@Url.Action("ReactivateUser","Admin",new{id=user.Id})'})">🔓 Reactivar</a> }
                         else if (user.IsBanned)
-                        { <a asp-controller="Admin" asp-action="UnbanUser" asp-route-id="@user.Id" class="ab su" onclick="return confirm('¿Desbanear?')">🔓 Desbanear</a> }
+                        { <a asp-controller="Admin" asp-action="UnbanUser" asp-route-id="@user.Id" class="ab su" onclick="event.preventDefault();showConfirm({icon:'🔓',title:'Desbanear usuario',message:'@user.Username recuperará acceso completo a la plataforma.',confirmText:'🔓 Desbanear',confirmColor:'#10b981',onConfirm:()=>window.location.href='@Url.Action("UnbanUser","Admin",new{id=user.Id})'})">🔓 Desbanear</a> }
                         else
                         {
                             if (isAdminUser && !isSuperAdmin)
@@ -605,16 +605,16 @@ body.bg-dark .qb.n{background:#1e293b!important;color:#94a3b8!important;border-c
                             }
                             else
                             {
-                                <button class="ab da" onclick="confirmDelete(@user.Id)">🔒 Desactivar</button>
-                                <a asp-controller="Admin" asp-action="BanUser" asp-route-id="@user.Id" class="ab wa" onclick="return confirm('¿Banear?')">🚫 Banear</a>
+                                <button class="ab da" onclick="confirmDelete(@user.Id,'@user.Username')">🔒 Desactivar</button>
+                                <a asp-controller="Admin" asp-action="BanUser" asp-route-id="@user.Id" class="ab wa" onclick="event.preventDefault();showConfirm({icon:'🚫',title:'Banear usuario',message:'@user.Username perderá acceso permanentemente. Podrás desbanearlo después.',confirmText:'🚫 Banear',confirmColor:'#dc2626',onConfirm:()=>window.location.href='@Url.Action("BanUser","Admin",new{id=user.Id})'})">🚫 Banear</a>
                             }
                             @if (isSuperAdmin)
                             {
-                                <a asp-controller="Admin" asp-action="DeleteUserPermanently" asp-route-id="@user.Id" class="ab dl" onclick="return confirm('¿Eliminar?')">💀 Eliminar</a>
+                                <a asp-controller="Admin" asp-action="DeleteUserPermanently" asp-route-id="@user.Id" class="ab dl" onclick="event.preventDefault();showConfirm({icon:'💀',title:'Eliminar permanentemente',message:'Se eliminarán TODOS los datos de @user.Username: publicaciones, hábitos, mensajes. Acción irreversible.',confirmText:'💀 Eliminar para siempre',confirmColor:'#7f1d1d',onConfirm:()=>window.location.href='@Url.Action("DeleteUserPermanently","Admin",new{id=user.Id})'})">💀 Eliminar</a>
                                 if (user.Role == "Admin")
-                                { <a href="#" class="ab se" onclick="event.preventDefault();confirmRemoveAdmin(@user.Id)">⬇️ Quitar Admin</a> }
+                                { <a href="#" class="ab se" onclick="event.preventDefault();confirmRemoveAdmin(@user.Id,'@user.Username')">⬇️ Quitar Admin</a> }
                                 else
-                                { <a asp-controller="Admin" asp-action="MakeAdmin" asp-route-id="@user.Id" class="ab pr2" onclick="return confirm('¿Hacer Admin?')">⬆️ Hacer Admin</a> }
+                                { <a asp-controller="Admin" asp-action="MakeAdmin" asp-route-id="@user.Id" class="ab pr2" onclick="event.preventDefault();showConfirm({icon:'⬆️',title:'Hacer Administrador',message:'@user.Username tendrá acceso al panel de administración.',confirmText:'⬆️ Sí, hacer Admin',confirmColor:'#6366f1',onConfirm:()=>window.location.href='@Url.Action("MakeAdmin","Admin",new{id=user.Id})'})">⬆️ Hacer Admin</a> }
                                 @if (user.IsIpBlocked)
                                 { <button class="ab ub2" onclick="desbloquearConexion(@user.Id,'@user.Username')" data-no-loader="true">🔓 Desbloquear conexión</button> }
                                 else
@@ -713,8 +713,12 @@ function filterByStatus(status){
     });
 }
 
-function confirmDelete(id){if(confirm("¿Desactivar este usuario?"))window.location.href="/Admin/DeleteUser/"+id;}
-function confirmRemoveAdmin(id){if(confirm("¿Quitar admin?"))window.location.href="/Admin/RemoveAdmin/"+id;}
+function confirmDelete(id,username){
+    showConfirm({icon:'🔒',title:'Desactivar usuario',message:`${username||'Este usuario'} no podrá acceder a la plataforma hasta que lo reactives.`,confirmText:'🔒 Desactivar',confirmColor:'#dc2626',onConfirm:()=>window.location.href='/Admin/DeleteUser/'+id});
+}
+function confirmRemoveAdmin(id,username){
+    showConfirm({icon:'⬇️',title:'Quitar Admin',message:`${username||'Este usuario'} perderá los permisos de administrador.`,confirmText:'⬇️ Quitar Admin',confirmColor:'#f59e0b',onConfirm:()=>window.location.href='/Admin/RemoveAdmin/'+id});
+}
 function pedirCodigoAdmin(){document.getElementById("codeModal").style.display="flex";}
 function cerrarModal(){document.getElementById("codeModal").style.display="none";document.getElementById("codeInput").value="";document.getElementById("codeError").textContent="";}
 
@@ -726,23 +730,35 @@ function mostrarWarn(){
 }
 
 function confirmarBloquearConexion(userId,username){
-    if(!confirm(`¿Bloquear completamente la conexión de ${username}?`))return;
-    const token=document.querySelector('#antiForgeryForm input[name="__RequestVerificationToken"]').value;
-    fetch('/Admin/BlockUserConnection',{method:'POST',headers:{'Content-Type':'application/json','RequestVerificationToken':token},body:JSON.stringify({userId})})
-    .then(r=>r.json()).then(d=>{
-        if(d.success){toast(`🔌 Conexión de ${username} bloqueada`,'#6366f1');setTimeout(()=>location.reload(),1500);}
-        else toast('⚠️ Error al bloquear','#ef4444');
-    }).catch(()=>toast('⚠️ Error de conexión','#ef4444'));
+    showConfirm({
+        icon:'🔌',title:'Bloquear conexión',
+        message:`Vas a bloquear la conexión de ${username}. No podrá acceder desde su IP actual.`,
+        confirmText:'🔌 Sí, bloquear',confirmColor:'#6366f1',
+        onConfirm:()=>{
+            const token=document.querySelector('#antiForgeryForm input[name="__RequestVerificationToken"]').value;
+            fetch('/Admin/BlockUserConnection',{method:'POST',headers:{'Content-Type':'application/json','RequestVerificationToken':token},body:JSON.stringify({userId})})
+            .then(r=>r.json()).then(d=>{
+                if(d.success){toast(`🔌 Conexión de ${username} bloqueada`,'#6366f1');setTimeout(()=>location.reload(),1500);}
+                else toast('⚠️ Error al bloquear','#ef4444');
+            }).catch(()=>toast('⚠️ Error de conexión','#ef4444'));
+        }
+    });
 }
 
 function desbloquearConexion(userId,username){
-    if(!confirm(`¿Desbloquear la conexión de ${username}?`))return;
-    const token=document.querySelector('#antiForgeryForm input[name="__RequestVerificationToken"]').value;
-    fetch('/Admin/UnblockUserConnection',{method:'POST',headers:{'Content-Type':'application/json','RequestVerificationToken':token},body:JSON.stringify({userId})})
-    .then(r=>r.json()).then(d=>{
-        if(d.success){toast(`🔓 Conexión de ${username} desbloqueada`,'#22c55e');setTimeout(()=>location.reload(),1500);}
-        else toast('⚠️ Error al desbloquear','#ef4444');
-    }).catch(()=>toast('⚠️ Error de conexión','#ef4444'));
+    showConfirm({
+        icon:'🔓',title:'Desbloquear conexión',
+        message:`${username} podrá volver a acceder a la plataforma.`,
+        confirmText:'🔓 Desbloquear',confirmColor:'#10b981',
+        onConfirm:()=>{
+            const token=document.querySelector('#antiForgeryForm input[name="__RequestVerificationToken"]').value;
+            fetch('/Admin/UnblockUserConnection',{method:'POST',headers:{'Content-Type':'application/json','RequestVerificationToken':token},body:JSON.stringify({userId})})
+            .then(r=>r.json()).then(d=>{
+                if(d.success){toast(`🔓 Conexión de ${username} desbloqueada`,'#22c55e');setTimeout(()=>location.reload(),1500);}
+                else toast('⚠️ Error al desbloquear','#ef4444');
+            }).catch(()=>toast('⚠️ Error de conexión','#ef4444'));
+        }
+    });
 }
 
 function toast(msg,color='#6366f1'){
@@ -763,8 +779,12 @@ function validarCodigo(){
     .then(r=>r.json()).then(d=>{
         if(!d.success){e.textContent="❌ Código incorrecto";return;}
         cerrarModal();
-        if(confirm("¿Bloquear conexión global?"))
-            fetch('/Admin/ToggleConnectionBlock',{method:'POST',headers:{'RequestVerificationToken':token}}).then(()=>location.reload());
+        showConfirm({
+            icon:'🌐',title:'Bloquear conexión global',
+            message:'Todos los usuarios serán expulsados y no podrán entrar hasta que desactives el bloqueo.',
+            confirmText:'🌐 Bloquear todo',confirmColor:'#dc2626',
+            onConfirm:()=>fetch('/Admin/ToggleConnectionBlock',{method:'POST',headers:{'RequestVerificationToken':token}}).then(()=>location.reload())
+        });
     }).catch(()=>e.textContent="⚠️ Error al validar");
 }
 </script>
