@@ -581,7 +581,7 @@ body.bg-dark .hx-btn.ghost{background:#111827!important;border-color:rgba(255,25
             {
                 <div class="hx-htabs">
                     <button class="hx-htab on" onclick="filtH('todos',this)">Todos (@totalHabits)</button>
-                    <button class="hx-htab" onclick="filtH('pendientes',this)">Pendientes (@pendingHabits.Count)</button>
+                    
                     <button class="hx-htab" onclick="filtH('completados',this)">Completados (@completedHabits.Count)</button>
                 </div>
             }
@@ -827,7 +827,7 @@ async function failHabit(event, habitId, habitName) {
     event.preventDefault();
     if (!confirm(`⚠️ ¿Estás seguro de que has fallado en "${habitName}"?\nEsto reiniciará el contador de tiempo y tu racha actual a 0.`)) return;
     try {
-        const res = await fetch(`/Habit/Fail/${habitId}`, { method: 'POST', headers: { 'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value } });
+  const res = await fetch(`/Habit/FailHabit/${habitId}`, { method: 'POST',  headers: { 'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value } });
         const data = await res.json();
         if (data.success) {
             // Actualizar la fecha de inicio en el atributo data-start-date (se obtiene del servidor, pero podemos recargar la página)
