@@ -14,6 +14,7 @@ namespace HabitTrackerApp.Models
         public int StreakDays { get; set; }
         public int MaxStreak { get; set; }
         public DateTime? LastCheckDate { get; set; }
+        public DateTime? LastFailDate { get; set; } // null = nunca ha fallado
 
         public DateTime CreatedDate { get; set; }
         public int UserId { get; set; }

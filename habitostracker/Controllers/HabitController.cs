@@ -26,6 +26,30 @@ namespace HabitTrackerApp.Controllers
             return int.Parse(claim.Value);
         }
 
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> FailHabit(int id)
+        {
+            var habit = await _context.Habits.FindAsync(id);
+            if (habit == null) return NotFound();
+            var userId = int.Parse(User.FindFirst("UserId").Value);
+            if (habit.UserId != userId) return Unauthorized();
+
+            // Reiniciar racha a 0
+            habit.StreakDays = 0;
+            // Si hoy estaba completado, desmarcarlo
+            if (habit.LastCheckDate == DateTime.Today && habit.Completed)
+            {
+                habit.Completed = false;
+                habit.LastCheckDate = DateTime.Today.AddDays(-1);
+            }
+            // Registrar la fecha de fallo (reinicia el contador de tiempo)
+            habit.LastFailDate = DateTime.UtcNow;
+            await _context.SaveChangesAsync();
+
+            return Ok(new { success = true });
+        }
         // 📌 DASHBOARD
         public IActionResult Index()
         {
@@ -224,27 +248,7 @@ namespace HabitTrackerApp.Controllers
         }
 
         // ❌ FAIL
-        public IActionResult Fail(int id)
-        {
-            var userId = GetUserId();
-            var habit = _context.Habits.FirstOrDefault(h => h.Id == id && h.UserId == userId);
-            if (habit == null) return NotFound();
-
-            habit.StreakDays = 0;
-            habit.Completed = false;
-            habit.LastCheckDate = DateTime.Today;
-
-            _context.HabitHistories.Add(new HabitHistory
-            {
-                HabitId = habit.Id,
-                HabitName = habit.Name,
-                Date = DateTime.Today,
-                Completed = false
-            });
-
-            _context.SaveChanges();
-            return RedirectToAction("Index");
-        }
+      
 
         [HttpPost]
         public IActionResult AddComment(int habitId, string content)
