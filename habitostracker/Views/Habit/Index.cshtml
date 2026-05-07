@@ -581,7 +581,7 @@ body.bg-dark .hx-btn.ghost{background:#111827!important;border-color:rgba(255,25
             {
                 <div class="hx-htabs">
                     <button class="hx-htab on" onclick="filtH('todos',this)">Todos (@totalHabits)</button>
-                    
+                  
                     <button class="hx-htab" onclick="filtH('completados',this)">Completados (@completedHabits.Count)</button>
                 </div>
             }
@@ -607,7 +607,7 @@ body.bg-dark .hx-btn.ghost{background:#111827!important;border-color:rgba(255,25
                         bool failed = habit.LastCheckDate == DateTime.Today && !habit.Completed;
                         string sc = done ? "done" : failed ? "failed" : "pending";
                         string icon = done ? "✔" : failed ? "✖" : "○";
-                   
+                        string badge = done ? "✔ Completado" : failed ? "✖ Fallado" : "";
 
                         // Fecha de inicio para el contador: si tiene LastFailDate usar esa, sino CreatedDate
                         DateTime startDate = habit.LastFailDate ?? habit.CreatedDate;
