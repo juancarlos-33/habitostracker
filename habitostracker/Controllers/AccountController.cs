@@ -2528,6 +2528,7 @@ namespace HabitTrackerApp.Controllers
                 Console.WriteLine($"❌ StackTrace: {ex.StackTrace}");
             }
         }
+
         public class LocationDto
         {
             public double latitude { get; set; }
