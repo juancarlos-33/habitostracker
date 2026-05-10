@@ -534,10 +534,8 @@ namespace HabitTrackerApp.Controllers
                 });
             }
 
-            _context.SaveChanges();
-
+            await _context.SaveChangesAsync();
             TempData["Success"] = "Pago aprobado y usuario premium 😈💸";
-
             return RedirectToAction("Payments");
         }
 
