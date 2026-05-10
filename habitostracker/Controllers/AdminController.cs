@@ -552,15 +552,26 @@ namespace HabitTrackerApp.Controllers
                     .OrderByDescending(p => p.CreatedAt)
                     .ToList();
 
-                return View(payments);
+                // Intenta renderizar la vista manualmente para capturar la excepción
+                try
+                {
+                    return View(payments);
+                }
+                catch (Exception viewEx)
+                {
+                    // Registra la excepción en la consola de Railway
+                    Console.WriteLine($"❌ VIEW ERROR: {viewEx.Message}");
+                    Console.WriteLine(viewEx.StackTrace);
+                    // Devuelve el error como texto plano para verlo en el navegador
+                    return Content($"<pre>Error en la vista:\n{viewEx.Message}\n\n{viewEx.StackTrace}</pre>", "text/html");
+                }
             }
             catch (Exception ex)
             {
-                // Temporal: muestra el error en la página
-                return Content($"<pre>Error: {ex.Message}\n\n{ex.StackTrace}</pre>", "text/html");
+                Console.WriteLine($"❌ CONTROLLER ERROR: {ex.Message}");
+                return Content($"<pre>Error en el controlador:\n{ex.Message}\n\n{ex.StackTrace}</pre>", "text/html");
             }
         }
-
         public async Task<IActionResult> RejectPayment(int id)
         {
             var payment = _context.Payments.FirstOrDefault(p => p.Id == id);
