@@ -541,17 +541,24 @@ namespace HabitTrackerApp.Controllers
 
         public IActionResult Payments()
         {
-            var myId = int.Parse(User.FindFirst("UserId").Value);
-            var me = _context.Users.FirstOrDefault(u => u.Id == myId);
-            if (me?.Role != "SuperAdmin") return Forbid();
+            try
+            {
+                var myId = int.Parse(User.FindFirst("UserId").Value);
+                var me = _context.Users.FirstOrDefault(u => u.Id == myId);
+                if (me?.Role != "SuperAdmin") return Forbid();
 
-            var payments = _context.Payments
-                .Include(p => p.User)
-                .Where(p => p.User != null)  // ← Evita registros huérfanos
-                .OrderByDescending(p => p.CreatedAt)
-                .ToList();
+                var payments = _context.Payments
+                    .Include(p => p.User)
+                    .OrderByDescending(p => p.CreatedAt)
+                    .ToList();
 
-            return View(payments);
+                return View(payments);
+            }
+            catch (Exception ex)
+            {
+                // Temporal: muestra el error en la página
+                return Content($"<pre>Error: {ex.Message}\n\n{ex.StackTrace}</pre>", "text/html");
+            }
         }
 
         public async Task<IActionResult> RejectPayment(int id)
