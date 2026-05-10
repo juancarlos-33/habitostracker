@@ -541,13 +541,13 @@ namespace HabitTrackerApp.Controllers
 
         public IActionResult Payments()
         {
-            // 🔒 solo SuperAdmin
             var myId = int.Parse(User.FindFirst("UserId").Value);
             var me = _context.Users.FirstOrDefault(u => u.Id == myId);
             if (me?.Role != "SuperAdmin") return Forbid();
 
             var payments = _context.Payments
                 .Include(p => p.User)
+                .Where(p => p.User != null)  // ← Evita registros huérfanos
                 .OrderByDescending(p => p.CreatedAt)
                 .ToList();
 
