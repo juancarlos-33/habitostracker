@@ -1,33 +1,22 @@
 ﻿@model List<HabitTrackerApp.Models.Payment>
 
 @{
-    ViewData["Title"] = "Pagos Premium";
-    var pending = Model.Count(p => !p.IsApproved && !p.IsRejected);
-    var approved = Model.Count(p => p.IsApproved);
-    var rejected = Model.Count(p => p.IsRejected);
+    ViewData["Title"] = "💸 Pagos Premium";
 }
 
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+<div class="payments-page">
 
-<div class="payments-container">
     <div class="payments-header">
-        <div>
-            <h1 class="payments-title">💸 Solicitudes Premium</h1>
-            <p class="payments-sub">Gestiona los comprobantes de pago y actualiza el estado de los usuarios.</p>
-        </div>
-        <div class="payments-stats">
-            <div class="stat-badge pending"><span>⏳</span> @pending pendientes</div>
-            <div class="stat-badge approved"><span>✅</span> @approved aprobados</div>
-            <div class="stat-badge rejected"><span>❌</span> @rejected rechazados</div>
-        </div>
+        <h2 class="payments-title">💸 Solicitudes Premium</h2>
+        <p class="payments-subtitle">Gestiona los pagos y aprobaciones de usuarios premium</p>
     </div>
 
     @if (!Model.Any())
     {
         <div class="empty-state">
-            <div class="empty-icon">📭</div>
-            <h3>Sin solicitudes de pago</h3>
-            <p>No hay comprobantes para revisar en este momento.</p>
+            <div class="empty-icon">💸</div>
+            <h5>Sin solicitudes pendientes</h5>
+            <p>No hay pagos para revisar en este momento.</p>
         </div>
     }
     else
@@ -35,449 +24,177 @@
         <div class="payments-grid">
             @foreach (var p in Model)
             {
-                var statusClass = p.IsApproved ? "approved" : (p.IsRejected ? "rejected" : "pending");
-                var statusIcon = p.IsApproved ? "✅" : (p.IsRejected ? "❌" : "⏳");
-                var statusText = p.IsApproved ? "Aprobado" : (p.IsRejected ? "Rechazado" : "Pendiente");
-
-                <div class="payment-card @statusClass">
-                    <div class="payment-card-header">
-                        <div class="user-info">
-                            @if (p.User != null)
+                <div class="payment-card @(p.IsApproved ? "approved" : p.IsRejected ? "rejected" : "pending")">
+                    <div class="payment-top">
+                        <div class="payment-user">
+                            @{
+                                var userImg = p.User?.ProfileImage ?? p.User?.ProfilePicture;
+                            }
+                            @if (!string.IsNullOrEmpty(userImg))
                             {
-                                var avatar = p.User.ProfileImage ?? p.User.ProfilePicture;
-                                if (!string.IsNullOrEmpty(avatar))
-                                {
-                                    <img src="@avatar" class="user-avatar" />
-                                }
-                                else
-                                {
-                                    <div class="user-avatar-placeholder">@(p.User.Username?.Substring(0,1).ToUpper() ?? "?")</div>
-                                }
-                                <div>
-                                    <div class="user-name">@p.User.Username</div>
-                                    <div class="payment-date">@p.CreatedAt.ToString("dd MMM yyyy · HH:mm")</div>
-                                </div>
+                                <img src="@userImg" class="payment-avatar" />
                             }
                             else
                             {
-                                <div class="user-avatar-placeholder">🗑️</div>
-                                <div>
-                                    <div class="user-name">Usuario eliminado</div>
-                                    <div class="payment-date">@p.CreatedAt.ToString("dd MMM yyyy · HH:mm")</div>
+                                <div class="payment-avatar-letter">
+                                    @p.User?.Username?.Substring(0,1).ToUpper()
                                 </div>
                             }
+                            <div>
+                                <div class="payment-username">@p.User?.Username</div>
+                                <div class="payment-date">@p.CreatedAt.ToString("dd MMM yyyy · HH:mm")</div>
+                            </div>
                         </div>
-                        <div class="payment-status @statusClass">
-                            <span class="status-icon">@statusIcon</span>
-                            <span>@statusText</span>
-                        </div>
-                    </div>
-
-                    <div class="payment-screenshot">
-                        @if (!string.IsNullOrEmpty(p.Screenshot))
+                        @if (p.IsApproved)
                         {
-                            <img src="@p.Screenshot" alt="Comprobante" onclick="openImageModal('@p.Screenshot')" />
-                            <div class="zoom-hint">🔍 Click para ampliar</div>
+                            <span class="payment-status approved">✔ Aprobado</span>
+                        }
+                        else if (p.IsRejected)
+                        {
+                            <span class="payment-status rejected">❌ Rechazado</span>
                         }
                         else
                         {
-                            <div class="no-screenshot">Sin comprobante</div>
+                            <span class="payment-status pending">⏳ Pendiente</span>
                         }
                     </div>
 
-                    @if (!p.IsApproved && !p.IsRejected && p.User != null)
+                    <div class="payment-screenshot-wrap" onclick="openImage('@p.Screenshot')">
+                        @if (!string.IsNullOrEmpty(p.Screenshot))
+                        {
+                            <img src="@p.Screenshot" class="payment-screenshot" />
+                            <div class="screenshot-overlay">
+                                🔍 Ver comprobante
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="payment-no-image">📄 Sin comprobante</div>
+                        }
+                    </div>
+
+                    @if (!p.IsApproved && !p.IsRejected)
                     {
                         <div class="payment-actions">
-                            <form asp-action="ApprovePayment" method="post" class="action-form">
-                                <input type="hidden" name="id" value="@p.Id" />
-                                @Html.AntiForgeryToken()
-                                <button type="submit" class="btn-approve" onclick="return confirm('✅ ¿Aprobar este pago? El usuario se volverá PREMIUM inmediatamente.');">
-                                    ✅ Aprobar
-                                </button>
-                            </form>
-                            <form asp-action="RejectPayment" method="post" class="action-form">
-                                <input type="hidden" name="id" value="@p.Id" />
-                                @Html.AntiForgeryToken()
-                                <button type="submit" class="btn-reject" onclick="return confirm('❌ ¿Rechazar este pago? El usuario recibirá una notificación y no será premium.');">
-                                    ❌ Rechazar
-                                </button>
-                            </form>
-                        </div>
-                    }
-                    else if (p.User == null)
-                    {
-                        <div class="payment-actions">
-                            <button class="btn-disabled" disabled>⚠️ Usuario no existe</button>
-                        </div>
-                    }
-                    else if (p.IsApproved)
-                    {
-                        <div class="payment-actions">
-                            <button class="btn-disabled approved" disabled>✅ Ya aprobado</button>
-                        </div>
-                    }
-                    else if (p.IsRejected)
-                    {
-                        <div class="payment-actions">
-                            <button class="btn-disabled rejected" disabled>❌ Ya rechazado</button>
+                            <a href="#" class="payment-btn approve" onclick="event.preventDefault(); showConfirm({
+                                icon: '✅',
+                                title: 'Aprobar pago',
+                                message: 'Se otorgará el plan Premium al usuario. Esta acción no se puede deshacer.',
+                                confirmText: '✅ Sí, aprobar',
+                                confirmColor: '#10b981',
+                                onConfirm: function() { window.location.href = '@Url.Action("ApprovePayment", "Admin", new { id = p.Id })'; }
+                            });">
+                                ✅ Aprobar
+                            </a>
+                            <a href="#" class="payment-btn reject" onclick="event.preventDefault(); showConfirm({
+                                icon: '❌',
+                                title: 'Rechazar pago',
+                                message: 'El comprobante será rechazado y el usuario no recibirá Premium.',
+                                confirmText: '❌ Sí, rechazar',
+                                confirmColor: '#ef4444',
+                                onConfirm: function() { window.location.href = '@Url.Action("RejectPayment", "Admin", new { id = p.Id })'; }
+                            });">
+                                ❌ Rechazar
+                            </a>
                         </div>
                     }
                 </div>
             }
         </div>
     }
-
-    <div class="back-link">
-        <a href="/Admin/Index" class="btn-back">← Volver al panel de administración</a>
-    </div>
 </div>
 
 <!-- MODAL PARA VER IMAGEN -->
 <div id="imageModal" class="image-modal" onclick="closeImageModal()">
-    <div class="image-modal-content" onclick="event.stopPropagation()">
-        <button class="modal-close" onclick="closeImageModal()">✕</button>
-        <img id="modalImage" src="" alt="Comprobante ampliado" />
+    <div class="image-modal-inner" onclick="event.stopPropagation()">
+        <button class="image-modal-close" onclick="closeImageModal()">✖</button>
+        <img id="modalImage" class="image-modal-img" />
     </div>
 </div>
 
 <style>
-* { box-sizing: border-box; }
-
-.payments-container {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 24px 20px;
-    font-family: 'Plus Jakarta Sans', sans-serif;
-}
-
-/* HEADER */
-.payments-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    flex-wrap: wrap;
-    gap: 16px;
-    margin-bottom: 24px;
-}
-.payments-title {
-    font-size: 28px;
-    font-weight: 800;
-    color: #111827;
-    margin: 0 0 5px;
-}
-.payments-sub {
-    font-size: 14px;
-    color: #6b7280;
-    margin: 0;
-}
-.payments-stats {
-    display: flex;
-    gap: 10px;
-    flex-wrap: wrap;
-}
-.stat-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 6px 14px;
-    border-radius: 40px;
-    font-size: 13px;
-    font-weight: 700;
-    background: #f3f4f6;
-    color: #374151;
-}
-.stat-badge.pending { background: #fef3c7; color: #b45309; }
-.stat-badge.approved { background: #dcfce7; color: #15803d; }
-.stat-badge.rejected { background: #fee2e2; color: #b91c1c; }
-
-/* EMPTY STATE */
-.empty-state {
-    text-align: center;
-    padding: 60px 24px;
-    background: white;
-    border-radius: 24px;
-    border: 1px solid #e5e7eb;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-}
-.empty-icon { font-size: 64px; margin-bottom: 16px; }
-.empty-state h3 { font-size: 20px; font-weight: 700; color: #111827; margin: 0 0 8px; }
-.empty-state p { font-size: 14px; color: #6b7280; margin: 0; }
-
-/* GRID CARDS */
-.payments-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-    gap: 20px;
-    margin: 16px 0 24px;
-}
-
-/* CARD */
-.payment-card {
-    background: white;
-    border-radius: 20px;
-    overflow: hidden;
-    border: 1px solid #e5e7eb;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-    transition: transform 0.2s, box-shadow 0.2s;
-}
-.payment-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 16px 32px rgba(0,0,0,0.1);
-}
-.payment-card.pending { border-top: 4px solid #f59e0b; }
-.payment-card.approved { border-top: 4px solid #10b981; }
-.payment-card.rejected { border-top: 4px solid #ef4444; }
-
-.payment-card-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 16px 18px;
-    gap: 12px;
-    border-bottom: 1px solid #f3f4f6;
-}
-.user-info {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    flex: 1;
-    min-width: 0;
-}
-.user-avatar {
-    width: 44px;
-    height: 44px;
-    border-radius: 50%;
-    object-fit: cover;
-    flex-shrink: 0;
-}
-.user-avatar-placeholder {
-    width: 44px;
-    height: 44px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, #6366f1, #4f46e5);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 18px;
-    font-weight: 800;
-    color: white;
-    flex-shrink: 0;
-}
-.user-name {
-    font-size: 15px;
-    font-weight: 700;
-    color: #111827;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-.payment-date {
-    font-size: 11px;
-    color: #9ca3af;
-    margin-top: 2px;
-}
-.payment-status {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    padding: 4px 12px;
-    border-radius: 60px;
-    font-size: 12px;
-    font-weight: 700;
-    white-space: nowrap;
-}
-.payment-status.pending { background: #fef3c7; color: #b45309; }
-.payment-status.approved { background: #dcfce7; color: #15803d; }
-.payment-status.rejected { background: #fee2e2; color: #b91c1c; }
-
-.payment-screenshot {
-    padding: 12px;
-    background: #f9fafb;
-    cursor: pointer;
-    text-align: center;
-    border-bottom: 1px solid #f3f4f6;
-}
-.payment-screenshot img {
-    max-width: 100%;
-    max-height: 160px;
-    border-radius: 12px;
-    object-fit: cover;
-    transition: 0.2s;
-}
-.payment-screenshot img:hover {
-    opacity: 0.9;
-    transform: scale(1.02);
-}
-.zoom-hint {
-    font-size: 11px;
-    color: #9ca3af;
-    margin-top: 6px;
-}
-.no-screenshot {
-    padding: 32px;
-    text-align: center;
-    color: #9ca3af;
-    font-size: 13px;
-    background: #f3f4f6;
-    border-radius: 12px;
-}
-
-.payment-actions {
-    display: flex;
-    gap: 12px;
-    padding: 16px 18px;
-}
-.action-form {
-    flex: 1;
-}
-.btn-approve, .btn-reject, .btn-disabled {
-    width: 100%;
-    padding: 10px 12px;
-    border-radius: 14px;
-    font-size: 13px;
-    font-weight: 700;
-    text-align: center;
-    cursor: pointer;
-    transition: 0.2s;
-    border: none;
-    font-family: inherit;
-}
-.btn-approve {
-    background: #dcfce7;
-    color: #15803d;
-}
-.btn-approve:hover {
-    background: #16a34a;
-    color: white;
-    transform: translateY(-2px);
-}
-.btn-reject {
-    background: #fee2e2;
-    color: #b91c1c;
-}
-.btn-reject:hover {
-    background: #dc2626;
-    color: white;
-    transform: translateY(-2px);
-}
-.btn-disabled {
-    background: #f3f4f6;
-    color: #9ca3af;
-    cursor: not-allowed;
-}
-.btn-disabled.approved { background: #dcfce7; color: #15803d; opacity: 0.6; }
-.btn-disabled.rejected { background: #fee2e2; color: #b91c1c; opacity: 0.6; }
-
-.back-link {
-    margin-top: 16px;
-    text-align: center;
-}
-.btn-back {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 10px 24px;
-    background: #f3f4f6;
-    color: #374151;
-    border-radius: 60px;
-    text-decoration: none;
-    font-size: 13px;
-    font-weight: 600;
-    transition: 0.2s;
-}
-.btn-back:hover {
-    background: #e5e7eb;
-    color: #111827;
-}
-
-/* MODAL IMAGEN */
-.image-modal {
-    display: none;
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.85);
-    z-index: 99999;
-    align-items: center;
-    justify-content: center;
-    backdrop-filter: blur(8px);
-    cursor: pointer;
-}
-.image-modal-content {
-    position: relative;
-    max-width: 90vw;
-    max-height: 90vh;
-    border-radius: 20px;
-    overflow: hidden;
-    box-shadow: 0 30px 70px rgba(0,0,0,0.5);
-}
-.modal-close {
-    position: absolute;
-    top: 12px;
-    right: 12px;
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-    background: rgba(255,255,255,0.15);
-    border: 1px solid rgba(255,255,255,0.2);
-    color: white;
-    font-size: 18px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: 0.2s;
-}
-.modal-close:hover {
-    background: rgba(255,255,255,0.3);
-}
-.image-modal-content img {
-    max-width: 100%;
-    max-height: 85vh;
-    display: block;
-}
-
-/* DARK MODE */
-body.bg-dark .payments-title { color: #f1f5f9; }
-body.bg-dark .payments-sub { color: #94a3b8; }
-body.bg-dark .empty-state { background: #1e293b; border-color: #2d3748; }
-body.bg-dark .empty-state h3 { color: #f1f5f9; }
-body.bg-dark .empty-state p { color: #94a3b8; }
-body.bg-dark .payment-card { background: #1e293b; border-color: #2d3748; }
-body.bg-dark .payment-card-header { border-bottom-color: #2d3748; }
-body.bg-dark .user-name { color: #f1f5f9; }
-body.bg-dark .payment-screenshot { background: #111827; }
-body.bg-dark .btn-back { background: #2d3748; color: #94a3b8; }
-body.bg-dark .btn-back:hover { background: #334155; color: #f1f5f9; }
-body.bg-dark .stat-badge { background: #2d3748; color: #94a3b8; }
-
-/* RESPONSIVE */
-@@media (max-width: 640px) {
-    .payments-container { padding: 16px; }
-    .payments-header { flex-direction: column; align-items: stretch; }
-    .payments-stats { justify-content: space-between; }
-    .payments-grid { grid-template-columns: 1fr; gap: 14px; }
-    .payment-card-header { flex-wrap: wrap; }
-    .user-info { min-width: 0; }
-    .user-name { white-space: normal; word-break: break-word; }
-    .payment-actions { flex-direction: column; }
-    .payments-title { font-size: 22px; }
-}
+    .payments-page { max-width: 1100px; margin: 0 auto; padding: 20px; font-family: 'DM Sans', 'Plus Jakarta Sans', sans-serif; }
+    .payments-header { margin-bottom: 24px; }
+    .payments-title { font-size: 24px; font-weight: 800; color: #111827; margin: 0 0 4px; }
+    .payments-subtitle { font-size: 14px; color: #9ca3af; margin: 0; }
+    .empty-state { text-align: center; padding: 60px 20px; background: #ffffff; border-radius: 20px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); border: 1px solid rgba(0,0,0,0.04); }
+    .empty-icon { font-size: 52px; margin-bottom: 16px; }
+    .empty-state h5 { font-size: 20px; font-weight: 700; color: #111827; margin-bottom: 8px; }
+    .empty-state p { font-size: 14px; color: #9ca3af; margin: 0; }
+    .payments-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; }
+    .payment-card { background: white; border-radius: 20px; padding: 20px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); border: 1px solid rgba(0,0,0,0.04); transition: 0.2s; }
+    .payment-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.1); }
+    .payment-card.approved { border-color: #86efac; background: #f0fdf4; }
+    .payment-card.rejected { border-color: #fecaca; background: #fff5f5; }
+    .payment-card.pending { border-color: #fde68a; background: #fffbeb; }
+    .payment-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; gap: 10px; }
+    .payment-user { display: flex; align-items: center; gap: 10px; }
+    .payment-avatar { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid #e5e7eb; flex-shrink: 0; }
+    .payment-avatar-letter { width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #2563eb, #7c3aed); color: white; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 16px; flex-shrink: 0; }
+    .payment-username { font-size: 14px; font-weight: 700; color: #111827; }
+    .payment-date { font-size: 11px; color: #9ca3af; margin-top: 2px; }
+    .payment-status { display: inline-flex; align-items: center; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 700; white-space: nowrap; flex-shrink: 0; }
+    .payment-status.approved { background: #dcfce7; color: #16a34a; }
+    .payment-status.rejected { background: #fee2e2; color: #dc2626; }
+    .payment-status.pending { background: #fef3c7; color: #d97706; }
+    .payment-screenshot-wrap { position: relative; border-radius: 12px; overflow: hidden; margin-bottom: 16px; cursor: pointer; background: #f1f5f9; min-height: 140px; display: flex; align-items: center; justify-content: center; }
+    .payment-screenshot { width: 100%; height: 160px; object-fit: cover; display: block; transition: 0.3s; }
+    .payment-no-image { display: flex; align-items: center; justify-content: center; width: 100%; height: 160px; color: #9ca3af; font-size: 14px; font-weight: 600; background: #f8fafc; }
+    .screenshot-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; color: white; font-size: 14px; font-weight: 600; opacity: 0; transition: 0.2s; border-radius: 12px; }
+    .payment-screenshot-wrap:hover .screenshot-overlay { opacity: 1; }
+    .payment-screenshot-wrap:hover .payment-screenshot { transform: scale(1.03); }
+    .payment-actions { display: flex; gap: 8px; margin-top: 8px; }
+    .payment-btn { flex: 1; padding: 9px 12px; border-radius: 10px; font-size: 13px; font-weight: 600; text-align: center; text-decoration: none; transition: 0.2s; display: inline-flex; align-items: center; justify-content: center; gap: 6px; cursor: pointer; }
+    .payment-btn.approve { background: #dcfce7; color: #16a34a; }
+    .payment-btn.approve:hover { background: #16a34a; color: white; }
+    .payment-btn.reject { background: #fee2e2; color: #dc2626; }
+    .payment-btn.reject:hover { background: #dc2626; color: white; }
+    /* MODAL IMAGEN */
+    .image-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 9999; justify-content: center; align-items: center; backdrop-filter: blur(4px); }
+    .image-modal.open { display: flex; }
+    .image-modal-inner { position: relative; max-width: 90vw; max-height: 90vh; }
+    .image-modal-close { position: absolute; top: -16px; right: -16px; width: 36px; height: 36px; border-radius: 50%; border: none; background: white; color: #111; font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-weight: 700; box-shadow: 0 4px 12px rgba(0,0,0,0.3); transition: 0.2s; z-index: 1; }
+    .image-modal-close:hover { background: #f3f4f6; transform: scale(1.1); }
+    .image-modal-img { max-width: 100%; max-height: 85vh; border-radius: 14px; box-shadow: 0 20px 60px rgba(0,0,0,0.5); }
+    /* DARK MODE */
+    body.bg-dark .payments-title { color: #f1f5f9 !important; }
+    body.bg-dark .payment-card { background: #1e1e2e !important; border-color: #2d2d3d !important; }
+    body.bg-dark .payment-card.approved { background: #0f2d1a !important; border-color: #166534 !important; }
+    body.bg-dark .payment-card.rejected { background: #2d1a1a !important; border-color: #991b1b !important; }
+    body.bg-dark .payment-card.pending { background: #2d2410 !important; border-color: #92400e !important; }
+    body.bg-dark .payment-username { color: #f1f5f9 !important; }
+    body.bg-dark .empty-state { background: #1e1e2e !important; border-color: #2d2d3d !important; }
+    body.bg-dark .empty-state h5 { color: #f1f5f9 !important; }
+    body.bg-dark .payment-btn.approve { background: #0f2d1a !important; color: #4ade80 !important; }
+    body.bg-dark .payment-btn.approve:hover { background: #16a34a !important; color: white !important; }
+    body.bg-dark .payment-btn.reject { background: #2d1a1a !important; color: #f87171 !important; }
+    body.bg-dark .payment-btn.reject:hover { background: #dc2626 !important; color: white !important; }
+    body.bg-dark .payment-no-image { background: #2d3748; color: #64748b; }
+    @@media (max-width: 640px) {
+        .payments-grid { grid-template-columns: 1fr; }
+        .payment-card { padding: 16px; }
+    }
 </style>
 
 <script>
-function openImageModal(src) {
-    const modal = document.getElementById('imageModal');
-    const img = document.getElementById('modalImage');
-    img.src = src;
-    modal.style.display = 'flex';
-    document.body.style.overflow = 'hidden';
-}
-function closeImageModal() {
-    const modal = document.getElementById('imageModal');
-    modal.style.display = 'none';
-    document.body.style.overflow = '';
-}
-document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape') closeImageModal();
-});
+    function openImage(src) {
+        if (!src) return;
+        const modal = document.getElementById('imageModal');
+        const img = document.getElementById('modalImage');
+        img.src = src;
+        modal.classList.add('open');
+        document.body.style.overflow = 'hidden';
+    }
+    function closeImageModal() {
+        const modal = document.getElementById('imageModal');
+        modal.classList.remove('open');
+        document.body.style.overflow = '';
+    }
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') closeImageModal();
+    });
+    // Cerrar modal al hacer clic fuera de la imagen
+    document.getElementById('imageModal')?.addEventListener('click', function(e) {
+        if (e.target === this) closeImageModal();
+    });
 </script>
