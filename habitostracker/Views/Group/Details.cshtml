@@ -537,8 +537,6 @@
     </div>
 </div>
 
-
-
 <!-- MODAL ADMIN ONLY -->
 <div class="gd-modal" id="adminOnlyModal">
     <div class="gd-modal-card">
@@ -749,19 +747,19 @@
                 </div>
                 <div class="gd-toggle @(isMuted ? "on" : "")" id="muteToggle"></div>
             </button>
-       @if (isCreator)
-{
-    <div class="gd-action-list" style="margin-top: 16px;">
-        <div class="gd-action-item" id="toggleTypeBtn" style="cursor:pointer;">
-            <div class="gd-action-icon purple" id="toggleIcon">@(Model.Type == "public" ? "🔒" : "🌍")</div>
-            <div style="flex:1;">
-                <div id="toggleText">@(Model.Type == "public" ? "Hacer privado" : "Hacer público")</div>
-                <div class="gd-action-sub" id="toggleSub">@(Model.Type == "public" ? "Solo los miembros podrán ver el grupo" : "Cualquier usuario podrá encontrarlo y solicitar unirse")</div>
-            </div>
-            <div class="gd-toggle @(Model.Type == "public" ? "on" : "")" id="typeToggle"></div>
-        </div>
-    </div>
-}
+            
+            @if (isCreator)
+            {
+                <div class="gd-action-item" id="toggleTypeBtn" onclick="toggleGroupType()" style="cursor:pointer;">
+                    <div class="gd-action-icon purple" id="toggleIcon">@(Model.Type == "public" ? "🔒" : "🌍")</div>
+                    <div style="flex:1;">
+                        <div id="toggleText">@(Model.Type == "public" ? "Hacer privado" : "Hacer público")</div>
+                        <div class="gd-action-sub" id="toggleSub">@(Model.Type == "public" ? "Solo los miembros podrán ver el grupo" : "Cualquier usuario podrá encontrarlo y solicitar unirse")</div>
+                    </div>
+                    <div class="gd-toggle @(Model.Type == "public" ? "on" : "")" id="typeToggle"></div>
+                </div>
+            }
+
             @if (isAdmin)
             {
                 <button class="gd-action-item" onclick="openModal('adminOnlyModal')">
@@ -829,7 +827,7 @@
 
 </div>
 
-                <script>
+<script>
 const groupId = @Model.Id;
 const isCreator = @isCreator.ToString().ToLower();
 const isAdmin = @isAdmin.ToString().ToLower();
@@ -957,23 +955,27 @@ async function quitarAdmin(userId, username) {
     else showToast("❌ " + (data.message ?? "Error"));
 }
 
+// ── TOGGLE GROUP TYPE (corregido) ──
 async function toggleGroupType() {
-    if (!confirm(`¿Cambiar el tipo de grupo a ${@(Model.Type == "public" ? "privado" : "público")}?`)) return;
+    if (!confirm(`¿Cambiar este grupo a ${@(Model.Type == "public" ? "privado" : "público")}?`)) return;
     try {
+        const formData = new FormData();
+        formData.append('groupId', groupId);
+        formData.append('__RequestVerificationToken', token());
         const res = await fetch('/Group/ToggleGroupType', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-                'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value
-            },
-            body: `groupId=${@Model.Id}`
+            body: formData
         });
         if (res.ok) {
             location.reload();
         } else {
-            alert('Error al cambiar el tipo de grupo');
+            const text = await res.text();
+            alert('Error al cambiar el tipo: ' + text);
         }
-    } catch(e) { alert('Error de conexión'); }
+    } catch(e) {
+        console.error(e);
+        alert('Error de conexión');
+    }
 }
 
 // ── SILENCIAR ──
@@ -997,9 +999,7 @@ async function toggleMute() {
 // ── ADMIN ONLY ──
 async function confirmarAdminOnly() {
     closeModal('adminOnlyModal');
-    // toggle via update — por ahora recargar
     showToast("⏳ Actualizando...");
-    // Necesitas un endpoint ToggleAdminOnly en GroupController
     try {
         const res = await fetch("/Group/ToggleAdminOnly", {
             method: "POST",
