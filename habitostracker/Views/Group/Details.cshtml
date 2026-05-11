@@ -833,6 +833,8 @@
     </div>
 </div>
 
+<input type="hidden" id="antiforgery-token" value="@Html.AntiForgeryToken().ToString().Replace("\"", "&quot;")" />
+
 <script>
 // ========== GLOBALES ==========
 const groupId = @Model.Id;
@@ -854,7 +856,7 @@ function showToast(msg) {
     t.className = "gd-toast";
     t.textContent = msg;
     document.body.appendChild(t);
-    setTimeout(() => t.remove(), 2800);
+    setTimeout(() => t.remove(), 3000);
 }
 
 function openModal(id) { document.getElementById(id).classList.add('open'); }
@@ -875,19 +877,15 @@ function confirmarAccion({title, message, confirmText="Confirmar", icon="⚠️"
 // ========== COMPARTIR ==========
 function compartirGrupo() {
     const url = `${window.location.origin}/Group/Chat/${groupId}`;
-    if (navigator.share) {
-        navigator.share({ title: document.getElementById('groupNameDisplay').textContent, url });
-    } else {
-        navigator.clipboard.writeText(url).then(() => showToast('📋 Link copiado'));
-    }
+    if (navigator.share) navigator.share({title: document.getElementById('groupNameDisplay').textContent, url});
+    else navigator.clipboard.writeText(url).then(() => showToast('📋 Link copiado'));
 }
 
-// ========== ENLACE DE INVITACIÓN ==========
-async function generarEnlace() {
-    document.getElementById('inviteSection').style.display = 'block';
+// ========== SILENCIAR NOTIFICACIONES ==========
+async function toggleMute() {
     try {
-        const res = await fetch('/Group/GenerateInviteCode', {
-            method: 'POST',
+        const res = await fetch("/Group/ToggleMute", {
+            method: "POST",
             headers: { 
                 "Content-Type": "application/x-www-form-urlencoded",
                 "RequestVerificationToken": token()
@@ -896,174 +894,118 @@ async function generarEnlace() {
         });
         const data = await res.json();
         if (data.success) {
-            currentInviteLink = data.link;
-            document.getElementById('inviteCode').textContent = data.code;
-            document.getElementById('inviteLink').textContent = data.link;
-            showToast('✅ Enlace generado');
-        } else showToast('❌ Error');
-    } catch { showToast('❌ Error de conexión'); }
-}
-
-async function resetEnlace() {
-    try {
-        const res = await fetch('/Group/ResetInviteCode', {
-            method: 'POST',
-            headers: { 
-                "Content-Type": "application/x-www-form-urlencoded",
-                "RequestVerificationToken": token()
-            },
-            body: `groupId=${groupId}`
-        });
-        const data = await res.json();
-        if (data.success) {
-            currentInviteLink = data.link;
-            document.getElementById('inviteCode').textContent = data.code || 'Nuevo';
-            document.getElementById('inviteLink').textContent = data.link;
-            showToast('🔄 Enlace renovado');
+            isMuted = data.isMuted.toString();
+            document.getElementById("muteIcon").textContent = isMuted === "true" ? "🔕" : "🔔";
+            document.getElementById("muteLabel").textContent = isMuted === "true" ? "Silenciado" : "Silenciar notificaciones";
+            document.getElementById("muteToggle").classList.toggle("on", isMuted === "true");
+            showToast(isMuted === "true" ? "🔕 Notificaciones silenciadas" : "🔔 Notificaciones activadas");
+        } else {
+            showToast("❌ Error al silenciar");
         }
-    } catch { showToast('❌ Error'); }
-}
-
-// ========== AÑADIR MIEMBROS ==========
-async function openAddMember() {
-    selectedMembers.clear();
-    openModal('addMemberModal');
-    document.getElementById("addMemberList").innerHTML = '<div class="gd-modal-empty">Cargando...</div>';
-
-    try {
-        const res = await fetch(`/Group/GetFriendsToAdd?groupId=${groupId}`);
-        allFriends = await res.json();
-        renderFriendsList(allFriends);
-    } catch(e) {
-        document.getElementById("addMemberList").innerHTML = '<div class="gd-modal-empty">Error al cargar</div>';
+    } catch (e) {
+        showToast("❌ Error de conexión");
     }
 }
 
-function renderFriendsList(friends) {
-    const list = document.getElementById("addMemberList");
-    list.innerHTML = friends.map(f => `
-        <div class="gd-modal-item" onclick="toggleSelectFriend(${f.id}, this)">
-            <div class="gd-modal-avatar">${f.img ? `<img src="${f.img}">` : f.username[0]}</div>
-            <div class="gd-modal-name">${f.username}</div>
-            <span class="gd-modal-check">✓</span>
-        </div>
-    `).join('');
-}
-
-function toggleSelectFriend(id, el) {
-    if (selectedMembers.has(id)) {
-        selectedMembers.delete(id);
-        el.classList.remove('selected');
-    } else {
-        selectedMembers.add(id);
-        el.classList.add('selected');
-    }
-    const btn = document.getElementById("addMemberConfirm");
-    btn.disabled = selectedMembers.size === 0;
-    btn.textContent = selectedMembers.size ? `Agregar (${selectedMembers.size})` : "Agregar";
-}
-
-async function confirmarAgregar() {
-    if (!selectedMembers.size) return;
-    const btn = document.getElementById("addMemberConfirm");
-    btn.disabled = true; btn.textContent = "Agregando...";
-
-    let ok = 0;
-    for (const memberId of selectedMembers) {
-        try {
-            const res = await fetch("/Group/AddMember", {
-                method: "POST",
-                headers: { "Content-Type": "application/x-www-form-urlencoded", "RequestVerificationToken": token() },
-                body: `groupId=${groupId}&newUserId=${memberId}`
-            });
-            const data = await res.json();
-            if (data.success) ok++;
-        } catch {}
-    }
-
-    closeModal('addMemberModal');
-    if (ok > 0) {
-        showToast(`✅ ${ok} miembro(s) agregado(s)`);
-        setTimeout(() => location.reload(), 1000);
-    }
-}
-
-// ========== ACCIONES DE MIEMBROS ==========
-async function removeMember(userId, username) {
+// ========== CAMBIAR PÚBLICO / PRIVADO ==========
+async function toggleGroupType() {
+    const currentIsPublic = '@Model.Type' === "public";
     confirmarAccion({
-        title: "Eliminar miembro",
-        message: `¿Eliminar a ${username} del grupo?`,
+        title: currentIsPublic ? "Hacer grupo Privado" : "Hacer grupo Público",
+        message: currentIsPublic 
+            ? "Solo los miembros podrán ver y unirse al grupo." 
+            : "Cualquier usuario podrá encontrar y solicitar unirse.",
+        confirmText: "Sí, cambiar",
+        onConfirm: async () => {
+            try {
+                const res = await fetch('/Group/ToggleGroupType', {
+                    method: 'POST',
+                    headers: { 
+                        "Content-Type": "application/x-www-form-urlencoded",
+                        "RequestVerificationToken": token()
+                    },
+                    body: `groupId=${groupId}`
+                });
+                if (res.ok) {
+                    showToast("✅ Visibilidad cambiada");
+                    setTimeout(() => location.reload(), 900);
+                } else {
+                    showToast("❌ No tienes permiso");
+                }
+            } catch (e) {
+                showToast("❌ Error de conexión");
+            }
+        }
+    });
+}
+
+// ========== SALIR DEL GRUPO ==========
+function leaveGroup() {
+    confirmarAccion({
+        title: "¿Salir del grupo?",
+        message: "Podrás ver el historial pero no recibirás nuevos mensajes.",
+        confirmText: "Sí, salir",
         danger: true,
-        onConfirm: async () => {
-            try {
-                const res = await fetch("/Group/RemoveMember", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/x-www-form-urlencoded", "RequestVerificationToken": token() },
-                    body: `groupId=${groupId}&memberId=${userId}`
-                });
-                const data = await res.json();
-                if (data.success) {
-                    showToast(`✅ ${username} eliminado`);
-                    document.getElementById(`member-row-${userId}`)?.remove();
-                }
-            } catch { showToast("❌ Error"); }
+        onConfirm: () => {
+            const form = document.querySelector('#leaveModal form');
+            if (form) form.submit();
         }
     });
 }
 
-async function promoverAdmin(userId, username) {
+// ========== ELIMINAR GRUPO ==========
+function deleteGroup() {
     confirmarAccion({
-        title: "Promover a Admin",
-        message: `¿Dar permisos de administrador a ${username}?`,
-        onConfirm: async () => {
-            try {
-                const res = await fetch("/Group/PromoteToAdmin", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/x-www-form-urlencoded", "RequestVerificationToken": token() },
-                    body: `groupId=${groupId}&memberId=${userId}`
-                });
-                if ((await res.json()).success) {
-                    showToast(`⭐ ${username} es ahora admin`);
-                    setTimeout(() => location.reload(), 800);
-                }
-            } catch { showToast("❌ Error"); }
+        title: "¿Eliminar grupo permanentemente?",
+        message: "Esta acción es irreversible. Se perderá todo el historial y mensajes.",
+        confirmText: "Eliminar grupo",
+        danger: true,
+        onConfirm: () => {
+            const form = document.createElement("form");
+            form.method = "POST";
+            form.action = "/Group/Delete";
+            form.innerHTML = `
+                <input type="hidden" name="groupId" value="${groupId}" />
+                <input type="hidden" name="__RequestVerificationToken" value="${token()}" />
+            `;
+            document.body.appendChild(form);
+            form.submit();
         }
     });
 }
 
-async function quitarAdmin(userId, username) {
-    confirmarAccion({
-        title: "Quitar Admin",
-        message: `¿Quitar permisos de admin a ${username}?`,
-        onConfirm: async () => {
-            try {
-                const res = await fetch("/Group/DemoteAdmin", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/x-www-form-urlencoded", "RequestVerificationToken": token() },
-                    body: `groupId=${groupId}&memberId=${userId}`
-                });
-                if ((await res.json()).success) {
-                    showToast(`↓ ${username} ya no es admin`);
-                    setTimeout(() => location.reload(), 800);
-                }
-            } catch { showToast("❌ Error"); }
-        }
-    });
+// ========== REPORTAR ==========
+function reportarGrupo() {
+    selectedReason = null;
+    document.querySelectorAll('.gd-reason-btn').forEach(b => b.classList.remove('selected'));
+    document.getElementById("sendReportBtn").disabled = true;
+    openModal('reportModal');
 }
 
-// ========== REPORTAR, SALIR, ELIMINAR ==========
+function seleccionarMotivo(btn, motivo) {
+    document.querySelectorAll('.gd-reason-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    selectedReason = motivo;
+    document.getElementById("sendReportBtn").disabled = false;
+}
+
 async function enviarReporte() {
     if (!selectedReason) return;
     closeModal('reportModal');
     try {
         const res = await fetch("/Group/Report", {
             method: "POST",
-            headers: { "Content-Type": "application/json", "RequestVerificationToken": token() },
+            headers: { 
+                "Content-Type": "application/json",
+                "RequestVerificationToken": token()
+            },
             body: JSON.stringify({ groupId: groupId, reason: selectedReason })
         });
         const data = await res.json();
-        showToast(data.success ? "✅ Reporte enviado" : "❌ Ya reportaste este grupo");
-    } catch { showToast("❌ Error"); }
+        showToast(data.success ? "✅ Reporte enviado correctamente" : "❌ " + (data.message || "Error"));
+    } catch (e) {
+        showToast("❌ Error de conexión");
+    }
 }
 
 // ========== EVENTOS ==========
@@ -1071,28 +1013,20 @@ document.addEventListener('DOMContentLoaded', () => {
     // Botones principales
     document.getElementById('compartirGrupoBtn')?.addEventListener('click', compartirGrupo);
     document.getElementById('compartirGrupoBtn2')?.addEventListener('click', compartirGrupo);
-    document.getElementById('generarEnlaceBtn')?.addEventListener('click', generarEnlace);
-    document.getElementById('resetEnlaceBtn')?.addEventListener('click', resetEnlace);
-    document.getElementById('copiarEnlaceBtn')?.addEventListener('click', () => currentInviteLink && navigator.clipboard.writeText(currentInviteLink).then(() => showToast('📋 Copiado')));
-    document.getElementById('updateNameBtn')?.addEventListener('click', updateName);
     document.getElementById('muteBtn')?.addEventListener('click', toggleMute);
     document.getElementById('toggleTypeBtn')?.addEventListener('click', toggleGroupType);
-    document.getElementById('openAddMemberBtn')?.addEventListener('click', openAddMember);
-    document.getElementById('reportarGrupoBtn')?.addEventListener('click', () => { selectedReason=null; openModal('reportModal'); });
+    document.getElementById('reportarGrupoBtn')?.addEventListener('click', reportarGrupo);
+    document.getElementById('leaveGroupBtn')?.addEventListener('click', leaveGroup);
+    document.getElementById('deleteGroupBtn')?.addEventListener('click', deleteGroup);
 
-    // Botones dinámicos de miembros
-    document.querySelectorAll('.gd-mbtn.promote').forEach(btn => {
-        btn.addEventListener('click', () => promoverAdmin(btn.dataset.userId, btn.dataset.username));
-    });
-    document.querySelectorAll('.gd-mbtn.demote').forEach(btn => {
-        btn.addEventListener('click', () => quitarAdmin(btn.dataset.userId, btn.dataset.username));
-    });
-    document.querySelectorAll('.gd-mbtn.remove').forEach(btn => {
-        btn.addEventListener('click', () => removeMember(btn.dataset.userId, btn.dataset.username));
+    // Enlace de invitación
+    document.getElementById('generarEnlaceBtn')?.addEventListener('click', generarEnlace);
+    document.getElementById('resetEnlaceBtn')?.addEventListener('click', resetEnlace);
+    document.getElementById('copiarEnlaceBtn')?.addEventListener('click', () => {
+        if (currentInviteLink) navigator.clipboard.writeText(currentInviteLink).then(() => showToast('📋 Copiado'));
     });
 
-    // Salir y Eliminar
-    document.getElementById('leaveGroupBtn')?.addEventListener('click', () => openModal('leaveModal'));
-    document.getElementById('deleteGroupBtn')?.addEventListener('click', () => openModal('deleteModal'));
+    // Report button inside modal
+    document.getElementById('sendReportBtn')?.addEventListener('click', enviarReporte);
 });
 </script>
