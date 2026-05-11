@@ -826,7 +826,6 @@
     </div>
 
 </div>
-
 <script>
 const groupId = @Model.Id;
 const isCreator = @isCreator.ToString().ToLower();
@@ -849,172 +848,44 @@ function showToast(msg) {
     setTimeout(() => { t.style.opacity = "0"; t.style.transition = "opacity 0.3s"; setTimeout(() => t.remove(), 300); }, 3000);
 }
 
-// ── MODALES ──
+// ── MODALES (definir primero) ──
 function openModal(id) { document.getElementById(id).classList.add('open'); }
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
-document.querySelectorAll('.gd-modal').forEach(m => {
-    m.addEventListener('click', function(e) { if (e.target === this) this.classList.remove('open'); });
-});
 
-// ── FOTO ──
-function abrirFoto() {
-    const img = document.getElementById('groupAvatarImg');
-    if (!img) return;
-    document.getElementById('photoOverlayImg').src = img.src;
-    document.getElementById('photoOverlay').classList.add('open');
-    document.body.style.overflow = 'hidden';
-}
-function cerrarFoto() {
-    document.getElementById('photoOverlay').classList.remove('open');
-    document.body.style.overflow = '';
-}
-
-// ── SUBIR IMAGEN ──
-async function uploadGroupImage(input) {
-    const file = input.files[0]; if (!file) return;
-    showToast("⏳ Subiendo imagen...");
-    const formData = new FormData();
-    formData.append("image", file); formData.append("groupId", groupId);
-    formData.append("__RequestVerificationToken", token());
-    try {
-        const res = await fetch("/Group/UpdateImage", { method: "POST", body: formData });
-        const data = await res.json();
-        if (data.success) {
-            const el = document.getElementById("groupAvatarEl");
-            document.getElementById("groupAvatarLetter")?.remove();
-            let img = el.querySelector("img");
-            if (!img) { img = document.createElement("img"); img.id = "groupAvatarImg"; el.appendChild(img); }
-            img.src = data.imageUrl;
-            showToast("✅ Foto actualizada");
-        } else showToast("❌ Error al subir");
-    } catch { showToast("❌ Error de conexión"); }
-}
-
-// ── NOMBRE ──
-async function updateName() {
-    const name = document.getElementById("newGroupName").value.trim();
-    if (!name) return;
-    const res = await fetch("/Group/UpdateName", {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: `groupId=${groupId}&name=${encodeURIComponent(name)}&__RequestVerificationToken=${encodeURIComponent(token())}`
-    });
-    const data = await res.json();
-    if (data.success) { document.getElementById("groupNameDisplay").textContent = name; showToast("✅ Nombre actualizado"); }
-    else showToast("❌ No se pudo actualizar");
-}
-
-// ── BUSCAR MIEMBROS ──
-function filtrarMiembros(q) {
-    q = q.toLowerCase().trim();
-    document.querySelectorAll('#membersList .gd-member').forEach(row => {
-        const name = row.getAttribute('data-name') || '';
-        row.style.display = !q || name.includes(q) ? '' : 'none';
-    });
-}
-
-// ── ELIMINAR MIEMBRO ──
-async function removeMember(userId, username) {
-    if (!confirm(`¿Eliminar a ${username} del grupo?`)) return;
-    const res = await fetch("/Group/RemoveMember", {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: `groupId=${groupId}&memberId=${userId}&__RequestVerificationToken=${encodeURIComponent(token())}`
-    });
-    const data = await res.json();
-    if (data.success) {
-        showToast(`✅ ${username} eliminado`);
-        const row = document.getElementById("member-row-" + userId);
-        if (row) { row.style.opacity = "0"; row.style.transition = "0.4s"; setTimeout(() => row.remove(), 400); }
-    } else showToast("❌ " + (data.message ?? "Error"));
-}
-
-// ── PROMOVER ──
-async function promoverAdmin(userId, username) {
-    if (!confirm(`¿Dar permisos de admin a ${username}?`)) return;
-    const res = await fetch("/Group/PromoteToAdmin", {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: `groupId=${groupId}&memberId=${userId}&__RequestVerificationToken=${encodeURIComponent(token())}`
-    });
-    const data = await res.json();
-    if (data.success) { showToast(`⭐ ${username} ahora es admin`); setTimeout(() => location.reload(), 1200); }
-    else showToast("❌ " + (data.message ?? "Error"));
-}
-
-// ── QUITAR ADMIN ──
-async function quitarAdmin(userId, username) {
-    if (!confirm(`¿Quitar admin a ${username}?`)) return;
-    const res = await fetch("/Group/DemoteAdmin", {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: `groupId=${groupId}&memberId=${userId}&__RequestVerificationToken=${encodeURIComponent(token())}`
-    });
-    const data = await res.json();
-    if (data.success) { showToast(`↓ ${username} ya no es admin`); setTimeout(() => location.reload(), 1200); }
-    else showToast("❌ " + (data.message ?? "Error"));
-}
-
-// ── TOGGLE GROUP TYPE (corregido) ──
-async function toggleGroupType() {
-    if (!confirm(`¿Cambiar este grupo a ${@(Model.Type == "public" ? "privado" : "público")}?`)) return;
-    try {
-        const formData = new FormData();
-        formData.append('groupId', groupId);
-        formData.append('__RequestVerificationToken', token());
-        const res = await fetch('/Group/ToggleGroupType', {
-            method: 'POST',
-            body: formData
-        });
-        if (res.ok) {
-            location.reload();
-        } else {
-            const text = await res.text();
-            alert('Error al cambiar el tipo: ' + text);
-        }
-    } catch(e) {
-        console.error(e);
-        alert('Error de conexión');
+// ── FUNCIONES DE GRUPO ──
+function compartirGrupo() {
+    const url = window.location.origin + '/Group/Chat/@Model.Id';
+    if (navigator.share) {
+        navigator.share({ title: '@Model.Name', text: 'Mira este grupo en HabitTracker', url });
+    } else {
+        navigator.clipboard.writeText(url).then(() => showToast('📋 Link copiado'));
     }
 }
 
-// ── SILENCIAR ──
-async function toggleMute() {
-    const res = await fetch("/Group/ToggleMute", {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: `groupId=${groupId}&__RequestVerificationToken=${encodeURIComponent(token())}`
-    });
-    const data = await res.json();
-    if (data.success) {
-        isMuted = data.isMuted;
-        document.getElementById("muteIcon").textContent = isMuted ? "🔕" : "🔔";
-        document.getElementById("muteLabel").textContent = isMuted ? "Silenciado" : "Silenciar notificaciones";
-        document.getElementById("muteBtn").classList.toggle("active-mute", isMuted);
-        document.getElementById("muteToggle").classList.toggle("on", isMuted);
-        showToast(isMuted ? "🔕 Notificaciones silenciadas" : "🔔 Notificaciones activadas");
+function compartirEnlace() {
+    if (!currentInviteLink) return;
+    if (navigator.share) {
+        navigator.share({ title: '@Model.Name', text: 'Únete al grupo en HabitTracker', url: currentInviteLink });
+    } else {
+        copiarEnlace();
     }
 }
 
-// ── ADMIN ONLY ──
-async function confirmarAdminOnly() {
-    closeModal('adminOnlyModal');
-    showToast("⏳ Actualizando...");
-    try {
-        const res = await fetch("/Group/ToggleAdminOnly", {
-            method: "POST",
-            headers: { "Content-Type": "application/x-www-form-urlencoded" },
-            body: `groupId=${groupId}&__RequestVerificationToken=${encodeURIComponent(token())}`
+function copiarEnlace() {
+    if (!currentInviteLink) return;
+    navigator.clipboard.writeText(currentInviteLink)
+        .then(() => showToast('📋 Enlace copiado'))
+        .catch(() => {
+            const i = document.createElement('input');
+            i.value = currentInviteLink;
+            document.body.appendChild(i);
+            i.select();
+            document.execCommand('copy');
+            i.remove();
+            showToast('📋 Enlace copiado');
         });
-        const data = await res.json();
-        if (data.success) {
-            showToast(data.isAdminOnly ? "🔒 Modo solo admins activado" : "🔓 Todos pueden escribir");
-            setTimeout(() => location.reload(), 1000);
-        } else showToast("❌ Error");
-    } catch { showToast("❌ Error de conexión"); }
 }
 
-// ── ENLACE INVITACIÓN ──
 async function generarEnlace() {
     document.getElementById('inviteSection').style.display = 'block';
     document.getElementById('inviteCode').textContent = '⏳';
@@ -1052,32 +923,118 @@ async function resetEnlace() {
     } catch { showToast("❌ Error"); }
 }
 
-function copiarEnlace() {
-    if (!currentInviteLink) return;
-    navigator.clipboard.writeText(currentInviteLink)
-        .then(() => showToast('📋 Enlace copiado'))
-        .catch(() => { const i = document.createElement('input'); i.value = currentInviteLink; document.body.appendChild(i); i.select(); document.execCommand('copy'); i.remove(); showToast('📋 Enlace copiado'); });
+async function updateName() {
+    const name = document.getElementById("newGroupName").value.trim();
+    if (!name) return;
+    const res = await fetch("/Group/UpdateName", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: `groupId=${groupId}&name=${encodeURIComponent(name)}&__RequestVerificationToken=${encodeURIComponent(token())}`
+    });
+    const data = await res.json();
+    if (data.success) { 
+        document.getElementById("groupNameDisplay").textContent = name; 
+        showToast("✅ Nombre actualizado");
+    } else showToast("❌ No se pudo actualizar");
 }
 
-function compartirEnlace() {
-    if (!currentInviteLink) return;
-    if (navigator.share) {
-        navigator.share({ title: '@Model.Name', text: 'Únete al grupo en HabitTracker', url: currentInviteLink });
-    } else {
-        copiarEnlace();
+async function toggleMute() {
+    const res = await fetch("/Group/ToggleMute", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: `groupId=${groupId}&__RequestVerificationToken=${encodeURIComponent(token())}`
+    });
+    const data = await res.json();
+    if (data.success) {
+        isMuted = data.isMuted;
+        document.getElementById("muteIcon").textContent = isMuted ? "🔕" : "🔔";
+        document.getElementById("muteLabel").textContent = isMuted ? "Silenciado" : "Silenciar notificaciones";
+        document.getElementById("muteBtn").classList.toggle("active-mute", isMuted);
+        document.getElementById("muteToggle").classList.toggle("on", isMuted);
+        showToast(isMuted ? "🔕 Notificaciones silenciadas" : "🔔 Notificaciones activadas");
     }
 }
 
-function compartirGrupo() {
-    const url = window.location.origin + '/Group/Chat/@Model.Id';
-    if (navigator.share) {
-        navigator.share({ title: '@Model.Name', text: 'Mira este grupo en HabitTracker', url });
-    } else {
-        navigator.clipboard.writeText(url).then(() => showToast('📋 Link copiado'));
-    }
+async function toggleGroupType() {
+    if (!confirm(`¿Cambiar este grupo a ${@(Model.Type == "public" ? "privado" : "público")}?`)) return;
+    try {
+        const formData = new FormData();
+        formData.append('groupId', groupId);
+        formData.append('__RequestVerificationToken', token());
+        const res = await fetch('/Group/ToggleGroupType', { method: 'POST', body: formData });
+        if (res.ok) {
+            location.reload();
+        } else {
+            alert('Error al cambiar el tipo');
+        }
+    } catch(e) { alert('Error de conexión'); }
 }
 
-// ── AÑADIR MIEMBRO ──
+async function confirmarAdminOnly() {
+    closeModal('adminOnlyModal');
+    showToast("⏳ Actualizando...");
+    try {
+        const res = await fetch("/Group/ToggleAdminOnly", {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: `groupId=${groupId}&__RequestVerificationToken=${encodeURIComponent(token())}`
+        });
+        const data = await res.json();
+        if (data.success) {
+            showToast(data.isAdminOnly ? "🔒 Modo solo admins activado" : "🔓 Todos pueden escribir");
+            setTimeout(() => location.reload(), 1000);
+        } else showToast("❌ Error");
+    } catch { showToast("❌ Error de conexión"); }
+}
+
+// ── MIEMBROS ──
+function filtrarMiembros(q) {
+    q = q.toLowerCase().trim();
+    document.querySelectorAll('#membersList .gd-member').forEach(row => {
+        const name = row.getAttribute('data-name') || '';
+        row.style.display = !q || name.includes(q) ? '' : 'none';
+    });
+}
+
+async function removeMember(userId, username) {
+    if (!confirm(`¿Eliminar a ${username} del grupo?`)) return;
+    const res = await fetch("/Group/RemoveMember", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: `groupId=${groupId}&memberId=${userId}&__RequestVerificationToken=${encodeURIComponent(token())}`
+    });
+    const data = await res.json();
+    if (data.success) {
+        showToast(`✅ ${username} eliminado`);
+        const row = document.getElementById("member-row-" + userId);
+        if (row) { row.style.opacity = "0"; row.style.transition = "0.4s"; setTimeout(() => row.remove(), 400); }
+    } else showToast("❌ " + (data.message ?? "Error"));
+}
+
+async function promoverAdmin(userId, username) {
+    if (!confirm(`¿Dar permisos de admin a ${username}?`)) return;
+    const res = await fetch("/Group/PromoteToAdmin", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: `groupId=${groupId}&memberId=${userId}&__RequestVerificationToken=${encodeURIComponent(token())}`
+    });
+    const data = await res.json();
+    if (data.success) { showToast(`⭐ ${username} ahora es admin`); setTimeout(() => location.reload(), 1200); }
+    else showToast("❌ " + (data.message ?? "Error"));
+}
+
+async function quitarAdmin(userId, username) {
+    if (!confirm(`¿Quitar admin a ${username}?`)) return;
+    const res = await fetch("/Group/DemoteAdmin", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: `groupId=${groupId}&memberId=${userId}&__RequestVerificationToken=${encodeURIComponent(token())}`
+    });
+    const data = await res.json();
+    if (data.success) { showToast(`↓ ${username} ya no es admin`); setTimeout(() => location.reload(), 1200); }
+    else showToast("❌ " + (data.message ?? "Error"));
+}
+
 async function openAddMember() {
     selectedMembers.clear();
     document.getElementById("addMemberSearch").value = "";
@@ -1141,7 +1098,7 @@ async function confirmarAgregar() {
     if (fail > 0) showToast(`⚠️ ${fail} no se pudo agregar`);
 }
 
-// ── REPORTAR ──
+// ── REPORTAR GRUPO ──
 function reportarGrupo() {
     selectedReason = null;
     document.getElementById("sendReportBtn").disabled = true;
@@ -1166,11 +1123,10 @@ async function enviarReporte() {
     showToast(data.success ? "✅ Reporte enviado. Lo revisaremos pronto." : "⚠️ " + (data.message ?? "Error"));
 }
 
-// ── ELIMINAR GRUPO CON CONFIRMACIÓN ESCRITA ──
+// ── ELIMINAR GRUPO ──
 document.getElementById('deleteConfirmInput')?.addEventListener('input', function() {
     document.getElementById('deleteConfirmBtn').disabled = this.value.trim().toUpperCase() !== 'ELIMINAR';
 });
-
 function confirmarEliminar() {
     const form = document.createElement("form");
     form.method = "POST"; form.action = "/Group/Delete";
@@ -1179,4 +1135,62 @@ function confirmarEliminar() {
     form.appendChild(inp); form.appendChild(tok);
     document.body.appendChild(form); form.submit();
 }
+
+// ── FOTO ──
+function abrirFoto() {
+    const img = document.getElementById('groupAvatarImg');
+    if (!img) return;
+    document.getElementById('photoOverlayImg').src = img.src;
+    document.getElementById('photoOverlay').classList.add('open');
+    document.body.style.overflow = 'hidden';
+}
+function cerrarFoto() {
+    document.getElementById('photoOverlay').classList.remove('open');
+    document.body.style.overflow = '';
+}
+
+// ── SUBIR IMAGEN ──
+async function uploadGroupImage(input) {
+    const file = input.files[0]; if (!file) return;
+    showToast("⏳ Subiendo imagen...");
+    const formData = new FormData();
+    formData.append("image", file); formData.append("groupId", groupId);
+    formData.append("__RequestVerificationToken", token());
+    try {
+        const res = await fetch("/Group/UpdateImage", { method: "POST", body: formData });
+        const data = await res.json();
+        if (data.success) {
+            const el = document.getElementById("groupAvatarEl");
+            document.getElementById("groupAvatarLetter")?.remove();
+            let img = el.querySelector("img");
+            if (!img) { img = document.createElement("img"); img.id = "groupAvatarImg"; el.appendChild(img); }
+            img.src = data.imageUrl;
+            showToast("✅ Foto actualizada");
+        } else showToast("❌ Error al subir");
+    } catch { showToast("❌ Error de conexión"); }
+}
+
+// ── CERRAR MODALES AL HACER CLICK FUERA ──
+document.querySelectorAll('.gd-modal').forEach(m => {
+    m.addEventListener('click', function(e) { if (e.target === this) this.classList.remove('open'); });
+});
+
+// ── Asegurar que todos los botones tengan sus eventos correctamente asignados (por si el HTML no los tiene) ──
+document.addEventListener('DOMContentLoaded', function() {
+    // Reasignar eventos por si acaso
+    document.getElementById('muteBtn')?.addEventListener('click', toggleMute);
+    document.getElementById('toggleTypeBtn')?.addEventListener('click', toggleGroupType);
+    document.querySelectorAll('.gd-mbtn.promote').forEach(btn => {
+        btn.onclick = function() { promoverAdmin(parseInt(this.getAttribute('data-user-id')), this.getAttribute('data-username')); };
+    });
+    document.querySelectorAll('.gd-mbtn.demote').forEach(btn => {
+        btn.onclick = function() { quitarAdmin(parseInt(this.getAttribute('data-user-id')), this.getAttribute('data-username')); };
+    });
+    document.querySelectorAll('.gd-mbtn.remove').forEach(btn => {
+        btn.onclick = function() { removeMember(parseInt(this.getAttribute('data-user-id')), this.getAttribute('data-username')); };
+    });
+    document.querySelector('.gd-edit-btn')?.addEventListener('click', updateName);
+    document.querySelector('.gd-card-btn')?.addEventListener('click', generarEnlace);
+    document.querySelector('.gd-card-btn')?.addEventListener('click', generarEnlace);
+});
 </script>
