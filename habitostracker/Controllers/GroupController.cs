@@ -1487,46 +1487,31 @@ namespace HabitTrackerApp.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ToggleGroupType(int groupId)
         {
-            try
+            var userId = int.Parse(User.FindFirst("UserId").Value);
+
+            var group = await _context.Groups.FindAsync(groupId);
+            if (group == null)
+                return Json(new { success = false, error = "Grupo no encontrado" });
+
+            // DEBUG FORZADO
+            return Json(new
             {
-                var userIdClaim = User.FindFirst("UserId");
-                if (userIdClaim == null)
-                    return Json(new { success = false, error = "ERROR: No se encontró UserId en la sesión (Claim nulo)" });
+                success = false,
+                error = $"DEBUG: Tu ID = {userId} | Creador del grupo = {group.CreatorId} | ¿Eres creador? = {group.CreatorId == userId}"
+            });
 
-                if (!int.TryParse(userIdClaim.Value, out int userId))
-                    return Json(new { success = false, error = $"ERROR: UserId inválido: {userIdClaim.Value}" });
+            // Código original (por ahora comentado)
+            /*
+            if (group.CreatorId != userId)
+                return Json(new { success = false, error = "Solo el creador puede cambiar la visibilidad." });
 
-                var group = await _context.Groups
-                    .FirstOrDefaultAsync(g => g.Id == groupId && g.IsActive);
+            string newType = group.Type == "public" ? "private" : "public";
+            group.Type = newType;
+            group.IsPublic = newType == "public";
+            await _context.SaveChangesAsync();
 
-                if (group == null)
-                    return Json(new { success = false, error = "Grupo no encontrado" });
-
-                // Debug claro
-                if (group.CreatorId != userId)
-                {
-                    return Json(new
-                    {
-                        success = false,
-                        error = $"NO ERES EL CREADOR. Creador ID = {group.CreatorId} | Tu ID = {userId}"
-                    });
-                }
-
-                // Si llega aquí, sí eres el creador
-                string newType = group.Type == "public" ? "private" : "public";
-                bool newIsPublic = newType == "public";
-
-                group.Type = newType;
-                group.IsPublic = newIsPublic;
-
-                await _context.SaveChangesAsync();
-
-                return Json(new { success = true, type = newType, message = "Cambiado correctamente" });
-            }
-            catch (Exception ex)
-            {
-                return Json(new { success = false, error = "Excepción: " + ex.Message });
-            }
+            return Json(new { success = true });
+            */
         }
         // 🔥 buscar amigos que no están en el grupo para añadir
         [HttpGet]
