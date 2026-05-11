@@ -10,7 +10,9 @@
         <h2 class="feed-title">🔥 Publicaciones</h2>
         <p class="feed-subtitle">Comparte momentos con la comunidad</p>
     </div>
-    <a asp-controller="Post" asp-action="Create" class="new-post-btn">✏️ Publicar</a>
+    <a asp-controller="Post" asp-action="Create" class="new-post-btn">
+        ✏️ Publicar
+    </a>
 </div>
 
 @if (!Model.Any())
@@ -19,26 +21,37 @@
         <div class="feed-empty-icon">📭</div>
         <h5>Sin publicaciones aún</h5>
         <p>¡Sé el primero en compartir algo!</p>
-        <a asp-controller="Post" asp-action="Create" class="new-post-btn" style="display:inline-flex;margin-top:16px;">✏️ Crear publicación</a>
+        <a asp-controller="Post" asp-action="Create" class="new-post-btn" style="display:inline-flex;margin-top:16px;">
+            ✏️ Crear publicación
+        </a>
     </div>
 }
 
 <div class="feed-container">
     @foreach (var post in Model)
     {
-        var isVideo = !string.IsNullOrEmpty(post.ImagePath) && (post.ImagePath.Contains("/video/upload/") || post.ImagePath.EndsWith(".mp4") || post.ImagePath.EndsWith(".mov") || post.ImagePath.EndsWith(".webm"));
+        var isVideo = !string.IsNullOrEmpty(post.ImagePath) &&
+                      (post.ImagePath.Contains("/video/upload/") ||
+                       post.ImagePath.EndsWith(".mp4") ||
+                       post.ImagePath.EndsWith(".mov") ||
+                       post.ImagePath.EndsWith(".webm"));
+
         var currentUserId = int.Parse(User.FindFirst("UserId").Value);
-        var likeCount = ViewBag.PostLikes != null && ((Dictionary<int,int>)ViewBag.PostLikes).ContainsKey(post.Id) ? ((Dictionary<int,int>)ViewBag.PostLikes)[post.Id] : 0;
+        var likeCount = ViewBag.PostLikes != null && ((Dictionary<int,int>)ViewBag.PostLikes).ContainsKey(post.Id)
+            ? ((Dictionary<int,int>)ViewBag.PostLikes)[post.Id] : 0;
         var isLiked = myLikes.Contains(post.Id);
 
         <article class="post-card" id="post-@post.Id">
+            <!-- HEADER -->
             <div class="post-header">
                 <div class="post-header-left">
                     @if (post.User != null)
                     {
                         <a asp-controller="User" asp-action="Profile" asp-route-id="@post.UserId" class="avatar-link">
                             @{
-                                var postPic = !string.IsNullOrEmpty(post.User?.ProfileImage) ? post.User.ProfileImage : post.User?.ProfilePicture;
+                                var postPic = !string.IsNullOrEmpty(post.User?.ProfileImage)
+                                    ? post.User.ProfileImage
+                                    : post.User?.ProfilePicture;
                             }
                             @if (!string.IsNullOrEmpty(postPic))
                             {
@@ -54,8 +67,11 @@
                     {
                         <div class="post-avatar-placeholder">👤</div>
                     }
+
                     <div class="post-meta">
-                        <div class="post-username"><a href="/User/Profile/@post.UserId" style="text-decoration:none;color:inherit;">@post.DisplayUsername</a></div>
+                        <div class="post-username">
+                            <a href="/User/Profile/@post.UserId" style="text-decoration:none;color:inherit;">@post.DisplayUsername</a>
+                        </div>
                         <div class="post-time-wrap">
                             <span class="post-time">@post.CreatedAt.ToString("dd MMM yyyy · hh:mm tt", new System.Globalization.CultureInfo("es-CO"))</span>
                             @if (post.Privacy == "Friends")
@@ -67,6 +83,7 @@
                         </div>
                     </div>
                 </div>
+
                 <div class="post-header-right">
                     @if (post.IsSensitive)
                     {
@@ -76,38 +93,53 @@
                     {
                         <form method="post" asp-controller="Post" asp-action="Delete" asp-route-id="@post.Id" style="display:inline;margin:0;">
                             @Html.AntiForgeryToken()
-                            <button type="submit" class="delete-btn" data-no-loader="true" onclick="event.preventDefault();showConfirm({icon:'🗑️',title:'¿Eliminar publicación?',message:'La publicación se eliminará permanentemente, junto con sus comentarios y reacciones.',confirmText:'🗑 Eliminar',confirmColor:'#ef4444',onConfirm:()=>this.closest('form').submit()});return false;">🗑</button>
+                            <button type="submit" class="delete-btn" data-no-loader="true"
+                                    onclick="event.preventDefault();showConfirm({icon:'🗑️',title:'¿Eliminar publicación?',message:'La publicación se eliminará permanentemente, junto con sus comentarios y reacciones.',confirmText:'🗑 Eliminar',confirmColor:'#ef4444',onConfirm:()=>this.closest('form').submit()});return false;">🗑</button>
                         </form>
                     }
                 </div>
             </div>
 
+            <!-- DESCRIPCIÓN -->
             @if (!string.IsNullOrEmpty(post.Description))
             {
                 <p class="post-description">@post.Description</p>
             }
 
+            <!-- ALERTAS DE ADVERTENCIA -->
             @if (post.IsUnderWarning)
             {
-                <div class="alert alert-danger mt-2 py-1" style="border-left:4px solid #dc2626;font-size:13px;">⚠️ <strong>Incumple nuestras normas</strong></div>
-                <div class="alert alert-danger mt-1 py-1" style="border-left:4px solid #dc2626;background:#fff5f5;font-size:13px;">🔴 <strong>Cuenta en riesgo</strong></div>
+                <div class="alert alert-danger mt-2 py-1" style="border-left: 4px solid #dc2626; font-size: 13px;">
+                    ⚠️ <strong>Incumple nuestras normas</strong>
+                </div>
+                <div class="alert alert-danger mt-1 py-1" style="border-left: 4px solid #dc2626; background-color: #fff5f5; font-size: 13px;">
+                    🔴 <strong>Cuenta en riesgo</strong>
+                </div>
             }
 
+            <!-- MEDIA -->
             @if (!string.IsNullOrEmpty(post.ImagePath))
             {
                 var isBlurred = post.IsSensitive || post.IsUnderWarning;
                 var blurMessage = post.IsUnderWarning ? "⚠️ Publicación sospechosa - Incumple normas" : "⚠️ Contenido sensible";
+
                 <div class="post-media-wrap @(isVideo ? "video-wrap" : "") @(isBlurred ? "blurred-wrap" : "")" data-post-id="@post.Id" ondblclick="dblTapLike(@post.Id, event)">
                     @if (isVideo)
                     {
-                        <video controls class="post-media" preload="metadata"><source src="@post.ImagePath" /></video>
+                        <video controls class="post-media" preload="metadata">
+                            <source src="@post.ImagePath" />
+                        </video>
                         <div class="video-badge">▶ Video</div>
                     }
                     else if (isBlurred)
                     {
                         <img src="@post.ImagePath" class="post-media blurred-image" id="img-@post.Id" />
                         <div class="blur-overlay" id="overlay-@post.Id">
-                            <div class="blur-overlay-content"><span class="blur-icon">🚫</span><p>@blurMessage</p><button class="reveal-btn" onclick="revealBlurred(@post.Id)">Ver imagen</button></div>
+                            <div class="blur-overlay-content">
+                                <span class="blur-icon">🚫</span>
+                                <p>@blurMessage</p>
+                                <button class="reveal-btn" onclick="revealBlurred(@post.Id)">Ver imagen</button>
+                            </div>
                         </div>
                     }
                     else
@@ -118,40 +150,93 @@
                 </div>
             }
 
+            <!-- STATS -->
             <div class="post-stats">
-                <span id="like-summary-@post.Id" class="like-summary">@if (likeCount > 0) { <span>❤️ @likeCount @(likeCount == 1 ? "like" : "likes")</span> }</span>
-                <span class="comment-summary">@if (commentCounts.ContainsKey(post.Id) && commentCounts[post.Id] > 0) { <span>@commentCounts[post.Id] @(commentCounts[post.Id] == 1 ? "comentario" : "comentarios")</span> }</span>
+                <span id="like-summary-@post.Id" class="like-summary">
+                    @if (likeCount > 0)
+                    {
+                        <span>❤️ @likeCount @(likeCount == 1 ? "like" : "likes")</span>
+                    }
+                </span>
+                <span class="comment-summary">
+                    @{
+                        var cc = commentCounts.ContainsKey(post.Id) ? commentCounts[post.Id] : 0;
+                    }
+                    @if (cc > 0)
+                    {
+                        <span>@cc @(cc == 1 ? "comentario" : "comentarios")</span>
+                    }
+                </span>
             </div>
+
+            <!-- DIVIDER -->
             <div class="post-divider"></div>
+
+            <!-- ACCIONES -->
             <div class="post-actions">
-                <button class="action-btn like-btn @(isLiked ? "liked" : "")" id="like-btn-@post.Id" data-no-loader="true" onclick="toggleLike(@post.Id, this)">
-                    <span class="action-icon like-icon" id="like-icon-@post.Id">@(isLiked ? "❤️" : "🤍")</span><span class="action-label">Me gusta</span>
+                <button class="action-btn like-btn @(isLiked ? "liked" : "")"
+                        id="like-btn-@post.Id"
+                        data-no-loader="true"
+                        onclick="toggleLike(@post.Id, this)">
+                    <span class="action-icon like-icon" id="like-icon-@post.Id">@(isLiked ? "❤️" : "🤍")</span>
+                    <span class="action-label">Me gusta</span>
                 </button>
-                <a href="javascript:void(0)" onclick="openCommentsModal(@post.Id)" class="action-btn"><span class="action-icon">💬</span><span class="action-label">Comentar</span></a>
-                <button class="action-btn" data-no-loader="true" onclick="openShare(@post.Id)"><span class="action-icon">↪️</span><span class="action-label">Compartir</span></button>
-                <button class="action-btn save-btn" data-no-loader="true" onclick="savePost(@post.Id, this)"><span class="action-icon">🔖</span><span class="action-label">Guardar</span></button>
-                <a asp-controller="Post" asp-action="Report" asp-route-postId="@post.Id" class="action-btn report-btn"><span class="action-icon">🚩</span><span class="action-label">Reportar</span></a>
+
+                <a asp-controller="Post" asp-action="Comments" asp-route-postId="@post.Id" class="action-btn">
+                    <span class="action-icon">💬</span>
+                    <span class="action-label">Comentar</span>
+                </a>
+
+                <button class="action-btn" data-no-loader="true" onclick="openShare(@post.Id)">
+                    <span class="action-icon">↪️</span>
+                    <span class="action-label">Compartir</span>
+                </button>
+
+                <button class="action-btn save-btn" data-no-loader="true" onclick="savePost(@post.Id, this)">
+                    <span class="action-icon">🔖</span>
+                    <span class="action-label">Guardar</span>
+                </button>
+
+                <a asp-controller="Post" asp-action="Report" asp-route-postId="@post.Id" class="action-btn report-btn">
+                    <span class="action-icon">🚩</span>
+                    <span class="action-label">Reportar</span>
+                </a>
             </div>
         </article>
     }
 </div>
 
-<!-- SHARE MENU (igual que antes) -->
+<!-- SHARE MENU -->
 <div id="shareOverlay" class="share-overlay" onclick="closeShare()"></div>
 <div id="shareMenu" class="share-menu">
     <div class="share-handle"></div>
     <div class="share-title">Compartir publicación</div>
     <div class="share-options">
-        <div class="share-option" onclick="repostear()"><span class="share-option-icon">↪️</span><span>Repostear</span></div>
-        <div class="share-option" onclick="shareWhatsApp()"><span class="share-option-icon">📱</span><span>WhatsApp</span></div>
-        <div class="share-option" onclick="shareTelegram()"><span class="share-option-icon">✈️</span><span>Telegram</span></div>
-        <div class="share-option" onclick="shareFacebook()"><span class="share-option-icon">📘</span><span>Facebook</span></div>
-        <div class="share-option" onclick="copyLink()"><span class="share-option-icon">📋</span><span>Copiar link</span></div>
+        <div class="share-option" onclick="repostear()">
+            <span class="share-option-icon">↪️</span>
+            <span>Repostear</span>
+        </div>
+        <div class="share-option" onclick="shareWhatsApp()">
+            <span class="share-option-icon">📱</span>
+            <span>WhatsApp</span>
+        </div>
+        <div class="share-option" onclick="shareTelegram()">
+            <span class="share-option-icon">✈️</span>
+            <span>Telegram</span>
+        </div>
+        <div class="share-option" onclick="shareFacebook()">
+            <span class="share-option-icon">📘</span>
+            <span>Facebook</span>
+        </div>
+        <div class="share-option" onclick="copyLink()">
+            <span class="share-option-icon">📋</span>
+            <span>Copiar link</span>
+        </div>
     </div>
     <div class="share-option cancel" onclick="closeShare()">✕ Cancelar</div>
 </div>
 
-<!-- MODAL DE COMENTARIOS PROFESIONAL -->
+<!-- MODAL DE COMENTARIOS (estilo Facebook) - CORREGIDO: FUERA DEL SHARE MENU -->
 <div id="commentsModal" class="comments-modal" style="display:none;">
     <div class="comments-modal-overlay" onclick="closeCommentsModal()"></div>
     <div class="comments-modal-container">
@@ -167,184 +252,689 @@
     </div>
 </div>
 
+<!-- LIKE EXPLOSION -->
 <div id="likeExplosion" class="like-explosion" style="display:none;">❤️</div>
+
 <div id="copyAlert" class="copy-alert">↪ Link copiado</div>
 
 <style>
-/* ========== ESTILOS GENERALES (mantenemos los tuyos y agregamos mejoras) ========== */
-.feed-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; flex-wrap: wrap; gap: 12px; }
+/* (todos los estilos originales se mantienen igual, incluyendo los del modal) */
+.feed-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 24px; flex-wrap: wrap; gap: 12px;
+}
+/* ══ STORIES BAR ══ */
+.stories-bar{
+    display:flex;gap:14px;overflow-x:auto;padding:4px 2px 16px;
+    scrollbar-width:none;-webkit-overflow-scrolling:touch;margin-bottom:8px;
+}
+.stories-bar::-webkit-scrollbar{display:none;}
+.story-item{display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;flex-shrink:0;}
+.story-avatar-wrap{
+    width:64px;height:64px;border-radius:50%;position:relative;
+    padding:3px;background:linear-gradient(135deg,#f97316,#ec4899,#6366f1);
+}
+.story-avatar-wrap.my-story{background:linear-gradient(135deg,#6366f1,#4f46e5);}
+.story-avatar-wrap.viewed{background:#e5e7eb;}
+.story-avatar-img{width:100%;height:100%;border-radius:50%;object-fit:cover;border:2px solid white;}
+.story-avatar-letter{
+    width:100%;height:100%;border-radius:50%;
+    background:linear-gradient(135deg,#2563eb,#7c3aed);
+    color:white;display:flex;align-items:center;justify-content:center;
+    font-weight:800;font-size:22px;border:2px solid white;
+}
+.story-add-btn{
+    position:absolute;bottom:0;right:0;
+    width:20px;height:20px;border-radius:50%;
+    background:#6366f1;color:white;font-size:14px;font-weight:800;
+    display:flex;align-items:center;justify-content:center;
+    border:2px solid white;line-height:1;
+}
+.story-name{font-size:11px;font-weight:600;color:#374151;max-width:64px;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+
+/* ══ STORY VIEWER ══ */
+.story-viewer{position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;}
+.story-viewer-bg{position:absolute;inset:0;background:rgba(0,0,0,0.92);}
+.story-viewer-card{
+    position:relative;width:100%;max-width:400px;height:100vh;max-height:720px;
+    border-radius:20px;overflow:hidden;background:#000;z-index:1;
+}
+.story-progress-bars{
+    position:absolute;top:12px;left:12px;right:12px;
+    display:flex;gap:4px;z-index:10;
+}
+.story-progress-bar{
+    flex:1;height:3px;background:rgba(255,255,255,0.3);border-radius:10px;overflow:hidden;
+}
+.story-progress-fill{height:100%;background:white;width:0%;transition:none;}
+.story-viewer-header{
+    position:absolute;top:28px;left:12px;right:12px;
+    display:flex;align-items:center;justify-content:space-between;z-index:10;
+}
+.story-viewer-content{width:100%;height:100%;position:relative;}
+.story-nav-left{position:absolute;left:0;top:0;width:40%;height:100%;z-index:5;cursor:pointer;}
+.story-nav-right{position:absolute;right:0;top:0;width:40%;height:100%;z-index:5;cursor:pointer;}
+.story-views-bar{
+    position:absolute;bottom:16px;left:16px;right:16px;
+    display:flex;align-items:center;justify-content:center;z-index:10;
+}
+.story-views-bar span{font-size:12px;color:rgba(255,255,255,0.7);font-weight:600;}
+
+body.bg-dark .story-name{color:#94a3b8!important;}
+body.bg-dark .story-avatar-wrap.viewed{background:#334155!important;}
+
+@@media(max-width:768px){
+    .story-viewer-card{border-radius:0;max-height:100vh;}
+}
+
 .feed-title { font-size: 22px; font-weight: 800; margin: 0 0 2px; color: #111827; }
 .feed-subtitle { font-size: 13px; color: #9ca3af; margin: 0; }
-.new-post-btn { display: inline-flex; align-items: center; gap: 6px; background: linear-gradient(135deg, #2563eb, #4f46e5); color: white; padding: 10px 20px; border-radius: 50px; font-size: 14px; font-weight: 600; text-decoration: none; transition: 0.2s; box-shadow: 0 4px 14px rgba(37,99,235,0.3); white-space: nowrap; }
+
+.new-post-btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: linear-gradient(135deg, #2563eb, #4f46e5);
+    color: white; padding: 10px 20px; border-radius: 50px;
+    font-size: 14px; font-weight: 600; text-decoration: none;
+    transition: 0.2s; box-shadow: 0 4px 14px rgba(37,99,235,0.3);
+    white-space: nowrap;
+}
 .new-post-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(37,99,235,0.4); color: white; }
-.feed-empty { text-align: center; padding: 60px 20px; background: white; border-radius: 22px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); border: 1px solid rgba(0,0,0,0.04); max-width: 620px; margin: 0 auto 24px; }
-.feed-empty-icon { font-size: 52px; margin-bottom: 16px; }
-.feed-empty h5 { font-size: 18px; font-weight: 700; color: #111827; margin-bottom: 8px; }
-.feed-empty p { font-size: 14px; color: #9ca3af; margin: 0; }
-.feed-container { max-width: 620px; margin: 0 auto; }
-.post-card { background: white; border-radius: 22px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); border: 1px solid rgba(0,0,0,0.04); transition: 0.2s; }
-.post-card:hover { box-shadow: 0 8px 28px rgba(0,0,0,0.1); transform: translateY(-1px); }
-.post-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; gap: 8px; }
-.post-header-left { display: flex; align-items: center; gap: 10px; min-width: 0; }
-.post-avatar { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; border: 2px solid #e5e7eb; flex-shrink: 0; }
-.post-avatar-placeholder { width: 44px; height: 44px; border-radius: 50%; background: linear-gradient(135deg, #2563eb, #7c3aed); color: white; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 17px; flex-shrink: 0; }
-.post-meta { display: flex; flex-direction: column; min-width: 0; }
-.post-username { font-weight: 700; font-size: 15px; color: #111827; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
-.post-time-wrap { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 2px; }
+
+.feed-empty {
+    text-align: center; padding: 60px 20px; background: white;
+    border-radius: 22px; box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    border: 1px solid rgba(0,0,0,0.04); max-width: 620px; margin: 0 auto 24px;
+}
+.post-time-wrap {
+    display: flex; align-items: center; gap: 6px;
+    flex-wrap: wrap; margin-top: 2px;
+}
 .post-time { font-size: 12px; color: #9ca3af; }
-.post-privacy-badge { font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 20px; white-space: nowrap; line-height: 1.4; }
+.post-privacy-badge {
+    font-size: 10px; font-weight: 700; padding: 2px 7px;
+    border-radius: 20px; white-space: nowrap; line-height: 1.4;
+}
 .post-privacy-badge.friends { background:#dbeafe; color:#1d4ed8; }
 .post-privacy-badge.private { background:#fce7f3; color:#9d174d; }
 .post-privacy-badge.public { background:#dcfce7; color:#15803d; }
-.sensitive-badge { background: #fef3c7; color: #d97706; font-size: 10px; padding: 3px 8px; border-radius: 20px; font-weight: 700; }
-.delete-btn { font-size: 17px; color: #ef4444; text-decoration: none; opacity: 0.7; transition: 0.2s; padding: 5px 8px; border-radius: 8px; }
-.delete-btn:hover { opacity: 1; background: #fef2f2; }
-.post-description { font-size: 15px; color: #374151; line-height: 1.65; margin: 0 0 14px; white-space: pre-wrap; word-break: break-word; }
-.post-media-wrap { border-radius: 16px; overflow: hidden; margin-bottom: 12px; background: #000; position: relative; user-select: none; }
-.post-media { width: 100%; max-height: 520px; object-fit: cover; display: block; }
-.video-wrap .post-media { object-fit: contain; background: #000; }
-.dbltap-heart { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0); font-size: 110px; color: white; pointer-events: none; opacity: 0; z-index: 5; filter: drop-shadow(0 0 20px rgba(239,68,68,0.8)); }
-.dbltap-heart.animate { animation: dbltapHeartPop 0.95s ease forwards; }
-@@keyframes dbltapHeartPop { 0% { transform: translate(-50%, -50%) scale(0) rotate(-12deg); opacity: 0; } 18% { transform: translate(-50%, -50%) scale(1.25) rotate(8deg); opacity: 1; } 35% { transform: translate(-50%, -50%) scale(1) rotate(0); opacity: 1; } 70% { transform: translate(-50%, -50%) scale(1) rotate(0); opacity: 1; } 100% { transform: translate(-50%, -50%) scale(1.6) rotate(0); opacity: 0; } }
-.video-badge { position: absolute; top: 10px; left: 10px; background: rgba(0,0,0,0.6); color: white; font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 20px; backdrop-filter: blur(4px); }
-.blurred-image { filter: blur(28px); transform: scale(1.05); transition: filter 0.4s ease, transform 0.4s ease; }
-.blur-overlay { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.45); backdrop-filter: blur(3px); z-index: 2; transition: opacity 0.3s ease; }
-.blur-overlay-content { text-align: center; color: #fff; background: rgba(0,0,0,0.6); padding: 12px 24px; border-radius: 40px; backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,0.2); }
-.blur-icon { font-size: 28px; display: block; margin-bottom: 6px; }
-.blur-overlay-content p { font-size: 14px; font-weight: 600; margin: 0 0 12px; }
-.reveal-btn { background: rgba(255,255,255,0.2); border: 1.5px solid rgba(255,255,255,0.6); padding: 6px 18px; border-radius: 30px; font-size: 12px; font-weight: 700; cursor: pointer; transition: 0.2s; font-family: inherit; }
-.reveal-btn:hover { background: rgba(255,255,255,0.35); }
-.post-stats { display: flex; align-items: center; justify-content: space-between; font-size: 13px; color: #6b7280; padding: 4px 2px 8px; min-height: 20px; }
-.post-divider { height: 1px; background: #f3f4f6; margin: 0 0 8px; }
-.post-actions { display: flex; align-items: center; gap: 0; flex-wrap: nowrap; overflow-x: auto; }
-.action-btn { display: inline-flex; align-items: center; gap: 5px; padding: 8px 10px; border-radius: 10px; border: none; background: transparent; cursor: pointer; font-size: 13px; color: #6b7280; text-decoration: none; transition: 0.15s; font-weight: 500; flex-shrink: 0; white-space: nowrap; }
-.action-btn:hover { background: #f3f4f6; color: #111; }
-.action-icon { font-size: 17px; }
-.action-label { font-size: 12px; font-weight: 600; }
-.like-btn.liked .action-label { color: #ef4444; }
-.like-btn.liked .action-icon { filter: drop-shadow(0 0 4px rgba(239,68,68,0.5)); }
-.report-btn:hover { background: #fef2f2; color: #ef4444; }
-.like-pop { animation: likePopIn 0.4s cubic-bezier(0.34,1.56,0.64,1); }
-.like-explosion { position: fixed; font-size: 36px; pointer-events: none; z-index: 99999; transform: translate(-50%, -50%); }
-.like-explosion.animate { animation: likeExplosionAnim 0.6s ease forwards; }
-@@keyframes likeExplosionAnim { 0% { transform: translate(-50%, -50%) scale(0); opacity: 1; } 50% { transform: translate(-50%, -80%) scale(1.8); opacity: 1; } 100% { transform: translate(-50%, -120%) scale(2.5); opacity: 0; } }
-@@keyframes likePopIn { 0% { transform: scale(1); } 30% { transform: scale(1.5); } 60% { transform: scale(0.9); } 100% { transform: scale(1); } }
-.share-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; z-index: 9998; backdrop-filter: blur(2px); }
-.share-menu { position: fixed; bottom: 0; left: 0; right: 0; background: white; border-radius: 24px 24px 0 0; padding: 16px 20px 32px; display: none; z-index: 9999; box-shadow: 0 -10px 40px rgba(0,0,0,0.15); }
-.share-handle { width: 40px; height: 4px; background: #e5e7eb; border-radius: 10px; margin: 0 auto 16px; }
-.share-title { font-weight: 700; font-size: 16px; margin-bottom: 16px; color: #111; text-align: center; }
-.share-options { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 16px; }
-.share-option { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 14px 10px; border-radius: 16px; cursor: pointer; font-weight: 500; font-size: 12px; color: #374151; transition: 0.15s; background: #f9fafb; text-align: center; }
-.share-option:hover { background: #f3f4f6; transform: scale(1.03); }
-.share-option-icon { font-size: 24px; }
-.share-option.cancel { width: 100%; text-align: center; padding: 14px; color: #ef4444; background: #fef2f2; border-radius: 12px; flex-direction: row; justify-content: center; font-size: 14px; }
-.copy-alert { position: fixed; bottom: 40px; left: 50%; transform: translateX(-50%); background: #111; color: white; padding: 10px 22px; border-radius: 50px; font-size: 14px; opacity: 0; transition: 0.3s; pointer-events: none; z-index: 99999; white-space: nowrap; }
-.copy-alert.show { opacity: 1; }
+body.bg-dark .post-privacy-badge.friends { background:rgba(37,99,235,0.2); color:#93c5fd; }
+body.bg-dark .post-privacy-badge.private { background:rgba(157,23,77,0.2); color:#f9a8d4; }
+body.bg-dark .post-privacy-badge.public { background:rgba(21,128,61,0.2); color:#86efac; }
 
-/* ===== MODAL DE COMENTARIOS (Facebook/TikTok style) ===== */
-.comments-modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 99999; display: flex; align-items: center; justify-content: center; }
-.comments-modal-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(4px); }
-.comments-modal-container { position: relative; background: white; width: 90%; max-width: 680px; max-height: 85vh; border-radius: 20px; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
-.comments-modal-header { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; border-bottom: 1px solid #e5e7eb; background: white; flex-shrink: 0; }
+.feed-empty-icon { font-size: 52px; margin-bottom: 16px; }
+.feed-empty h5 { font-size: 18px; font-weight: 700; color: #111827; margin-bottom: 8px; }
+.feed-empty p { font-size: 14px; color: #9ca3af; margin: 0; }
+
+.feed-container { max-width: 620px; margin: 0 auto; }
+
+.post-card {
+    background: white; border-radius: 22px; padding: 20px;
+    margin-bottom: 20px; box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    border: 1px solid rgba(0,0,0,0.04); transition: 0.2s;
+}
+.post-card:hover { box-shadow: 0 8px 28px rgba(0,0,0,0.1); transform: translateY(-1px); }
+
+.post-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 14px; gap: 8px;
+}
+.post-header-left { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.post-header-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.avatar-link { text-decoration: none; flex-shrink: 0; }
+.post-avatar { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; border: 2px solid #e5e7eb; flex-shrink: 0; }
+.post-avatar-placeholder {
+    width: 44px; height: 44px; border-radius: 50%;
+    background: linear-gradient(135deg, #2563eb, #7c3aed);
+    color: white; display: flex; align-items: center; justify-content: center;
+    font-weight: 800; font-size: 17px; flex-shrink: 0;
+}
+.post-meta { display: flex; flex-direction: column; min-width: 0; }
+.post-username { font-weight: 700; font-size: 15px; color: #111827; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.owner-badge {
+    background: linear-gradient(135deg, #fbbf24, #f59e0b);
+    color: #111; font-size: 10px; padding: 2px 8px;
+    border-radius: 20px; font-weight: 700;
+}
+
+/* ===== MODAL COMENTARIOS ESTILOS (Facebook style) ===== */
+.comments-modal {
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    z-index: 99999; display: flex; align-items: center; justify-content: center;
+}
+.comments-modal-overlay {
+    position: absolute; inset: 0;
+    background: rgba(0,0,0,0.6); backdrop-filter: blur(4px);
+}
+.comments-modal-container {
+    position: relative; background: white; width: 90%; max-width: 620px;
+    max-height: 85vh; border-radius: 20px; display: flex; flex-direction: column;
+    overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+}
+.comments-modal-header {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 16px 20px; border-bottom: 1px solid #e5e7eb;
+    background: white; flex-shrink: 0;
+}
 .comments-modal-title { font-weight: 800; font-size: 18px; color: #111827; }
-.comments-modal-close { background: none; border: none; font-size: 20px; cursor: pointer; color: #9ca3af; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
+.comments-modal-close {
+    background: none; border: none; font-size: 20px; cursor: pointer;
+    color: #9ca3af; width: 32px; height: 32px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center; transition: 0.2s;
+}
 .comments-modal-close:hover { background: #f3f4f6; color: #111827; }
-.comments-modal-body { flex: 1; overflow-y: auto; padding: 16px; background: #f9fafb; }
+.comments-modal-body {
+    flex: 1; overflow-y: auto; padding: 16px; background: #f9fafb;
+}
 .comments-loading { text-align: center; padding: 40px; color: #9ca3af; }
-.comment-item { display: flex; gap: 12px; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid #e5e7eb; }
-.comment-avatar { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; flex-shrink: 0; }
-.comment-avatar-letter { width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #6366f1, #2563eb); color: white; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 16px; flex-shrink: 0; }
-.comment-content { flex: 1; min-width: 0; }
-.comment-header { display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap; margin-bottom: 4px; }
-.comment-username { font-weight: 700; font-size: 14px; color: #111827; }
+.comment-item {
+    display: flex; gap: 12px; margin-bottom: 16px; padding-bottom: 12px;
+    border-bottom: 1px solid #e5e7eb;
+}
+.comment-avatar {
+    width: 40px; height: 40px; border-radius: 50%; object-fit: cover;
+    flex-shrink: 0;
+}
+.comment-avatar-letter {
+    width: 40px; height: 40px; border-radius: 50%;
+    background: linear-gradient(135deg, #6366f1, #2563eb);
+    color: white; display: flex; align-items: center; justify-content: center;
+    font-weight: 800; font-size: 16px; flex-shrink: 0;
+}
+.comment-content { flex: 1; }
+.comment-username { font-weight: 700; font-size: 14px; color: #111827; display: inline-block; margin-right: 8px; }
 .comment-time { font-size: 11px; color: #9ca3af; }
 .comment-text { font-size: 14px; color: #374151; margin: 6px 0 8px; word-break: break-word; }
 .comment-img { max-width: 100%; max-height: 200px; border-radius: 12px; margin-top: 6px; cursor: pointer; }
 .comment-actions { display: flex; gap: 12px; margin-top: 6px; }
-.comment-like-btn { background: none; border: none; font-size: 13px; font-weight: 600; color: #6b7280; cursor: pointer; padding: 2px 6px; border-radius: 8px; transition: 0.2s; display: flex; align-items: center; gap: 4px; }
+.comment-like-btn {
+    background: none; border: none; font-size: 13px; font-weight: 600;
+    color: #6b7280; cursor: pointer; padding: 2px 6px;
+    border-radius: 8px; transition: 0.2s; display: flex; align-items: center; gap: 4px;
+}
 .comment-like-btn:hover { background: #f3f4f6; }
 .comment-like-btn.liked { color: #ef4444; }
-.comment-reply-btn { background: none; border: none; font-size: 12px; font-weight: 600; color: #6b7280; cursor: pointer; padding: 2px 6px; border-radius: 8px; }
-.comment-reply-btn:hover { background: #f3f4f6; color: #111827; }
-.comment-delete-btn { background: none; border: none; font-size: 12px; color: #9ca3af; cursor: pointer; padding: 2px 6px; border-radius: 8px; }
+.comment-delete-btn {
+    background: none; border: none; font-size: 12px; color: #9ca3af;
+    cursor: pointer; padding: 2px 6px; border-radius: 8px;
+}
 .comment-delete-btn:hover { background: #fef2f2; color: #dc2626; }
-.replies-container { margin-top: 12px; margin-left: 52px; }
-.reply-item { display: flex; gap: 10px; margin-bottom: 12px; padding-left: 0; }
-.reply-avatar { width: 28px; height: 28px; border-radius: 50%; object-fit: cover; flex-shrink: 0; }
-.reply-avatar-letter { width: 28px; height: 28px; border-radius: 50%; background: linear-gradient(135deg, #8b5cf6, #6d28d9); color: white; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 12px; flex-shrink: 0; }
-.reply-content { flex: 1; background: rgba(0,0,0,0.03); border-radius: 12px; padding: 8px 12px; }
-.reply-header { display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap; margin-bottom: 2px; }
-.reply-username { font-weight: 700; font-size: 12px; color: #111827; }
-.reply-time { font-size: 10px; color: #9ca3af; }
-.reply-text { font-size: 13px; color: #374151; margin: 4px 0 6px; word-break: break-word; }
-.reply-actions { display: flex; gap: 8px; margin-top: 4px; }
-.reply-like-btn { background: none; border: none; font-size: 11px; font-weight: 600; color: #6b7280; cursor: pointer; display: flex; align-items: center; gap: 3px; padding: 2px 4px; border-radius: 6px; }
-.reply-like-btn.liked { color: #ef4444; }
-.reply-reply-btn { background: none; border: none; font-size: 11px; font-weight: 600; color: #6b7280; cursor: pointer; }
-.comments-modal-footer { border-top: 1px solid #e5e7eb; background: white; padding: 12px 16px; flex-shrink: 0; }
-.comments-input-wrapper { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
-.comments-input { flex: 1; padding: 10px 14px; border: 1.5px solid #e5e7eb; border-radius: 24px; font-size: 14px; resize: none; outline: none; font-family: inherit; background: #f9fafb; }
+.comments-modal-footer {
+    border-top: 1px solid #e5e7eb; background: white; padding: 12px 16px;
+    flex-shrink: 0;
+}
+.comments-input-wrapper {
+    display: flex; align-items: center; gap: 8px; margin-bottom: 6px;
+}
+.comments-input {
+    flex: 1; padding: 10px 14px; border: 1.5px solid #e5e7eb;
+    border-radius: 24px; font-size: 14px; resize: none; outline: none;
+    font-family: inherit; background: #f9fafb;
+}
 .comments-input:focus { border-color: #6366f1; background: white; }
-.comments-send-btn { width: 38px; height: 38px; border-radius: 50%; border: none; background: #6366f1; color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
+.comments-send-btn {
+    width: 38px; height: 38px; border-radius: 50%; border: none;
+    background: #6366f1; color: white; cursor: pointer; display: flex;
+    align-items: center; justify-content: center; transition: 0.2s;
+}
 .comments-send-btn:disabled { background: #cbd5e1; cursor: not-allowed; }
-.comments-attach-wrapper { margin-bottom: 8px; }
-.comments-attach-btn { font-size: 12px; color: #6366f1; font-weight: 600; cursor: pointer; text-decoration: underline; display: inline-block; }
-.comment-image-preview { margin-top: 8px; display: flex; align-items: center; gap: 8px; background: #f3f4f6; padding: 6px 10px; border-radius: 12px; width: fit-content; }
+.comments-attach-wrapper { margin-bottom: 6px; }
+.comments-attach-btn {
+    font-size: 12px; color: #6366f1; font-weight: 600; cursor: pointer;
+    text-decoration: underline; display: inline-block;
+}
+.comment-image-preview {
+    margin-top: 8px; display: flex; align-items: center; gap: 8px;
+    background: #f3f4f6; padding: 6px 10px; border-radius: 12px; width: fit-content;
+}
 .comment-image-preview img { width: 48px; height: 48px; border-radius: 8px; object-fit: cover; }
-.comment-image-preview button { background: #ef4444; border: none; color: white; width: 22px; height: 22px; border-radius: 50%; cursor: pointer; font-size: 12px; }
-.comment-typing-indicator { font-size: 12px; color: #6366f1; padding: 6px 16px 8px; font-style: italic; border-top: 1px solid #e5e7eb; background: #f9fafb; }
-.reply-form-container { margin-top: 8px; margin-left: 52px; display: none; }
-.reply-form { display: flex; gap: 8px; align-items: center; }
-.reply-input { flex: 1; padding: 6px 12px; border: 1.5px solid #e5e7eb; border-radius: 20px; font-size: 12px; outline: none; font-family: inherit; background: #f9fafb; }
-.reply-send-btn { background: #6366f1; color: white; border: none; border-radius: 20px; padding: 6px 12px; font-size: 12px; font-weight: 600; cursor: pointer; }
-.reply-cancel-btn { background: none; border: none; color: #9ca3af; cursor: pointer; font-size: 12px; }
+.comment-image-preview button {
+    background: #ef4444; border: none; color: white; width: 22px; height: 22px;
+    border-radius: 50%; cursor: pointer; font-size: 12px;
+}
+.comment-typing-indicator {
+    font-size: 12px; color: #6366f1; padding: 6px 16px 8px; font-style: italic;
+    border-top: 1px solid #e5e7eb; background: #f9fafb;
+}
 body.bg-dark .comments-modal-container { background: #1e293b; }
 body.bg-dark .comments-modal-title { color: white; }
 body.bg-dark .comments-modal-body { background: #0f172a; }
 body.bg-dark .comment-item { border-color: #334155; }
 body.bg-dark .comment-username { color: #f1f5f9; }
 body.bg-dark .comment-text { color: #cbd5e1; }
+body.bg-dark .comments-input { background: #2d3748; border-color: #475569; color: white; }
+body.bg-dark .comments-modal-footer { background: #1e293b; border-color: #334155; }
+body.bg-dark .comment-like-btn:hover { background: #2d3748; }
+body.bg-dark .comment-image-preview { background: #2d3748; }
+
+/* Blur para imágenes sospechosas o sensibles */
+.blurred-image { filter: blur(28px); transform: scale(1.05); transition: filter 0.4s ease, transform 0.4s ease; }
+.blur-overlay {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(0,0,0,0.45);
+    backdrop-filter: blur(3px);
+    z-index: 2;
+    transition: opacity 0.3s ease;
+}
+.blur-overlay-content {
+    text-align: center;
+    color: #fff;
+    background: rgba(0,0,0,0.6);
+    padding: 12px 24px;
+    border-radius: 40px;
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255,255,255,0.2);
+}
+.blur-icon { font-size: 28px; display: block; margin-bottom: 6px; }
+.blur-overlay-content p { font-size: 14px; font-weight: 600; margin: 0 0 12px; }
+.reveal-btn {
+    background: rgba(255,255,255,0.2);
+    border: 1.5px solid rgba(255,255,255,0.6);
+    padding: 6px 18px;
+    border-radius: 30px;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: 0.2s;
+    font-family: inherit;
+}
+.reveal-btn:hover { background: rgba(255,255,255,0.35); }
+.sensitive-badge { background: #fef3c7; color: #d97706; font-size: 10px; padding: 3px 8px; border-radius: 20px; font-weight: 700; }
+.delete-btn { font-size: 17px; color: #ef4444; text-decoration: none; opacity: 0.7; transition: 0.2s; padding: 5px 8px; border-radius: 8px; }
+.delete-btn:hover { opacity: 1; background: #fef2f2; }
+.post-description { font-size: 15px; color: #374151; line-height: 1.65; margin: 0 0 14px; white-space: pre-wrap; word-break: break-word; }
+.post-media-wrap { border-radius: 16px; overflow: hidden; margin-bottom: 12px; background: #000; position: relative; user-select: none; -webkit-user-select: none; }
+.post-media { width: 100%; max-height: 520px; object-fit: cover; display: block; }
+.video-wrap .post-media { object-fit: contain; background: #000; }
+.dbltap-heart {
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0);
+    font-size: 110px; color: white; pointer-events: none; opacity: 0;
+    text-shadow: 0 6px 30px rgba(0,0,0,0.6); z-index: 5;
+    filter: drop-shadow(0 0 20px rgba(239,68,68,0.8));
+}
+.dbltap-heart.animate { animation: dbltapHeartPop 0.95s ease forwards; }
+@@keyframes dbltapHeartPop {
+    0%   { transform: translate(-50%, -50%) scale(0)   rotate(-12deg); opacity: 0; }
+    18%  { transform: translate(-50%, -50%) scale(1.25) rotate(8deg);  opacity: 1; }
+    35%  { transform: translate(-50%, -50%) scale(1)   rotate(0);    opacity: 1; }
+    70%  { transform: translate(-50%, -50%) scale(1)   rotate(0);    opacity: 1; }
+    100% { transform: translate(-50%, -50%) scale(1.6) rotate(0);    opacity: 0; }
+}
+.video-badge {
+    position: absolute; top: 10px; left: 10px;
+    background: rgba(0,0,0,0.6); color: white; font-size: 11px;
+    font-weight: 700; padding: 3px 10px; border-radius: 20px;
+    backdrop-filter: blur(4px);
+}
+.sensitive-blurred { filter: blur(28px); transform: scale(1.05); transition: filter 0.4s ease, transform 0.4s ease; }
+.sensitive-overlay {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(0,0,0,0.35);
+    backdrop-filter: blur(2px);
+    z-index: 2; transition: opacity 0.3s ease;
+}
+.sensitive-overlay-content { text-align: center; color: #fff; }
+.sensitive-overlay-content .sensitive-icon { font-size: 32px; display: block; margin-bottom: 6px; }
+.sensitive-overlay-content p { font-size: 14px; font-weight: 600; margin: 0 0 12px; }
+.reveal-btn {
+    background: rgba(255,255,255,0.2); color: #fff; border: 1.5px solid rgba(255,255,255,0.6);
+    padding: 7px 20px; border-radius: 20px; font-size: 13px; font-weight: 600;
+    cursor: pointer; backdrop-filter: blur(4px); transition: background 0.2s;
+}
+.reveal-btn:hover { background: rgba(255,255,255,0.35); }
+.post-stats {
+    display: flex; align-items: center; justify-content: space-between;
+    font-size: 13px; color: #6b7280; padding: 4px 2px 8px;
+    min-height: 20px;
+}
+/* ===== RESPUESTAS A COMENTARIOS ===== */
+.replies-container {
+    margin-top: 12px;
+    margin-left: 52px;
+}
+.reply-item {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+.reply-avatar {
+    width: 28px; height: 28px; border-radius: 50%; object-fit: cover;
+}
+.reply-avatar-letter {
+    width: 28px; height: 28px; border-radius: 50%;
+    background: linear-gradient(135deg, #8b5cf6, #6d28d9);
+    color: white; display: flex;
+    align-items: center; justify-content: center;
+    font-weight: 800; font-size: 12px;
+}
+.reply-content {
+    flex: 1; background: rgba(0,0,0,0.03); border-radius: 12px; padding: 8px 12px;
+}
+.reply-header {
+    display: flex; align-items: baseline; gap: 6px; margin-bottom: 2px;
+}
+.reply-username { font-weight: 700; font-size: 12px; color: #111827; }
+.reply-time { font-size: 10px; color: #9ca3af; }
+.reply-text { font-size: 13px; color: #374151; margin: 4px 0; }
+.reply-actions { display: flex; gap: 8px; margin-top: 4px; }
+.reply-like-btn {
+    background: none; border: none; font-size: 11px; font-weight: 600;
+    color: #6b7280; cursor: pointer; display: flex; align-items: center; gap: 3px;
+}
+.reply-like-btn.liked { color: #ef4444; }
+.reply-reply-btn {
+    background: none; border: none; font-size: 11px; font-weight: 600;
+    color: #6b7280; cursor: pointer;
+}
+.reply-delete-btn {
+    background: none; border: none; font-size: 11px; color: #9ca3af; cursor: pointer;
+}
+.view-replies-btn {
+    background: none; border: none; color: #6366f1; font-size: 12px;
+    font-weight: 600; cursor: pointer; margin-top: 6px;
+}
+.reply-form-container {
+    margin-top: 8px; margin-left: 52px; display: none;
+}
+.reply-form {
+    display: flex; gap: 8px; align-items: center;
+}
+.reply-input {
+    flex: 1; padding: 6px 12px; border: 1.5px solid #e5e7eb; border-radius: 20px;
+    font-size: 12px; outline: none; font-family: inherit; background: #f9fafb;
+}
+.reply-send-btn {
+    background: #6366f1; color: white; border: none; border-radius: 20px;
+    padding: 6px 12px; font-size: 12px; font-weight: 600; cursor: pointer;
+}
+.reply-cancel-btn {
+    background: none; border: none; color: #9ca3af; cursor: pointer; font-size: 12px;
+}
 body.bg-dark .reply-content { background: #1e293b; }
 body.bg-dark .reply-username { color: #f1f5f9; }
 body.bg-dark .reply-text { color: #cbd5e1; }
-body.bg-dark .comments-input { background: #2d3748; border-color: #475569; color: white; }
-body.bg-dark .comments-modal-footer { background: #1e293b; border-color: #334155; }
-body.bg-dark .comment-like-btn:hover, body.bg-dark .reply-like-btn:hover, body.bg-dark .comment-reply-btn:hover { background: #2d3748; }
-body.bg-dark .comment-image-preview { background: #2d3748; }
-@@media (max-width: 768px) {
-    .comments-modal-container { width: 100%; max-width: 100%; max-height: 100%; border-radius: 0; }
-    .comment-avatar { width: 32px; height: 32px; }
-    .comment-avatar-letter { width: 32px; height: 32px; font-size: 13px; }
-    .reply-avatar { width: 24px; height: 24px; }
-    .reply-avatar-letter { width: 24px; height: 24px; font-size: 10px; }
-    .replies-container { margin-left: 44px; }
+body.bg-dark .reply-input { background: #2d3748; border-color: #475569; color: white; }
+.like-summary, .comment-summary { font-weight: 500; }
+.post-divider { height: 1px; background: #f3f4f6; margin: 0 0 8px; }
+.post-actions {
+    display: flex; align-items: center;
+    gap: 0; flex-wrap: nowrap; overflow-x: auto;
 }
+.action-btn {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 8px 10px; border-radius: 10px; border: none;
+    background: transparent; cursor: pointer; font-size: 13px;
+    color: #6b7280; text-decoration: none; transition: 0.15s;
+    font-weight: 500; flex-shrink: 0; white-space: nowrap;
+}
+.action-btn:hover { background: #f3f4f6; color: #111; }
+.action-icon { font-size: 17px; }
+.action-label { font-size: 12px; font-weight: 600; }
+.like-btn.liked .action-label { color: #ef4444; }
+.like-btn.liked .action-icon { filter: drop-shadow(0 0 4px rgba(239,68,68,0.5)); }
+.report-btn:hover { background: #fef2f2; color: #ef4444; }
+.report-btn:hover .action-label { color: #ef4444; }
+.like-pop { animation: likePopIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); }
+.like-explosion {
+    position: fixed; font-size: 36px; pointer-events: none;
+    z-index: 99999; transform: translate(-50%, -50%);
+}
+.like-explosion.animate { animation: likeExplosionAnim 0.6s ease forwards; }
+@@keyframes likeExplosionAnim {
+    0% { transform: translate(-50%, -50%) scale(0); opacity: 1; }
+    50% { transform: translate(-50%, -80%) scale(1.8); opacity: 1; }
+    100% { transform: translate(-50%, -120%) scale(2.5); opacity: 0; }
+}
+@@keyframes likePopIn {
+    0% { transform: scale(1); }
+    30% { transform: scale(1.5); }
+    60% { transform: scale(0.9); }
+    100% { transform: scale(1); }
+}
+.share-overlay {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.5); display: none; z-index: 9998;
+    backdrop-filter: blur(2px);
+}
+.share-menu {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    background: white; border-radius: 24px 24px 0 0;
+    padding: 16px 20px 32px; display: none; z-index: 9999;
+    box-shadow: 0 -10px 40px rgba(0,0,0,0.15);
+}
+.share-handle { width: 40px; height: 4px; background: #e5e7eb; border-radius: 10px; margin: 0 auto 16px; }
+.share-title { font-weight: 700; font-size: 16px; margin-bottom: 16px; color: #111; text-align: center; }
+.share-options {
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    gap: 12px; margin-bottom: 16px;
+}
+.share-option {
+    display: flex; flex-direction: column; align-items: center; gap: 6px;
+    padding: 14px 10px; border-radius: 16px; cursor: pointer;
+    font-weight: 500; font-size: 12px; color: #374151;
+    transition: 0.15s; background: #f9fafb; text-align: center;
+}
+.share-option:hover { background: #f3f4f6; transform: scale(1.03); }
+.share-option-icon { font-size: 24px; }
+.share-option.cancel {
+    width: 100%; text-align: center; padding: 14px; color: #ef4444;
+    background: #fef2f2; border-radius: 12px; flex-direction: row;
+    justify-content: center; font-size: 14px;
+}
+.copy-alert {
+    position: fixed; bottom: 40px; left: 50%; transform: translateX(-50%);
+    background: #111; color: white; padding: 10px 22px; border-radius: 50px;
+    font-size: 14px; opacity: 0; transition: 0.3s; pointer-events: none;
+    z-index: 99999; white-space: nowrap;
+}
+.copy-alert.show { opacity: 1; }
+
+/* DARK MODE */
+body.bg-dark .feed-title { color: #f1f5f9 !important; }
+body.bg-dark .feed-empty { background: #1e1e2e !important; border-color: #2d2d3d !important; }
+body.bg-dark .feed-empty h5 { color: #f1f5f9 !important; }
+body.bg-dark .post-card { background: #1e1e2e !important; border-color: #2d2d3d !important; box-shadow: 0 2px 12px rgba(0,0,0,0.3) !important; }
+body.bg-dark .post-username { color: #f1f5f9 !important; }
+body.bg-dark .post-description { color: #cbd5e1 !important; }
+body.bg-dark .post-divider { background: #2d2d3d !important; }
+body.bg-dark .post-stats { color: #64748b !important; }
+body.bg-dark .action-btn { color: #94a3b8 !important; }
+body.bg-dark .action-btn:hover { background: #2d2d3d !important; color: #f1f5f9 !important; }
+body.bg-dark .share-menu { background: #1e1e2e !important; }
+body.bg-dark .share-title { color: #f1f5f9 !important; }
+body.bg-dark .share-option { background: #2d2d3d !important; color: #cbd5e1 !important; }
+body.bg-dark .share-option:hover { background: #3d3d4d !important; }
+body.bg-dark .share-handle { background: #3d3d4d !important; }
+body.bg-dark .share-option.cancel { background: #3a1a1a !important; }
 </style>
 
 <script>
-// ========== FUNCIONES BASE (like, share, guardar, etc.) ==========
-function revealSensitive(postId) { /* ... */ }
-function dblTapLike(postId, e) { /* ... */ }
-function toggleLike(postId, element) { /* ... */ }
-function revealBlurred(postId) { /* ... */ }
-function savePost(postId, btn) { /* ... */ }
-function openShare(postId) { /* ... */ }
-function closeShare() { /* ... */ }
-function shareWhatsApp() { /* ... */ }
-function shareTelegram() { /* ... */ }
-function shareFacebook() { /* ... */ }
-function copyLink() { /* ... */ }
-function showAlert(msg) { /* ... */ }
-async function repostear() { /* ... */ }
+function revealSensitive(postId) {
+    const img = document.getElementById('img-' + postId);
+    const overlay = document.getElementById('overlay-' + postId);
+    if (img) img.classList.remove('sensitive-blurred');
+    if (overlay) { overlay.style.opacity = '0'; overlay.style.pointerEvents = 'none'; }
+}
 
-// ========== MODAL COMENTARIOS AVANZADO ==========
+// ❤️ Double-tap to like (Instagram style)
+const dblTapState = new Map();
+function dblTapLike(postId, e) {
+    const heart = document.getElementById('dbltap-heart-' + postId);
+    if (heart) {
+        heart.classList.remove('animate');
+        void heart.offsetWidth;
+        heart.classList.add('animate');
+    }
+    const btn = document.getElementById('like-btn-' + postId);
+    if (btn && !btn.classList.contains('liked')) {
+        toggleLike(postId, btn);
+    }
+    if (navigator.vibrate) try { navigator.vibrate(15); } catch(_){}
+}
+document.addEventListener('touchend', function(e){
+    const wrap = e.target.closest('.post-media-wrap[data-post-id]');
+    if (!wrap) return;
+    const postId = wrap.getAttribute('data-post-id');
+    const now = Date.now();
+    const last = dblTapState.get(postId) || 0;
+    if (now - last < 320) {
+        dblTapLike(parseInt(postId, 10), e);
+        dblTapState.set(postId, 0);
+        e.preventDefault();
+    } else {
+        dblTapState.set(postId, now);
+    }
+}, {passive: false});
+
+function toggleLike(postId, element) {
+    const icon = document.getElementById('like-icon-' + postId);
+    const isLiked = element.classList.contains('liked');
+    icon.classList.remove('like-pop');
+    void icon.offsetWidth;
+    icon.classList.add('like-pop');
+    if (!isLiked) {
+        const explosion = document.getElementById('likeExplosion');
+        const rect = icon.getBoundingClientRect();
+        explosion.style.left = (rect.left + rect.width / 2) + 'px';
+        explosion.style.top = (rect.top + rect.height / 2) + 'px';
+        explosion.style.display = 'block';
+        explosion.classList.remove('animate');
+        void explosion.offsetWidth;
+        explosion.classList.add('animate');
+        setTimeout(() => { explosion.style.display = 'none'; explosion.classList.remove('animate'); }, 700);
+    }
+    fetch('/Post/ToggleLike?postId=' + postId, { method: 'POST' })
+        .then(res => res.json())
+        .then(data => {
+            icon.textContent = data.liked ? '❤️' : '🤍';
+            element.classList.toggle('liked', data.liked);
+            const summary = document.getElementById('like-summary-' + postId);
+            if (summary) {
+                summary.innerHTML = data.count > 0
+                    ? `<span>❤️ ${data.count} ${data.count === 1 ? 'like' : 'likes'}</span>`
+                    : '';
+            }
+        });
+}
+function revealBlurred(postId) {
+    const img = document.getElementById('img-' + postId);
+    const overlay = document.getElementById('overlay-' + postId);
+    if (img) {
+        img.classList.remove('blurred-image');
+        img.style.filter = 'none';
+        img.style.transform = 'none';
+    }
+    if (overlay) overlay.style.display = 'none';
+}
+function savePost(postId, btn) {
+    fetch('/Post/SavePost', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(postId)
+    }).then(() => {
+        const icon = btn.querySelector('.action-icon');
+        icon.textContent = '🔖';
+        icon.style.filter = 'drop-shadow(0 0 4px rgba(99,102,241,0.6))';
+        showAlert('🔖 Publicación guardada');
+        setTimeout(() => icon.style.filter = '', 1000);
+    });
+}
+let currentPost = null;
+function openShare(postId) {
+    currentPost = postId;
+    document.getElementById('shareMenu').style.display = 'block';
+    document.getElementById('shareOverlay').style.display = 'block';
+}
+function closeShare() {
+    document.getElementById('shareMenu').style.display = 'none';
+    document.getElementById('shareOverlay').style.display = 'none';
+}
+function shareWhatsApp() {
+    window.open('https://wa.me/?text=' + encodeURIComponent(window.location.origin + '/Post/Comments?postId=' + currentPost));
+    closeShare();
+}
+function shareTelegram() {
+    window.open('https://t.me/share/url?url=' + encodeURIComponent(window.location.origin + '/Post/Comments?postId=' + currentPost));
+    closeShare();
+}
+function shareFacebook() {
+    window.open('https://www.facebook.com/sharer/sharer.php?u=' + encodeURIComponent(window.location.origin + '/Post/Comments?postId=' + currentPost));
+    closeShare();
+}
+function copyLink() {
+    navigator.clipboard.writeText(window.location.origin + '/Post/Comments?postId=' + currentPost);
+    closeShare();
+    showAlert('↪ Link copiado');
+}
+function showAlert(msg) {
+    const el = document.getElementById('copyAlert');
+    el.textContent = msg;
+    el.classList.add('show');
+    setTimeout(() => el.classList.remove('show'), 2500);
+}
+async function repostear() {
+    if (!currentPost) return;
+    closeShare();
+    try {
+        const res = await fetch('/Post/Repost', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(currentPost)
+        });
+        const data = await res.json();
+        if (data.success) {
+            showAlert(data.reposted ? '↪️ Reposteado en tu perfil' : '↩️ Repost eliminado');
+        } else {
+            showAlert('⚠️ ' + (data.error ?? 'Error'));
+        }
+    } catch {
+        showAlert('❌ Error de conexión');
+    }
+}
+
+// ══ ANUNCIO PRIMERA VEZ ══
+(function() {
+    if (localStorage.getItem('ht_posts_welcome_seen')) return;
+    const overlay = document.createElement('div');
+    overlay.id = 'welcomePostsOverlay';
+    overlay.style.cssText = `
+        position:fixed;inset:0;z-index:999999;
+        background:rgba(0,0,0,0.7);backdrop-filter:blur(8px);
+        display:flex;align-items:center;justify-content:center;padding:20px;
+    `;
+    overlay.innerHTML = `
+        <div style="background:linear-gradient(135deg,#0f172a,#1e293b);border:1px solid rgba(255,255,255,0.08);border-radius:28px;max-width:420px;width:100%;padding:36px 32px;position:relative;box-shadow:0 30px 80px rgba(0,0,0,0.6);">
+            <button onclick="cerrarAnuncioPosts()" style="position:absolute;top:16px;right:16px;background:rgba(255,255,255,0.08);border:none;color:rgba(255,255,255,0.6);width:32px;height:32px;border-radius:50%;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.15)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">✕</button>
+            <div style="font-size:48px;text-align:center;margin-bottom:16px;">📢</div>
+            <h3 style="color:white;font-size:20px;font-weight:800;text-align:center;margin:0 0 8px;">Bienvenido a Publicaciones</h3>
+            <p style="color:rgba(255,255,255,0.45);font-size:13px;text-align:center;margin:0 0 24px;">Antes de empezar, ten en cuenta nuestras normas de comunidad</p>
+            <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:28px;">
+                <div style="display:flex;align-items:flex-start;gap:12px;background:rgba(255,255,255,0.04);padding:12px 14px;border-radius:14px;border:1px solid rgba(255,255,255,0.06);"><span style="font-size:18px;flex-shrink:0;">🚫</span><span style="color:rgba(255,255,255,0.7);font-size:13px;line-height:1.5;">No publiques contenido ofensivo, violento o que incite al odio.</span></div>
+                <div style="display:flex;align-items:flex-start;gap:12px;background:rgba(99,102,241,0.08);padding:12px 14px;border-radius:14px;border:1px solid rgba(99,102,241,0.2);"><span style="font-size:18px;flex-shrink:0;">🤖</span><span style="color:rgba(255,255,255,0.7);font-size:13px;line-height:1.5;">Hemos integrado <strong style="color:#818cf8;">Inteligencia Artificial</strong> para detectar y eliminar automáticamente contenido inapropiado, explícito o que viole nuestras normas. Tu cuenta puede ser suspendida si intentas burlar este sistema.</span></div>
+                <div style="display:flex;align-items:flex-start;gap:12px;background:rgba(255,255,255,0.04);padding:12px 14px;border-radius:14px;border:1px solid rgba(255,255,255,0.06);"><span style="font-size:18px;flex-shrink:0;">🔞</span><span style="color:rgba(255,255,255,0.7);font-size:13px;line-height:1.5;">El contenido explícito o para adultos no está permitido y será eliminado automáticamente.</span></div>
+                <div style="display:flex;align-items:flex-start;gap:12px;background:rgba(255,255,255,0.04);padding:12px 14px;border-radius:14px;border:1px solid rgba(255,255,255,0.06);"><span style="font-size:18px;flex-shrink:0;">🤝</span><span style="color:rgba(255,255,255,0.7);font-size:13px;line-height:1.5;">Respeta a los demás usuarios. El acoso o spam resultará en suspensión.</span></div>
+                <div style="display:flex;align-items:flex-start;gap:12px;background:rgba(255,255,255,0.04);padding:12px 14px;border-radius:14px;border:1px solid rgba(255,255,255,0.06);"><span style="font-size:18px;flex-shrink:0;">📸</span><span style="color:rgba(255,255,255,0.7);font-size:13px;line-height:1.5;">Solo publica contenido del que tengas derechos. No compartas información privada de otros.</span></div>
+            </div>
+            <button onclick="cerrarAnuncioPosts()" style="width:100%;padding:14px;border-radius:14px;border:none;background:linear-gradient(135deg,#6366f1,#2563eb);color:white;font-size:15px;font-weight:700;cursor:pointer;transition:0.2s;font-family:inherit;" onmouseover="this.style.transform='translateY(-1px)'" onmouseout="this.style.transform='translateY(0)'">✅ Entendido, continuar</button>
+        </div>
+    `;
+    document.body.appendChild(overlay);
+})();
+function cerrarAnuncioPosts() {
+    localStorage.setItem('ht_posts_welcome_seen', '1');
+    const overlay = document.getElementById('welcomePostsOverlay');
+    if (overlay) {
+        overlay.style.opacity = '0';
+        overlay.style.transition = 'opacity 0.3s';
+        setTimeout(() => overlay.remove(), 300);
+    }
+}
+
+// ==================== MODAL COMENTARIOS ====================
 let currentPostId = null;
 let commentConnection = null;
 let selectedCommentImage = null;
-let activeReplyForm = null;
-let currentReplyingId = null; // commentId o replyId
-let currentParentType = null; // 'comment' o 'reply'
-let currentParentUserId = null;
 
 async function openCommentsModal(postId) {
     currentPostId = postId;
@@ -354,24 +944,31 @@ async function openCommentsModal(postId) {
     modal.style.display = 'flex';
     document.body.style.overflow = 'hidden';
     body.innerHTML = '<div class="comments-loading">Cargando comentarios...</div>';
-
+    
+    // Inicializar conexión SignalR si no está
     if (!commentConnection && window.connectionGlobal) {
         commentConnection = window.connectionGlobal;
         setupCommentSignalR();
     }
+    
+    // Unirse al grupo (si SignalR está conectado)
     if (commentConnection && commentConnection.state === 'Connected') {
-        try { await commentConnection.invoke("JoinPostGroup", postId); } catch(e) { console.warn(e); }
+        try {
+            await commentConnection.invoke("JoinPostGroup", postId);
+        } catch(e) { console.warn("SignalR JoinPostGroup error:", e); }
     }
-
+    
+    // Cargar comentarios
     try {
         const res = await fetch(`/Post/GetComments?postId=${postId}`);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
         if (data.success) {
-            renderComments(data.comments); // función mejorada que dibuja comentarios + respuestas
+            renderComments(data.comments, data.commentsDisabled);
             if (data.commentsDisabled) {
-                footer.innerHTML = `<div class="comments-disabled-msg">🔒 Los comentarios están deshabilitados.</div>`;
+                footer.innerHTML = `<div class="comments-disabled-msg">🔒 Los comentarios están deshabilitados para esta publicación.</div>`;
             } else {
+                // Restaurar footer
                 footer.innerHTML = `
                     <div class="comments-input-wrapper">
                         <textarea id="newCommentText" class="comments-input" placeholder="Escribe un comentario..." rows="1"></textarea>
@@ -382,18 +979,22 @@ async function openCommentsModal(postId) {
                         <input type="file" id="commentImageInput" accept="image/*" style="display:none;" />
                     </div>
                     <div id="commentImagePreview" class="comment-image-preview" style="display:none;">
-                        <img id="previewCommentImg" /><button onclick="clearCommentImage()">✕</button>
+                        <img id="previewCommentImg" />
+                        <button onclick="clearCommentImage()">✕</button>
                     </div>
                 `;
-                attachMainCommentEvents();
+                attachCommentEvents();
             }
         } else {
             body.innerHTML = `<div class="comments-loading">Error: ${data.error || 'desconocido'}</div>`;
         }
-    } catch(e) { console.error(e); body.innerHTML = '<div class="comments-loading">Error de conexión</div>'; }
+    } catch(e) {
+        console.error(e);
+        body.innerHTML = '<div class="comments-loading">Error de conexión</div>';
+    }
 }
 
-function renderComments(comments) {
+function renderComments(comments, commentsDisabled) {
     const body = document.getElementById('commentsModalBody');
     if (!comments || comments.length === 0) {
         body.innerHTML = '<div class="comments-loading">No hay comentarios aún. ¡Sé el primero!</div>';
@@ -401,152 +1002,43 @@ function renderComments(comments) {
     }
     let html = '';
     comments.forEach(c => {
-        // Comentario principal
+        const avatar = c.profileImage 
+            ? `<img src="${c.profileImage}" class="comment-avatar" />` 
+            : `<div class="comment-avatar-letter">${c.username.charAt(0).toUpperCase()}</div>`;
+        const img = c.imagePath ? `<img src="${c.imagePath}" class="comment-img" onclick="window.open('${c.imagePath}', '_blank')" />` : '';
         html += `
             <div class="comment-item" data-comment-id="${c.id}">
-                ${c.profileImage ? `<img src="${c.profileImage}" class="comment-avatar" />` : `<div class="comment-avatar-letter">${c.username.charAt(0).toUpperCase()}</div>`}
+                ${avatar}
                 <div class="comment-content">
-                    <div class="comment-header">
+                    <div>
                         <span class="comment-username">${escapeHtml(c.username)}</span>
                         <span class="comment-time">${c.createdAt}</span>
                     </div>
                     <div class="comment-text">${escapeHtml(c.comment)}</div>
-                    ${c.imagePath ? `<img src="${c.imagePath}" class="comment-img" onclick="window.open('${c.imagePath}', '_blank')" />` : ''}
+                    ${img}
                     <div class="comment-actions">
-                        <button class="comment-like-btn ${c.isLiked ? 'liked' : ''}" data-comment-id="${c.id}" onclick="toggleCommentLikeModal(this, ${c.id}, 'comment')">
+                        <button class="comment-like-btn ${c.isLiked ? 'liked' : ''}" data-comment-id="${c.id}" onclick="toggleCommentLikeModal(this, ${c.id})">
                             ${c.isLiked ? '❤️' : '🤍'} <span class="like-count">${c.likeCount}</span>
                         </button>
                         <button class="comment-reply-btn" data-comment-id="${c.id}" data-username="${escapeHtml(c.username)}" onclick="showReplyForm(this, ${c.id}, 'comment')">Responder</button>
-                        ${c.isMine ? `<button class="comment-delete-btn" onclick="deleteCommentModal(${c.id}, 'comment')">Eliminar</button>` : ''}
+                        ${c.isMine ? `<button class="comment-delete-btn" onclick="deleteCommentModal(${c.id})">Eliminar</button>` : ''}
                     </div>
-                    <div class="replies-container" id="replies-${c.id}"></div>
+                    <div class="replies-container" id="replies-${c.id}">
+                        <button class="view-replies-btn" onclick="cargarRespuestas(this, ${c.id})">Ver respuestas</button>
+                    </div>
                 </div>
             </div>
         `;
     });
     body.innerHTML = html;
-    // Cargar respuestas de cada comentario (desde el attributo data-replies del objeto, pero las obtenemos por separado o ya vienen incluidas)
-    // Para simplificar, suponemos que el método GetComments ya devuelve las respuestas anidadas (replies). 
-    // Si no, haremos otra petición. Pero para ahorrar peticiones, adaptaremos el controlador para que envíe replies.
-    // Como no podemos cambiar el controlador ahora, voy a simular que las respuestas se cargan mediante un segundo fetch por comentario.
-    // Sin embargo, para evitar múltiples llamadas, modificaré la lógica: al hacer clic en "Responder", se muestra el formulario, y las respuestas se van añadiendo en tiempo real al enviar.
-    // Además, se puede agregar un botón "Ver respuestas" y cargarlas bajo demanda. Por brevedad, implementaré carga bajo demanda con botón "Ver respuestas".
-    comments.forEach(c => {
-        addLoadRepliesButton(c.id);
-    });
 }
-
-function addLoadRepliesButton(commentId) {
-    const container = document.getElementById(`replies-${commentId}`);
-    if (!container) return;
-    const btn = document.createElement('button');
-    btn.textContent = 'Ver respuestas';
-    btn.className = 'view-replies-btn';
-    btn.onclick = async () => {
-        btn.disabled = true;
-        btn.textContent = 'Cargando...';
-        try {
-            const res = await fetch(`/Post/GetReplies?commentId=${commentId}`);
-            const replies = await res.json();
-            if (replies && replies.length) {
-                renderReplies(commentId, replies);
-                btn.remove();
-            } else {
-                btn.textContent = 'No hay respuestas aún';
-                btn.disabled = true;
-            }
-        } catch(e) { console.error(e); btn.textContent = 'Error'; }
-    };
-    container.appendChild(btn);
-}
-
-function renderReplies(commentId, replies) {
-    const container = document.getElementById(`replies-${commentId}`);
-    let html = '';
-    replies.forEach(r => {
-        html += `
-            <div class="reply-item" data-reply-id="${r.id}">
-                ${r.profileImage ? `<img src="${r.profileImage}" class="reply-avatar" />` : `<div class="reply-avatar-letter">${r.username.charAt(0).toUpperCase()}</div>`}
-                <div class="reply-content">
-                    <div class="reply-header">
-                        <span class="reply-username">${escapeHtml(r.username)}</span>
-                        <span class="reply-time">${r.createdAt}</span>
-                    </div>
-                    <div class="reply-text">${escapeHtml(r.text)}</div>
-                    <div class="reply-actions">
-                        <button class="reply-like-btn ${r.isLiked ? 'liked' : ''}" data-reply-id="${r.id}" onclick="toggleCommentLikeModal(this, ${r.id}, 'reply')">
-                            ${r.isLiked ? '❤️' : '🤍'} <span class="like-count">${r.likeCount}</span>
-                        </button>
-                        <button class="reply-reply-btn" data-reply-id="${r.id}" data-username="${escapeHtml(r.username)}" onclick="showReplyForm(this, ${r.id}, 'reply')">Responder</button>
-                        ${r.isMine ? `<button class="reply-delete-btn" onclick="deleteCommentModal(${r.id}, 'reply')">Eliminar</button>` : ''}
-                    </div>
-                </div>
-            </div>
-        `;
-    });
-    container.innerHTML = html;
-}
-
-function showReplyForm(element, parentId, type) {
-    if (activeReplyForm) {
-        activeReplyForm.style.display = 'none';
-        if (activeReplyForm.parentNode) activeReplyForm.remove();
-    }
-    const container = type === 'comment' 
-        ? document.getElementById(`replies-${parentId}`) 
-        : document.querySelector(`.reply-item[data-reply-id="${parentId}"]`);
-    if (!container) return;
-    const formDiv = document.createElement('div');
-    formDiv.className = 'reply-form-container';
-    formDiv.style.display = 'block';
-    formDiv.innerHTML = `
-        <div class="reply-form">
-            <input type="text" class="reply-input" placeholder="Escribe una respuesta..." />
-            <button class="reply-send-btn">Enviar</button>
-            <button class="reply-cancel-btn">Cancelar</button>
-        </div>
-    `;
-    const input = formDiv.querySelector('.reply-input');
-    const sendBtn = formDiv.querySelector('.reply-send-btn');
-    const cancelBtn = formDiv.querySelector('.reply-cancel-btn');
-    sendBtn.onclick = async () => {
-        const text = input.value.trim();
-        if (!text) return;
-        sendBtn.disabled = true;
-        sendBtn.textContent = '...';
-        try {
-            const formData = new FormData();
-            formData.append('commentId', parentId);
-            formData.append('text', text);
-            if (type === 'reply') formData.append('parentReplyId', parentId);
-            const res = await fetch('/Post/ReplyComment', { method: 'POST', body: formData });
-            const data = await res.json();
-            if (data.success) {
-                // Recargar respuestas del comentario padre
-                const topCommentId = type === 'comment' ? parentId : document.querySelector(`.reply-item[data-reply-id="${parentId}"]`).closest('.comment-item').getAttribute('data-comment-id');
-                const reloadRes = await fetch(`/Post/GetReplies?commentId=${topCommentId}`);
-                const replies = await reloadRes.json();
-                renderReplies(topCommentId, replies);
-                formDiv.remove();
-                activeReplyForm = null;
-            } else {
-                alert(data.error || 'Error');
-                sendBtn.disabled = false;
-                sendBtn.textContent = 'Enviar';
-            }
-        } catch(e) { alert('Error de conexión'); sendBtn.disabled = false; sendBtn.textContent = 'Enviar'; }
-    };
-    cancelBtn.onclick = () => { formDiv.remove(); activeReplyForm = null; };
-    container.appendChild(formDiv);
-    activeReplyForm = formDiv;
-    input.focus();
-}
-
-function attachMainCommentEvents() {
+function attachCommentEvents() {
     const textarea = document.getElementById('newCommentText');
     const sendBtn = document.getElementById('sendCommentBtn');
     if (!textarea) return;
-    const updateButton = () => { sendBtn.disabled = textarea.value.trim() === '' && !selectedCommentImage; };
+    const updateButton = () => {
+        sendBtn.disabled = textarea.value.trim() === '' && !selectedCommentImage;
+    };
     textarea.addEventListener('input', () => {
         updateButton();
         if (commentConnection && commentConnection.state === 'Connected' && currentPostId) {
@@ -555,7 +1047,10 @@ function attachMainCommentEvents() {
     });
     updateButton();
     textarea.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); if (!sendBtn.disabled) sendMainComment(); }
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            if (!sendBtn.disabled) sendComment();
+        }
     });
     const fileInput = document.getElementById('commentImageInput');
     if (fileInput) {
@@ -575,10 +1070,166 @@ function attachMainCommentEvents() {
             }
         });
     }
-    sendBtn.onclick = sendMainComment;
+    sendBtn.onclick = sendComment;
+}
+// ========== FUNCIONES PARA RESPUESTAS ==========
+let activeReplyForm = null;
+
+async function cargarRespuestas(btn, commentId) {
+    btn.disabled = true;
+    btn.textContent = 'Cargando...';
+    try {
+        const res = await fetch(`/Post/GetReplies?commentId=${commentId}`);
+        if (!res.ok) throw new Error('Error');
+        const replies = await res.json();
+        const container = document.getElementById(`replies-${commentId}`);
+        if (replies && replies.length) {
+            let repliesHtml = '';
+            replies.forEach(r => {
+                repliesHtml += `
+                    <div class="reply-item" data-reply-id="${r.id}">
+                        ${r.profileImage ? `<img src="${r.profileImage}" class="reply-avatar" />` : `<div class="reply-avatar-letter">${r.username.charAt(0).toUpperCase()}</div>`}
+                        <div class="reply-content">
+                            <div class="reply-header">
+                                <span class="reply-username">${escapeHtml(r.username)}</span>
+                                <span class="reply-time">${r.createdAt}</span>
+                            </div>
+                            <div class="reply-text">${escapeHtml(r.text)}</div>
+                            <div class="reply-actions">
+                                <button class="reply-like-btn ${r.isLiked ? 'liked' : ''}" data-reply-id="${r.id}" onclick="toggleReplyLikeModal(this, ${r.id})">
+                                    ${r.isLiked ? '❤️' : '🤍'} <span class="like-count">${r.likeCount}</span>
+                                </button>
+                                <button class="reply-reply-btn" data-reply-id="${r.id}" data-username="${escapeHtml(r.username)}" onclick="showReplyForm(this, ${r.id}, 'reply')">Responder</button>
+                                ${r.isMine ? `<button class="reply-delete-btn" onclick="deleteReplyModal(${r.id})">Eliminar</button>` : ''}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            container.innerHTML = repliesHtml;
+        } else {
+            btn.textContent = 'Sin respuestas';
+            btn.disabled = true;
+        }
+    } catch(e) {
+        btn.textContent = 'Error';
+        console.error(e);
+    }
 }
 
-let selectedCommentImage = null;
+function showReplyForm(element, parentId, type) {
+    if (activeReplyForm) {
+        activeReplyForm.style.display = 'none';
+        activeReplyForm.remove();
+    }
+    let container;
+    if (type === 'comment') {
+        container = document.getElementById(`replies-${parentId}`);
+    } else {
+        const replyItem = document.querySelector(`.reply-item[data-reply-id="${parentId}"]`);
+        container = replyItem ? replyItem.querySelector('.reply-content') : null;
+    }
+    if (!container) return;
+    const formDiv = document.createElement('div');
+    formDiv.className = 'reply-form-container';
+    formDiv.style.display = 'block';
+    formDiv.innerHTML = `
+        <div class="reply-form">
+            <input type="text" class="reply-input" placeholder="Escribe una respuesta..." />
+            <button class="reply-send-btn">Enviar</button>
+            <button class="reply-cancel-btn">Cancelar</button>
+        </div>
+    `;
+    const input = formDiv.querySelector('.reply-input');
+    const sendBtn = formDiv.querySelector('.reply-send-btn');
+    const cancelBtn = formDiv.querySelector('.reply-cancel-btn');
+    
+    sendBtn.onclick = async () => {
+        const text = input.value.trim();
+        if (!text) return;
+        sendBtn.disabled = true;
+        sendBtn.textContent = '...';
+        try {
+            const formData = new FormData();
+            formData.append('commentId', parentId);
+            formData.append('text', text);
+            if (type === 'reply') formData.append('parentReplyId', parentId);
+            const res = await fetch('/Post/ReplyComment', { method: 'POST', body: formData });
+            const data = await res.json();
+            if (data.success) {
+                const topCommentId = type === 'comment' ? parentId : document.querySelector(`.reply-item[data-reply-id="${parentId}"]`).closest('.comment-item').getAttribute('data-comment-id');
+                const reloadRes = await fetch(`/Post/GetReplies?commentId=${topCommentId}`);
+                const replies = await reloadRes.json();
+                const containerReplies = document.getElementById(`replies-${topCommentId}`);
+                let repliesHtml = '';
+                replies.forEach(r => {
+                    repliesHtml += `
+                        <div class="reply-item" data-reply-id="${r.id}">
+                            ${r.profileImage ? `<img src="${r.profileImage}" class="reply-avatar" />` : `<div class="reply-avatar-letter">${r.username.charAt(0).toUpperCase()}</div>`}
+                            <div class="reply-content">
+                                <div class="reply-header"><span class="reply-username">${escapeHtml(r.username)}</span><span class="reply-time">${r.createdAt}</span></div>
+                                <div class="reply-text">${escapeHtml(r.text)}</div>
+                                <div class="reply-actions">
+                                    <button class="reply-like-btn ${r.isLiked ? 'liked' : ''}" data-reply-id="${r.id}" onclick="toggleReplyLikeModal(this, ${r.id})">${r.isLiked ? '❤️' : '🤍'} <span class="like-count">${r.likeCount}</span></button>
+                                    <button class="reply-reply-btn" data-reply-id="${r.id}" data-username="${escapeHtml(r.username)}" onclick="showReplyForm(this, ${r.id}, 'reply')">Responder</button>
+                                    ${r.isMine ? `<button class="reply-delete-btn" onclick="deleteReplyModal(${r.id})">Eliminar</button>` : ''}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+                containerReplies.innerHTML = repliesHtml;
+                formDiv.remove();
+                activeReplyForm = null;
+            } else {
+                alert(data.error || 'Error');
+                sendBtn.disabled = false;
+                sendBtn.textContent = 'Enviar';
+            }
+        } catch(e) {
+            alert('Error de conexión');
+            sendBtn.disabled = false;
+            sendBtn.textContent = 'Enviar';
+        }
+    };
+    cancelBtn.onclick = () => {
+        formDiv.remove();
+        activeReplyForm = null;
+    };
+    container.appendChild(formDiv);
+    activeReplyForm = formDiv;
+    input.focus();
+}
+
+async function toggleReplyLikeModal(btn, replyId) {
+    const isLiked = btn.classList.contains('liked');
+    const countSpan = btn.querySelector('.like-count');
+    let currentCount = parseInt(countSpan.innerText) || 0;
+    btn.classList.toggle('liked');
+    const newCount = isLiked ? currentCount - 1 : currentCount + 1;
+    countSpan.innerText = newCount;
+    btn.innerHTML = (isLiked ? '🤍' : '❤️') + ` <span class="like-count">${newCount}</span>`;
+    try {
+        const res = await fetch(`/Post/ToggleReplyLike?id=${replyId}`, { method: 'POST' });
+        const data = await res.json();
+        if (data.liked !== undefined) {
+            countSpan.innerText = data.count;
+            btn.innerHTML = (data.liked ? '❤️' : '🤍') + ` <span class="like-count">${data.count}</span>`;
+            if (data.liked !== !isLiked) btn.classList.toggle('liked', data.liked);
+        }
+    } catch(e) { console.error(e); }
+}
+
+async function deleteReplyModal(replyId) {
+    if (!confirm('¿Eliminar esta respuesta?')) return;
+    try {
+        const res = await fetch(`/Post/DeleteReply/${replyId}`, { method: 'GET' });
+        if (res.ok) {
+            const replyEl = document.querySelector(`.reply-item[data-reply-id="${replyId}"]`);
+            if (replyEl) replyEl.remove();
+        } else alert('Error al eliminar');
+    } catch(e) { alert('Error de conexión'); }
+}
 function clearCommentImage() {
     selectedCommentImage = null;
     document.getElementById('commentImagePreview').style.display = 'none';
@@ -590,14 +1241,16 @@ function clearCommentImage() {
     }
 }
 
-async function sendMainComment() {
+async function sendComment() {
     const textarea = document.getElementById('newCommentText');
     const content = textarea.value.trim();
     if (!content && !selectedCommentImage) return;
     const formData = new FormData();
     formData.append('postId', currentPostId);
     formData.append('comment', content);
-    if (selectedCommentImage) formData.append('image', selectedCommentImage);
+    if (selectedCommentImage) {
+        formData.append('image', selectedCommentImage);
+    }
     const sendBtn = document.getElementById('sendCommentBtn');
     sendBtn.disabled = true;
     sendBtn.innerHTML = '⏳';
@@ -606,73 +1259,48 @@ async function sendMainComment() {
         const data = await res.json();
         if (data.success) {
             textarea.value = '';
-            clearCommentImage();
-            // Agregar comentario a la lista
-            const newComment = data.comment;
-            const body = document.getElementById('commentsModalBody');
-            const empty = body.querySelector('.comments-loading');
-            if (empty && empty.innerText.includes('No hay comentarios')) empty.remove();
-            const newHtml = `
-                <div class="comment-item" data-comment-id="${newComment.id}">
-                    ${newComment.profileImage ? `<img src="${newComment.profileImage}" class="comment-avatar" />` : `<div class="comment-avatar-letter">${newComment.username.charAt(0).toUpperCase()}</div>`}
-                    <div class="comment-content">
-                        <div class="comment-header">
-                            <span class="comment-username">${escapeHtml(newComment.username)}</span>
-                            <span class="comment-time">${newComment.createdAt}</span>
-                        </div>
-                        <div class="comment-text">${escapeHtml(newComment.comment)}</div>
-                        ${newComment.imagePath ? `<img src="${newComment.imagePath}" class="comment-img" onclick="window.open('${newComment.imagePath}', '_blank')" />` : ''}
-                        <div class="comment-actions">
-                            <button class="comment-like-btn" data-comment-id="${newComment.id}" onclick="toggleCommentLikeModal(this, ${newComment.id}, 'comment')">🤍 <span class="like-count">0</span></button>
-                            <button class="comment-reply-btn" data-comment-id="${newComment.id}" data-username="${escapeHtml(newComment.username)}" onclick="showReplyForm(this, ${newComment.id}, 'comment')">Responder</button>
-                            ${newComment.isMine ? `<button class="comment-delete-btn" onclick="deleteCommentModal(${newComment.id}, 'comment')">Eliminar</button>` : ''}
-                        </div>
-                        <div class="replies-container" id="replies-${newComment.id}"><button class="view-replies-btn" onclick="cargarRespuestas(this, ${newComment.id})">Ver respuestas</button></div>
-                    </div>
-                </div>
-            `;
-            body.insertAdjacentHTML('afterbegin', newHtml);
+            selectedCommentImage = null;
+            document.getElementById('commentImagePreview').style.display = 'none';
+            document.getElementById('commentImageInput').value = '';
+            addCommentToList(data.comment);
             sendBtn.disabled = false;
             sendBtn.innerHTML = '📤';
             textarea.focus();
         } else {
-            alert(data.error || 'Error');
+            alert(data.error || 'Error al comentar');
             sendBtn.disabled = false;
             sendBtn.innerHTML = '📤';
         }
-    } catch(e) { console.error(e); alert('Error de conexión'); sendBtn.disabled = false; sendBtn.innerHTML = '📤'; }
+    } catch(e) {
+        console.error(e);
+        alert('Error de conexión');
+        sendBtn.disabled = false;
+        sendBtn.innerHTML = '📤';
+    }
 }
 
-async function toggleCommentLikeModal(btn, id, type) {
-    const isLiked = btn.classList.contains('liked');
-    const countSpan = btn.querySelector('.like-count');
-    let currentCount = parseInt(countSpan.innerText) || 0;
-    const url = type === 'comment' ? `/Post/ToggleCommentLike?commentId=${id}` : `/Post/ToggleReplyLike?id=${id}`;
-    btn.classList.toggle('liked');
-    const newCount = isLiked ? currentCount - 1 : currentCount + 1;
-    countSpan.innerText = newCount;
-    btn.innerHTML = (isLiked ? '🤍' : '❤️') + ` <span class="like-count">${newCount}</span>`;
-    try {
-        const res = await fetch(url, { method: 'POST' });
-        const data = await res.json();
-        if (data.liked !== undefined) {
-            countSpan.innerText = data.count;
-            btn.innerHTML = (data.liked ? '❤️' : '🤍') + ` <span class="like-count">${data.count}</span>`;
-            if (data.liked !== !isLiked) btn.classList.toggle('liked', data.liked);
-        }
-    } catch(e) { console.error(e); }
-}
-
-async function deleteCommentModal(id, type) {
-    if (!confirm('¿Eliminar este comentario?')) return;
-    const url = type === 'comment' ? `/Post/DeleteComment/${id}` : `/Post/DeleteReply/${id}`;
-    try {
-        const res = await fetch(url, { method: 'GET' });
-        if (res.ok) {
-            const element = type === 'comment' ? document.querySelector(`.comment-item[data-comment-id="${id}"]`) : document.querySelector(`.reply-item[data-reply-id="${id}"]`);
-            if (element) element.remove();
-        } else alert('Error al eliminar');
-    } catch(e) { alert('Error de conexión'); }
+function addCommentToList(comment) {
+    const body = document.getElementById('commentsModalBody');
+    const emptyMsg = body.querySelector('.comments-loading');
+    if (emptyMsg && emptyMsg.innerText.includes('No hay comentarios')) emptyMsg.remove();
+    const newCommentHtml = `
+        <div class="comment-item" id="comment-${comment.id}">
+            ${comment.profileImage ? `<img src="${comment.profileImage}" class="comment-avatar" />` : `<div class="comment-avatar-letter">${comment.username.charAt(0).toUpperCase()}</div>`}
+            <div class="comment-content">
+                <div>
+                    <span class="comment-username">${escapeHtml(comment.username)}</span>
+                    <span class="comment-time">${comment.createdAt}</span>
+                </div>
+                <div class="comment-text">${escapeHtml(comment.comment)}</div>
+                ${comment.imagePath ? `<img src="${comment.imagePath}" class="comment-img" onclick="window.open('${comment.imagePath}', '_blank')" />` : ''}
+                <div class="comment-actions">
+                    <button class="comment-like-btn" data-comment-id="${comment.id}" onclick="toggleCommentLikeModal(this, ${comment.id})">🤍 <span class="like-count">0</span></button>
+                    ${comment.isMine ? `<button class="comment-delete-btn" onclick="deleteCommentModal(${comment.id})">Eliminar</button>` : ''}
+                </div>
+            </div>
+        </div>
+    `;
+    body.insertAdjacentHTML('afterbegin', newCommentHtml);
 }
 
 function closeCommentsModal() {
@@ -686,31 +1314,58 @@ function closeCommentsModal() {
     selectedCommentImage = null;
 }
 
+async function toggleCommentLikeModal(btn, commentId) {
+    const isLiked = btn.classList.contains('liked');
+    const iconSpan = btn.querySelector('.like-count');
+    const currentCount = parseInt(iconSpan.innerText) || 0;
+    const newCount = isLiked ? currentCount - 1 : currentCount + 1;
+    btn.classList.toggle('liked');
+    iconSpan.innerText = newCount;
+    btn.innerHTML = (isLiked ? '🤍' : '❤️') + ` <span class="like-count">${newCount}</span>`;
+    try {
+        const res = await fetch('/Post/ToggleCommentLike?commentId=' + commentId, { method: 'POST' });
+        const data = await res.json();
+        if (data.liked !== undefined) {
+            iconSpan.innerText = data.count;
+            btn.innerHTML = (data.liked ? '❤️' : '🤍') + ` <span class="like-count">${data.count}</span>`;
+            if (data.liked !== !isLiked) btn.classList.toggle('liked', data.liked);
+        }
+    } catch(e) { console.error(e); }
+}
+
+async function deleteCommentModal(commentId) {
+    if (!confirm('¿Eliminar este comentario?')) return;
+    try {
+        const res = await fetch(`/Post/DeleteComment/${commentId}`, { method: 'GET' });
+        if (res.ok) {
+            const commentEl = document.getElementById(`comment-${commentId}`);
+            if (commentEl) commentEl.remove();
+        } else alert('Error al eliminar');
+    } catch(e) { alert('Error de conexión'); }
+}
+
+function escapeHtml(text) {
+    if (!text) return '';
+    return String(text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+// Reemplazar enlaces de comentarios
+document.querySelectorAll('.post-actions a.action-btn[href*="/Post/Comments"]').forEach(link => {
+    const href = link.getAttribute('href');
+    const match = href.match(/postId=(\d+)/);
+    if (match) {
+        const postId = match[1];
+        link.setAttribute('href', 'javascript:void(0)');
+        link.setAttribute('onclick', `openCommentsModal(${postId})`);
+    }
+});
+
 function setupCommentSignalR() {
     if (!window.connectionGlobal) return;
     commentConnection = window.connectionGlobal;
     window.connectionGlobal.on("NewComment", (comment) => {
         if (currentPostId && comment && comment.postId == currentPostId) {
-            const body = document.getElementById('commentsModalBody');
-            const empty = body.querySelector('.comments-loading');
-            if (empty && empty.innerText.includes('No hay comentarios')) empty.remove();
-            const newHtml = `
-                <div class="comment-item" data-comment-id="${comment.id}">
-                    ${comment.profileImage ? `<img src="${comment.profileImage}" class="comment-avatar" />` : `<div class="comment-avatar-letter">${comment.username.charAt(0).toUpperCase()}</div>`}
-                    <div class="comment-content">
-                        <div class="comment-header"><span class="comment-username">${escapeHtml(comment.username)}</span><span class="comment-time">${comment.createdAt}</span></div>
-                        <div class="comment-text">${escapeHtml(comment.comment)}</div>
-                        ${comment.imagePath ? `<img src="${comment.imagePath}" class="comment-img" onclick="window.open('${comment.imagePath}', '_blank')" />` : ''}
-                        <div class="comment-actions">
-                            <button class="comment-like-btn" data-comment-id="${comment.id}" onclick="toggleCommentLikeModal(this, ${comment.id}, 'comment')">🤍 <span class="like-count">0</span></button>
-                            <button class="comment-reply-btn" data-comment-id="${comment.id}" data-username="${escapeHtml(comment.username)}" onclick="showReplyForm(this, ${comment.id}, 'comment')">Responder</button>
-                            ${comment.isMine ? `<button class="comment-delete-btn" onclick="deleteCommentModal(${comment.id}, 'comment')">Eliminar</button>` : ''}
-                        </div>
-                        <div class="replies-container" id="replies-${comment.id}"><button class="view-replies-btn" onclick="cargarRespuestas(this, ${comment.id})">Ver respuestas</button></div>
-                    </div>
-                </div>
-            `;
-            body.insertAdjacentHTML('afterbegin', newHtml);
+            addCommentToList(comment);
         }
     });
     window.connectionGlobal.on("UserTypingOnPost", (data) => {
@@ -722,54 +1377,6 @@ function setupCommentSignalR() {
         }
     });
 }
-
-async function cargarRespuestas(btn, commentId) {
-    btn.disabled = true; btn.textContent = 'Cargando...';
-    try {
-        const res = await fetch(`/Post/GetReplies?commentId=${commentId}`);
-        const replies = await res.json();
-        if (replies && replies.length) {
-            const container = document.getElementById(`replies-${commentId}`);
-            let html = '';
-            replies.forEach(r => {
-                html += `
-                    <div class="reply-item" data-reply-id="${r.id}">
-                        ${r.profileImage ? `<img src="${r.profileImage}" class="reply-avatar" />` : `<div class="reply-avatar-letter">${r.username.charAt(0).toUpperCase()}</div>`}
-                        <div class="reply-content">
-                            <div class="reply-header"><span class="reply-username">${escapeHtml(r.username)}</span><span class="reply-time">${r.createdAt}</span></div>
-                            <div class="reply-text">${escapeHtml(r.text)}</div>
-                            <div class="reply-actions">
-                                <button class="reply-like-btn ${r.isLiked ? 'liked' : ''}" data-reply-id="${r.id}" onclick="toggleCommentLikeModal(this, ${r.id}, 'reply')">${r.isLiked ? '❤️' : '🤍'} <span class="like-count">${r.likeCount}</span></button>
-                                <button class="reply-reply-btn" data-reply-id="${r.id}" data-username="${escapeHtml(r.username)}" onclick="showReplyForm(this, ${r.id}, 'reply')">Responder</button>
-                                ${r.isMine ? `<button class="reply-delete-btn" onclick="deleteCommentModal(${r.id}, 'reply')">Eliminar</button>` : ''}
-                            </div>
-                        </div>
-                    </div>
-                `;
-            });
-            container.innerHTML = html;
-        } else {
-            btn.textContent = 'Sin respuestas';
-            btn.disabled = true;
-        }
-    } catch(e) { btn.textContent = 'Error'; console.error(e); }
-}
-
-function escapeHtml(text) {
-    if (!text) return '';
-    return String(text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-}
-
-// Reemplazar enlaces de comentarios en el feed
-document.querySelectorAll('.post-actions a.action-btn[href*="/Post/Comments"]').forEach(link => {
-    const href = link.getAttribute('href');
-    const match = href.match(/postId=(\d+)/);
-    if (match) {
-        const postId = match[1];
-        link.setAttribute('href', 'javascript:void(0)');
-        link.setAttribute('onclick', `openCommentsModal(${postId})`);
-    }
-});
 
 if (window.connectionGlobal) {
     setupCommentSignalR();

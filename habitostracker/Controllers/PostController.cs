@@ -889,7 +889,28 @@ Esta publicación ha sido marcada y los comentarios han sido deshabilitados.
 
             return Json(new { success = true, comment = commentDto });
         }
+
         [HttpGet]
+        public async Task<IActionResult> GetReplies(int commentId)
+        {
+            var currentUserId = int.Parse(User.FindFirst("UserId").Value);
+            var replies = await _context.CommentReplies
+                .Where(r => r.CommentId == commentId)
+                .OrderBy(r => r.CreatedAt)
+                .Select(r => new {
+                    r.Id,
+                    r.UserId,
+                    r.Username,
+                    ProfileImage = r.ProfileImage ?? "",
+                    Text = r.Text,
+                    CreatedAt = r.CreatedAt.ToString("dd MMM yyyy · hh:mm tt"),
+                    IsMine = r.UserId == currentUserId,
+                    LikeCount = _context.CommentReplyLikes.Count(l => l.ReplyId == r.Id),
+                    IsLiked = _context.CommentReplyLikes.Any(l => l.ReplyId == r.Id && l.UserId == currentUserId)
+                })
+                .ToListAsync();
+            return Json(replies);
+        }
         [HttpGet]
         public async Task<IActionResult> GetComments(int postId)
         {
@@ -924,6 +945,7 @@ Esta publicación ha sido marcada y los comentarios han sido deshabilitados.
             {
                 return Json(new { success = false, error = ex.Message });
             }
+
         }
     }
 }
