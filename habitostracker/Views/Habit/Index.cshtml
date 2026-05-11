@@ -955,37 +955,58 @@ let currentEditId = null;
 function openCreateModal() {
     isEditing = false;
     currentEditId = null;
+    const modal = document.getElementById('habitModal');
+    if (!modal) return;
     document.getElementById('habitModalTitle').textContent = '📝 Nuevo hábito';
     document.getElementById('habitNameModal').value = '';
     document.getElementById('editHabitId').value = '0';
     document.getElementById('modalCharCount').textContent = '0';
     document.getElementById('habitModalError').style.display = 'none';
-    document.getElementById('habitModal').style.display = 'flex';
+    modal.style.display = 'flex';
     document.body.style.overflow = 'hidden';
+    document.documentElement.style.overflow = 'hidden';
     document.getElementById('habitNameModal').focus();
+    // Agregar listener para tecla Escape
+    document.addEventListener('keydown', handleModalEscape);
 }
 
 function openEditModal(habitId, currentName) {
     isEditing = true;
     currentEditId = habitId;
+    const modal = document.getElementById('habitModal');
+    if (!modal) return;
     document.getElementById('habitModalTitle').textContent = '✏️ Editar hábito';
     document.getElementById('habitNameModal').value = currentName;
     document.getElementById('editHabitId').value = habitId;
     const len = currentName.length;
     document.getElementById('modalCharCount').textContent = len;
     document.getElementById('habitModalError').style.display = 'none';
-    document.getElementById('habitModal').style.display = 'flex';
+    modal.style.display = 'flex';
     document.body.style.overflow = 'hidden';
+    document.documentElement.style.overflow = 'hidden';
     document.getElementById('habitNameModal').focus();
+    document.addEventListener('keydown', handleModalEscape);
 }
 
 function closeHabitModal() {
-    document.getElementById('habitModal').style.display = 'none';
+    const modal = document.getElementById('habitModal');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+    // Restaurar scroll en body y html
     document.body.style.overflow = '';
+    document.documentElement.style.overflow = '';
+    // Eliminar listener de tecla Escape
+    document.removeEventListener('keydown', handleModalEscape);
     isEditing = false;
     currentEditId = null;
 }
 
+function handleModalEscape(e) {
+    if (e.key === 'Escape') {
+        closeHabitModal();
+    }
+}
 document.getElementById('habitNameModal').addEventListener('input', function() {
     const len = this.value.length;
     document.getElementById('modalCharCount').textContent = len;
