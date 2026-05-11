@@ -892,29 +892,37 @@ Esta publicación ha sido marcada y los comentarios han sido deshabilitados.
         [HttpGet]
         public async Task<IActionResult> GetComments(int postId)
         {
-            var post = await _context.Posts.FindAsync(postId);
-            if (post == null) return NotFound();
+            try
+            {
+                var post = await _context.Posts.FindAsync(postId);
+                if (post == null) return Json(new { success = false, error = "Publicación no encontrada" });
 
-            var comments = await _context.PostComments
-                .Where(c => c.PostId == postId)
-                .Include(c => c.UserId)
-                .OrderByDescending(c => c.CreatedAt)
-                .Select(c => new
-                {
-                    c.Id,
-                    c.UserId,
-                    c.Username,
-                    c.ProfileImage,
-                    c.Comment,
-                    c.ImagePath,
-                    CreatedAt = c.CreatedAt.ToString("dd MMM yyyy · hh:mm tt"),
-                    IsMine = c.UserId == int.Parse(User.FindFirst("UserId").Value),
-                    LikeCount = _context.CommentLikes.Count(l => l.CommentId == c.Id),
-                    IsLiked = _context.CommentLikes.Any(l => l.CommentId == c.Id && l.UserId == int.Parse(User.FindFirst("UserId").Value))
-                })
-                .ToListAsync();
+                var currentUserId = int.Parse(User.FindFirst("UserId").Value);
 
-            return Json(new { success = true, comments, commentsDisabled = post.CommentsDisabled });
+                var comments = await _context.PostComments
+                    .Where(c => c.PostId == postId)
+                    .OrderByDescending(c => c.CreatedAt)
+                    .Select(c => new
+                    {
+                        c.Id,
+                        c.UserId,
+                        c.Username,
+                        ProfileImage = c.ProfileImage ?? "",
+                        c.Comment,
+                        c.ImagePath,
+                        CreatedAt = c.CreatedAt.ToString("dd MMM yyyy · hh:mm tt"),
+                        IsMine = c.UserId == currentUserId,
+                        LikeCount = _context.CommentLikes.Count(l => l.CommentId == c.Id),
+                        IsLiked = _context.CommentLikes.Any(l => l.CommentId == c.Id && l.UserId == currentUserId)
+                    })
+                    .ToListAsync();
+
+                return Json(new { success = true, comments, commentsDisabled = post.CommentsDisabled });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, error = ex.Message });
+            }
         }
     }
 }
