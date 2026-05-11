@@ -62,19 +62,11 @@ body.bg-dark{
 .hx-page{max-width:1100px;margin:0 auto;font-family:'DM Sans',sans-serif;color:var(--text);padding-bottom:70px;}
 
 /* ══ HERO ══ */
-.hx-hero{
-    position:relative;border-radius:26px;overflow:hidden;
-    margin-bottom:16px;padding:24px 26px 22px;
-    /* SIN min-height fijo — se adapta al contenido */
-}
+.hx-hero{position:relative;border-radius:26px;overflow:hidden;margin-bottom:16px;padding:24px 26px 22px;}
 .hx-hero-bg{position:absolute;inset:0;z-index:0;}
 .hx-hero-base{position:absolute;inset:0;background:linear-gradient(135deg,#0a0e1f 0%,#1a1060 40%,#0d1f3c 70%,#060c18 100%);}
-.hx-hero-mesh{position:absolute;inset:0;background:
-    radial-gradient(ellipse 70% 60% at 80% 20%,rgba(91,94,244,0.35) 0%,transparent 55%),
-    radial-gradient(ellipse 50% 50% at 10% 80%,rgba(0,196,140,0.2) 0%,transparent 55%);}
-.hx-hero-grid{position:absolute;inset:0;opacity:0.04;
-    background-image:linear-gradient(rgba(255,255,255,1) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,1) 1px,transparent 1px);
-    background-size:40px 40px;}
+.hx-hero-mesh{position:absolute;inset:0;background:radial-gradient(ellipse 70% 60% at 80% 20%,rgba(91,94,244,0.35) 0%,transparent 55%),radial-gradient(ellipse 50% 50% at 10% 80%,rgba(0,196,140,0.2) 0%,transparent 55%);}
+.hx-hero-grid{position:absolute;inset:0;opacity:0.04;background-image:linear-gradient(rgba(255,255,255,1) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,1) 1px,transparent 1px);background-size:40px 40px;}
 .hx-orb{position:absolute;border-radius:50%;filter:blur(60px);opacity:0.4;pointer-events:none;}
 .hx-orb-1{width:280px;height:280px;top:-80px;right:-60px;background:radial-gradient(circle,#5b5ef4,transparent);animation:o1 8s ease-in-out infinite;}
 .hx-orb-2{width:180px;height:180px;bottom:-40px;left:8%;background:radial-gradient(circle,#00c48c,transparent);animation:o2 10s ease-in-out infinite;}
@@ -86,15 +78,7 @@ body.bg-dark{
 /* TOP ROW */
 .hx-hero-top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:20px;}
 .hx-hero-id{display:flex;align-items:center;gap:12px;flex:1;min-width:0;}
-.hx-av{
-    width:50px;height:50px;border-radius:50%;flex-shrink:0;
-    background:linear-gradient(135deg,var(--accent),var(--accent2));
-    border:2px solid rgba(255,255,255,0.25);
-    display:flex;align-items:center;justify-content:center;
-    font-family:'Syne',sans-serif;font-size:19px;font-weight:800;color:white;
-    overflow:hidden;box-shadow:0 0 0 3px rgba(255,255,255,0.08),0 8px 20px rgba(0,0,0,0.35);
-    transition:0.25s;cursor:pointer;
-}
+.hx-av{width:50px;height:50px;border-radius:50%;flex-shrink:0;background:linear-gradient(135deg,var(--accent),var(--accent2));border:2px solid rgba(255,255,255,0.25);display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-size:19px;font-weight:800;color:white;overflow:hidden;box-shadow:0 0 0 3px rgba(255,255,255,0.08),0 8px 20px rgba(0,0,0,0.35);transition:0.25s;cursor:pointer;}
 .hx-av:hover{transform:scale(1.06);}
 .hx-av img{width:100%;height:100%;object-fit:cover;}
 .hx-hero-txt{min-width:0;flex:1;}
@@ -216,6 +200,7 @@ body.bg-dark .hx-sinner{background:#1e293b;border-color:var(--card);}
 .hx-hmeta{display:flex;gap:9px;flex-wrap:wrap;}
 .hx-hstreak{font-size:11px;color:var(--orange);font-weight:700;}
 .hx-hrec{font-size:10px;color:var(--muted2);font-weight:600;}
+
 /* Nuevos estilos para contador dinámico */
 .hx-progress-detail {
     display: flex;
@@ -401,24 +386,18 @@ body.bg-dark .hx-btn.ghost{background:#111827!important;border-color:rgba(255,25
     .hx-htabs{padding:9px 12px 0;overflow-x:auto;flex-wrap:nowrap;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
     .hx-htab{flex-shrink:0;}
     .hx-hlist{padding:8px 10px 10px;gap:7px;}
-   .hx-habit{padding:11px 10px;gap:8px;align-items:flex-start;overflow:visible;flex-wrap:wrap;}
+    .hx-habit{padding:11px 10px;gap:8px;align-items:flex-start;overflow:visible;flex-wrap:wrap;}
     .hx-hico{width:32px;height:32px;border-radius:10px;font-size:14px;flex-shrink:0;margin-top:1px;}
     .hx-hinfo{min-width:0;flex:1;}
     .hx-hname{font-size:13px;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
     .hx-hmeta{gap:7px;margin-top:2px;}
     .hx-hstreak{font-size:10.5px;}
-    .hx-progress-detail{flex-wrap:wrap;gap:4px;}
-.hx-time-live{font-size:10px;padding:2px 7px;max-width:100%;overflow:hidden;}
-.hx-hinfo{width:100%;}
-.hx-hacts{width:100%;justify-content:flex-end;margin-top:2px;}
     .hx-hrec{font-size:10px;}
-    .hx-progress-detail{gap:6px;margin-top:3px;}
-    .hx-time-live{font-size:11px;padding:2px 8px;}
-    .hx-percent-live{font-size:11px;}
-    .hx-goal-live{font-size:10px;padding:2px 7px;}
-    .hx-fail-btn{font-size:12px;padding:3px 10px;}
+    .hx-progress-detail{flex-wrap:wrap;gap:4px;}
+    .hx-time-live{font-size:10px;padding:2px 7px;max-width:100%;overflow:hidden;}
+    .hx-hinfo{width:100%;}
+    .hx-hacts{width:100%;justify-content:flex-end;margin-top:2px;}
     .hx-hstatus{display:none;}
-    .hx-hacts{gap:5px;flex-shrink:0;align-self:center;}
     .hx-ha{width:34px;height:34px;border-radius:10px;font-size:14px;}
     .hx-cwrap{padding:8px 11px 9px;}
     .hx-cinput{font-size:13px;padding:8px 11px;}
@@ -831,7 +810,7 @@ async function failHabit(event, habitId, habitName) {
     event.preventDefault();
     if (!confirm(`⚠️ ¿Estás seguro de que has fallado en "${habitName}"?\nEsto reiniciará el contador de tiempo y tu racha actual a 0.`)) return;
     try {
-  const res = await fetch(`/Habit/FailHabit/${habitId}`, { method: 'POST',  headers: { 'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value } });
+        const res = await fetch(`/Habit/FailHabit/${habitId}`, { method: 'POST', headers: { 'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value } });
         const data = await res.json();
         if (data.success) {
             // Actualizar la fecha de inicio en el atributo data-start-date (se obtiene del servidor, pero podemos recargar la página)
