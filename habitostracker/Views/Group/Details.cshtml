@@ -885,7 +885,34 @@ async function generarEnlace() {
         } else showToast('❌ Error');
     } catch { showToast('❌ Error de conexión'); }
 }
+// TOGGLE SOLO ADMINS
+async function confirmarAdminOnly() {
+    closeModal('adminOnlyModal');
+    
+    showToast("⏳ Actualizando...");
+    
+    try {
+        const res = await fetch("/Group/ToggleAdminOnly", {
+            method: "POST",
+            headers: { 
+                "Content-Type": "application/x-www-form-urlencoded",
+                "RequestVerificationToken": token()
+            },
+            body: `groupId=${groupId}`
+        });
 
+        const data = await res.json();
+
+        if (data.success) {
+            showToast(data.isAdminOnly ? "🔒 Solo admins activado" : "🔓 Todos pueden escribir");
+            setTimeout(() => location.reload(), 900);   // recargamos para actualizar todo
+        } else {
+            showToast("❌ No tienes permisos para cambiar esto");
+        }
+    } catch (e) {
+        showToast("❌ Error de conexión");
+    }
+}
 // Añadir Miembro
 async function openAddMember() {
     selectedMembers.clear();
@@ -957,7 +984,25 @@ async function promoverAdmin(userId, username) {
         }
     });
 }
+// COMPARTIR GRUPO
+function compartirGrupo() {
+    const url = `${window.location.origin}/Group/Chat/${groupId}`;
+    const title = document.getElementById('groupNameDisplay').textContent || "Grupo en HabitTracker";
 
+    if (navigator.share) {
+        navigator.share({
+            title: title,
+            text: "Únete a este grupo",
+            url: url
+        }).catch(() => {});
+    } else {
+        navigator.clipboard.writeText(url).then(() => {
+            showToast('✅ Link copiado al portapapeles');
+        }).catch(() => {
+            showToast('❌ No se pudo copiar');
+        });
+    }
+}
 async function removeMember(userId, username) {
     confirmarAccion({
         title: "Eliminar miembro",
@@ -978,22 +1023,33 @@ async function removeMember(userId, username) {
 }
 
 // Cambiar Público / Privado
+// CAMBIAR PÚBLICO / PRIVADO
 async function toggleGroupType() {
     confirmarAccion({
-        title: "Cambiar visibilidad",
-        message: "Solo el creador puede hacer esto.",
+        title: "Cambiar visibilidad del grupo",
+        message: `@(Model.Type == "public" ? "Hacer privado" : "Hacer público")`,
+        confirmText: "Sí, cambiar",
         onConfirm: async () => {
             try {
                 const res = await fetch('/Group/ToggleGroupType', {
                     method: 'POST',
-                    headers: {"Content-Type": "application/x-www-form-urlencoded", "RequestVerificationToken": token()},
+                    headers: { 
+                        "Content-Type": "application/x-www-form-urlencoded",
+                        "RequestVerificationToken": token()
+                    },
                     body: `groupId=${groupId}`
                 });
+
                 if (res.ok) {
-                    showToast("✅ Cambiado");
+                    showToast("✅ Visibilidad cambiada correctamente");
                     setTimeout(() => location.reload(), 800);
-                } else showToast("❌ Solo el creador puede cambiarlo");
-            } catch { showToast("❌ Error"); }
+                } else {
+                    const text = await res.text();
+                    showToast("❌ Error: " + (text || "No tienes permiso"));
+                }
+            } catch (e) {
+                showToast("❌ Error de conexión");
+            }
         }
     });
 }
@@ -1048,6 +1104,8 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('reportarGrupoBtn')?.addEventListener('click', reportarGrupo);
     document.getElementById('leaveGroupBtn')?.addEventListener('click', () => openModal('leaveModal'));
     document.getElementById('deleteGroupBtn')?.addEventListener('click', () => openModal('deleteModal'));
+    document.getElementById('compartirGrupoBtn')?.addEventListener('click', compartirGrupo);
+    document.getElementById('compartirGrupoBtn2')?.addEventListener('click', compartirGrupo);
 
     // Miembros
     document.querySelectorAll('.gd-mbtn.promote').forEach(btn => btn.addEventListener('click', () => promoverAdmin(btn.dataset.userId, btn.dataset.username)));
