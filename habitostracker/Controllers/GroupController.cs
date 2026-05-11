@@ -1490,7 +1490,7 @@ namespace HabitTrackerApp.Controllers
             var userIdClaim = User.FindFirst("UserId");
             if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
             {
-                return Json(new { success = false, error = "Error de autenticación" });
+                return Json(new { success = false, error = "No se encontró tu UserId en la sesión" });
             }
 
             var group = await _context.Groups
@@ -1499,17 +1499,19 @@ namespace HabitTrackerApp.Controllers
             if (group == null)
                 return Json(new { success = false, error = "Grupo no encontrado" });
 
-            // 🔥 DEBUG: Vamos a ver quién es el creador y quién está intentando cambiar
-            if (group.CreatorId != userId)
+            // === DEBUG ===
+            bool soyCreador = group.CreatorId == userId;
+
+            if (!soyCreador)
             {
                 return Json(new
                 {
                     success = false,
-                    error = $"Solo el creador puede cambiar la visibilidad. Creador ID: {group.CreatorId}, Tu ID: {userId}"
+                    error = $"No tienes permiso. Creador del grupo: {group.CreatorId} | Tu ID: {userId}"
                 });
             }
 
-            // Alternar tipo
+            // Si llega aquí, sí eres el creador
             string newType = group.Type == "public" ? "private" : "public";
             bool newIsPublic = newType == "public";
 
@@ -1518,15 +1520,12 @@ namespace HabitTrackerApp.Controllers
 
             await _context.SaveChangesAsync();
 
-            await _hub.Clients.Group($"group-{groupId}")
-                .SendAsync("GroupTypeChanged", newType, newIsPublic);
-
             return Json(new
             {
                 success = true,
                 type = newType,
                 isPublic = newIsPublic,
-                message = "Visibilidad cambiada correctamente"
+                message = "Cambiado correctamente"
             });
         }
         // 🔥 buscar amigos que no están en el grupo para añadir
