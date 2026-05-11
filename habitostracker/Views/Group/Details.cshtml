@@ -15,6 +15,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 
 <style>
+/* ========== (todos tus estilos actuales, no los modifico) ========== */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
@@ -577,7 +578,7 @@
                 </div>
                 <div class="gd-hero-actions">
                     <a asp-controller="Group" asp-action="Chat" asp-route-id="@Model.Id" class="gd-hero-action-btn primary">💬 Chat</a>
-                    <button class="gd-hero-action-btn secondary" onclick="compartirGrupo()">↗️ Compartir</button>
+                    <button class="gd-hero-action-btn secondary" id="compartirGrupoBtn">↗️ Compartir</button>
                 </div>
             </div>
             <div class="gd-hero-name" id="groupNameDisplay">@Model.Name</div>
@@ -616,7 +617,7 @@
             </div>
             <div class="gd-edit-row">
                 <input type="text" id="newGroupName" class="gd-edit-input" placeholder="Nombre del grupo..." value="@Model.Name" />
-                <button class="gd-edit-btn" onclick="updateName()">Guardar</button>
+                <button class="gd-edit-btn" id="updateNameBtn">Guardar</button>
             </div>
         </div>
 
@@ -624,7 +625,7 @@
         <div class="gd-card">
             <div class="gd-card-hd">
                 <div class="gd-card-title">🔗 Enlace de invitación</div>
-                <button class="gd-card-btn" onclick="generarEnlace()">Generar</button>
+                <button class="gd-card-btn" id="generarEnlaceBtn">Generar</button>
             </div>
             <div id="inviteSection" style="display:none;">
                 <div class="gd-invite-box">
@@ -632,9 +633,9 @@
                     <div class="gd-invite-code" id="inviteCode">—</div>
                     <div class="gd-invite-link" id="inviteLink">—</div>
                     <div class="gd-invite-btns">
-                        <button class="gd-invite-btn copy" onclick="copiarEnlace()">📋 Copiar</button>
-                        <button class="gd-invite-btn share" onclick="compartirEnlace()">↗️ Compartir</button>
-                        <button class="gd-invite-btn reset" onclick="resetEnlace()">🔄 Nuevo</button>
+                        <button class="gd-invite-btn copy" id="copiarEnlaceBtn">📋 Copiar</button>
+                        <button class="gd-invite-btn share" id="compartirEnlaceBtn">↗️ Compartir</button>
+                        <button class="gd-invite-btn reset" id="resetEnlaceBtn">🔄 Nuevo</button>
                     </div>
                 </div>
             </div>
@@ -675,7 +676,7 @@
         <div class="gd-card-hd">
             <div class="gd-card-title">👥 Miembros (@totalMembers)</div>
             @if (isAdmin)
-            { <button class="gd-card-btn" onclick="openAddMember()">➕ Añadir</button> }
+            { <button class="gd-card-btn" id="openAddMemberBtn">➕ Añadir</button> }
         </div>
         <div class="gd-members-count-bar">
             <span>👑 <strong>@adminCount</strong> admin@(adminCount != 1 ? "s" : "")</span>
@@ -720,12 +721,18 @@
                             @if (isCreator)
                             {
                                 @if (!isMemberAdmin)
-                                { <button class="gd-mbtn promote" onclick="promoverAdmin(@m.UserId, '@m.User?.Username')" title="Dar admin">⭐</button> }
+                                {
+                                    <button class="gd-mbtn promote" data-user-id="@m.UserId" data-username="@m.User?.Username">⭐</button>
+                                }
                                 else
-                                { <button class="gd-mbtn demote" onclick="quitarAdmin(@m.UserId, '@m.User?.Username')" title="Quitar admin">↓</button> }
+                                {
+                                    <button class="gd-mbtn demote" data-user-id="@m.UserId" data-username="@m.User?.Username">↓</button>
+                                }
                             }
                             @if (isAdmin && (isCreator || !isMemberAdmin))
-                            { <button class="gd-mbtn remove" onclick="removeMember(@m.UserId, '@m.User?.Username')" title="Eliminar">✕</button> }
+                            {
+                                <button class="gd-mbtn remove" data-user-id="@m.UserId" data-username="@m.User?.Username">✕</button>
+                            }
                         }
                     </div>
                 </div>
@@ -739,7 +746,7 @@
             <div class="gd-card-title">⚙️ Opciones</div>
         </div>
         <div class="gd-action-list">
-            <button class="gd-action-item @(isMuted ? "active-mute" : "")" id="muteBtn" onclick="toggleMute()">
+            <button class="gd-action-item" id="muteBtn">
                 <div class="gd-action-icon orange"><span id="muteIcon">@(isMuted ? "🔕" : "🔔")</span></div>
                 <div style="flex:1;">
                     <div id="muteLabel">@(isMuted ? "Silenciado" : "Silenciar notificaciones")</div>
@@ -747,10 +754,10 @@
                 </div>
                 <div class="gd-toggle @(isMuted ? "on" : "")" id="muteToggle"></div>
             </button>
-            
+
             @if (isCreator)
             {
-                <div class="gd-action-item" id="toggleTypeBtn" onclick="toggleGroupType()" style="cursor:pointer;">
+                <div class="gd-action-item" id="toggleTypeBtn">
                     <div class="gd-action-icon purple" id="toggleIcon">@(Model.Type == "public" ? "🔒" : "🌍")</div>
                     <div style="flex:1;">
                         <div id="toggleText">@(Model.Type == "public" ? "Hacer privado" : "Hacer público")</div>
@@ -784,7 +791,7 @@
                 }
             }
 
-            <button class="gd-action-item" onclick="compartirGrupo()">
+            <button class="gd-action-item" id="compartirGrupoBtn2">
                 <div class="gd-action-icon green">↗️</div>
                 <div style="flex:1;">
                     <div>Compartir grupo</div>
@@ -793,7 +800,7 @@
                 <span class="gd-action-chevron">›</span>
             </button>
 
-            <button class="gd-action-item" onclick="reportarGrupo()">
+            <button class="gd-action-item" id="reportarGrupoBtn">
                 <div class="gd-action-icon purple">🚩</div>
                 <div style="flex:1;">
                     <div>Reportar grupo</div>
@@ -802,7 +809,7 @@
                 <span class="gd-action-chevron">›</span>
             </button>
 
-            <button class="gd-action-item danger" onclick="openModal('leaveModal')">
+            <button class="gd-action-item danger" id="leaveGroupBtn">
                 <div class="gd-action-icon red">🚪</div>
                 <div style="flex:1;">
                     <div>Salir del grupo</div>
@@ -813,7 +820,7 @@
 
             @if (isCreator)
             {
-                <button class="gd-action-item danger" onclick="openModal('deleteModal')">
+                <button class="gd-action-item danger" id="deleteGroupBtn">
                     <div class="gd-action-icon red">🗑️</div>
                     <div style="flex:1;">
                         <div>Eliminar grupo</div>
@@ -824,9 +831,10 @@
             }
         </div>
     </div>
-
 </div>
+
 <script>
+// ========== DEFINICIÓN GLOBAL DE FUNCIONES ==========
 const groupId = @Model.Id;
 const isCreator = @isCreator.ToString().ToLower();
 const isAdmin = @isAdmin.ToString().ToLower();
@@ -839,7 +847,6 @@ let currentInviteLink = '';
 
 const token = () => document.querySelector('input[name="__RequestVerificationToken"]')?.value ?? "";
 
-// ── TOAST ──
 function showToast(msg) {
     document.querySelectorAll('.gd-toast').forEach(t => t.remove());
     const t = document.createElement("div");
@@ -848,11 +855,9 @@ function showToast(msg) {
     setTimeout(() => { t.style.opacity = "0"; t.style.transition = "opacity 0.3s"; setTimeout(() => t.remove(), 300); }, 3000);
 }
 
-// ── MODALES (definir primero) ──
 function openModal(id) { document.getElementById(id).classList.add('open'); }
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
 
-// ── FUNCIONES DE GRUPO ──
 function compartirGrupo() {
     const url = window.location.origin + '/Group/Chat/@Model.Id';
     if (navigator.share) {
@@ -864,11 +869,8 @@ function compartirGrupo() {
 
 function compartirEnlace() {
     if (!currentInviteLink) return;
-    if (navigator.share) {
-        navigator.share({ title: '@Model.Name', text: 'Únete al grupo en HabitTracker', url: currentInviteLink });
-    } else {
-        copiarEnlace();
-    }
+    if (navigator.share) navigator.share({ title: '@Model.Name', text: 'Únete al grupo en HabitTracker', url: currentInviteLink });
+    else copiarEnlace();
 }
 
 function copiarEnlace() {
@@ -932,10 +934,8 @@ async function updateName() {
         body: `groupId=${groupId}&name=${encodeURIComponent(name)}&__RequestVerificationToken=${encodeURIComponent(token())}`
     });
     const data = await res.json();
-    if (data.success) { 
-        document.getElementById("groupNameDisplay").textContent = name; 
-        showToast("✅ Nombre actualizado");
-    } else showToast("❌ No se pudo actualizar");
+    if (data.success) { document.getElementById("groupNameDisplay").textContent = name; showToast("✅ Nombre actualizado"); }
+    else showToast("❌ No se pudo actualizar");
 }
 
 async function toggleMute() {
@@ -949,7 +949,6 @@ async function toggleMute() {
         isMuted = data.isMuted;
         document.getElementById("muteIcon").textContent = isMuted ? "🔕" : "🔔";
         document.getElementById("muteLabel").textContent = isMuted ? "Silenciado" : "Silenciar notificaciones";
-        document.getElementById("muteBtn").classList.toggle("active-mute", isMuted);
         document.getElementById("muteToggle").classList.toggle("on", isMuted);
         showToast(isMuted ? "🔕 Notificaciones silenciadas" : "🔔 Notificaciones activadas");
     }
@@ -962,11 +961,8 @@ async function toggleGroupType() {
         formData.append('groupId', groupId);
         formData.append('__RequestVerificationToken', token());
         const res = await fetch('/Group/ToggleGroupType', { method: 'POST', body: formData });
-        if (res.ok) {
-            location.reload();
-        } else {
-            alert('Error al cambiar el tipo');
-        }
+        if (res.ok) location.reload();
+        else alert('Error al cambiar el tipo');
     } catch(e) { alert('Error de conexión'); }
 }
 
@@ -987,7 +983,6 @@ async function confirmarAdminOnly() {
     } catch { showToast("❌ Error de conexión"); }
 }
 
-// ── MIEMBROS ──
 function filtrarMiembros(q) {
     q = q.toLowerCase().trim();
     document.querySelectorAll('#membersList .gd-member').forEach(row => {
@@ -1051,7 +1046,7 @@ async function openAddMember() {
 
 function renderFriendsList(friends) {
     const list = document.getElementById("addMemberList");
-    if (!friends.length) { list.innerHTML = '<div class="gd-modal-empty">Sin amigos disponibles para agregar</div>'; return; }
+    if (!friends.length) { list.innerHTML = '<div class="gd-modal-empty">Sin amigos disponibles</div>'; return; }
     list.innerHTML = friends.map(f => {
         const avatar = f.img ? `<img src="${f.img}" style="width:100%;height:100%;object-fit:cover;" />` : f.username.charAt(0).toUpperCase();
         return `<div class="gd-modal-item ${selectedMembers.has(f.id) ? 'selected' : ''}" id="friend-item-${f.id}" onclick="toggleSelectFriend(${f.id})">
@@ -1098,7 +1093,6 @@ async function confirmarAgregar() {
     if (fail > 0) showToast(`⚠️ ${fail} no se pudo agregar`);
 }
 
-// ── REPORTAR GRUPO ──
 function reportarGrupo() {
     selectedReason = null;
     document.getElementById("sendReportBtn").disabled = true;
@@ -1120,10 +1114,9 @@ async function enviarReporte() {
         body: JSON.stringify({ groupId, reason: selectedReason })
     });
     const data = await res.json();
-    showToast(data.success ? "✅ Reporte enviado. Lo revisaremos pronto." : "⚠️ " + (data.message ?? "Error"));
+    showToast(data.success ? "✅ Reporte enviado" : "⚠️ " + (data.message ?? "Error"));
 }
 
-// ── ELIMINAR GRUPO ──
 document.getElementById('deleteConfirmInput')?.addEventListener('input', function() {
     document.getElementById('deleteConfirmBtn').disabled = this.value.trim().toUpperCase() !== 'ELIMINAR';
 });
@@ -1136,7 +1129,6 @@ function confirmarEliminar() {
     document.body.appendChild(form); form.submit();
 }
 
-// ── FOTO ──
 function abrirFoto() {
     const img = document.getElementById('groupAvatarImg');
     if (!img) return;
@@ -1148,8 +1140,6 @@ function cerrarFoto() {
     document.getElementById('photoOverlay').classList.remove('open');
     document.body.style.overflow = '';
 }
-
-// ── SUBIR IMAGEN ──
 async function uploadGroupImage(input) {
     const file = input.files[0]; if (!file) return;
     showToast("⏳ Subiendo imagen...");
@@ -1170,27 +1160,49 @@ async function uploadGroupImage(input) {
     } catch { showToast("❌ Error de conexión"); }
 }
 
-// ── CERRAR MODALES AL HACER CLICK FUERA ──
 document.querySelectorAll('.gd-modal').forEach(m => {
     m.addEventListener('click', function(e) { if (e.target === this) this.classList.remove('open'); });
 });
 
-// ── Asegurar que todos los botones tengan sus eventos correctamente asignados (por si el HTML no los tiene) ──
-document.addEventListener('DOMContentLoaded', function() {
-    // Reasignar eventos por si acaso
+// ========== ASIGNAR EVENTOS A LOS BOTONES ==========
+document.addEventListener('DOMContentLoaded', () => {
+    // Compartir grupo (ambos botones)
+    document.getElementById('compartirGrupoBtn')?.addEventListener('click', compartirGrupo);
+    document.getElementById('compartirGrupoBtn2')?.addEventListener('click', compartirGrupo);
+    document.getElementById('compartirEnlaceBtn')?.addEventListener('click', compartirEnlace);
+    document.getElementById('copiarEnlaceBtn')?.addEventListener('click', copiarEnlace);
+    document.getElementById('resetEnlaceBtn')?.addEventListener('click', resetEnlace);
+    document.getElementById('generarEnlaceBtn')?.addEventListener('click', generarEnlace);
+    document.getElementById('updateNameBtn')?.addEventListener('click', updateName);
     document.getElementById('muteBtn')?.addEventListener('click', toggleMute);
     document.getElementById('toggleTypeBtn')?.addEventListener('click', toggleGroupType);
+    document.getElementById('openAddMemberBtn')?.addEventListener('click', openAddMember);
+    document.getElementById('reportarGrupoBtn')?.addEventListener('click', reportarGrupo);
+    document.getElementById('leaveGroupBtn')?.addEventListener('click', () => openModal('leaveModal'));
+    document.getElementById('deleteGroupBtn')?.addEventListener('click', () => openModal('deleteModal'));
+
+    // Botones dinámicos de miembros (promote, demote, remove)
     document.querySelectorAll('.gd-mbtn.promote').forEach(btn => {
-        btn.onclick = function() { promoverAdmin(parseInt(this.getAttribute('data-user-id')), this.getAttribute('data-username')); };
+        const userId = btn.getAttribute('data-user-id');
+        const username = btn.getAttribute('data-username');
+        btn.addEventListener('click', () => promoverAdmin(parseInt(userId), username));
     });
     document.querySelectorAll('.gd-mbtn.demote').forEach(btn => {
-        btn.onclick = function() { quitarAdmin(parseInt(this.getAttribute('data-user-id')), this.getAttribute('data-username')); };
+        const userId = btn.getAttribute('data-user-id');
+        const username = btn.getAttribute('data-username');
+        btn.addEventListener('click', () => quitarAdmin(parseInt(userId), username));
     });
     document.querySelectorAll('.gd-mbtn.remove').forEach(btn => {
-        btn.onclick = function() { removeMember(parseInt(this.getAttribute('data-user-id')), this.getAttribute('data-username')); };
+        const userId = btn.getAttribute('data-user-id');
+        const username = btn.getAttribute('data-username');
+        btn.addEventListener('click', () => removeMember(parseInt(userId), username));
     });
-    document.querySelector('.gd-edit-btn')?.addEventListener('click', updateName);
-    document.querySelector('.gd-card-btn')?.addEventListener('click', generarEnlace);
-    document.querySelector('.gd-card-btn')?.addEventListener('click', generarEnlace);
+
+    // Leave modal confirm
+    const leaveForm = document.querySelector('#leaveModal form');
+    if (leaveForm) {
+        const leaveBtn = leaveForm.querySelector('button');
+        if (leaveBtn) leaveBtn.addEventListener('click', (e) => { e.preventDefault(); leaveForm.submit(); });
+    }
 });
 </script>
