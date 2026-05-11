@@ -239,6 +239,34 @@ else
         </div>
     </div>
     <div class="share-option cancel" onclick="closeShare()">✕ Cancelar</div>
+    <!-- MODAL DE COMENTARIOS (estilo Facebook) -->
+<div id="commentsModal" class="comments-modal" style="display:none;">
+    <div class="comments-modal-overlay" onclick="closeCommentsModal()"></div>
+    <div class="comments-modal-container">
+        <div class="comments-modal-header">
+            <div class="comments-modal-title">💬 Comentarios</div>
+            <button class="comments-modal-close" onclick="closeCommentsModal()">✕</button>
+        </div>
+        <div class="comments-modal-body" id="commentsModalBody">
+            <div class="comments-loading">Cargando comentarios...</div>
+        </div>
+        <div class="comments-modal-footer" id="commentsModalFooter">
+            <div class="comments-input-wrapper">
+                <textarea id="newCommentText" class="comments-input" placeholder="Escribe un comentario..." rows="1"></textarea>
+                <button class="comments-send-btn" id="sendCommentBtn" disabled>📤</button>
+            </div>
+            <div class="comments-attach-wrapper">
+                <label for="commentImageInput" class="comments-attach-btn">📎 Adjuntar imagen</label>
+                <input type="file" id="commentImageInput" accept="image/*" style="display:none;" />
+            </div>
+            <div id="commentImagePreview" class="comment-image-preview" style="display:none;">
+                <img id="previewCommentImg" />
+                <button onclick="clearCommentImage()">✕</button>
+            </div>
+        </div>
+        <div id="commentTypingIndicator" class="comment-typing-indicator" style="display:none;">✍️ Alguien está escribiendo...</div>
+    </div>
+</div>
 </div>
 
 <!-- LIKE EXPLOSION -->
@@ -399,6 +427,123 @@ body.bg-dark .post-privacy-badge.public { background:rgba(21,128,61,0.2); color:
     color: #111; font-size: 10px; padding: 2px 8px;
     border-radius: 20px; font-weight: 700;
 }
+/* ── MODAL COMENTARIOS (Facebook style) ── */
+.comments-modal {
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    z-index: 99999; display: flex; align-items: center; justify-content: center;
+}
+.comments-modal-overlay {
+    position: absolute; inset: 0;
+    background: rgba(0,0,0,0.6); backdrop-filter: blur(4px);
+}
+.comments-modal-container {
+    position: relative; background: white; width: 90%; max-width: 620px;
+    max-height: 85vh; border-radius: 20px; display: flex; flex-direction: column;
+    overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+}
+.comments-modal-header {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 16px 20px; border-bottom: 1px solid #e5e7eb;
+    background: white; flex-shrink: 0;
+}
+.comments-modal-title { font-weight: 800; font-size: 18px; color: #111827; }
+.comments-modal-close {
+    background: none; border: none; font-size: 20px; cursor: pointer;
+    color: #9ca3af; width: 32px; height: 32px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center; transition: 0.2s;
+}
+.comments-modal-close:hover { background: #f3f4f6; color: #111827; }
+.comments-modal-body {
+    flex: 1; overflow-y: auto; padding: 16px; background: #f9fafb;
+}
+.comments-loading { text-align: center; padding: 40px; color: #9ca3af; }
+.comment-item {
+    display: flex; gap: 12px; margin-bottom: 16px; padding-bottom: 12px;
+    border-bottom: 1px solid #e5e7eb;
+}
+.comment-avatar {
+    width: 40px; height: 40px; border-radius: 50%; object-fit: cover;
+    flex-shrink: 0;
+}
+.comment-avatar-letter {
+    width: 40px; height: 40px; border-radius: 50%;
+    background: linear-gradient(135deg, #6366f1, #2563eb);
+    color: white; display: flex; align-items: center; justify-content: center;
+    font-weight: 800; font-size: 16px; flex-shrink: 0;
+}
+.comment-content { flex: 1; }
+.comment-username {
+    font-weight: 700; font-size: 14px; color: #111827;
+    display: inline-block; margin-right: 8px;
+}
+.comment-time { font-size: 11px; color: #9ca3af; }
+.comment-text { font-size: 14px; color: #374151; margin: 6px 0 8px; word-break: break-word; }
+.comment-img {
+    max-width: 100%; max-height: 200px; border-radius: 12px;
+    margin-top: 6px; cursor: pointer;
+}
+.comment-actions {
+    display: flex; gap: 12px; margin-top: 6px;
+}
+.comment-like-btn {
+    background: none; border: none; font-size: 13px; font-weight: 600;
+    color: #6b7280; cursor: pointer; padding: 2px 6px;
+    border-radius: 8px; transition: 0.2s; display: flex; align-items: center; gap: 4px;
+}
+.comment-like-btn:hover { background: #f3f4f6; }
+.comment-like-btn.liked { color: #ef4444; }
+.comment-delete-btn {
+    background: none; border: none; font-size: 12px; color: #9ca3af;
+    cursor: pointer; padding: 2px 6px; border-radius: 8px;
+}
+.comment-delete-btn:hover { background: #fef2f2; color: #dc2626; }
+.comments-modal-footer {
+    border-top: 1px solid #e5e7eb; background: white; padding: 12px 16px;
+    flex-shrink: 0;
+}
+.comments-input-wrapper {
+    display: flex; align-items: center; gap: 8px; margin-bottom: 6px;
+}
+.comments-input {
+    flex: 1; padding: 10px 14px; border: 1.5px solid #e5e7eb;
+    border-radius: 24px; font-size: 14px; resize: none; outline: none;
+    font-family: inherit; background: #f9fafb;
+}
+.comments-input:focus { border-color: #6366f1; background: white; }
+.comments-send-btn {
+    width: 38px; height: 38px; border-radius: 50%; border: none;
+    background: #6366f1; color: white; cursor: pointer; display: flex;
+    align-items: center; justify-content: center; transition: 0.2s;
+}
+.comments-send-btn:disabled { background: #cbd5e1; cursor: not-allowed; }
+.comments-attach-wrapper { margin-bottom: 6px; }
+.comments-attach-btn {
+    font-size: 12px; color: #6366f1; font-weight: 600; cursor: pointer;
+    text-decoration: underline; display: inline-block;
+}
+.comment-image-preview {
+    margin-top: 8px; display: flex; align-items: center; gap: 8px;
+    background: #f3f4f6; padding: 6px 10px; border-radius: 12px; width: fit-content;
+}
+.comment-image-preview img { width: 48px; height: 48px; border-radius: 8px; object-fit: cover; }
+.comment-image-preview button {
+    background: #ef4444; border: none; color: white; width: 22px; height: 22px;
+    border-radius: 50%; cursor: pointer; font-size: 12px;
+}
+.comment-typing-indicator {
+    font-size: 12px; color: #6366f1; padding: 6px 16px 8px; font-style: italic;
+    border-top: 1px solid #e5e7eb; background: #f9fafb;
+}
+body.bg-dark .comments-modal-container { background: #1e293b; }
+body.bg-dark .comments-modal-title { color: white; }
+body.bg-dark .comments-modal-body { background: #0f172a; }
+body.bg-dark .comment-item { border-color: #334155; }
+body.bg-dark .comment-username { color: #f1f5f9; }
+body.bg-dark .comment-text { color: #cbd5e1; }
+body.bg-dark .comments-input { background: #2d3748; border-color: #475569; color: white; }
+body.bg-dark .comments-modal-footer { background: #1e293b; border-color: #334155; }
+body.bg-dark .comment-like-btn:hover { background: #2d3748; }
+body.bg-dark .comment-image-preview { background: #2d3748; }
 
 /* Blur para imágenes sospechosas o sensibles */
 .blurred-image {
@@ -902,6 +1047,338 @@ function cerrarAnuncioPosts() {
         overlay.style.transition = 'opacity 0.3s';
         setTimeout(() => overlay.remove(), 300);
     }
+}
+// ==================== MODAL COMENTARIOS ====================
+let currentPostId = null;
+let commentConnection = null; // conexión SignalR específica para comentarios (o reutilizar la global)
+
+async function openCommentsModal(postId) {
+    currentPostId = postId;
+    const modal = document.getElementById('commentsModal');
+    const body = document.getElementById('commentsModalBody');
+    const footer = document.getElementById('commentsModalFooter');
+    modal.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+    body.innerHTML = '<div class="comments-loading">Cargando comentarios...</div>';
+    
+    // Ocultar footer si comentarios deshabilitados (se mostrará después de cargar)
+    footer.style.display = 'flex';
+    
+    // Unirse al grupo de SignalR para esta publicación
+    if (commentConnection && commentConnection.state === 'Connected') {
+        try {
+            await commentConnection.invoke("JoinPostGroup", postId);
+        } catch(e) { console.warn("SignalR JoinPostGroup error:", e); }
+    }
+    
+    // Cargar comentarios
+    try {
+        const res = await fetch(`/Post/GetComments?postId=${postId}`);
+        const data = await res.json();
+        if (data.success) {
+            renderComments(data.comments, data.commentsDisabled);
+            if (data.commentsDisabled) {
+                // Deshabilitar input y mostrar mensaje
+                footer.innerHTML = `<div class="comments-disabled-msg">🔒 Los comentarios están deshabilitados para esta publicación.</div>`;
+            } else {
+                // Restaurar footer con input funcional (si ya estaba deshabilitado, lo reemplazamos)
+                footer.innerHTML = `
+                    <div class="comments-input-wrapper">
+                        <textarea id="newCommentText" class="comments-input" placeholder="Escribe un comentario..." rows="1"></textarea>
+                        <button class="comments-send-btn" id="sendCommentBtn" disabled>📤</button>
+                    </div>
+                    <div class="comments-attach-wrapper">
+                        <label for="commentImageInput" class="comments-attach-btn">📎 Adjuntar imagen</label>
+                        <input type="file" id="commentImageInput" accept="image/*" style="display:none;" />
+                    </div>
+                    <div id="commentImagePreview" class="comment-image-preview" style="display:none;">
+                        <img id="previewCommentImg" />
+                        <button onclick="clearCommentImage()">✕</button>
+                    </div>
+                `;
+                attachCommentEvents();
+            }
+        } else {
+            body.innerHTML = '<div class="comments-loading">Error al cargar comentarios</div>';
+        }
+    } catch(e) {
+        console.error(e);
+        body.innerHTML = '<div class="comments-loading">Error de conexión</div>';
+    }
+}
+
+function renderComments(comments, commentsDisabled) {
+    const body = document.getElementById('commentsModalBody');
+    if (!comments || comments.length === 0) {
+        body.innerHTML = '<div class="comments-loading">No hay comentarios aún. ¡Sé el primero!</div>';
+        return;
+    }
+    const html = comments.map(c => `
+        <div class="comment-item" id="comment-${c.id}">
+            ${c.profileImage ? `<img src="${c.profileImage}" class="comment-avatar" />` : `<div class="comment-avatar-letter">${c.username.charAt(0).toUpperCase()}</div>`}
+            <div class="comment-content">
+                <div>
+                    <span class="comment-username">${escapeHtml(c.username)}</span>
+                    <span class="comment-time">${c.createdAt}</span>
+                </div>
+                <div class="comment-text">${escapeHtml(c.comment)}</div>
+                ${c.imagePath ? `<img src="${c.imagePath}" class="comment-img" onclick="window.open('${c.imagePath}', '_blank')" />` : ''}
+                <div class="comment-actions">
+                    <button class="comment-like-btn ${c.isLiked ? 'liked' : ''}" data-comment-id="${c.id}" onclick="toggleCommentLikeModal(this, ${c.id})">
+                        ${c.isLiked ? '❤️' : '🤍'} <span class="like-count">${c.likeCount}</span>
+                    </button>
+                    ${c.isMine ? `<button class="comment-delete-btn" onclick="deleteCommentModal(${c.id})">Eliminar</button>` : ''}
+                </div>
+            </div>
+        </div>
+    `).join('');
+    body.innerHTML = html;
+}
+
+function attachCommentEvents() {
+    const textarea = document.getElementById('newCommentText');
+    const sendBtn = document.getElementById('sendCommentBtn');
+    if (!textarea) return;
+    
+    const updateButton = () => {
+        sendBtn.disabled = textarea.value.trim() === '' && !selectedCommentImage;
+    };
+    textarea.addEventListener('input', () => {
+        updateButton();
+        // Enviar evento "escribiendo" a SignalR
+        if (commentConnection && commentConnection.state === 'Connected' && currentPostId) {
+            commentConnection.invoke("UserTypingOnPost", currentPostId);
+        }
+    });
+    updateButton();
+    
+    // Enviar comentario con Enter (Shift+Enter para nueva línea)
+    textarea.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            if (!sendBtn.disabled) sendComment();
+        }
+    });
+    
+    const fileInput = document.getElementById('commentImageInput');
+    if (fileInput) {
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                selectedCommentImage = file;
+                const reader = new FileReader();
+                reader.onload = (ev) => {
+                    const preview = document.getElementById('commentImagePreview');
+                    const img = document.getElementById('previewCommentImg');
+                    img.src = ev.target.result;
+                    preview.style.display = 'flex';
+                };
+                reader.readAsDataURL(file);
+                updateButton();
+            }
+        });
+    }
+    
+    sendBtn.onclick = sendComment;
+}
+
+let selectedCommentImage = null;
+function clearCommentImage() {
+    selectedCommentImage = null;
+    document.getElementById('commentImagePreview').style.display = 'none';
+    document.getElementById('commentImageInput').value = '';
+    const textarea = document.getElementById('newCommentText');
+    if (textarea) {
+        const sendBtn = document.getElementById('sendCommentBtn');
+        sendBtn.disabled = textarea.value.trim() === '';
+    }
+}
+
+async function sendComment() {
+    const textarea = document.getElementById('newCommentText');
+    const content = textarea.value.trim();
+    if (!content && !selectedCommentImage) return;
+    
+    const formData = new FormData();
+    formData.append('postId', currentPostId);
+    formData.append('comment', content);
+    if (selectedCommentImage) {
+        formData.append('image', selectedCommentImage);
+    }
+    
+    const sendBtn = document.getElementById('sendCommentBtn');
+    sendBtn.disabled = true;
+    sendBtn.innerHTML = '⏳';
+    
+    try {
+        const res = await fetch('/Post/AddCommentAjax', {
+            method: 'POST',
+            body: formData
+        });
+        const data = await res.json();
+        if (data.success) {
+            // Limpiar input y preview
+            textarea.value = '';
+            selectedCommentImage = null;
+            document.getElementById('commentImagePreview').style.display = 'none';
+            document.getElementById('commentImageInput').value = '';
+            // Agregar comentario localmente (ya llegará por SignalR, pero agregamos inmediatamente para mejor UX)
+            addCommentToList(data.comment);
+            sendBtn.disabled = false;
+            sendBtn.innerHTML = '📤';
+            textarea.focus();
+        } else {
+            alert(data.error || 'Error al comentar');
+            sendBtn.disabled = false;
+            sendBtn.innerHTML = '📤';
+        }
+    } catch(e) {
+        console.error(e);
+        alert('Error de conexión');
+        sendBtn.disabled = false;
+        sendBtn.innerHTML = '📤';
+    }
+}
+
+function addCommentToList(comment) {
+    const body = document.getElementById('commentsModalBody');
+    const emptyMsg = body.querySelector('.comments-loading');
+    if (emptyMsg && emptyMsg.innerText.includes('No hay comentarios')) emptyMsg.remove();
+    const newCommentHtml = `
+        <div class="comment-item" id="comment-${comment.id}">
+            ${comment.profileImage ? `<img src="${comment.profileImage}" class="comment-avatar" />` : `<div class="comment-avatar-letter">${comment.username.charAt(0).toUpperCase()}</div>`}
+            <div class="comment-content">
+                <div>
+                    <span class="comment-username">${escapeHtml(comment.username)}</span>
+                    <span class="comment-time">${comment.createdAt}</span>
+                </div>
+                <div class="comment-text">${escapeHtml(comment.comment)}</div>
+                ${comment.imagePath ? `<img src="${comment.imagePath}" class="comment-img" onclick="window.open('${comment.imagePath}', '_blank')" />` : ''}
+                <div class="comment-actions">
+                    <button class="comment-like-btn" data-comment-id="${comment.id}" onclick="toggleCommentLikeModal(this, ${comment.id})">
+                        🤍 <span class="like-count">0</span>
+                    </button>
+                    ${comment.isMine ? `<button class="comment-delete-btn" onclick="deleteCommentModal(${comment.id})">Eliminar</button>` : ''}
+                </div>
+            </div>
+        </div>
+    `;
+    body.insertAdjacentHTML('afterbegin', newCommentHtml);
+}
+
+function closeCommentsModal() {
+    const modal = document.getElementById('commentsModal');
+    modal.style.display = 'none';
+    document.body.style.overflow = '';
+    currentPostId = null;
+    selectedCommentImage = null;
+    // Abandonar grupo de SignalR
+    if (commentConnection && commentConnection.state === 'Connected' && currentPostId) {
+        commentConnection.invoke("LeavePostGroup", currentPostId).catch(e=>console.warn);
+    }
+}
+
+// Like en comentarios (modal)
+async function toggleCommentLikeModal(btn, commentId) {
+    const isLiked = btn.classList.contains('liked');
+    const iconSpan = btn.querySelector('.like-count');
+    const currentCount = parseInt(iconSpan.innerText) || 0;
+    // Optimista
+    btn.classList.toggle('liked');
+    const newCount = isLiked ? currentCount - 1 : currentCount + 1;
+    iconSpan.innerText = newCount;
+    btn.innerHTML = (isLiked ? '🤍' : '❤️') + ` <span class="like-count">${newCount}</span>`;
+    
+    try {
+        const res = await fetch('/Post/ToggleCommentLike?commentId=' + commentId, { method: 'POST' });
+        const data = await res.json();
+        if (data.liked !== undefined) {
+            // Ajustar según respuesta real
+            if (data.liked !== !isLiked) {
+                // revertir si hubo desincronización
+                btn.classList.toggle('liked');
+                iconSpan.innerText = data.count;
+                btn.innerHTML = (data.liked ? '❤️' : '🤍') + ` <span class="like-count">${data.count}</span>`;
+            } else {
+                iconSpan.innerText = data.count;
+                btn.innerHTML = (data.liked ? '❤️' : '🤍') + ` <span class="like-count">${data.count}</span>`;
+            }
+        }
+    } catch(e) {
+        console.error(e);
+        // revertir
+        btn.classList.toggle('liked');
+        iconSpan.innerText = isLiked ? currentCount : currentCount;
+        btn.innerHTML = (isLiked ? '❤️' : '🤍') + ` <span class="like-count">${isLiked ? currentCount : currentCount}</span>`;
+    }
+}
+
+async function deleteCommentModal(commentId) {
+    if (!confirm('¿Eliminar este comentario?')) return;
+    try {
+        const res = await fetch(`/Post/DeleteComment/${commentId}`, { method: 'GET' });
+        if (res.ok) {
+            const commentEl = document.getElementById(`comment-${commentId}`);
+            if (commentEl) commentEl.remove();
+        } else {
+            alert('Error al eliminar');
+        }
+    } catch(e) { alert('Error de conexión'); }
+}
+
+function escapeHtml(text) {
+    if (!text) return '';
+    return String(text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+// Modificar el evento del botón "Comentar" en cada publicación para que abra el modal
+// Buscamos todos los enlaces con href="/Post/Comments..."" y los reemplazamos para que llamen a openCommentsModal
+document.querySelectorAll('.post-actions a.action-btn[href*="/Post/Comments"]').forEach(link => {
+    const href = link.getAttribute('href');
+    const match = href.match(/postId=(\d+)/);
+    if (match) {
+        const postId = match[1];
+        link.setAttribute('href', 'javascript:void(0)');
+        link.setAttribute('onclick', `openCommentsModal(${postId})`);
+    }
+});
+
+// ── INICIALIZAR CONEXIÓN SIGNALR PARA COMENTARIOS (reutilizar la global o crear una nueva) ──
+// Como ya tenemos connectionGlobal, la usamos; solo necesitamos añadir el manejo de eventos.
+// Agregamos los listeners después de que la conexión global se establezca.
+
+function setupCommentSignalR() {
+    if (!window.connectionGlobal) return;
+    // Escuchar nuevos comentarios
+    window.connectionGlobal.on("NewComment", (comment) => {
+        if (currentPostId && comment && comment.postId == currentPostId) {
+            addCommentToList(comment);
+        }
+    });
+    // Escuchar typing
+    window.connectionGlobal.on("UserTypingOnPost", (data) => {
+        if (currentPostId && data.postId == currentPostId) {
+            const indicator = document.getElementById('commentTypingIndicator');
+            indicator.style.display = 'block';
+            clearTimeout(window.typingTimeout);
+            window.typingTimeout = setTimeout(() => {
+                indicator.style.display = 'none';
+            }, 1500);
+        }
+    });
+    // Métodos para unirse/salir del grupo (deben existir en ChatHub)
+    window.connectionGlobal.invoke = window.connectionGlobal.invoke || function() {};
+    // Añadimos funciones personalizadas (post groups) solo si no existen
+    if (typeof window.connectionGlobal.invoke === 'function') {
+        // Sobrescribimos temporalmente, pero mejor agregar métodos en el hub.
+    }
+}
+
+// Esperar a que connectionGlobal esté lista
+if (window.connectionGlobal) {
+    setupCommentSignalR();
+} else {
+    document.addEventListener('connectionGlobalReady', setupCommentSignalR);
 }
 
 </script>

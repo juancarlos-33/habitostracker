@@ -319,6 +319,20 @@ namespace HabitTrackerApp.Hubs
             await Clients.OthersInGroup("group-" + groupId)
                 .SendAsync("GroupUserStoppedTyping");
         }
+        public async Task JoinPostGroup(int postId)
+        {
+            await Groups.AddToGroupAsync(Context.ConnectionId, $"post-{postId}");
+        }
+
+        public async Task LeavePostGroup(int postId)
+        {
+            await Groups.RemoveFromGroupAsync(Context.ConnectionId, $"post-{postId}");
+        }
+
+        public async Task UserTypingOnPost(int postId)
+        {
+            await Clients.Group($"post-{postId}").SendAsync("UserTypingOnPost", new { postId, userId = Context.UserIdentifier });
+        }
 
         public async Task RemoveMemberFromGroup(string groupId, string removedUserId, string message)
         {
