@@ -1487,46 +1487,46 @@ namespace HabitTrackerApp.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ToggleGroupType(int groupId)
         {
-            var userIdClaim = User.FindFirst("UserId");
-            if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
+            try
             {
-                return Json(new { success = false, error = "No se encontró tu UserId en la sesión" });
-            }
+                var userIdClaim = User.FindFirst("UserId");
+                if (userIdClaim == null)
+                    return Json(new { success = false, error = "ERROR: No se encontró UserId en la sesión (Claim nulo)" });
 
-            var group = await _context.Groups
-                .FirstOrDefaultAsync(g => g.Id == groupId && g.IsActive);
+                if (!int.TryParse(userIdClaim.Value, out int userId))
+                    return Json(new { success = false, error = $"ERROR: UserId inválido: {userIdClaim.Value}" });
 
-            if (group == null)
-                return Json(new { success = false, error = "Grupo no encontrado" });
+                var group = await _context.Groups
+                    .FirstOrDefaultAsync(g => g.Id == groupId && g.IsActive);
 
-            // === DEBUG ===
-            bool soyCreador = group.CreatorId == userId;
+                if (group == null)
+                    return Json(new { success = false, error = "Grupo no encontrado" });
 
-            if (!soyCreador)
-            {
-                return Json(new
+                // Debug claro
+                if (group.CreatorId != userId)
                 {
-                    success = false,
-                    error = $"No tienes permiso. Creador del grupo: {group.CreatorId} | Tu ID: {userId}"
-                });
+                    return Json(new
+                    {
+                        success = false,
+                        error = $"NO ERES EL CREADOR. Creador ID = {group.CreatorId} | Tu ID = {userId}"
+                    });
+                }
+
+                // Si llega aquí, sí eres el creador
+                string newType = group.Type == "public" ? "private" : "public";
+                bool newIsPublic = newType == "public";
+
+                group.Type = newType;
+                group.IsPublic = newIsPublic;
+
+                await _context.SaveChangesAsync();
+
+                return Json(new { success = true, type = newType, message = "Cambiado correctamente" });
             }
-
-            // Si llega aquí, sí eres el creador
-            string newType = group.Type == "public" ? "private" : "public";
-            bool newIsPublic = newType == "public";
-
-            group.Type = newType;
-            group.IsPublic = newIsPublic;
-
-            await _context.SaveChangesAsync();
-
-            return Json(new
+            catch (Exception ex)
             {
-                success = true,
-                type = newType,
-                isPublic = newIsPublic,
-                message = "Cambiado correctamente"
-            });
+                return Json(new { success = false, error = "Excepción: " + ex.Message });
+            }
         }
         // 🔥 buscar amigos que no están en el grupo para añadir
         [HttpGet]
