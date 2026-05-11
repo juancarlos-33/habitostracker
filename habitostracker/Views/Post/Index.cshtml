@@ -6,7 +6,6 @@
 }
 
 <div class="feed-header">
-  
     <div>
         <h2 class="feed-title">🔥 Publicaciones</h2>
         <p class="feed-subtitle">Comparte momentos con la comunidad</p>
@@ -43,7 +42,6 @@
         var isLiked = myLikes.Contains(post.Id);
 
         <article class="post-card" id="post-@post.Id">
-
             <!-- HEADER -->
             <div class="post-header">
                 <div class="post-header-left">
@@ -72,17 +70,17 @@
 
                     <div class="post-meta">
                         <div class="post-username">
-                          <a href="/User/Profile/@post.UserId" style="text-decoration:none;color:inherit;">@post.DisplayUsername</a>
+                            <a href="/User/Profile/@post.UserId" style="text-decoration:none;color:inherit;">@post.DisplayUsername</a>
                         </div>
-               <div class="post-time-wrap">
- <span class="post-time">@post.CreatedAt.ToString("dd MMM yyyy · hh:mm tt", new System.Globalization.CultureInfo("es-CO"))</span>
-  @if (post.Privacy == "Friends")
-{ <span class="post-privacy-badge friends">👥 Amigos</span> }
-else if (post.Privacy == "Private")
-{ <span class="post-privacy-badge private">🔒 Solo yo</span> }
-else
-{ <span class="post-privacy-badge public">🌐 Público</span> }
-</div>
+                        <div class="post-time-wrap">
+                            <span class="post-time">@post.CreatedAt.ToString("dd MMM yyyy · hh:mm tt", new System.Globalization.CultureInfo("es-CO"))</span>
+                            @if (post.Privacy == "Friends")
+                            { <span class="post-privacy-badge friends">👥 Amigos</span> }
+                            else if (post.Privacy == "Private")
+                            { <span class="post-privacy-badge private">🔒 Solo yo</span> }
+                            else
+                            { <span class="post-privacy-badge public">🌐 Público</span> }
+                        </div>
                     </div>
                 </div>
 
@@ -109,50 +107,48 @@ else
             }
 
             <!-- ALERTAS DE ADVERTENCIA -->
-@if (post.IsUnderWarning)
-{
-    <div class="alert alert-danger mt-2 py-1" style="border-left: 4px solid #dc2626; font-size: 13px;">
-        ⚠️ <strong>Incumple nuestras normas</strong>
-    </div>
-    <div class="alert alert-danger mt-1 py-1" style="border-left: 4px solid #dc2626; background-color: #fff5f5; font-size: 13px;">
-        🔴 <strong>Cuenta en riesgo</strong> 
-    </div>
-}
-
-          <!-- MEDIA -->
-@if (!string.IsNullOrEmpty(post.ImagePath))
-{
-    var isBlurred = post.IsSensitive || post.IsUnderWarning;
-    var blurMessage = post.IsUnderWarning ? "⚠️ Publicación sospechosa - Incumple normas" : "⚠️ Contenido sensible";
-
-    <div class="post-media-wrap @(isVideo ? "video-wrap" : "") @(isBlurred ? "blurred-wrap" : "")" data-post-id="@post.Id" ondblclick="dblTapLike(@post.Id, event)">
-        @if (isVideo)
-        {
-            <video controls class="post-media" preload="metadata">
-                <source src="@post.ImagePath" />
-            </video>
-            <div class="video-badge">▶ Video</div>
-        }
-        else if (isBlurred)
-        {
-            <img src="@post.ImagePath" class="post-media blurred-image" id="img-@post.Id" />
-            <div class="blur-overlay" id="overlay-@post.Id">
-                <div class="blur-overlay-content">
-                    <span class="blur-icon">🚫</span>
-                    <p>@blurMessage</p>
-                    <button class="reveal-btn" onclick="revealBlurred(@post.Id)">Ver imagen</button>
+            @if (post.IsUnderWarning)
+            {
+                <div class="alert alert-danger mt-2 py-1" style="border-left: 4px solid #dc2626; font-size: 13px;">
+                    ⚠️ <strong>Incumple nuestras normas</strong>
                 </div>
-            </div>
-        }
-        else
-        {
-            <img src="@post.ImagePath" class="post-media" onclick="abrirFotoPost(this.src)" />
-        }
-        <div class="dbltap-heart" id="dbltap-heart-@post.Id">❤</div>
-    </div>
-}
+                <div class="alert alert-danger mt-1 py-1" style="border-left: 4px solid #dc2626; background-color: #fff5f5; font-size: 13px;">
+                    🔴 <strong>Cuenta en riesgo</strong>
+                </div>
+            }
 
+            <!-- MEDIA -->
+            @if (!string.IsNullOrEmpty(post.ImagePath))
+            {
+                var isBlurred = post.IsSensitive || post.IsUnderWarning;
+                var blurMessage = post.IsUnderWarning ? "⚠️ Publicación sospechosa - Incumple normas" : "⚠️ Contenido sensible";
 
+                <div class="post-media-wrap @(isVideo ? "video-wrap" : "") @(isBlurred ? "blurred-wrap" : "")" data-post-id="@post.Id" ondblclick="dblTapLike(@post.Id, event)">
+                    @if (isVideo)
+                    {
+                        <video controls class="post-media" preload="metadata">
+                            <source src="@post.ImagePath" />
+                        </video>
+                        <div class="video-badge">▶ Video</div>
+                    }
+                    else if (isBlurred)
+                    {
+                        <img src="@post.ImagePath" class="post-media blurred-image" id="img-@post.Id" />
+                        <div class="blur-overlay" id="overlay-@post.Id">
+                            <div class="blur-overlay-content">
+                                <span class="blur-icon">🚫</span>
+                                <p>@blurMessage</p>
+                                <button class="reveal-btn" onclick="revealBlurred(@post.Id)">Ver imagen</button>
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        <img src="@post.ImagePath" class="post-media" onclick="abrirFotoPost(this.src)" />
+                    }
+                    <div class="dbltap-heart" id="dbltap-heart-@post.Id">❤</div>
+                </div>
+            }
 
             <!-- STATS -->
             <div class="post-stats">
@@ -206,7 +202,6 @@ else
                     <span class="action-label">Reportar</span>
                 </a>
             </div>
-
         </article>
     }
 </div>
@@ -239,7 +234,9 @@ else
         </div>
     </div>
     <div class="share-option cancel" onclick="closeShare()">✕ Cancelar</div>
-    <!-- MODAL DE COMENTARIOS (estilo Facebook) -->
+</div>
+
+<!-- MODAL DE COMENTARIOS (estilo Facebook) - CORREGIDO: FUERA DEL SHARE MENU -->
 <div id="commentsModal" class="comments-modal" style="display:none;">
     <div class="comments-modal-overlay" onclick="closeCommentsModal()"></div>
     <div class="comments-modal-container">
@@ -250,23 +247,9 @@ else
         <div class="comments-modal-body" id="commentsModalBody">
             <div class="comments-loading">Cargando comentarios...</div>
         </div>
-        <div class="comments-modal-footer" id="commentsModalFooter">
-            <div class="comments-input-wrapper">
-                <textarea id="newCommentText" class="comments-input" placeholder="Escribe un comentario..." rows="1"></textarea>
-                <button class="comments-send-btn" id="sendCommentBtn" disabled>📤</button>
-            </div>
-            <div class="comments-attach-wrapper">
-                <label for="commentImageInput" class="comments-attach-btn">📎 Adjuntar imagen</label>
-                <input type="file" id="commentImageInput" accept="image/*" style="display:none;" />
-            </div>
-            <div id="commentImagePreview" class="comment-image-preview" style="display:none;">
-                <img id="previewCommentImg" />
-                <button onclick="clearCommentImage()">✕</button>
-            </div>
-        </div>
+        <div class="comments-modal-footer" id="commentsModalFooter"></div>
         <div id="commentTypingIndicator" class="comment-typing-indicator" style="display:none;">✍️ Alguien está escribiendo...</div>
     </div>
-</div>
 </div>
 
 <!-- LIKE EXPLOSION -->
@@ -275,11 +258,11 @@ else
 <div id="copyAlert" class="copy-alert">↪ Link copiado</div>
 
 <style>
+/* (todos los estilos originales se mantienen igual, incluyendo los del modal) */
 .feed-header {
     display: flex; align-items: center; justify-content: space-between;
     margin-bottom: 24px; flex-wrap: wrap; gap: 12px;
 }
-
 /* ══ STORIES BAR ══ */
 .stories-bar{
     display:flex;gap:14px;overflow-x:auto;padding:4px 2px 16px;
@@ -355,7 +338,6 @@ body.bg-dark .story-avatar-wrap.viewed{background:#334155!important;}
     transition: 0.2s; box-shadow: 0 4px 14px rgba(37,99,235,0.3);
     white-space: nowrap;
 }
-
 .new-post-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(37,99,235,0.4); color: white; }
 
 .feed-empty {
@@ -390,44 +372,31 @@ body.bg-dark .post-privacy-badge.public { background:rgba(21,128,61,0.2); color:
     margin-bottom: 20px; box-shadow: 0 2px 12px rgba(0,0,0,0.06);
     border: 1px solid rgba(0,0,0,0.04); transition: 0.2s;
 }
-
 .post-card:hover { box-shadow: 0 8px 28px rgba(0,0,0,0.1); transform: translateY(-1px); }
 
 .post-header {
     display: flex; align-items: center; justify-content: space-between;
     margin-bottom: 14px; gap: 8px;
 }
-
 .post-header-left { display: flex; align-items: center; gap: 10px; min-width: 0; }
 .post-header-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
 .avatar-link { text-decoration: none; flex-shrink: 0; }
-
-.post-avatar {
-    width: 44px; height: 44px; border-radius: 50%; object-fit: cover;
-    border: 2px solid #e5e7eb; flex-shrink: 0;
-}
-
+.post-avatar { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; border: 2px solid #e5e7eb; flex-shrink: 0; }
 .post-avatar-placeholder {
     width: 44px; height: 44px; border-radius: 50%;
     background: linear-gradient(135deg, #2563eb, #7c3aed);
     color: white; display: flex; align-items: center; justify-content: center;
     font-weight: 800; font-size: 17px; flex-shrink: 0;
 }
-
 .post-meta { display: flex; flex-direction: column; min-width: 0; }
-
-.post-username {
-    font-weight: 700; font-size: 15px; color: #111827;
-    display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
-}
-
-
+.post-username { font-weight: 700; font-size: 15px; color: #111827; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
 .owner-badge {
     background: linear-gradient(135deg, #fbbf24, #f59e0b);
     color: #111; font-size: 10px; padding: 2px 8px;
     border-radius: 20px; font-weight: 700;
 }
-/* ── MODAL COMENTARIOS (Facebook style) ── */
+
+/* ===== MODAL COMENTARIOS ESTILOS (Facebook style) ===== */
 .comments-modal {
     position: fixed; top: 0; left: 0; right: 0; bottom: 0;
     z-index: 99999; display: flex; align-items: center; justify-content: center;
@@ -472,19 +441,11 @@ body.bg-dark .post-privacy-badge.public { background:rgba(21,128,61,0.2); color:
     font-weight: 800; font-size: 16px; flex-shrink: 0;
 }
 .comment-content { flex: 1; }
-.comment-username {
-    font-weight: 700; font-size: 14px; color: #111827;
-    display: inline-block; margin-right: 8px;
-}
+.comment-username { font-weight: 700; font-size: 14px; color: #111827; display: inline-block; margin-right: 8px; }
 .comment-time { font-size: 11px; color: #9ca3af; }
 .comment-text { font-size: 14px; color: #374151; margin: 6px 0 8px; word-break: break-word; }
-.comment-img {
-    max-width: 100%; max-height: 200px; border-radius: 12px;
-    margin-top: 6px; cursor: pointer;
-}
-.comment-actions {
-    display: flex; gap: 12px; margin-top: 6px;
-}
+.comment-img { max-width: 100%; max-height: 200px; border-radius: 12px; margin-top: 6px; cursor: pointer; }
+.comment-actions { display: flex; gap: 12px; margin-top: 6px; }
 .comment-like-btn {
     background: none; border: none; font-size: 13px; font-weight: 600;
     color: #6b7280; cursor: pointer; padding: 2px 6px;
@@ -546,17 +507,10 @@ body.bg-dark .comment-like-btn:hover { background: #2d3748; }
 body.bg-dark .comment-image-preview { background: #2d3748; }
 
 /* Blur para imágenes sospechosas o sensibles */
-.blurred-image {
-    filter: blur(28px);
-    transform: scale(1.05);
-    transition: filter 0.4s ease, transform 0.4s ease;
-}
+.blurred-image { filter: blur(28px); transform: scale(1.05); transition: filter 0.4s ease, transform 0.4s ease; }
 .blur-overlay {
-    position: absolute;
-    inset: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
     background: rgba(0,0,0,0.45);
     backdrop-filter: blur(3px);
     z-index: 2;
@@ -571,16 +525,8 @@ body.bg-dark .comment-image-preview { background: #2d3748; }
     backdrop-filter: blur(8px);
     border: 1px solid rgba(255,255,255,0.2);
 }
-.blur-icon {
-    font-size: 28px;
-    display: block;
-    margin-bottom: 6px;
-}
-.blur-overlay-content p {
-    font-size: 14px;
-    font-weight: 600;
-    margin: 0 0 12px;
-}
+.blur-icon { font-size: 28px; display: block; margin-bottom: 6px; }
+.blur-overlay-content p { font-size: 14px; font-weight: 600; margin: 0 0 12px; }
 .reveal-btn {
     background: rgba(255,255,255,0.2);
     border: 1.5px solid rgba(255,255,255,0.6);
@@ -592,46 +538,21 @@ body.bg-dark .comment-image-preview { background: #2d3748; }
     transition: 0.2s;
     font-family: inherit;
 }
-.reveal-btn:hover {
-    background: rgba(255,255,255,0.35);
-}
-
-.sensitive-badge {
-    background: #fef3c7; color: #d97706; font-size: 10px;
-    padding: 3px 8px; border-radius: 20px; font-weight: 700;
-}
-
-.delete-btn {
-    font-size: 17px; color: #ef4444; text-decoration: none;
-    opacity: 0.7; transition: 0.2s; padding: 5px 8px; border-radius: 8px;
-}
-
+.reveal-btn:hover { background: rgba(255,255,255,0.35); }
+.sensitive-badge { background: #fef3c7; color: #d97706; font-size: 10px; padding: 3px 8px; border-radius: 20px; font-weight: 700; }
+.delete-btn { font-size: 17px; color: #ef4444; text-decoration: none; opacity: 0.7; transition: 0.2s; padding: 5px 8px; border-radius: 8px; }
 .delete-btn:hover { opacity: 1; background: #fef2f2; }
-
-.post-description {
-    font-size: 15px; color: #374151; line-height: 1.65;
-    margin: 0 0 14px; white-space: pre-wrap; word-break: break-word;
-}
-
-.post-media-wrap {
-    border-radius: 16px; overflow: hidden; margin-bottom: 12px;
-    background: #000; position: relative;
-    user-select: none; -webkit-user-select: none;
-}
-
+.post-description { font-size: 15px; color: #374151; line-height: 1.65; margin: 0 0 14px; white-space: pre-wrap; word-break: break-word; }
+.post-media-wrap { border-radius: 16px; overflow: hidden; margin-bottom: 12px; background: #000; position: relative; user-select: none; -webkit-user-select: none; }
 .post-media { width: 100%; max-height: 520px; object-fit: cover; display: block; }
 .video-wrap .post-media { object-fit: contain; background: #000; }
-
-/* ❤️ Doble-tap to like (Instagram style) */
 .dbltap-heart {
     position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0);
     font-size: 110px; color: white; pointer-events: none; opacity: 0;
     text-shadow: 0 6px 30px rgba(0,0,0,0.6); z-index: 5;
     filter: drop-shadow(0 0 20px rgba(239,68,68,0.8));
 }
-.dbltap-heart.animate {
-    animation: dbltapHeartPop 0.95s ease forwards;
-}
+.dbltap-heart.animate { animation: dbltapHeartPop 0.95s ease forwards; }
 @@keyframes dbltapHeartPop {
     0%   { transform: translate(-50%, -50%) scale(0)   rotate(-12deg); opacity: 0; }
     18%  { transform: translate(-50%, -50%) scale(1.25) rotate(8deg);  opacity: 1; }
@@ -639,15 +560,12 @@ body.bg-dark .comment-image-preview { background: #2d3748; }
     70%  { transform: translate(-50%, -50%) scale(1)   rotate(0);    opacity: 1; }
     100% { transform: translate(-50%, -50%) scale(1.6) rotate(0);    opacity: 0; }
 }
-
 .video-badge {
     position: absolute; top: 10px; left: 10px;
     background: rgba(0,0,0,0.6); color: white; font-size: 11px;
     font-weight: 700; padding: 3px 10px; border-radius: 20px;
     backdrop-filter: blur(4px);
 }
-
-/* CONTENIDO SENSIBLE */
 .sensitive-blurred { filter: blur(28px); transform: scale(1.05); transition: filter 0.4s ease, transform 0.4s ease; }
 .sensitive-overlay {
     position: absolute; inset: 0;
@@ -665,24 +583,17 @@ body.bg-dark .comment-image-preview { background: #2d3748; }
     cursor: pointer; backdrop-filter: blur(4px); transition: background 0.2s;
 }
 .reveal-btn:hover { background: rgba(255,255,255,0.35); }
-
-/* STATS */
 .post-stats {
     display: flex; align-items: center; justify-content: space-between;
     font-size: 13px; color: #6b7280; padding: 4px 2px 8px;
     min-height: 20px;
 }
-
 .like-summary, .comment-summary { font-weight: 500; }
-
 .post-divider { height: 1px; background: #f3f4f6; margin: 0 0 8px; }
-
-/* ACCIONES */
 .post-actions {
     display: flex; align-items: center;
     gap: 0; flex-wrap: nowrap; overflow-x: auto;
 }
-
 .action-btn {
     display: inline-flex; align-items: center; gap: 5px;
     padding: 8px 10px; border-radius: 10px; border: none;
@@ -690,92 +601,66 @@ body.bg-dark .comment-image-preview { background: #2d3748; }
     color: #6b7280; text-decoration: none; transition: 0.15s;
     font-weight: 500; flex-shrink: 0; white-space: nowrap;
 }
-
 .action-btn:hover { background: #f3f4f6; color: #111; }
 .action-icon { font-size: 17px; }
 .action-label { font-size: 12px; font-weight: 600; }
-
 .like-btn.liked .action-label { color: #ef4444; }
 .like-btn.liked .action-icon { filter: drop-shadow(0 0 4px rgba(239,68,68,0.5)); }
 .report-btn:hover { background: #fef2f2; color: #ef4444; }
 .report-btn:hover .action-label { color: #ef4444; }
-
-/* 🔥 LIKE ANIMATION */
+.like-pop { animation: likePopIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); }
+.like-explosion {
+    position: fixed; font-size: 36px; pointer-events: none;
+    z-index: 99999; transform: translate(-50%, -50%);
+}
+.like-explosion.animate { animation: likeExplosionAnim 0.6s ease forwards; }
+@@keyframes likeExplosionAnim {
+    0% { transform: translate(-50%, -50%) scale(0); opacity: 1; }
+    50% { transform: translate(-50%, -80%) scale(1.8); opacity: 1; }
+    100% { transform: translate(-50%, -120%) scale(2.5); opacity: 0; }
+}
 @@keyframes likePopIn {
     0% { transform: scale(1); }
     30% { transform: scale(1.5); }
     60% { transform: scale(0.9); }
     100% { transform: scale(1); }
 }
-
-@@keyframes likeExplosionAnim {
-    0% { transform: translate(-50%, -50%) scale(0); opacity: 1; }
-    50% { transform: translate(-50%, -80%) scale(1.8); opacity: 1; }
-    100% { transform: translate(-50%, -120%) scale(2.5); opacity: 0; }
-}
-
-.like-pop {
-    animation: likePopIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-
-.like-explosion {
-    position: fixed; font-size: 36px; pointer-events: none;
-    z-index: 99999; transform: translate(-50%, -50%);
-}
-
-.like-explosion.animate {
-    animation: likeExplosionAnim 0.6s ease forwards;
-}
-
-/* SHARE */
 .share-overlay {
     position: fixed; top: 0; left: 0; width: 100%; height: 100%;
     background: rgba(0,0,0,0.5); display: none; z-index: 9998;
     backdrop-filter: blur(2px);
 }
-
 .share-menu {
     position: fixed; bottom: 0; left: 0; right: 0;
     background: white; border-radius: 24px 24px 0 0;
     padding: 16px 20px 32px; display: none; z-index: 9999;
     box-shadow: 0 -10px 40px rgba(0,0,0,0.15);
 }
-
-.share-handle {
-    width: 40px; height: 4px; background: #e5e7eb;
-    border-radius: 10px; margin: 0 auto 16px;
-}
-
+.share-handle { width: 40px; height: 4px; background: #e5e7eb; border-radius: 10px; margin: 0 auto 16px; }
 .share-title { font-weight: 700; font-size: 16px; margin-bottom: 16px; color: #111; text-align: center; }
-
 .share-options {
     display: grid; grid-template-columns: repeat(4, 1fr);
     gap: 12px; margin-bottom: 16px;
 }
-
 .share-option {
     display: flex; flex-direction: column; align-items: center; gap: 6px;
     padding: 14px 10px; border-radius: 16px; cursor: pointer;
     font-weight: 500; font-size: 12px; color: #374151;
     transition: 0.15s; background: #f9fafb; text-align: center;
 }
-
 .share-option:hover { background: #f3f4f6; transform: scale(1.03); }
 .share-option-icon { font-size: 24px; }
-
 .share-option.cancel {
     width: 100%; text-align: center; padding: 14px; color: #ef4444;
     background: #fef2f2; border-radius: 12px; flex-direction: row;
     justify-content: center; font-size: 14px;
 }
-
 .copy-alert {
     position: fixed; bottom: 40px; left: 50%; transform: translateX(-50%);
     background: #111; color: white; padding: 10px 22px; border-radius: 50px;
     font-size: 14px; opacity: 0; transition: 0.3s; pointer-events: none;
     z-index: 99999; white-space: nowrap;
 }
-
 .copy-alert.show { opacity: 1; }
 
 /* DARK MODE */
@@ -785,7 +670,6 @@ body.bg-dark .feed-empty h5 { color: #f1f5f9 !important; }
 body.bg-dark .post-card { background: #1e1e2e !important; border-color: #2d2d3d !important; box-shadow: 0 2px 12px rgba(0,0,0,0.3) !important; }
 body.bg-dark .post-username { color: #f1f5f9 !important; }
 body.bg-dark .post-description { color: #cbd5e1 !important; }
-
 body.bg-dark .post-divider { background: #2d2d3d !important; }
 body.bg-dark .post-stats { color: #64748b !important; }
 body.bg-dark .action-btn { color: #94a3b8 !important; }
@@ -809,22 +693,18 @@ function revealSensitive(postId) {
 // ❤️ Double-tap to like (Instagram style)
 const dblTapState = new Map();
 function dblTapLike(postId, e) {
-    // animación de corazón gigante en el media
     const heart = document.getElementById('dbltap-heart-' + postId);
     if (heart) {
         heart.classList.remove('animate');
         void heart.offsetWidth;
         heart.classList.add('animate');
     }
-    // dar like solo si NO estaba dado (no quitar al doble-tap, igual que Instagram)
     const btn = document.getElementById('like-btn-' + postId);
     if (btn && !btn.classList.contains('liked')) {
         toggleLike(postId, btn);
     }
     if (navigator.vibrate) try { navigator.vibrate(15); } catch(_){}
 }
-
-// Soporte de doble-tap en móvil (touchend pares con < 300ms)
 document.addEventListener('touchend', function(e){
     const wrap = e.target.closest('.post-media-wrap[data-post-id]');
     if (!wrap) return;
@@ -843,14 +723,10 @@ document.addEventListener('touchend', function(e){
 function toggleLike(postId, element) {
     const icon = document.getElementById('like-icon-' + postId);
     const isLiked = element.classList.contains('liked');
-
-    // 🔥 animación inmediata
     icon.classList.remove('like-pop');
     void icon.offsetWidth;
     icon.classList.add('like-pop');
-
     if (!isLiked) {
-        // 🔥 explosión de corazón
         const explosion = document.getElementById('likeExplosion');
         const rect = icon.getBoundingClientRect();
         explosion.style.left = (rect.left + rect.width / 2) + 'px';
@@ -861,14 +737,11 @@ function toggleLike(postId, element) {
         explosion.classList.add('animate');
         setTimeout(() => { explosion.style.display = 'none'; explosion.classList.remove('animate'); }, 700);
     }
-
     fetch('/Post/ToggleLike?postId=' + postId, { method: 'POST' })
         .then(res => res.json())
         .then(data => {
             icon.textContent = data.liked ? '❤️' : '🤍';
             element.classList.toggle('liked', data.liked);
-
-            // 🔥 actualizar stats
             const summary = document.getElementById('like-summary-' + postId);
             if (summary) {
                 summary.innerHTML = data.count > 0
@@ -887,7 +760,6 @@ function revealBlurred(postId) {
     }
     if (overlay) overlay.style.display = 'none';
 }
-
 function savePost(postId, btn) {
     fetch('/Post/SavePost', {
         method: 'POST',
@@ -901,48 +773,39 @@ function savePost(postId, btn) {
         setTimeout(() => icon.style.filter = '', 1000);
     });
 }
-
 let currentPost = null;
 function openShare(postId) {
     currentPost = postId;
     document.getElementById('shareMenu').style.display = 'block';
     document.getElementById('shareOverlay').style.display = 'block';
 }
-
 function closeShare() {
     document.getElementById('shareMenu').style.display = 'none';
     document.getElementById('shareOverlay').style.display = 'none';
 }
-
 function shareWhatsApp() {
     window.open('https://wa.me/?text=' + encodeURIComponent(window.location.origin + '/Post/Comments?postId=' + currentPost));
     closeShare();
 }
-
 function shareTelegram() {
     window.open('https://t.me/share/url?url=' + encodeURIComponent(window.location.origin + '/Post/Comments?postId=' + currentPost));
     closeShare();
 }
-
 function shareFacebook() {
     window.open('https://www.facebook.com/sharer/sharer.php?u=' + encodeURIComponent(window.location.origin + '/Post/Comments?postId=' + currentPost));
     closeShare();
 }
-
 function copyLink() {
     navigator.clipboard.writeText(window.location.origin + '/Post/Comments?postId=' + currentPost);
     closeShare();
     showAlert('↪ Link copiado');
 }
-
 function showAlert(msg) {
     const el = document.getElementById('copyAlert');
     el.textContent = msg;
     el.classList.add('show');
     setTimeout(() => el.classList.remove('show'), 2500);
 }
-
-
 async function repostear() {
     if (!currentPost) return;
     closeShare();
@@ -966,7 +829,6 @@ async function repostear() {
 // ══ ANUNCIO PRIMERA VEZ ══
 (function() {
     if (localStorage.getItem('ht_posts_welcome_seen')) return;
-    
     const overlay = document.createElement('div');
     overlay.id = 'welcomePostsOverlay';
     overlay.style.cssText = `
@@ -974,71 +836,24 @@ async function repostear() {
         background:rgba(0,0,0,0.7);backdrop-filter:blur(8px);
         display:flex;align-items:center;justify-content:center;padding:20px;
     `;
-    
     overlay.innerHTML = `
-        <div style="
-            background:linear-gradient(135deg,#0f172a,#1e293b);
-            border:1px solid rgba(255,255,255,0.08);
-            border-radius:28px;max-width:420px;width:100%;
-            padding:36px 32px;position:relative;
-            box-shadow:0 30px 80px rgba(0,0,0,0.6);
-        ">
-            <button onclick="cerrarAnuncioPosts()" style="
-                position:absolute;top:16px;right:16px;
-                background:rgba(255,255,255,0.08);border:none;
-                color:rgba(255,255,255,0.6);width:32px;height:32px;
-                border-radius:50%;font-size:16px;cursor:pointer;
-                display:flex;align-items:center;justify-content:center;
-                transition:0.2s;
-            " onmouseover="this.style.background='rgba(255,255,255,0.15)'"
-               onmouseout="this.style.background='rgba(255,255,255,0.08)'">✕</button>
-
+        <div style="background:linear-gradient(135deg,#0f172a,#1e293b);border:1px solid rgba(255,255,255,0.08);border-radius:28px;max-width:420px;width:100%;padding:36px 32px;position:relative;box-shadow:0 30px 80px rgba(0,0,0,0.6);">
+            <button onclick="cerrarAnuncioPosts()" style="position:absolute;top:16px;right:16px;background:rgba(255,255,255,0.08);border:none;color:rgba(255,255,255,0.6);width:32px;height:32px;border-radius:50%;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.15)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">✕</button>
             <div style="font-size:48px;text-align:center;margin-bottom:16px;">📢</div>
-            <h3 style="color:white;font-size:20px;font-weight:800;text-align:center;margin:0 0 8px;">
-                Bienvenido a Publicaciones
-            </h3>
-            <p style="color:rgba(255,255,255,0.45);font-size:13px;text-align:center;margin:0 0 24px;">
-                Antes de empezar, ten en cuenta nuestras normas de comunidad
-            </p>
-
+            <h3 style="color:white;font-size:20px;font-weight:800;text-align:center;margin:0 0 8px;">Bienvenido a Publicaciones</h3>
+            <p style="color:rgba(255,255,255,0.45);font-size:13px;text-align:center;margin:0 0 24px;">Antes de empezar, ten en cuenta nuestras normas de comunidad</p>
             <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:28px;">
-                <div style="display:flex;align-items:flex-start;gap:12px;background:rgba(255,255,255,0.04);padding:12px 14px;border-radius:14px;border:1px solid rgba(255,255,255,0.06);">
-                    <span style="font-size:18px;flex-shrink:0;">🚫</span>
-                    <span style="color:rgba(255,255,255,0.7);font-size:13px;line-height:1.5;">No publiques contenido ofensivo, violento o que incite al odio.</span>
-                </div>
-                <div style="display:flex;align-items:flex-start;gap:12px;background:rgba(99,102,241,0.08);padding:12px 14px;border-radius:14px;border:1px solid rgba(99,102,241,0.2);">
-    <span style="font-size:18px;flex-shrink:0;">🤖</span>
-    <span style="color:rgba(255,255,255,0.7);font-size:13px;line-height:1.5;">Hemos integrado <strong style="color:#818cf8;">Inteligencia Artificial</strong> para detectar y eliminar automáticamente contenido inapropiado, explícito o que viole nuestras normas. Tu cuenta puede ser suspendida si intentas burlar este sistema.</span>
-</div>
-                <div style="display:flex;align-items:flex-start;gap:12px;background:rgba(255,255,255,0.04);padding:12px 14px;border-radius:14px;border:1px solid rgba(255,255,255,0.06);">
-                    <span style="font-size:18px;flex-shrink:0;">🔞</span>
-                    <span style="color:rgba(255,255,255,0.7);font-size:13px;line-height:1.5;">El contenido explícito o para adultos no está permitido y será eliminado automáticamente.</span>
-                </div>
-                <div style="display:flex;align-items:flex-start;gap:12px;background:rgba(255,255,255,0.04);padding:12px 14px;border-radius:14px;border:1px solid rgba(255,255,255,0.06);">
-                    <span style="font-size:18px;flex-shrink:0;">🤝</span>
-                    <span style="color:rgba(255,255,255,0.7);font-size:13px;line-height:1.5;">Respeta a los demás usuarios. El acoso o spam resultará en suspensión.</span>
-                </div>
-                <div style="display:flex;align-items:flex-start;gap:12px;background:rgba(255,255,255,0.04);padding:12px 14px;border-radius:14px;border:1px solid rgba(255,255,255,0.06);">
-                    <span style="font-size:18px;flex-shrink:0;">📸</span>
-                    <span style="color:rgba(255,255,255,0.7);font-size:13px;line-height:1.5;">Solo publica contenido del que tengas derechos. No compartas información privada de otros.</span>
-                </div>
+                <div style="display:flex;align-items:flex-start;gap:12px;background:rgba(255,255,255,0.04);padding:12px 14px;border-radius:14px;border:1px solid rgba(255,255,255,0.06);"><span style="font-size:18px;flex-shrink:0;">🚫</span><span style="color:rgba(255,255,255,0.7);font-size:13px;line-height:1.5;">No publiques contenido ofensivo, violento o que incite al odio.</span></div>
+                <div style="display:flex;align-items:flex-start;gap:12px;background:rgba(99,102,241,0.08);padding:12px 14px;border-radius:14px;border:1px solid rgba(99,102,241,0.2);"><span style="font-size:18px;flex-shrink:0;">🤖</span><span style="color:rgba(255,255,255,0.7);font-size:13px;line-height:1.5;">Hemos integrado <strong style="color:#818cf8;">Inteligencia Artificial</strong> para detectar y eliminar automáticamente contenido inapropiado, explícito o que viole nuestras normas. Tu cuenta puede ser suspendida si intentas burlar este sistema.</span></div>
+                <div style="display:flex;align-items:flex-start;gap:12px;background:rgba(255,255,255,0.04);padding:12px 14px;border-radius:14px;border:1px solid rgba(255,255,255,0.06);"><span style="font-size:18px;flex-shrink:0;">🔞</span><span style="color:rgba(255,255,255,0.7);font-size:13px;line-height:1.5;">El contenido explícito o para adultos no está permitido y será eliminado automáticamente.</span></div>
+                <div style="display:flex;align-items:flex-start;gap:12px;background:rgba(255,255,255,0.04);padding:12px 14px;border-radius:14px;border:1px solid rgba(255,255,255,0.06);"><span style="font-size:18px;flex-shrink:0;">🤝</span><span style="color:rgba(255,255,255,0.7);font-size:13px;line-height:1.5;">Respeta a los demás usuarios. El acoso o spam resultará en suspensión.</span></div>
+                <div style="display:flex;align-items:flex-start;gap:12px;background:rgba(255,255,255,0.04);padding:12px 14px;border-radius:14px;border:1px solid rgba(255,255,255,0.06);"><span style="font-size:18px;flex-shrink:0;">📸</span><span style="color:rgba(255,255,255,0.7);font-size:13px;line-height:1.5;">Solo publica contenido del que tengas derechos. No compartas información privada de otros.</span></div>
             </div>
-
-            <button onclick="cerrarAnuncioPosts()" style="
-                width:100%;padding:14px;border-radius:14px;border:none;
-                background:linear-gradient(135deg,#6366f1,#2563eb);
-                color:white;font-size:15px;font-weight:700;
-                cursor:pointer;transition:0.2s;font-family:inherit;
-            " onmouseover="this.style.transform='translateY(-1px)'"
-               onmouseout="this.style.transform='translateY(0)'">
-                ✅ Entendido, continuar
-            </button>
+            <button onclick="cerrarAnuncioPosts()" style="width:100%;padding:14px;border-radius:14px;border:none;background:linear-gradient(135deg,#6366f1,#2563eb);color:white;font-size:15px;font-weight:700;cursor:pointer;transition:0.2s;font-family:inherit;" onmouseover="this.style.transform='translateY(-1px)'" onmouseout="this.style.transform='translateY(0)'">✅ Entendido, continuar</button>
         </div>
     `;
-    
     document.body.appendChild(overlay);
 })();
-
 function cerrarAnuncioPosts() {
     localStorage.setItem('ht_posts_welcome_seen', '1');
     const overlay = document.getElementById('welcomePostsOverlay');
@@ -1048,9 +863,11 @@ function cerrarAnuncioPosts() {
         setTimeout(() => overlay.remove(), 300);
     }
 }
+
 // ==================== MODAL COMENTARIOS ====================
 let currentPostId = null;
-let commentConnection = null; // conexión SignalR específica para comentarios (o reutilizar la global)
+let commentConnection = null;
+let selectedCommentImage = null;
 
 async function openCommentsModal(postId) {
     currentPostId = postId;
@@ -1061,10 +878,13 @@ async function openCommentsModal(postId) {
     document.body.style.overflow = 'hidden';
     body.innerHTML = '<div class="comments-loading">Cargando comentarios...</div>';
     
-    // Ocultar footer si comentarios deshabilitados (se mostrará después de cargar)
-    footer.style.display = 'flex';
+    // Inicializar conexión SignalR si no está
+    if (!commentConnection && window.connectionGlobal) {
+        commentConnection = window.connectionGlobal;
+        setupCommentSignalR();
+    }
     
-    // Unirse al grupo de SignalR para esta publicación
+    // Unirse al grupo (si SignalR está conectado)
     if (commentConnection && commentConnection.state === 'Connected') {
         try {
             await commentConnection.invoke("JoinPostGroup", postId);
@@ -1074,14 +894,14 @@ async function openCommentsModal(postId) {
     // Cargar comentarios
     try {
         const res = await fetch(`/Post/GetComments?postId=${postId}`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
         if (data.success) {
             renderComments(data.comments, data.commentsDisabled);
             if (data.commentsDisabled) {
-                // Deshabilitar input y mostrar mensaje
                 footer.innerHTML = `<div class="comments-disabled-msg">🔒 Los comentarios están deshabilitados para esta publicación.</div>`;
             } else {
-                // Restaurar footer con input funcional (si ya estaba deshabilitado, lo reemplazamos)
+                // Restaurar footer
                 footer.innerHTML = `
                     <div class="comments-input-wrapper">
                         <textarea id="newCommentText" class="comments-input" placeholder="Escribe un comentario..." rows="1"></textarea>
@@ -1099,7 +919,7 @@ async function openCommentsModal(postId) {
                 attachCommentEvents();
             }
         } else {
-            body.innerHTML = '<div class="comments-loading">Error al cargar comentarios</div>';
+            body.innerHTML = `<div class="comments-loading">Error: ${data.error || 'desconocido'}</div>`;
         }
     } catch(e) {
         console.error(e);
@@ -1113,25 +933,31 @@ function renderComments(comments, commentsDisabled) {
         body.innerHTML = '<div class="comments-loading">No hay comentarios aún. ¡Sé el primero!</div>';
         return;
     }
-    const html = comments.map(c => `
-        <div class="comment-item" id="comment-${c.id}">
-            ${c.profileImage ? `<img src="${c.profileImage}" class="comment-avatar" />` : `<div class="comment-avatar-letter">${c.username.charAt(0).toUpperCase()}</div>`}
-            <div class="comment-content">
-                <div>
-                    <span class="comment-username">${escapeHtml(c.username)}</span>
-                    <span class="comment-time">${c.createdAt}</span>
-                </div>
-                <div class="comment-text">${escapeHtml(c.comment)}</div>
-                ${c.imagePath ? `<img src="${c.imagePath}" class="comment-img" onclick="window.open('${c.imagePath}', '_blank')" />` : ''}
-                <div class="comment-actions">
-                    <button class="comment-like-btn ${c.isLiked ? 'liked' : ''}" data-comment-id="${c.id}" onclick="toggleCommentLikeModal(this, ${c.id})">
-                        ${c.isLiked ? '❤️' : '🤍'} <span class="like-count">${c.likeCount}</span>
-                    </button>
-                    ${c.isMine ? `<button class="comment-delete-btn" onclick="deleteCommentModal(${c.id})">Eliminar</button>` : ''}
+    const html = comments.map(c => {
+        const avatar = c.profileImage 
+            ? `<img src="${c.profileImage}" class="comment-avatar" />` 
+            : `<div class="comment-avatar-letter">${c.username.charAt(0).toUpperCase()}</div>`;
+        const img = c.imagePath ? `<img src="${c.imagePath}" class="comment-img" onclick="window.open('${c.imagePath}', '_blank')" />` : '';
+        return `
+            <div class="comment-item" id="comment-${c.id}">
+                ${avatar}
+                <div class="comment-content">
+                    <div>
+                        <span class="comment-username">${escapeHtml(c.username)}</span>
+                        <span class="comment-time">${c.createdAt}</span>
+                    </div>
+                    <div class="comment-text">${escapeHtml(c.comment)}</div>
+                    ${img}
+                    <div class="comment-actions">
+                        <button class="comment-like-btn ${c.isLiked ? 'liked' : ''}" data-comment-id="${c.id}" onclick="toggleCommentLikeModal(this, ${c.id})">
+                            ${c.isLiked ? '❤️' : '🤍'} <span class="like-count">${c.likeCount}</span>
+                        </button>
+                        ${c.isMine ? `<button class="comment-delete-btn" onclick="deleteCommentModal(${c.id})">Eliminar</button>` : ''}
+                    </div>
                 </div>
             </div>
-        </div>
-    `).join('');
+        `;
+    }).join('');
     body.innerHTML = html;
 }
 
@@ -1139,27 +965,22 @@ function attachCommentEvents() {
     const textarea = document.getElementById('newCommentText');
     const sendBtn = document.getElementById('sendCommentBtn');
     if (!textarea) return;
-    
     const updateButton = () => {
         sendBtn.disabled = textarea.value.trim() === '' && !selectedCommentImage;
     };
     textarea.addEventListener('input', () => {
         updateButton();
-        // Enviar evento "escribiendo" a SignalR
         if (commentConnection && commentConnection.state === 'Connected' && currentPostId) {
             commentConnection.invoke("UserTypingOnPost", currentPostId);
         }
     });
     updateButton();
-    
-    // Enviar comentario con Enter (Shift+Enter para nueva línea)
     textarea.addEventListener('keydown', (e) => {
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
             if (!sendBtn.disabled) sendComment();
         }
     });
-    
     const fileInput = document.getElementById('commentImageInput');
     if (fileInput) {
         fileInput.addEventListener('change', (e) => {
@@ -1178,11 +999,9 @@ function attachCommentEvents() {
             }
         });
     }
-    
     sendBtn.onclick = sendComment;
 }
 
-let selectedCommentImage = null;
 function clearCommentImage() {
     selectedCommentImage = null;
     document.getElementById('commentImagePreview').style.display = 'none';
@@ -1198,31 +1017,23 @@ async function sendComment() {
     const textarea = document.getElementById('newCommentText');
     const content = textarea.value.trim();
     if (!content && !selectedCommentImage) return;
-    
     const formData = new FormData();
     formData.append('postId', currentPostId);
     formData.append('comment', content);
     if (selectedCommentImage) {
         formData.append('image', selectedCommentImage);
     }
-    
     const sendBtn = document.getElementById('sendCommentBtn');
     sendBtn.disabled = true;
     sendBtn.innerHTML = '⏳';
-    
     try {
-        const res = await fetch('/Post/AddCommentAjax', {
-            method: 'POST',
-            body: formData
-        });
+        const res = await fetch('/Post/AddCommentAjax', { method: 'POST', body: formData });
         const data = await res.json();
         if (data.success) {
-            // Limpiar input y preview
             textarea.value = '';
             selectedCommentImage = null;
             document.getElementById('commentImagePreview').style.display = 'none';
             document.getElementById('commentImageInput').value = '';
-            // Agregar comentario localmente (ya llegará por SignalR, pero agregamos inmediatamente para mejor UX)
             addCommentToList(data.comment);
             sendBtn.disabled = false;
             sendBtn.innerHTML = '📤';
@@ -1255,9 +1066,7 @@ function addCommentToList(comment) {
                 <div class="comment-text">${escapeHtml(comment.comment)}</div>
                 ${comment.imagePath ? `<img src="${comment.imagePath}" class="comment-img" onclick="window.open('${comment.imagePath}', '_blank')" />` : ''}
                 <div class="comment-actions">
-                    <button class="comment-like-btn" data-comment-id="${comment.id}" onclick="toggleCommentLikeModal(this, ${comment.id})">
-                        🤍 <span class="like-count">0</span>
-                    </button>
+                    <button class="comment-like-btn" data-comment-id="${comment.id}" onclick="toggleCommentLikeModal(this, ${comment.id})">🤍 <span class="like-count">0</span></button>
                     ${comment.isMine ? `<button class="comment-delete-btn" onclick="deleteCommentModal(${comment.id})">Eliminar</button>` : ''}
                 </div>
             </div>
@@ -1270,47 +1079,30 @@ function closeCommentsModal() {
     const modal = document.getElementById('commentsModal');
     modal.style.display = 'none';
     document.body.style.overflow = '';
-    currentPostId = null;
-    selectedCommentImage = null;
-    // Abandonar grupo de SignalR
     if (commentConnection && commentConnection.state === 'Connected' && currentPostId) {
         commentConnection.invoke("LeavePostGroup", currentPostId).catch(e=>console.warn);
     }
+    currentPostId = null;
+    selectedCommentImage = null;
 }
 
-// Like en comentarios (modal)
 async function toggleCommentLikeModal(btn, commentId) {
     const isLiked = btn.classList.contains('liked');
     const iconSpan = btn.querySelector('.like-count');
     const currentCount = parseInt(iconSpan.innerText) || 0;
-    // Optimista
-    btn.classList.toggle('liked');
     const newCount = isLiked ? currentCount - 1 : currentCount + 1;
+    btn.classList.toggle('liked');
     iconSpan.innerText = newCount;
     btn.innerHTML = (isLiked ? '🤍' : '❤️') + ` <span class="like-count">${newCount}</span>`;
-    
     try {
         const res = await fetch('/Post/ToggleCommentLike?commentId=' + commentId, { method: 'POST' });
         const data = await res.json();
         if (data.liked !== undefined) {
-            // Ajustar según respuesta real
-            if (data.liked !== !isLiked) {
-                // revertir si hubo desincronización
-                btn.classList.toggle('liked');
-                iconSpan.innerText = data.count;
-                btn.innerHTML = (data.liked ? '❤️' : '🤍') + ` <span class="like-count">${data.count}</span>`;
-            } else {
-                iconSpan.innerText = data.count;
-                btn.innerHTML = (data.liked ? '❤️' : '🤍') + ` <span class="like-count">${data.count}</span>`;
-            }
+            iconSpan.innerText = data.count;
+            btn.innerHTML = (data.liked ? '❤️' : '🤍') + ` <span class="like-count">${data.count}</span>`;
+            if (data.liked !== !isLiked) btn.classList.toggle('liked', data.liked);
         }
-    } catch(e) {
-        console.error(e);
-        // revertir
-        btn.classList.toggle('liked');
-        iconSpan.innerText = isLiked ? currentCount : currentCount;
-        btn.innerHTML = (isLiked ? '❤️' : '🤍') + ` <span class="like-count">${isLiked ? currentCount : currentCount}</span>`;
-    }
+    } catch(e) { console.error(e); }
 }
 
 async function deleteCommentModal(commentId) {
@@ -1320,9 +1112,7 @@ async function deleteCommentModal(commentId) {
         if (res.ok) {
             const commentEl = document.getElementById(`comment-${commentId}`);
             if (commentEl) commentEl.remove();
-        } else {
-            alert('Error al eliminar');
-        }
+        } else alert('Error al eliminar');
     } catch(e) { alert('Error de conexión'); }
 }
 
@@ -1331,8 +1121,7 @@ function escapeHtml(text) {
     return String(text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
-// Modificar el evento del botón "Comentar" en cada publicación para que abra el modal
-// Buscamos todos los enlaces con href="/Post/Comments..."" y los reemplazamos para que llamen a openCommentsModal
+// Reemplazar enlaces de comentarios
 document.querySelectorAll('.post-actions a.action-btn[href*="/Post/Comments"]').forEach(link => {
     const href = link.getAttribute('href');
     const match = href.match(/postId=(\d+)/);
@@ -1343,42 +1132,27 @@ document.querySelectorAll('.post-actions a.action-btn[href*="/Post/Comments"]').
     }
 });
 
-// ── INICIALIZAR CONEXIÓN SIGNALR PARA COMENTARIOS (reutilizar la global o crear una nueva) ──
-// Como ya tenemos connectionGlobal, la usamos; solo necesitamos añadir el manejo de eventos.
-// Agregamos los listeners después de que la conexión global se establezca.
-
 function setupCommentSignalR() {
     if (!window.connectionGlobal) return;
-    // Escuchar nuevos comentarios
+    commentConnection = window.connectionGlobal;
     window.connectionGlobal.on("NewComment", (comment) => {
         if (currentPostId && comment && comment.postId == currentPostId) {
             addCommentToList(comment);
         }
     });
-    // Escuchar typing
     window.connectionGlobal.on("UserTypingOnPost", (data) => {
         if (currentPostId && data.postId == currentPostId) {
             const indicator = document.getElementById('commentTypingIndicator');
             indicator.style.display = 'block';
             clearTimeout(window.typingTimeout);
-            window.typingTimeout = setTimeout(() => {
-                indicator.style.display = 'none';
-            }, 1500);
+            window.typingTimeout = setTimeout(() => indicator.style.display = 'none', 1500);
         }
     });
-    // Métodos para unirse/salir del grupo (deben existir en ChatHub)
-    window.connectionGlobal.invoke = window.connectionGlobal.invoke || function() {};
-    // Añadimos funciones personalizadas (post groups) solo si no existen
-    if (typeof window.connectionGlobal.invoke === 'function') {
-        // Sobrescribimos temporalmente, pero mejor agregar métodos en el hub.
-    }
 }
 
-// Esperar a que connectionGlobal esté lista
 if (window.connectionGlobal) {
     setupCommentSignalR();
 } else {
     document.addEventListener('connectionGlobalReady', setupCommentSignalR);
 }
-
 </script>
