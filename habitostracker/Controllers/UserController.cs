@@ -18,11 +18,14 @@ namespace HabitTrackerApp.Controllers
         private readonly HabitDbContext _context;
         private readonly OnlineUsersService _onlineUsers;
 
-        public UserController(HabitDbContext context, IHubContext<ChatHub> hubContext, OnlineUsersService onlineUsers)
+        private readonly CloudinaryService _cloudinaryService;
+
+        public UserController(HabitDbContext context, IHubContext<ChatHub> hubContext, OnlineUsersService onlineUsers, CloudinaryService cloudinaryService)
         {
             _context = context;
             _hubContext = hubContext;
             _onlineUsers = onlineUsers;
+            _cloudinaryService = cloudinaryService;
         }
         [HttpGet]
         public IActionResult GetFriendsForMention()
@@ -181,7 +184,7 @@ namespace HabitTrackerApp.Controllers
         }
 
         [HttpPost]
-        public IActionResult UploadPayment(IFormFile file)
+        public async Task<IActionResult> UploadPayment(IFormFile file)
         {
             if (file == null || file.Length == 0)
             {
@@ -193,64 +196,73 @@ namespace HabitTrackerApp.Controllers
             var user = _context.Users.FirstOrDefault(u => u.Id == userId);
             if (user == null) return NotFound();
 
-            var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/uploads/payments");
-            if (!Directory.Exists(uploadsFolder)) Directory.CreateDirectory(uploadsFolder);
-
-            var fileName = Guid.NewGuid().ToString() + Path.GetExtension(file.FileName);
-            var filePath = Path.Combine(uploadsFolder, fileName);
-
-            using (var stream = new FileStream(filePath, FileMode.Create))
-                file.CopyTo(stream);
+            // Subir a Cloudinary
+            string imageUrl;
+            try
+            {
+                imageUrl = await _cloudinaryService.UploadImageAsync(file, "payments");
+            }
+            catch (Exception ex)
+            {
+                TempData["Error"] = "Error al subir el comprobante: " + ex.Message;
+                return RedirectToAction("Pay");
+            }
 
             var payment = new Payment
             {
                 UserId = userId,
-                Screenshot = "/uploads/payments/" + fileName,
+                Screenshot = imageUrl,
                 CreatedAt = DateTime.Now,
                 IsApproved = false,
                 IsRejected = false
             };
 
             _context.Payments.Add(payment);
-            _context.SaveChanges();
+            await _context.SaveChangesAsync();
 
             TempData["Success"] = "Comprobante enviado. Espera aprobación del admin 😎";
             return RedirectToAction("Index", "Habit");
         }
-
         [HttpPost]
-        public IActionResult MakePremium(IFormFile screenshot)
+        public async Task<IActionResult> MakePremium(IFormFile screenshot)
         {
-            var userId = int.Parse(User.FindFirst("UserId").Value);
-
             if (screenshot == null || screenshot.Length == 0)
             {
                 TempData["Error"] = "Debes subir un comprobante";
                 return RedirectToAction("Pay");
             }
 
-            var folder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/payments");
-            if (!Directory.Exists(folder)) Directory.CreateDirectory(folder);
-            var fileName = Guid.NewGuid().ToString() + Path.GetExtension(screenshot.FileName);
-            var path = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/payments", fileName);
+            var userId = int.Parse(User.FindFirst("UserId").Value);
+            var user = _context.Users.FirstOrDefault(u => u.Id == userId);
+            if (user == null) return NotFound();
 
-            using (var stream = new FileStream(path, FileMode.Create))
-                screenshot.CopyTo(stream);
+            // Subir a Cloudinary
+            string imageUrl;
+            try
+            {
+                imageUrl = await _cloudinaryService.UploadImageAsync(screenshot, "payments");
+            }
+            catch (Exception ex)
+            {
+                TempData["Error"] = "Error al subir el comprobante: " + ex.Message;
+                return RedirectToAction("Pay");
+            }
 
             var payment = new Payment
             {
                 UserId = userId,
-                Screenshot = "/payments/" + fileName,
-                CreatedAt = DateTime.Now
+                Screenshot = imageUrl,
+                CreatedAt = DateTime.Now,
+                IsApproved = false,
+                IsRejected = false
             };
 
             _context.Payments.Add(payment);
-            _context.SaveChanges();
+            await _context.SaveChangesAsync();
 
             TempData["Success"] = "Comprobante enviado. Espera aprobación 😈";
             return RedirectToAction("Index", "Habit");
         }
-
         public IActionResult Pay() => View();
 
         [HttpPost]
