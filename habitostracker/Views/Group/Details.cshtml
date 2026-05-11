@@ -537,6 +537,20 @@
     </div>
 </div>
 
+@if (isCreator) // Solo el creador puede cambiar el tipo
+{
+    <div class="gd-action-list" style="margin-top: 16px;">
+        <div class="gd-action-item" onclick="toggleGroupType()" style="cursor:pointer;">
+            <div class="gd-action-icon purple">@(Model.Type == "public" ? "🔒" : "🌍")</div>
+            <div style="flex:1;">
+                <div>@(Model.Type == "public" ? "Hacer privado" : "Hacer público")</div>
+                <div class="gd-action-sub">@(Model.Type == "public" ? "Solo los miembros podrán ver el grupo" : "Cualquier usuario podrá encontrarlo y unirse")</div>
+            </div>
+            <div class="gd-toggle @(Model.Type == "public" ? "on" : "")" id="typeToggle"></div>
+        </div>
+    </div>
+}
+
 <!-- MODAL ADMIN ONLY -->
 <div class="gd-modal" id="adminOnlyModal">
     <div class="gd-modal-card">
@@ -941,6 +955,25 @@ async function quitarAdmin(userId, username) {
     const data = await res.json();
     if (data.success) { showToast(`↓ ${username} ya no es admin`); setTimeout(() => location.reload(), 1200); }
     else showToast("❌ " + (data.message ?? "Error"));
+}
+
+async function toggleGroupType() {
+    if (!confirm(`¿Cambiar el tipo de grupo a ${@(Model.Type == "public" ? "privado" : "público")}?`)) return;
+    try {
+        const res = await fetch('/Group/ToggleGroupType', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value
+            },
+            body: `groupId=${@Model.Id}`
+        });
+        if (res.ok) {
+            location.reload();
+        } else {
+            alert('Error al cambiar el tipo de grupo');
+        }
+    } catch(e) { alert('Error de conexión'); }
 }
 
 // ── SILENCIAR ──

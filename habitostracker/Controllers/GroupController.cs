@@ -1483,6 +1483,42 @@ namespace HabitTrackerApp.Controllers
 
             return Json(new { success = true, content = msg.Content });
         }
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ToggleGroupType(int groupId)
+        {
+            var userId = int.Parse(User.FindFirst("UserId").Value);
+            var group = await _context.Groups.FindAsync(groupId);
+            if (group == null) return NotFound();
+
+            // Solo el creador puede cambiar el tipo
+            if (group.CreatorId != userId) return Forbid();
+
+            // Alternar entre private y public (ignoramos channel por ahora)
+            if (group.Type == "private")
+            {
+                group.Type = "public";
+                group.IsPublic = true;
+            }
+            else if (group.Type == "public")
+            {
+                group.Type = "private";
+                group.IsPublic = false;
+            }
+            else
+            {
+                // Si es channel, no permitir cambio desde aquí (opcional)
+                return BadRequest("No se puede cambiar el tipo de un canal desde esta opción.");
+            }
+
+            await _context.SaveChangesAsync();
+
+            // Opcional: notificar a los miembros del cambio
+            await _hub.Clients.Group($"group-{groupId}")
+                .SendAsync("GroupTypeChanged", group.Type, group.IsPublic);
+
+            return RedirectToAction("Details", new { id = groupId });
+        }
 
         // 🔥 buscar amigos que no están en el grupo para añadir
         [HttpGet]
@@ -1528,8 +1564,6 @@ namespace HabitTrackerApp.Controllers
             }
 
             return Json(available);
-
-            return Json(available);
         }
 
         [HttpPost]
@@ -1553,6 +1587,7 @@ namespace HabitTrackerApp.Controllers
 
 
     }
+
     public class RespondJoinDto
     {
         public int RequestId { get; set; }
