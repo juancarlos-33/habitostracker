@@ -491,6 +491,82 @@ body.bg-dark .hx-btn.ghost{background:#111827!important;border-color:rgba(255,25
         color: white;
         box-shadow: 0 2px 8px var(--ag);
     }
+    /* ===== MODAL HÁBITO ===== */
+.habit-modal {
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    z-index: 99999; display: flex; align-items: center; justify-content: center;
+}
+.habit-modal-overlay {
+    position: absolute; inset: 0;
+    background: rgba(0,0,0,0.6); backdrop-filter: blur(4px);
+}
+.habit-modal-container {
+    position: relative; background: white; width: 90%; max-width: 480px;
+    border-radius: 20px; display: flex; flex-direction: column;
+    overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+}
+.habit-modal-header {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 16px 20px; border-bottom: 1px solid #e5e7eb;
+    background: white; flex-shrink: 0;
+}
+.habit-modal-title { font-weight: 800; font-size: 18px; color: #111827; }
+.habit-modal-close {
+    background: none; border: none; font-size: 20px; cursor: pointer;
+    color: #9ca3af; width: 32px; height: 32px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center; transition: 0.2s;
+}
+.habit-modal-close:hover { background: #f3f4f6; color: #111827; }
+.habit-modal-body {
+    padding: 20px; background: #f9fafb; flex: 1;
+}
+.habit-field { margin-bottom: 16px; }
+.habit-label {
+    display: block; font-size: 12px; font-weight: 700; color: #374151;
+    margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px;
+}
+.habit-input {
+    width: 100%; padding: 10px 14px; border: 1.5px solid #e5e7eb;
+    border-radius: 12px; font-size: 14px; outline: none;
+    font-family: inherit; background: white;
+}
+.habit-input:focus { border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99,102,241,0.1); }
+.habit-char-count { font-size: 11px; color: #9ca3af; margin-top: 4px; text-align: right; }
+.habit-suggestions {
+    display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px;
+}
+.habit-sugg {
+    padding: 6px 12px; border-radius: 20px; border: 1.5px solid #e5e7eb;
+    background: white; font-size: 12px; font-weight: 600; color: #374151;
+    cursor: pointer; transition: 0.15s; font-family: inherit;
+}
+.habit-sugg:hover { border-color: #6366f1; color: #6366f1; background: rgba(99,102,241,0.04); }
+.habit-error {
+    padding: 10px; border-radius: 10px; background: rgba(239,68,68,0.08);
+    border: 1px solid rgba(239,68,68,0.2); color: #dc2626; font-size: 12px; font-weight: 600;
+    text-align: center; margin-top: 12px;
+}
+.habit-modal-footer {
+    padding: 16px 20px; border-top: 1px solid #e5e7eb;
+    background: white; display: flex; gap: 10px;
+}
+.habit-cancel {
+    flex: 1; padding: 10px; border-radius: 12px; background: #f3f4f6;
+    border: none; font-size: 14px; font-weight: 600; cursor: pointer;
+}
+.habit-save {
+    flex: 1; padding: 10px; border-radius: 12px; border: none;
+    background: linear-gradient(135deg, #6366f1, #4f46e5);
+    color: white; font-size: 14px; font-weight: 800; cursor: pointer;
+}
+body.bg-dark .habit-modal-container { background: #1e293b; }
+body.bg-dark .habit-modal-title { color: white; }
+body.bg-dark .habit-modal-body { background: #0f172a; }
+body.bg-dark .habit-label { color: #94a3b8; }
+body.bg-dark .habit-input { background: #2d3748; border-color: #475569; color: white; }
+body.bg-dark .habit-sugg { background: #2d3748; border-color: #475569; color: #94a3b8; }
+body.bg-dark .habit-sugg:hover { background: rgba(99,102,241,0.1); color: #818cf8; }
+body.bg-dark .habit-cancel { background: #2d3748; color: #94a3b8; }
 
     /* Tarjetas KPI (Racha acumulada, Mejor racha) */
     .hx-kpi-grid {
@@ -589,6 +665,37 @@ body.bg-dark .hx-btn.ghost{background:#111827!important;border-color:rgba(255,25
             </div>
         </div>
     </div>
+    <!-- MODAL CREAR/EDITAR HÁBITO -->
+<div id="habitModal" class="habit-modal" style="display:none;">
+    <div class="habit-modal-overlay" onclick="closeHabitModal()"></div>
+    <div class="habit-modal-container">
+        <div class="habit-modal-header">
+            <div class="habit-modal-title" id="habitModalTitle">📝 Nuevo hábito</div>
+            <button class="habit-modal-close" onclick="closeHabitModal()">✕</button>
+        </div>
+        <div class="habit-modal-body">
+            <input type="hidden" id="editHabitId" value="0" />
+            <div class="habit-field">
+                <label class="habit-label">Nombre del hábito *</label>
+                <input type="text" id="habitNameModal" class="habit-input" placeholder="Ej: Leer 30 minutos" maxlength="60" />
+                <div class="habit-char-count"><span id="modalCharCount">0</span>/60</div>
+            </div>
+            <div class="habit-suggestions">
+                <button type="button" class="habit-sugg" data-name="📚 Leer 30 min">📚 Leer 30 min</button>
+                <button type="button" class="habit-sugg" data-name="🏃 Ejercicio">🏃 Ejercicio</button>
+                <button type="button" class="habit-sugg" data-name="💧 Tomar agua">💧 Tomar agua</button>
+                <button type="button" class="habit-sugg" data-name="🧘 Meditar">🧘 Meditar</button>
+                <button type="button" class="habit-sugg" data-name="📝 Journaling">📝 Journaling</button>
+                <button type="button" class="habit-sugg" data-name="🛌 Dormir 8h">🛌 Dormir 8h</button>
+            </div>
+            <div id="habitModalError" class="habit-error" style="display:none;">⚠️ El nombre es obligatorio</div>
+        </div>
+        <div class="habit-modal-footer">
+            <button class="habit-cancel" onclick="closeHabitModal()">Cancelar</button>
+            <button class="habit-save" id="saveHabitBtn">💾 Guardar</button>
+        </div>
+    </div>
+</div>
 </div>
 
 <!-- STORIES -->
@@ -841,6 +948,121 @@ new Chart(document.getElementById('habitChart'),{
         scales:{y:{beginAtZero:true,max:100,ticks:{color:tc,callback:v=>v+'%',font:{size:9}},grid:{color:gc}},
                 x:{ticks:{color:tc,font:{size:9}},grid:{display:false}}}}
 });
+// ==================== MODAL HÁBITO ====================
+let isEditing = false;
+let currentEditId = null;
+
+function openCreateModal() {
+    isEditing = false;
+    currentEditId = null;
+    document.getElementById('habitModalTitle').textContent = '📝 Nuevo hábito';
+    document.getElementById('habitNameModal').value = '';
+    document.getElementById('editHabitId').value = '0';
+    document.getElementById('modalCharCount').textContent = '0';
+    document.getElementById('habitModalError').style.display = 'none';
+    document.getElementById('habitModal').style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+    document.getElementById('habitNameModal').focus();
+}
+
+function openEditModal(habitId, currentName) {
+    isEditing = true;
+    currentEditId = habitId;
+    document.getElementById('habitModalTitle').textContent = '✏️ Editar hábito';
+    document.getElementById('habitNameModal').value = currentName;
+    document.getElementById('editHabitId').value = habitId;
+    const len = currentName.length;
+    document.getElementById('modalCharCount').textContent = len;
+    document.getElementById('habitModalError').style.display = 'none';
+    document.getElementById('habitModal').style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+    document.getElementById('habitNameModal').focus();
+}
+
+function closeHabitModal() {
+    document.getElementById('habitModal').style.display = 'none';
+    document.body.style.overflow = '';
+    isEditing = false;
+    currentEditId = null;
+}
+
+document.getElementById('habitNameModal').addEventListener('input', function() {
+    const len = this.value.length;
+    document.getElementById('modalCharCount').textContent = len;
+});
+
+document.querySelectorAll('.habit-sugg').forEach(btn => {
+    btn.addEventListener('click', function() {
+        document.getElementById('habitNameModal').value = this.getAttribute('data-name');
+        const len = this.getAttribute('data-name').length;
+        document.getElementById('modalCharCount').textContent = len;
+    });
+});
+
+document.getElementById('saveHabitBtn').addEventListener('click', async function() {
+    const name = document.getElementById('habitNameModal').value.trim();
+    if (!name) {
+        document.getElementById('habitModalError').style.display = 'block';
+        return;
+    }
+    const url = isEditing ? '/Habit/EditAjax' : '/Habit/CreateAjax';
+    const data = isEditing ? { id: currentEditId, name: name } : { name: name };
+    this.disabled = true;
+    this.innerHTML = '⏳ Guardando...';
+    try {
+        const res = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value },
+            body: JSON.stringify(data)
+        });
+        const result = await res.json();
+        if (result.success) {
+            if (isEditing) {
+                // Actualizar el nombre en la tarjeta localmente
+                const habitDiv = document.querySelector(`.hx-habit[data-habit-id="${currentEditId}"]`);
+                if (habitDiv) {
+                    const nameLink = habitDiv.querySelector('.hx-hname');
+                    if (nameLink) nameLink.textContent = name;
+                }
+            } else {
+                // Recargar la página para mostrar el nuevo hábito (más sencillo)
+                location.reload();
+            }
+            closeHabitModal();
+        } else {
+            alert(result.error || 'Error al guardar');
+        }
+    } catch (err) {
+        console.error(err);
+        alert('Error de conexión');
+    } finally {
+        this.disabled = false;
+        this.innerHTML = '💾 Guardar';
+    }
+});
+
+// Modificar los botones "Editar" existentes en las tarjetas de hábito
+// Los botones de editar actualmente tienen la clase "hx-ha ed" y onclick="confirmarEditarHabito(...)"
+// Vamos a reemplazar su comportamiento: en lugar de redirigir, abrir el modal.
+document.querySelectorAll('.hx-ha.ed').forEach(btn => {
+    const originalOnclick = btn.getAttribute('onclick');
+    if (originalOnclick && originalOnclick.includes('confirmarEditarHabito')) {
+        // Extraemos el id y el nombre
+        const match = originalOnclick.match(/confirmarEditarHabito\('(\d+)','([^']+)'/);
+        if (match) {
+            const id = match[1];
+            const name = match[2];
+            btn.setAttribute('onclick', `openEditModal(${id}, '${name.replace(/'/g, "\\'")}'); return false;`);
+        }
+    }
+});
+
+// El botón "Nuevo hábito" (en la barra de acciones) debe abrir el modal
+const newHabitBtn = document.querySelector('.hx-btn.primary');
+if (newHabitBtn && newHabitBtn.textContent.includes('Nuevo hábito')) {
+    newHabitBtn.setAttribute('onclick', 'openCreateModal(); return false;');
+    newHabitBtn.removeAttribute('href');
+}
 
 // ── CALENDAR ──
 const cg=document.getElementById('calGrid');

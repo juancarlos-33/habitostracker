@@ -722,6 +722,69 @@ namespace HabitTrackerApp.Controllers
         public class ReactProgressDto { public int ProgressId { get; set; } public string Emoji { get; set; } }
         public class CommentProgressDto { public int ProgressId { get; set; } public string Content { get; set; } }
 
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CreateAjax([FromBody] CreateHabitDto dto)
+        {
+            if (string.IsNullOrWhiteSpace(dto.Name))
+                return Json(new { success = false, error = "El nombre es obligatorio." });
+
+            var userId = GetUserId();
+            var user = _context.Users.FirstOrDefault(u => u.Id == userId);
+
+            if (user != null && !user.IsPremium)
+            {
+                var count = _context.Habits.Count(h => h.UserId == userId);
+                if (count >= 5)
+                    return Json(new { success = false, error = "Límite de 5 hábitos. Hazte premium para más." });
+            }
+
+            var habit = new Habit
+            {
+                UserId = userId,
+                Name = dto.Name,
+                CreatedDate = DateTime.Now,
+                Completed = false,
+                StreakDays = 0,
+                MaxStreak = 0
+            };
+
+            _context.Habits.Add(habit);
+            await _context.SaveChangesAsync();
+
+            return Json(new { success = true, habitId = habit.Id, name = habit.Name });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> EditAjax([FromBody] EditHabitDto dto)
+        {
+            if (string.IsNullOrWhiteSpace(dto.Name))
+                return Json(new { success = false, error = "El nombre es obligatorio." });
+
+            var userId = GetUserId();
+            var habit = await _context.Habits.FirstOrDefaultAsync(h => h.Id == dto.Id && h.UserId == userId);
+            if (habit == null)
+                return Json(new { success = false, error = "Hábito no encontrado." });
+
+            habit.Name = dto.Name;
+            await _context.SaveChangesAsync();
+
+            return Json(new { success = true, habitId = habit.Id, name = habit.Name });
+        }
+
+        // DTOs (puedes colocarlos dentro de la misma clase o fuera)
+        public class CreateHabitDto
+        {
+            public string Name { get; set; }
+        }
+
+        public class EditHabitDto
+        {
+            public int Id { get; set; }
+            public string Name { get; set; }
+        }
+
         // 📅 CALENDARIO
         public IActionResult Calendar(DateTime? month)
         {
