@@ -890,6 +890,7 @@ Esta publicación ha sido marcada y los comentarios han sido deshabilitados.
             return Json(new { success = true, comment = commentDto });
         }
         [HttpGet]
+        [HttpGet]
         public async Task<IActionResult> GetComments(int postId)
         {
             try
@@ -905,11 +906,11 @@ Esta publicación ha sido marcada y los comentarios han sido deshabilitados.
                     .Select(c => new
                     {
                         c.Id,
-                        c.UserId,
-                        c.Username,
+                        UserId = c.UserId,
+                        Username = c.Username,
                         ProfileImage = c.ProfileImage ?? "",
-                        c.Comment,
-                        c.ImagePath,
+                        Comment = c.Comment,
+                        ImagePath = c.ImagePath,
                         CreatedAt = c.CreatedAt.ToString("dd MMM yyyy · hh:mm tt"),
                         IsMine = c.UserId == currentUserId,
                         LikeCount = _context.CommentLikes.Count(l => l.CommentId == c.Id),
