@@ -418,40 +418,57 @@ namespace HabitTrackerApp.Controllers
         }
 
         [HttpPost]
+        [IgnoreAntiforgeryToken]
         public async Task<IActionResult> ReplyComment(int commentId, string text, int? parentReplyId)
         {
-            var userId = int.Parse(User.FindFirst("UserId").Value);
-
-            // 🔥 TRAER USUARIO
-            var user = await _context.Users.FindAsync(userId);
-
-            // ❌ VALIDACIÓN
-            if (string.IsNullOrWhiteSpace(text))
+            try
             {
-                var c = _context.PostComments.FirstOrDefault(x => x.Id == commentId);
-                return RedirectToAction("Comments", new { postId = c.PostId });
+                var userId = int.Parse(User.FindFirst("UserId").Value);
+                var user = await _context.Users.FindAsync(userId);
+
+                if (string.IsNullOrWhiteSpace(text))
+                    return Json(new { success = false, error = "El comentario no puede estar vacío" });
+
+                var reply = new CommentReply
+                {
+                    CommentId = commentId,
+                    UserId = userId,
+                    Username = user.Username,
+                    ProfileImage = user.ProfileImage ?? "",
+                    Text = text,
+                    CreatedAt = DateTime.Now,
+                    ParentReplyId = parentReplyId
+                };
+
+                _context.CommentReplies.Add(reply);
+                await _context.SaveChangesAsync();
+
+                // Notificación al dueño del comentario (si no es el mismo)
+                var parentComment = await _context.PostComments.FindAsync(commentId);
+                if (parentComment != null && parentComment.UserId != userId)
+                {
+                    _context.Notifications.Add(new Notification
+                    {
+                        UserId = parentComment.UserId,
+                        FromUserId = userId,
+                        FromUsername = user.Username,
+                        FromUserImage = user.ProfileImage ?? "",
+                        Message = $"{user.Username} respondió a tu comentario",
+                        Link = $"/Post/Details/{parentComment.PostId}#comment-{commentId}",
+                        IsRead = false,
+                        CreatedAt = DateTime.Now
+                    });
+                    await _hubContext.Clients.Group(parentComment.UserId.ToString())
+                        .SendAsync("ReceiveNotification", userId, $"{user.Username} respondió a tu comentario", user.Username, user.ProfileImage ?? "", $"/Post/Details/{parentComment.PostId}#comment-{commentId}");
+                }
+
+                return Json(new { success = true, replyId = reply.Id });
             }
-
-            // 🔥 CREAR RESPUESTA (AHORA SOPORTA SUB-RESPUESTAS)
-            var reply = new CommentReply
+            catch (Exception ex)
             {
-                CommentId = commentId,
-                UserId = userId,
-                Username = user.Username,
-                ProfileImage = user.ProfileImage ?? "",
-                Text = text,
-                CreatedAt = DateTime.Now,
-                ParentReplyId = parentReplyId // 🔥 CLAVE
-            };
-
-            _context.CommentReplies.Add(reply);
-            await _context.SaveChangesAsync();
-
-            var comment = _context.PostComments.FirstOrDefault(c => c.Id == commentId);
-
-            return RedirectToAction("Comments", new { postId = comment.PostId });
+                return Json(new { success = false, error = ex.Message });
+            }
         }
-
         [HttpPost]
         public async Task<IActionResult> ToggleReplyLike(int id)
         {
@@ -809,107 +826,128 @@ Esta publicación ha sido marcada y los comentarios han sido deshabilitados.
             return View(posts);
         }
         [HttpPost]
+        [IgnoreAntiforgeryToken] // Para evitar problemas con el token en peticiones AJAX desde el modal
         public async Task<IActionResult> AddCommentAjax(int postId, string comment, IFormFile image)
         {
-            // Verificar si comentarios están deshabilitados
-            var post = await _context.Posts.FindAsync(postId);
-            if (post == null) return Json(new { success = false, error = "Publicación no encontrada" });
-            if (post.CommentsDisabled)
-                return Json(new { success = false, error = "Los comentarios están deshabilitados." });
-
-            var userId = int.Parse(User.FindFirst("UserId").Value);
-            var user = await _context.Users.FindAsync(userId);
-
-            string imagePath = null;
-            if (image != null && image.Length > 0)
-                imagePath = await _cloudinaryService.UploadImageAsync(image);
-
-            var newComment = new PostComment
+            try
             {
-                PostId = postId,
-                UserId = userId,
-                Username = user.Username,
-                ProfileImage = user.ProfileImage ?? "",
-                Comment = comment,
-                ImagePath = imagePath,
-                CreatedAt = DateTime.Now
-            };
+                // Verificar si comentarios están deshabilitados
+                var post = await _context.Posts.FindAsync(postId);
+                if (post == null) return Json(new { success = false, error = "Publicación no encontrada" });
+                if (post.CommentsDisabled)
+                    return Json(new { success = false, error = "Los comentarios están deshabilitados." });
 
-            _context.PostComments.Add(newComment);
-            await _context.SaveChangesAsync();
+                var userId = int.Parse(User.FindFirst("UserId").Value);
+                var user = await _context.Users.FindAsync(userId);
 
-            // Notificar al dueño del post (si no es el mismo)
-            if (post.UserId != userId)
-            {
-                _context.Notifications.Add(new Notification
+                string imagePath = null;
+                if (image != null && image.Length > 0)
                 {
-                    UserId = post.UserId,
-                    FromUserId = userId,
-                    FromUsername = user.Username,
-                    FromUserImage = user.ProfileImage ?? "",
-                    Message = $"{user.Username} comentó tu publicación",
-                    Link = $"/Post/Details/{postId}#comment-{newComment.Id}",
-                    IsRead = false,
+                    // Subir imagen a Cloudinary (como ya haces en Create)
+                    imagePath = await _cloudinaryService.UploadImageAsync(image);
+                }
+
+                var newComment = new PostComment
+                {
+                    PostId = postId,
+                    UserId = userId,
+                    Username = user.Username,
+                    ProfileImage = user.ProfileImage ?? "",
+                    Comment = comment ?? "",
+                    ImagePath = imagePath,
                     CreatedAt = DateTime.Now
-                });
-                await _hubContext.Clients.Group(post.UserId.ToString())
-                    .SendAsync("ReceiveNotification", userId, $"{user.Username} comentó tu publicación", user.Username, user.ProfileImage ?? "", $"/Post/Details/{postId}#comment-{newComment.Id}");
-            }
+                };
 
-            // 🔥 Notificar a todos los usuarios que están viendo esta publicación en tiempo real
-            await _hubContext.Clients.Group($"post-{postId}")
-                .SendAsync("NewComment", new
+                _context.PostComments.Add(newComment);
+                await _context.SaveChangesAsync();
+
+                // Notificación al dueño del post (si no es el mismo)
+                if (post.UserId != userId)
                 {
-                    newComment.Id,
-                    newComment.UserId,
-                    newComment.Username,
-                    newComment.ProfileImage,
-                    newComment.Comment,
-                    newComment.ImagePath,
-                    CreatedAt = DateTime.Now.ToString("dd MMM yyyy · hh:mm tt"),
-                    IsMine = false,
-                    LikeCount = 0,
-                    IsLiked = false
+                    _context.Notifications.Add(new Notification
+                    {
+                        UserId = post.UserId,
+                        FromUserId = userId,
+                        FromUsername = user.Username,
+                        FromUserImage = user.ProfileImage ?? "",
+                        Message = $"{user.Username} comentó tu publicación",
+                        Link = $"/Post/Details/{postId}#comment-{newComment.Id}",
+                        IsRead = false,
+                        CreatedAt = DateTime.Now
+                    });
+                    await _hubContext.Clients.Group(post.UserId.ToString())
+                        .SendAsync("ReceiveNotification", userId, $"{user.Username} comentó tu publicación", user.Username, user.ProfileImage ?? "", $"/Post/Details/{postId}#comment-{newComment.Id}");
+                }
+
+                // Enviar evento SignalR a todos los que estén viendo esta publicación
+                await _hubContext.Clients.Group($"post-{postId}")
+                    .SendAsync("NewComment", new
+                    {
+                        newComment.Id,
+                        newComment.UserId,
+                        newComment.Username,
+                        newComment.ProfileImage,
+                        newComment.Comment,
+                        newComment.ImagePath,
+                        CreatedAt = newComment.CreatedAt.ToString("dd MMM yyyy · hh:mm tt"),
+                        IsMine = true,
+                        LikeCount = 0,
+                        IsLiked = false
+                    });
+
+                // Devolver el comentario para agregarlo al modal
+                return Json(new
+                {
+                    success = true,
+                    comment = new
+                    {
+                        newComment.Id,
+                        newComment.UserId,
+                        newComment.Username,
+                        newComment.ProfileImage,
+                        newComment.Comment,
+                        newComment.ImagePath,
+                        CreatedAt = newComment.CreatedAt.ToString("dd MMM yyyy · hh:mm tt"),
+                        IsMine = true,
+                        LikeCount = 0,
+                        IsLiked = false
+                    }
                 });
-
-            // Devolver el comentario creado para agregarlo al modal del remitente
-            var commentDto = new
+            }
+            catch (Exception ex)
             {
-                newComment.Id,
-                newComment.UserId,
-                newComment.Username,
-                newComment.ProfileImage,
-                newComment.Comment,
-                newComment.ImagePath,
-                CreatedAt = newComment.CreatedAt.ToString("dd MMM yyyy · hh:mm tt"),
-                IsMine = true,
-                LikeCount = 0,
-                IsLiked = false
-            };
-
-            return Json(new { success = true, comment = commentDto });
+                return Json(new { success = false, error = ex.Message });
+            }
         }
 
         [HttpGet]
         public async Task<IActionResult> GetReplies(int commentId)
         {
-            var currentUserId = int.Parse(User.FindFirst("UserId").Value);
-            var replies = await _context.CommentReplies
-                .Where(r => r.CommentId == commentId)
-                .OrderBy(r => r.CreatedAt)
-                .Select(r => new {
-                    r.Id,
-                    r.UserId,
-                    r.Username,
-                    ProfileImage = r.ProfileImage ?? "",
-                    Text = r.Text,
-                    CreatedAt = r.CreatedAt.ToString("dd MMM yyyy · hh:mm tt"),
-                    IsMine = r.UserId == currentUserId,
-                    LikeCount = _context.CommentReplyLikes.Count(l => l.ReplyId == r.Id),
-                    IsLiked = _context.CommentReplyLikes.Any(l => l.ReplyId == r.Id && l.UserId == currentUserId)
-                })
-                .ToListAsync();
-            return Json(replies);
+            try
+            {
+                var currentUserId = int.Parse(User.FindFirst("UserId").Value);
+                var replies = await _context.CommentReplies
+                    .Where(r => r.CommentId == commentId)
+                    .OrderBy(r => r.CreatedAt)
+                    .Select(r => new
+                    {
+                        r.Id,
+                        r.UserId,
+                        r.Username,
+                        ProfileImage = r.ProfileImage ?? "",
+                        Text = r.Text,
+                        CreatedAt = r.CreatedAt.ToString("dd MMM yyyy · hh:mm tt"),
+                        IsMine = r.UserId == currentUserId,
+                        LikeCount = _context.CommentReplyLikes.Count(l => l.ReplyId == r.Id),
+                        IsLiked = _context.CommentReplyLikes.Any(l => l.ReplyId == r.Id && l.UserId == currentUserId)
+                    })
+                    .ToListAsync();
+                return Json(replies);
+            }
+            catch (Exception ex)
+            {
+                return Json(new { error = ex.Message });
+            }
         }
         [HttpGet]
         public async Task<IActionResult> GetComments(int postId)
