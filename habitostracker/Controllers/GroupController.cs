@@ -1487,17 +1487,29 @@ namespace HabitTrackerApp.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ToggleGroupType(int groupId)
         {
-            var userId = int.Parse(User.FindFirst("UserId").Value);
+            var userIdClaim = User.FindFirst("UserId");
+            if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
+            {
+                return Json(new { success = false, error = "Error de autenticación" });
+            }
 
-            var group = await _context.Groups.FindAsync(groupId);
+            var group = await _context.Groups
+                .FirstOrDefaultAsync(g => g.Id == groupId && g.IsActive);
+
             if (group == null)
                 return Json(new { success = false, error = "Grupo no encontrado" });
 
-            // 🔥 SOLO EL CREADOR puede cambiar la visibilidad
+            // 🔥 DEBUG: Vamos a ver quién es el creador y quién está intentando cambiar
             if (group.CreatorId != userId)
-                return Json(new { success = false, error = "Solo el creador del grupo puede cambiar la visibilidad." });
+            {
+                return Json(new
+                {
+                    success = false,
+                    error = $"Solo el creador puede cambiar la visibilidad. Creador ID: {group.CreatorId}, Tu ID: {userId}"
+                });
+            }
 
-            // Alternar entre private y public
+            // Alternar tipo
             string newType = group.Type == "public" ? "private" : "public";
             bool newIsPublic = newType == "public";
 
@@ -1506,11 +1518,16 @@ namespace HabitTrackerApp.Controllers
 
             await _context.SaveChangesAsync();
 
-            // Notificar vía SignalR (opcional)
             await _hub.Clients.Group($"group-{groupId}")
                 .SendAsync("GroupTypeChanged", newType, newIsPublic);
 
-            return Json(new { success = true, type = newType, isPublic = newIsPublic });
+            return Json(new
+            {
+                success = true,
+                type = newType,
+                isPublic = newIsPublic,
+                message = "Visibilidad cambiada correctamente"
+            });
         }
         // 🔥 buscar amigos que no están en el grupo para añadir
         [HttpGet]
