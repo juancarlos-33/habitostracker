@@ -834,47 +834,34 @@
 </div>
 
 <script>
-// ========== VARIABLES GLOBALES ==========
+// ========== GLOBALES ==========
 const groupId = @Model.Id;
 const isCreator = @isCreator.ToString().ToLower();
 const isAdmin = @isAdmin.ToString().ToLower();
 let isMuted = @isMuted.ToString().ToLower();
-let isAdminOnly = @Model.IsAdminOnly.ToString().ToLower();
 
 let selectedReason = null;
 let selectedMembers = new Set();
 let allFriends = [];
 let currentInviteLink = '';
 
-// Token AntiForgery
+// AntiForgery Token
 const token = () => document.getElementById('antiforgery-token')?.value ?? "";
 
 // ========== UTILIDADES ==========
 function showToast(msg) {
     const t = document.createElement("div");
-    t.className = "gd-toast"; 
+    t.className = "gd-toast";
     t.textContent = msg;
     document.body.appendChild(t);
-    setTimeout(() => t.remove(), 3000);
+    setTimeout(() => t.remove(), 2800);
 }
 
 function openModal(id) { document.getElementById(id).classList.add('open'); }
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
 
-// ========== COMPARTIR GRUPO ==========
-function compartirGrupo() {
-    const url = window.location.origin + `/Group/Chat/${groupId}`;
-    const text = `Únete al grupo "${document.getElementById('groupNameDisplay').textContent}" en HabitTracker`;
-
-    if (navigator.share) {
-        navigator.share({ title: document.getElementById('groupNameDisplay').textContent, text: text, url: url });
-    } else {
-        navigator.clipboard.writeText(url).then(() => showToast('📋 Link del grupo copiado'));
-    }
-}
-
-// ========== CONFIRMACIONES BONITAS ==========
-function confirmarAccion({ title, message, confirmText = "Confirmar", icon = "⚠️", danger = false, onConfirm }) {
+// Confirmación bonita
+function confirmarAccion({title, message, confirmText="Confirmar", icon="⚠️", danger=false, onConfirm}) {
     showConfirm({
         icon: icon,
         title: title,
@@ -885,87 +872,158 @@ function confirmarAccion({ title, message, confirmText = "Confirmar", icon = "�
     });
 }
 
-// ========== FUNCIONES ==========
-
-async function updateName() {
-    const name = document.getElementById("newGroupName").value.trim();
-    if (!name || name.length < 2) return showToast("❌ Nombre muy corto");
-
-    try {
-        const res = await fetch("/Group/UpdateName", {
-            method: "POST",
-            headers: { "Content-Type": "application/x-www-form-urlencoded", "RequestVerificationToken": token() },
-            body: `groupId=${groupId}&name=${encodeURIComponent(name)}`
-        });
-        const data = await res.json();
-        if (data.success) {
-            document.getElementById("groupNameDisplay").textContent = name;
-            showToast("✅ Nombre actualizado");
-        } else showToast("❌ Error al actualizar");
-    } catch { showToast("❌ Error de conexión"); }
+// ========== COMPARTIR ==========
+function compartirGrupo() {
+    const url = `${window.location.origin}/Group/Chat/${groupId}`;
+    if (navigator.share) {
+        navigator.share({ title: document.getElementById('groupNameDisplay').textContent, url });
+    } else {
+        navigator.clipboard.writeText(url).then(() => showToast('📋 Link copiado'));
+    }
 }
 
-async function toggleMute() {
+// ========== ENLACE DE INVITACIÓN ==========
+async function generarEnlace() {
+    document.getElementById('inviteSection').style.display = 'block';
     try {
-        const res = await fetch("/Group/ToggleMute", {
-            method: "POST",
-            headers: { "Content-Type": "application/x-www-form-urlencoded", "RequestVerificationToken": token() },
+        const res = await fetch('/Group/GenerateInviteCode', {
+            method: 'POST',
+            headers: { 
+                "Content-Type": "application/x-www-form-urlencoded",
+                "RequestVerificationToken": token()
+            },
             body: `groupId=${groupId}`
         });
         const data = await res.json();
         if (data.success) {
-            isMuted = data.isMuted.toString();
-            document.getElementById("muteIcon").textContent = isMuted === "true" ? "🔕" : "🔔";
-            document.getElementById("muteLabel").textContent = isMuted === "true" ? "Silenciado" : "Silenciar notificaciones";
-            document.getElementById("muteToggle").classList.toggle("on", isMuted === "true");
-            showToast(isMuted === "true" ? "🔕 Silenciado" : "🔔 Activado");
+            currentInviteLink = data.link;
+            document.getElementById('inviteCode').textContent = data.code;
+            document.getElementById('inviteLink').textContent = data.link;
+            showToast('✅ Enlace generado');
+        } else showToast('❌ Error');
+    } catch { showToast('❌ Error de conexión'); }
+}
+
+async function resetEnlace() {
+    try {
+        const res = await fetch('/Group/ResetInviteCode', {
+            method: 'POST',
+            headers: { 
+                "Content-Type": "application/x-www-form-urlencoded",
+                "RequestVerificationToken": token()
+            },
+            body: `groupId=${groupId}`
+        });
+        const data = await res.json();
+        if (data.success) {
+            currentInviteLink = data.link;
+            document.getElementById('inviteCode').textContent = data.code || 'Nuevo';
+            document.getElementById('inviteLink').textContent = data.link;
+            showToast('🔄 Enlace renovado');
         }
-    } catch { showToast("❌ Error"); }
+    } catch { showToast('❌ Error'); }
 }
 
-// Solo Admins - Actualización en tiempo real
-async function confirmarAdminOnly() {
-    closeModal('adminOnlyModal');
-    
+// ========== AÑADIR MIEMBROS ==========
+async function openAddMember() {
+    selectedMembers.clear();
+    openModal('addMemberModal');
+    document.getElementById("addMemberList").innerHTML = '<div class="gd-modal-empty">Cargando...</div>';
+
     try {
-        const res = await fetch("/Group/ToggleAdminOnly", {
-            method: "POST",
-            headers: { "Content-Type": "application/x-www-form-urlencoded", "RequestVerificationToken": token() },
-            body: `groupId=${groupId}`
-        });
-        const data = await res.json();
-        
-        if (data.success) {
-            isAdminOnly = data.isAdminOnly.toString();
-            showToast(data.isAdminOnly ? "🔒 Solo admins activado" : "🔓 Todos pueden escribir");
-            
-            // Actualizar en tiempo real sin recargar
-            document.querySelectorAll('.gd-info-value').forEach(el => {
-                if (el.textContent.includes("Solo admins") || el.textContent.includes("Todos pueden")) {
-                    el.textContent = data.isAdminOnly ? "Solo admins" : "Todos los miembros";
-                }
+        const res = await fetch(`/Group/GetFriendsToAdd?groupId=${groupId}`);
+        allFriends = await res.json();
+        renderFriendsList(allFriends);
+    } catch(e) {
+        document.getElementById("addMemberList").innerHTML = '<div class="gd-modal-empty">Error al cargar</div>';
+    }
+}
+
+function renderFriendsList(friends) {
+    const list = document.getElementById("addMemberList");
+    list.innerHTML = friends.map(f => `
+        <div class="gd-modal-item" onclick="toggleSelectFriend(${f.id}, this)">
+            <div class="gd-modal-avatar">${f.img ? `<img src="${f.img}">` : f.username[0]}</div>
+            <div class="gd-modal-name">${f.username}</div>
+            <span class="gd-modal-check">✓</span>
+        </div>
+    `).join('');
+}
+
+function toggleSelectFriend(id, el) {
+    if (selectedMembers.has(id)) {
+        selectedMembers.delete(id);
+        el.classList.remove('selected');
+    } else {
+        selectedMembers.add(id);
+        el.classList.add('selected');
+    }
+    const btn = document.getElementById("addMemberConfirm");
+    btn.disabled = selectedMembers.size === 0;
+    btn.textContent = selectedMembers.size ? `Agregar (${selectedMembers.size})` : "Agregar";
+}
+
+async function confirmarAgregar() {
+    if (!selectedMembers.size) return;
+    const btn = document.getElementById("addMemberConfirm");
+    btn.disabled = true; btn.textContent = "Agregando...";
+
+    let ok = 0;
+    for (const memberId of selectedMembers) {
+        try {
+            const res = await fetch("/Group/AddMember", {
+                method: "POST",
+                headers: { "Content-Type": "application/x-www-form-urlencoded", "RequestVerificationToken": token() },
+                body: `groupId=${groupId}&newUserId=${memberId}`
             });
-        } else {
-            showToast("❌ Sin permisos");
-        }
-    } catch { showToast("❌ Error de conexión"); }
+            const data = await res.json();
+            if (data.success) ok++;
+        } catch {}
+    }
+
+    closeModal('addMemberModal');
+    if (ok > 0) {
+        showToast(`✅ ${ok} miembro(s) agregado(s)`);
+        setTimeout(() => location.reload(), 1000);
+    }
 }
 
-async function toggleGroupType() {
+// ========== ACCIONES DE MIEMBROS ==========
+async function removeMember(userId, username) {
     confirmarAccion({
-        title: "Cambiar visibilidad del grupo",
-        message: `¿Quieres cambiar este grupo a ${(Model.Type == "public" ? "PRIVADO" : "PÚBLICO")}?`,
-        confirmText: "Sí, cambiar",
-        danger: false,
+        title: "Eliminar miembro",
+        message: `¿Eliminar a ${username} del grupo?`,
+        danger: true,
         onConfirm: async () => {
             try {
-                const res = await fetch('/Group/ToggleGroupType', {
-                    method: 'POST',
+                const res = await fetch("/Group/RemoveMember", {
+                    method: "POST",
                     headers: { "Content-Type": "application/x-www-form-urlencoded", "RequestVerificationToken": token() },
-                    body: `groupId=${groupId}`
+                    body: `groupId=${groupId}&memberId=${userId}`
                 });
-                if (res.ok) {
-                    showToast("✅ Tipo cambiado");
+                const data = await res.json();
+                if (data.success) {
+                    showToast(`✅ ${username} eliminado`);
+                    document.getElementById(`member-row-${userId}`)?.remove();
+                }
+            } catch { showToast("❌ Error"); }
+        }
+    });
+}
+
+async function promoverAdmin(userId, username) {
+    confirmarAccion({
+        title: "Promover a Admin",
+        message: `¿Dar permisos de administrador a ${username}?`,
+        onConfirm: async () => {
+            try {
+                const res = await fetch("/Group/PromoteToAdmin", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/x-www-form-urlencoded", "RequestVerificationToken": token() },
+                    body: `groupId=${groupId}&memberId=${userId}`
+                });
+                if ((await res.json()).success) {
+                    showToast(`⭐ ${username} es ahora admin`);
                     setTimeout(() => location.reload(), 800);
                 }
             } catch { showToast("❌ Error"); }
@@ -973,29 +1031,67 @@ async function toggleGroupType() {
     });
 }
 
-// Añadir miembros (mantengo lógica anterior pero con mejor UX)
-async function openAddMember() { /* ... mismo código que antes ... */ }
+async function quitarAdmin(userId, username) {
+    confirmarAccion({
+        title: "Quitar Admin",
+        message: `¿Quitar permisos de admin a ${username}?`,
+        onConfirm: async () => {
+            try {
+                const res = await fetch("/Group/DemoteAdmin", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/x-www-form-urlencoded", "RequestVerificationToken": token() },
+                    body: `groupId=${groupId}&memberId=${userId}`
+                });
+                if ((await res.json()).success) {
+                    showToast(`↓ ${username} ya no es admin`);
+                    setTimeout(() => location.reload(), 800);
+                }
+            } catch { showToast("❌ Error"); }
+        }
+    });
+}
 
-// Reportar, Enlace, etc.
-async function generarEnlace() { /* mismo código anterior */ }
-async function resetEnlace() { /* mismo código anterior */ }
-function copiarEnlace() { /* mismo código anterior */ }
+// ========== REPORTAR, SALIR, ELIMINAR ==========
+async function enviarReporte() {
+    if (!selectedReason) return;
+    closeModal('reportModal');
+    try {
+        const res = await fetch("/Group/Report", {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "RequestVerificationToken": token() },
+            body: JSON.stringify({ groupId: groupId, reason: selectedReason })
+        });
+        const data = await res.json();
+        showToast(data.success ? "✅ Reporte enviado" : "❌ Ya reportaste este grupo");
+    } catch { showToast("❌ Error"); }
+}
 
 // ========== EVENTOS ==========
 document.addEventListener('DOMContentLoaded', () => {
     // Botones principales
     document.getElementById('compartirGrupoBtn')?.addEventListener('click', compartirGrupo);
     document.getElementById('compartirGrupoBtn2')?.addEventListener('click', compartirGrupo);
+    document.getElementById('generarEnlaceBtn')?.addEventListener('click', generarEnlace);
+    document.getElementById('resetEnlaceBtn')?.addEventListener('click', resetEnlace);
+    document.getElementById('copiarEnlaceBtn')?.addEventListener('click', () => currentInviteLink && navigator.clipboard.writeText(currentInviteLink).then(() => showToast('📋 Copiado')));
     document.getElementById('updateNameBtn')?.addEventListener('click', updateName);
     document.getElementById('muteBtn')?.addEventListener('click', toggleMute);
     document.getElementById('toggleTypeBtn')?.addEventListener('click', toggleGroupType);
     document.getElementById('openAddMemberBtn')?.addEventListener('click', openAddMember);
-    document.getElementById('reportarGrupoBtn')?.addEventListener('click', reportarGrupo);
-    document.getElementById('leaveGroupBtn')?.addEventListener('click', () => openModal('leaveModal'));
-    document.getElementById('deleteGroupBtn')?.addEventListener('click', () => openModal('deleteModal'));
-    document.getElementById('generarEnlaceBtn')?.addEventListener('click', generarEnlace);
+    document.getElementById('reportarGrupoBtn')?.addEventListener('click', () => { selectedReason=null; openModal('reportModal'); });
 
-    // Confirmaciones bonitas para acciones peligrosas
+    // Botones dinámicos de miembros
+    document.querySelectorAll('.gd-mbtn.promote').forEach(btn => {
+        btn.addEventListener('click', () => promoverAdmin(btn.dataset.userId, btn.dataset.username));
+    });
+    document.querySelectorAll('.gd-mbtn.demote').forEach(btn => {
+        btn.addEventListener('click', () => quitarAdmin(btn.dataset.userId, btn.dataset.username));
+    });
+    document.querySelectorAll('.gd-mbtn.remove').forEach(btn => {
+        btn.addEventListener('click', () => removeMember(btn.dataset.userId, btn.dataset.username));
+    });
+
+    // Salir y Eliminar
     document.getElementById('leaveGroupBtn')?.addEventListener('click', () => openModal('leaveModal'));
     document.getElementById('deleteGroupBtn')?.addEventListener('click', () => openModal('deleteModal'));
 });
