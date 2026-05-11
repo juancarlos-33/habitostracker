@@ -749,14 +749,14 @@
                 </div>
                 <div class="gd-toggle @(isMuted ? "on" : "")" id="muteToggle"></div>
             </button>
-            @if (isCreator) // Solo el creador puede cambiar el tipo
+       @if (isCreator)
 {
     <div class="gd-action-list" style="margin-top: 16px;">
-        <div class="gd-action-item" onclick="toggleGroupType()" style="cursor:pointer;">
-            <div class="gd-action-icon purple">@(Model.Type == "public" ? "🔒" : "🌍")</div>
+        <div class="gd-action-item" id="toggleTypeBtn" style="cursor:pointer;">
+            <div class="gd-action-icon purple" id="toggleIcon">@(Model.Type == "public" ? "🔒" : "🌍")</div>
             <div style="flex:1;">
-                <div>@(Model.Type == "public" ? "Hacer privado" : "Hacer público")</div>
-                <div class="gd-action-sub">@(Model.Type == "public" ? "Solo los miembros podrán ver el grupo" : "Cualquier usuario podrá encontrarlo y unirse")</div>
+                <div id="toggleText">@(Model.Type == "public" ? "Hacer privado" : "Hacer público")</div>
+                <div class="gd-action-sub" id="toggleSub">@(Model.Type == "public" ? "Solo los miembros podrán ver el grupo" : "Cualquier usuario podrá encontrarlo y solicitar unirse")</div>
             </div>
             <div class="gd-toggle @(Model.Type == "public" ? "on" : "")" id="typeToggle"></div>
         </div>
