@@ -937,21 +937,26 @@ let commentConnection = null;
 let selectedCommentImage = null;
 
 async function openCommentsModal(postId) {
+    // Evitar abrir si ya está abierto
+    if (document.getElementById('commentsModal').style.display === 'flex') return;
+    
     currentPostId = postId;
     const modal = document.getElementById('commentsModal');
     const body = document.getElementById('commentsModalBody');
     const footer = document.getElementById('commentsModalFooter');
+    
     modal.style.display = 'flex';
     document.body.style.overflow = 'hidden';
+    document.documentElement.style.overflow = 'hidden'; // también bloquea scroll en html
     body.innerHTML = '<div class="comments-loading">Cargando comentarios...</div>';
     
-    // Inicializar conexión SignalR si no está
+    // Inicializar SignalR si no está
     if (!commentConnection && window.connectionGlobal) {
         commentConnection = window.connectionGlobal;
         setupCommentSignalR();
     }
     
-    // Unirse al grupo (si SignalR está conectado)
+    // Unirse al grupo de la publicación
     if (commentConnection && commentConnection.state === 'Connected') {
         try {
             await commentConnection.invoke("JoinPostGroup", postId);
@@ -968,7 +973,6 @@ async function openCommentsModal(postId) {
             if (data.commentsDisabled) {
                 footer.innerHTML = `<div class="comments-disabled-msg">🔒 Los comentarios están deshabilitados para esta publicación.</div>`;
             } else {
-                // Restaurar footer
                 footer.innerHTML = `
                     <div class="comments-input-wrapper">
                         <textarea id="newCommentText" class="comments-input" placeholder="Escribe un comentario..." rows="1"></textarea>
@@ -992,8 +996,16 @@ async function openCommentsModal(postId) {
         console.error(e);
         body.innerHTML = '<div class="comments-loading">Error de conexión</div>';
     }
+    
+    // Agregar listener para tecla Escape (solo cuando el modal está abierto)
+    document.addEventListener('keydown', handleEscapeKey);
 }
 
+function handleEscapeKey(e) {
+    if (e.key === 'Escape') {
+        closeCommentsModal();
+    }
+}
 function renderComments(comments, commentsDisabled) {
     const body = document.getElementById('commentsModalBody');
     if (!comments || comments.length === 0) {
@@ -1305,15 +1317,32 @@ function addCommentToList(comment) {
 
 function closeCommentsModal() {
     const modal = document.getElementById('commentsModal');
+    if (!modal || modal.style.display !== 'flex') return;
+    
     modal.style.display = 'none';
     document.body.style.overflow = '';
+    document.documentElement.style.overflow = '';
+    
+    // Remover listener de tecla Escape específico del modal
+    document.removeEventListener('keydown', handleEscapeKey);
+    
     if (commentConnection && commentConnection.state === 'Connected' && currentPostId) {
         commentConnection.invoke("LeavePostGroup", currentPostId).catch(e=>console.warn);
     }
+    
+    // Limpiar cualquier formulario de respuesta activo
+    if (activeReplyForm) {
+        activeReplyForm.remove();
+        activeReplyForm = null;
+    }
+    
     currentPostId = null;
     selectedCommentImage = null;
+    
+    // Opcional: cancelar cualquier petición fetch en curso (no es fácil, pero se puede usar AbortController)
+    // Si hay un setTimeout del typing indicator, limpiarlo
+    if (window.typingTimeout) clearTimeout(window.typingTimeout);
 }
-
 async function toggleCommentLikeModal(btn, commentId) {
     const isLiked = btn.classList.contains('liked');
     const iconSpan = btn.querySelector('.like-count');
