@@ -1493,14 +1493,13 @@ namespace HabitTrackerApp.Controllers
             if (group == null)
                 return Json(new { success = false, error = "Grupo no encontrado" });
 
-            // === DEBUG FUERTE ===
-            return Json(new
-            {
-                success = false,
-                error = $"DEBUG - Tu UserId: {userId} | Creador del grupo: {group.CreatorId} | ¿Coinciden? {group.CreatorId == userId}"
-            });
+            if (group.CreatorId != userId)
+                return Json(new { success = false, error = "No tienes permiso" });
 
-            // El resto del código (comentado por ahora)
+            group.Type = group.Type == "public" ? "private" : "public";
+            await _context.SaveChangesAsync();
+
+            return Json(new { success = true, newType = group.Type });
         }
         // 🔥 buscar amigos que no están en el grupo para añadir
         [HttpGet]
