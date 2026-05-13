@@ -1060,19 +1060,24 @@ function handleEscapeKey(e) {
 function renderComments(comments, commentsDisabled) {
     const body = document.getElementById('commentsModalBody');
     commentsCache = Array.isArray(comments) ? comments : [];
+    
     const list = commentsSort === 'top'
         ? [...commentsCache].sort((a, b) => (b.likeCount || 0) - (a.likeCount || 0))
         : [...commentsCache];
+
     if (!list || list.length === 0) {
-        body.innerHTML = '<div class="comments-loading">Todavía no hay comentarios. Sé quien abra la conversación.</div>';
+        body.innerHTML = '<div class="comments-loading">Todavía no hay comentarios. Sé el primero en comentar.</div>';
         return;
     }
+
     let html = '';
     list.forEach(c => {
         const avatar = c.profileImage 
             ? `<img src="${c.profileImage}" class="comment-avatar" onclick="goToUserProfile(${c.userId})" />` 
-            : `<div class="comment-avatar-letter">${c.username.charAt(0).toUpperCase()}</div>`;
+            : `<div class="comment-avatar-letter">${c.username.charAt(0).ToUpperCase()}</div>`;
+
         const img = c.imagePath ? `<img src="${c.imagePath}" class="comment-img" onclick="window.open('${c.imagePath}', '_blank')" />` : '';
+
         html += `
             <div class="comment-item" id="comment-${c.id}" data-comment-id="${c.id}">
                 ${avatar}
@@ -1083,23 +1088,72 @@ function renderComments(comments, commentsDisabled) {
                     </div>
                     <div class="comment-text">${escapeHtml(c.comment)}</div>
                     ${img}
+
                     <div class="comment-actions">
                         <button class="comment-like-btn ${c.isLiked ? 'liked' : ''}" data-comment-id="${c.id}" onclick="toggleCommentLikeModal(this, ${c.id})">
-                            ${c.isLiked ? '❤️' : '🤍'} <span class="like-count">${c.likeCount}</span>
+                            ${c.isLiked ? '❤️' : '🤍'} <span class="like-count">${c.likeCount || 0}</span>
                         </button>
                         <button class="comment-reply-btn" data-comment-id="${c.id}" data-username="${escapeHtml(c.username)}" onclick="showReplyForm(this, ${c.id}, 'comment')">Responder</button>
                         ${c.isMine ? `<button class="comment-delete-btn" onclick="deleteCommentModal(${c.id})">Eliminar</button>` : ''}
                     </div>
+
+                    <!-- PREVIEW DE RESPUESTAS -->
                     <div class="replies-container" id="replies-${c.id}">
-                        <button class="view-replies-btn" onclick="cargarRespuestas(this, ${c.id})">Ver respuestas</button>
+                        ${renderRepliesPreview(c.replies || [], c.id)}
                     </div>
                 </div>
             </div>
         `;
     });
+
     body.innerHTML = html;
 }
+// Renderiza preview de respuestas (máximo 2)
+function renderRepliesPreview(replies, commentId) {
+    if (!replies || replies.length === 0) {
+        return `<button class="view-replies-btn" onclick="cargarRespuestas(this, ${commentId})">Ver respuestas</button>`;
+    }
 
+    let html = '';
+    const previewCount = Math.min(2, replies.length);
+    
+    for (let i = 0; i < previewCount; i++) {
+        const r = replies[i];
+        html += `
+            <div class="reply-item" data-reply-id="${r.id}">
+                ${r.profileImage ? `<img src="${r.profileImage}" class="reply-avatar" onclick="goToUserProfile(${r.userId})" />` : `<div class="reply-avatar-letter">${r.username.charAt(0).ToUpperCase()}</div>`}
+                <div class="reply-content">
+                    <div class="reply-header">
+                        <a href="/User/Profile/${r.userId}" class="reply-username-link">${escapeHtml(r.username)}</a>
+                        <span class="reply-time">${r.createdAt}</span>
+                    </div>
+                    <div class="reply-text">${escapeHtml(r.text)}</div>
+                    <div class="reply-actions">
+                        <button class="reply-like-btn ${r.isLiked ? 'liked' : ''}" onclick="toggleReplyLikeModal(this, ${r.id})">
+                            ${r.isLiked ? '❤️' : '🤍'} <span class="like-count">${r.likeCount || 0}</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    if (replies.length > 2) {
+        html += `
+            <button class="view-replies-btn" onclick="cargarRespuestas(this, ${commentId})">
+                Ver ${replies.length - 2} respuestas más
+            </button>
+        `;
+    } else if (replies.length > 0) {
+        html += `
+            <button class="view-replies-btn" onclick="cargarRespuestas(this, ${commentId})">
+                Ver todas las respuestas
+            </button>
+        `;
+    }
+
+    return html;
+}
 function setCommentsSort(sort) {
     commentsSort = sort;
     document.querySelectorAll('.cm-tab').forEach(btn => btn.classList.toggle('active', btn.dataset.sort === sort));
