@@ -245,6 +245,10 @@
                 <div class="comments-modal-title">Comentarios</div>
                 <div class="comments-modal-subtitle" id="commentsModalSubtitle">Conversación de la publicación</div>
             </div>
+            <div class="comments-modal-tabs">
+                <button type="button" class="cm-tab active" data-sort="recent" onclick="setCommentsSort('recent')">Recientes</button>
+                <button type="button" class="cm-tab" data-sort="top" onclick="setCommentsSort('top')">Populares</button>
+            </div>
             <button class="comments-modal-close" onclick="closeCommentsModal()">✕</button>
         </div>
         <div class="comments-modal-body" id="commentsModalBody">
@@ -416,12 +420,15 @@ body.bg-dark .post-privacy-badge.public { background:rgba(21,128,61,0.2); color:
     border: 1px solid rgba(255,255,255,.45);
 }
 .comments-modal-header {
-    display: flex; justify-content: space-between; align-items: center;
-    padding: 16px 18px; border-bottom: 1px solid rgba(15,23,42,.07);
-    background: linear-gradient(180deg,#ffffff,#f8fafc); flex-shrink: 0;
+    display: grid; grid-template-columns: 1fr auto auto; align-items: center; gap:12px;
+    padding: 14px 16px; border-bottom: 1px solid rgba(15,23,42,.07);
+    background: rgba(255,255,255,.96); flex-shrink: 0;
 }
 .comments-modal-title { font-weight: 900; font-size: 18px; color: #0f172a; letter-spacing:-.2px; }
 .comments-modal-subtitle { font-size: 12px; color:#64748b; font-weight:700; margin-top:2px; }
+.comments-modal-tabs{display:flex;gap:6px;background:#f1f5f9;border-radius:999px;padding:4px;border:1px solid #e2e8f0;}
+.cm-tab{border:none;background:transparent;color:#64748b;border-radius:999px;padding:7px 10px;font-size:12px;font-weight:900;cursor:pointer;}
+.cm-tab.active{background:#0f172a;color:white;box-shadow:0 8px 18px rgba(15,23,42,.18);}
 .comments-modal-close {
     background: #f1f5f9; border: none; font-size: 18px; cursor: pointer;
     color: #64748b; width: 34px; height: 34px; border-radius: 50%;
@@ -450,7 +457,8 @@ body.bg-dark .post-privacy-badge.public { background:rgba(21,128,61,0.2); color:
 }
 .comment-content { flex: 1; min-width:0; background:#fff; border:1px solid rgba(15,23,42,.06); border-radius:18px; padding:11px 13px; box-shadow:0 10px 28px rgba(15,23,42,.055); }
 .comment-head { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:4px; }
-.comment-username { font-weight: 900; font-size: 13px; color: #0f172a; display: inline-block; }
+.comment-username { font-weight: 900; font-size: 13px; color: #0f172a; display: inline-block; text-decoration:none; }
+.comment-username:hover{color:#4f46e5;text-decoration:underline;}
 .comment-time { font-size: 11px; color: #94a3b8; font-weight:700; }
 .comment-text { font-size: 14px; color: #334155; margin: 5px 0 8px; line-height:1.55; word-break: break-word; white-space:pre-wrap; }
 .comment-img { max-width: 100%; max-height: 240px; border-radius: 14px; margin-top: 7px; cursor: pointer; object-fit:cover; box-shadow:0 10px 28px rgba(15,23,42,.12); }
@@ -514,6 +522,10 @@ body.bg-dark .post-privacy-badge.public { background:rgba(21,128,61,0.2); color:
 }
 body.bg-dark .comments-modal-container { background: #1e293b; border-color:rgba(255,255,255,.08); }
 body.bg-dark .comments-modal-title { color: white; }
+body.bg-dark .comments-modal-header{background:#1e293b;border-color:#334155;}
+body.bg-dark .comments-modal-subtitle{color:#94a3b8;}
+body.bg-dark .comments-modal-tabs{background:#0f172a;border-color:#334155;}
+body.bg-dark .cm-tab.active{background:#6366f1;}
 body.bg-dark .comments-modal-body { background: #0f172a; }
 body.bg-dark .comment-content { background:#1e293b; border-color:#334155; box-shadow:none; }
 body.bg-dark .comment-username { color: #f1f5f9; }
@@ -525,6 +537,10 @@ body.bg-dark .comment-image-preview { background: #2d3748; }
 @@media(max-width:640px){
     .comments-modal{align-items:flex-end;}
     .comments-modal-container{width:100%;height:calc(100vh - 18px);border-radius:24px 24px 0 0;}
+    .comments-modal-header{grid-template-columns:1fr auto;grid-template-areas:"title close" "tabs tabs";}
+    .comments-modal-header > div:first-child{grid-area:title;}
+    .comments-modal-tabs{grid-area:tabs;width:100%;justify-content:center;}
+    .comments-modal-close{grid-area:close;}
     .comments-modal-body{padding:14px;}
     .comment-item{gap:9px;}
     .comment-avatar,.comment-avatar-letter{width:36px;height:36px;flex-basis:36px;}
@@ -641,6 +657,8 @@ body.bg-dark .comment-image-preview { background: #2d3748; }
     display: flex; align-items: baseline; gap: 6px; margin-bottom: 2px;
 }
 .reply-username { font-weight: 700; font-size: 12px; color: #111827; }
+.reply-username-link{font-weight:900;font-size:12px;color:#111827;text-decoration:none;}
+.reply-username-link:hover{color:#4f46e5;text-decoration:underline;}
 .reply-time { font-size: 10px; color: #9ca3af; }
 .reply-text { font-size: 13px; color: #374151; margin: 4px 0; }
 .reply-actions { display: flex; gap: 8px; margin-top: 4px; }
@@ -964,6 +982,8 @@ function cerrarAnuncioPosts() {
 let currentPostId = null;
 let commentConnection = null;
 let selectedCommentImage = null;
+let commentsCache = [];
+let commentsSort = 'recent';
 
 async function openCommentsModal(postId) {
     // Evitar abrir si ya está abierto
@@ -1039,14 +1059,18 @@ function handleEscapeKey(e) {
 }
 function renderComments(comments, commentsDisabled) {
     const body = document.getElementById('commentsModalBody');
-    if (!comments || comments.length === 0) {
+    commentsCache = Array.isArray(comments) ? comments : [];
+    const list = commentsSort === 'top'
+        ? [...commentsCache].sort((a, b) => (b.likeCount || 0) - (a.likeCount || 0))
+        : [...commentsCache];
+    if (!list || list.length === 0) {
         body.innerHTML = '<div class="comments-loading">Todavía no hay comentarios. Sé quien abra la conversación.</div>';
         return;
     }
     let html = '';
-    comments.forEach(c => {
+    list.forEach(c => {
         const avatar = c.profileImage 
-            ? `<img src="${c.profileImage}" class="comment-avatar" />` 
+            ? `<img src="${c.profileImage}" class="comment-avatar" onclick="goToUserProfile(${c.userId})" />` 
             : `<div class="comment-avatar-letter">${c.username.charAt(0).toUpperCase()}</div>`;
         const img = c.imagePath ? `<img src="${c.imagePath}" class="comment-img" onclick="window.open('${c.imagePath}', '_blank')" />` : '';
         html += `
@@ -1054,7 +1078,7 @@ function renderComments(comments, commentsDisabled) {
                 ${avatar}
                 <div class="comment-content">
                     <div class="comment-head">
-                        <span class="comment-username">${escapeHtml(c.username)}</span>
+                        <a href="/User/Profile/${c.userId}" class="comment-username">${escapeHtml(c.username)}</a>
                         <span class="comment-time">${c.createdAt}</span>
                     </div>
                     <div class="comment-text">${escapeHtml(c.comment)}</div>
@@ -1074,6 +1098,17 @@ function renderComments(comments, commentsDisabled) {
         `;
     });
     body.innerHTML = html;
+}
+
+function setCommentsSort(sort) {
+    commentsSort = sort;
+    document.querySelectorAll('.cm-tab').forEach(btn => btn.classList.toggle('active', btn.dataset.sort === sort));
+    renderComments(commentsCache, false);
+}
+
+function goToUserProfile(userId) {
+    if (!userId) return;
+    window.location.href = `/User/Profile/${userId}`;
 }
 function attachCommentEvents() {
     const textarea = document.getElementById('newCommentText');
@@ -1133,10 +1168,10 @@ async function cargarRespuestas(btn, commentId) {
             replies.forEach(r => {
                 repliesHtml += `
                     <div class="reply-item" data-reply-id="${r.id}">
-                        ${r.profileImage ? `<img src="${r.profileImage}" class="reply-avatar" />` : `<div class="reply-avatar-letter">${r.username.charAt(0).toUpperCase()}</div>`}
+                        ${r.profileImage ? `<img src="${r.profileImage}" class="reply-avatar" onclick="goToUserProfile(${r.userId})" />` : `<div class="reply-avatar-letter" onclick="goToUserProfile(${r.userId})">${r.username.charAt(0).toUpperCase()}</div>`}
                         <div class="reply-content">
                             <div class="reply-header">
-                                <span class="reply-username">${escapeHtml(r.username)}</span>
+                                <a href="/User/Profile/${r.userId}" class="reply-username-link">${escapeHtml(r.username)}</a>
                                 <span class="reply-time">${r.createdAt}</span>
                             </div>
                             <div class="reply-text">${escapeHtml(r.text)}</div>
@@ -1213,9 +1248,9 @@ function showReplyForm(element, parentId, type) {
                 replies.forEach(r => {
                     repliesHtml += `
                         <div class="reply-item" data-reply-id="${r.id}">
-                            ${r.profileImage ? `<img src="${r.profileImage}" class="reply-avatar" />` : `<div class="reply-avatar-letter">${r.username.charAt(0).toUpperCase()}</div>`}
+                            ${r.profileImage ? `<img src="${r.profileImage}" class="reply-avatar" onclick="goToUserProfile(${r.userId})" />` : `<div class="reply-avatar-letter" onclick="goToUserProfile(${r.userId})">${r.username.charAt(0).toUpperCase()}</div>`}
                             <div class="reply-content">
-                                <div class="reply-header"><span class="reply-username">${escapeHtml(r.username)}</span><span class="reply-time">${r.createdAt}</span></div>
+                                <div class="reply-header"><a href="/User/Profile/${r.userId}" class="reply-username-link">${escapeHtml(r.username)}</a><span class="reply-time">${r.createdAt}</span></div>
                                 <div class="reply-text">${escapeHtml(r.text)}</div>
                                 <div class="reply-actions">
                                     <button class="reply-like-btn ${r.isLiked ? 'liked' : ''}" data-reply-id="${r.id}" onclick="toggleReplyLikeModal(this, ${r.id})">${r.isLiked ? '❤️' : '🤍'} <span class="like-count">${r.likeCount}</span></button>
@@ -1338,10 +1373,10 @@ function addCommentToList(comment) {
     if (emptyMsg && emptyMsg.innerText.includes('No hay comentarios')) emptyMsg.remove();
     const newCommentHtml = `
         <div class="comment-item" id="comment-${comment.id}">
-            ${comment.profileImage ? `<img src="${comment.profileImage}" class="comment-avatar" />` : `<div class="comment-avatar-letter">${comment.username.charAt(0).toUpperCase()}</div>`}
+            ${comment.profileImage ? `<img src="${comment.profileImage}" class="comment-avatar" onclick="goToUserProfile(${comment.userId})" />` : `<div class="comment-avatar-letter" onclick="goToUserProfile(${comment.userId})">${comment.username.charAt(0).toUpperCase()}</div>`}
             <div class="comment-content">
                 <div class="comment-head">
-                    <span class="comment-username">${escapeHtml(comment.username)}</span>
+                    <a href="/User/Profile/${comment.userId}" class="comment-username">${escapeHtml(comment.username)}</a>
                     <span class="comment-time">${comment.createdAt}</span>
                 </div>
                 <div class="comment-text">${escapeHtml(comment.comment)}</div>
@@ -1362,11 +1397,15 @@ function addCommentToList(comment) {
 
 function closeCommentsModal() {
     const modal = document.getElementById('commentsModal');
-    if (!modal || modal.style.display !== 'flex') return;
+    if (!modal) return;
     
     modal.style.display = 'none';
-    document.body.style.overflow = '';
-    document.documentElement.style.overflow = '';
+    document.body.style.removeProperty('overflow');
+    document.body.style.removeProperty('padding-right');
+    document.body.style.removeProperty('position');
+    document.body.classList.remove('modal-open');
+    document.documentElement.style.removeProperty('overflow');
+    document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
     
     // Remover listener de tecla Escape específico del modal
     document.removeEventListener('keydown', handleEscapeKey);
@@ -1383,6 +1422,9 @@ function closeCommentsModal() {
     
     currentPostId = null;
     selectedCommentImage = null;
+    commentsCache = [];
+    commentsSort = 'recent';
+    document.querySelectorAll('.cm-tab').forEach(btn => btn.classList.toggle('active', btn.dataset.sort === 'recent'));
     
     // Opcional: cancelar cualquier petición fetch en curso (no es fácil, pero se puede usar AbortController)
     // Si hay un setTimeout del typing indicator, limpiarlo
