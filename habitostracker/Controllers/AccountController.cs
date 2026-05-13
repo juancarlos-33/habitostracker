@@ -1866,37 +1866,47 @@ namespace HabitTrackerApp.Controllers
         {
             if (string.IsNullOrWhiteSpace(username) || username.Length < 3)
             {
-                ModelState.AddModelError("", "El nombre de usuario debe tener al menos 3 caracteres.");
+                ModelState.AddModelError("", "El nombre debe tener al menos 3 caracteres.");
                 return View();
             }
 
+            username = username.Trim();
+
             if (_context.Users.Any(u => u.Username.ToLower() == username.ToLower()))
             {
-                ModelState.AddModelError("", "Ese nombre de usuario ya existe.");
+                ModelState.AddModelError("", "Ese nombre de usuario ya existe. Elige otro.");
                 return View();
             }
 
             var user = new User
             {
-                Username = username.Trim(),
-                Email = $"guest_{Guid.NewGuid().ToString().Substring(0, 8)}@guest.local",
+                Username = username,
+                Email = $"guest_{Guid.NewGuid().ToString("N").Substring(0, 12)}@guest.local",
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword(Guid.NewGuid().ToString()),
                 EmailConfirmed = true,
                 Role = "Guest",
-                CreatedAt = DateTime.Now,
+                CreatedAt = DateTime.UtcNow,
                 IsActive = true,
                 Gender = "No especificado",
                 FullName = username,
-                Bio = "Usuario invitado"
+                Bio = "Usuario invitado",
+                IsGoogleAccount = false,
+                OnboardingComplete = true,           // ← Esto es lo más importante
+                LastOnline = DateTime.UtcNow
             };
 
             _context.Users.Add(user);
             await _context.SaveChangesAsync();
 
+            // Iniciar sesión
             await SignInUser(user);
+
+            // Marcar como invitado
             HttpContext.Session.SetString("Guest", "true");
 
-            TempData["Success"] = "✅ Bienvenido como invitado";
+            TempData["Success"] = $"✅ Bienvenido, {username}!";
+
+            // Redirección directa y forzada al Index
             return RedirectToAction("Index", "Habit");
         }
         [HttpGet]
