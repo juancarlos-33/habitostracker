@@ -1035,9 +1035,13 @@ async function openCommentsModal(postId) {
         console.error(e);
         body.innerHTML = `<div class="comments-loading" style="color:#ef4444;">❌ Error de conexión.<br><small>Inténtalo de nuevo</small></div>`;
     }
-}function handleEscapeKey(e) {
+}
+function handleEscapeKey(e) {
     if (e.key === 'Escape') {
-        closeCommentsModal();
+        const modal = document.getElementById('commentsModal');
+        if (modal && modal.style.display === 'flex') {
+            closeCommentsModal();
+        }
     }
 }
 function renderComments(comments, commentsDisabled) {
@@ -1434,28 +1438,36 @@ function closeCommentsModal() {
 
     modal.style.display = 'none';
 
-    // Restaurar scroll correctamente
+    // Restaurar scroll de forma agresiva
     document.body.style.overflow = '';
     document.body.style.position = '';
     document.body.style.paddingRight = '';
+    document.body.style.top = '';
     document.documentElement.style.overflow = '';
+    
+    // Quitar cualquier clase residual
+    document.body.classList.remove('modal-open', 'overflow-hidden');
 
-    // Limpiar todo
+    // Limpiar SignalR
     if (commentConnection && commentConnection.state === 'Connected' && currentPostId) {
         commentConnection.invoke("LeavePostGroup", currentPostId).catch(() => {});
     }
 
+    // Limpiar formularios de respuesta
     if (activeReplyForm) {
         activeReplyForm.remove();
         activeReplyForm = null;
     }
 
+    // Resetear variables
     currentPostId = null;
     selectedCommentImage = null;
     commentsCache = [];
 
     // Remover listener de Escape
     document.removeEventListener('keydown', handleEscapeKey);
+
+    console.log("✅ Modal cerrado y scroll restaurado");
 }
 async function toggleCommentLikeModal(btn, commentId) {
     const isLiked = btn.classList.contains('liked');
