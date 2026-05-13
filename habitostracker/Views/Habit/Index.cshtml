@@ -825,9 +825,9 @@ body.bg-dark .hx-btn.ghost{background:#111827!important;border-color:rgba(255,25
                               <div class="hx-progress-detail">
     <span class="hx-time-live" id="time-@habit.Id">⏱️ 0s</span>
     <span class="hx-percent-live" id="perc-@habit.Id">0%</span>
- <span class="hx-goal-live" id="goal-@habit.Id" 
-      onclick="cambiarObjetivo(@habit.Id, '@habit.Name.Replace("'", "\\'")')" 
-      style="cursor:pointer; text-decoration:underline dotted;">
+<span class="hx-goal-live" id="goal-@habit.Id" 
+      onclick="cambiarObjetivo(@habit.Id, '@(habit.Name.Replace("'", "\\'"))')" 
+      style="cursor:pointer;">
     🎯 Objetivo
 </span>
 </div>
@@ -1003,57 +1003,8 @@ if(navigator.geolocation){navigator.geolocation.getCurrentPosition(pos=>{const{l
 function filtH(tipo,btn){document.querySelectorAll('.hx-htab').forEach(t=>t.classList.remove('on'));btn.classList.add('on');document.querySelectorAll('.hx-habit').forEach(h=>{const s=h.getAttribute('data-status');const show=tipo==='todos'||(tipo==='pendientes'&&s==='pending')||(tipo==='completados'&&s==='done');const id=h.id.replace('hb-','');h.style.display=show?'flex':'none';const cw=document.getElementById('cw-'+id);if(cw)cw.style.display=show?'block':'none';});}
 
 // ==================== CONTADOR TIEMPO REAL ====================
-const hitos = [
-    { seg: 86400, nombre: "1 DÍA" },      // 24h
-    { seg: 259200, nombre: "3 DÍAS" },     // 3d
-    { seg: 604800, nombre: "1 SEMANA" },   // 7d
-    { seg: 864000, nombre: "10 DÍAS" },    // 10d
-    { seg: 1209600, nombre: "2 SEMANAS" }, // 14d
-    { seg: 2592000, nombre: "1 MES" },     // 30d
-    { seg: 7776000, nombre: "3 MESES" },   // 90d
-    { seg: 15552000, nombre: "6 MESES" },  // 180d
-    { seg: 31536000, nombre: "1 AÑO" }     // 365d
-];
-function cambiarObjetivo(habitId, nombreHabit) {
-    let html = `<div style="padding:20px 16px 10px;">
-        <div style="font-weight:700;margin-bottom:16px;color:#e0e7ff;">🎯 Cambiar objetivo</div>
-        <div style="margin-bottom:12px;font-size:13px;">${nombreHabit}</div>`;
 
-    hitos.forEach(h => {
-        html += `
-            <div onclick="aplicarObjetivo(${habitId}, ${h.seg});" 
-                 style="padding:14px 16px;margin:6px 0;background:#334155;border-radius:12px;cursor:pointer;color:white;">
-                ${h.nombre}
-            </div>`;
-    });
-
-    html += `</div>`;
-
-    const modal = document.createElement('div');
-    modal.style.cssText = `position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:999999;display:flex;align-items:center;justify-content:center;`;
-    modal.innerHTML = `<div style="background:#1e293b;width:90%;max-width:340px;border-radius:20px;">${html}</div>`;
-    document.body.appendChild(modal);
-
-    modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
-}
-
-function aplicarObjetivo(habitId, segundos) {
-    habitObjectives[habitId] = segundos;
-    document.querySelectorAll('div[style*="position:fixed"]').forEach(m => m.remove());
-    actualizarTodosLosContadores();
-    showToast("✅ Objetivo actualizado");
-}
-// ==================== SUBIR HISTORIA ====================
-function openStoryUpload() {
-    // Por ahora redirige a la página de crear historia
-    // Puedes cambiar esto después por un modal si prefieres
-    window.location.href = '/Story/Create';
-}
-
-// Opcional: Si quieres un modal bonito en el futuro, avísame y lo creamos
-// ==================== SISTEMA DE OBJETIVOS PERSONALIZADOS ====================
-// ==================== OBJETIVOS PERSONALIZADOS ====================
-// ==================== CONTADOR TIEMPO REAL + OBJETIVOS ====================
+// ==================== OBJETIVOS PERSONALIZADOS + CONTADOR ====================
 const hitos = [
     { seg: 86400,    nombre: "24 Horas" },
     { seg: 259200,   nombre: "3 Días" },
@@ -1093,7 +1044,6 @@ function actualizarTodosLosContadores() {
     document.querySelectorAll('.hx-habit').forEach(habitDiv => {
         const startDateStr = habitDiv.getAttribute('data-start-date');
         const habitId = habitDiv.getAttribute('data-habit-id');
-        
         if (!startDateStr || !habitId) return;
 
         const start = new Date(startDateStr).getTime() / 1000;
@@ -1104,18 +1054,17 @@ function actualizarTodosLosContadores() {
 
         const prog = calcularProgreso(diff, habitId);
 
-        // Actualizar tiempo transcurrido
+        // Tiempo transcurrido
         const dias = Math.floor(diff / 86400);
         const horas = Math.floor((diff % 86400) / 3600);
         const minutos = Math.floor((diff % 3600) / 60);
-        const segundos = Math.floor(diff % 60);
 
         const timeStr = `${dias}d ${horas.toString().padStart(2,'0')}h ${minutos.toString().padStart(2,'0')}m`;
         
         const timeSpan = document.getElementById(`time-${habitId}`);
-        if (timeSpan) timeSpan.innerHTML = `⏱️ ${timeStr}`;
+        if (timeSpan) timeSpan.textContent = `⏱️ ${timeStr}`;
 
-        // Actualizar porcentaje y objetivo
+        // Porcentaje y objetivo
         const percSpan = document.getElementById(`perc-${habitId}`);
         if (percSpan) percSpan.textContent = `${prog.porc}%`;
 
@@ -1123,28 +1072,54 @@ function actualizarTodosLosContadores() {
         if (goalSpan) goalSpan.textContent = `Objetivo: ${prog.nombre}`;
     });
 }
-function cambiarObjetivo(habitId, nombreHabit) {
-    const menu = document.createElement('div');
-    menu.style.cssText = `
-        position:fixed; top:50%; left:50%; transform:translate(-50%,-50%);
-        background:#1e293b; color:white; border-radius:20px; padding:20px; 
-        z-index:999999; min-width:280px; box-shadow:0 20px 50px rgba(0,0,0,0.6);
-    `;
 
-    let html = `<div style="margin-bottom:16px;font-weight:700;">🎯 Objetivo para<br><strong>${nombreHabit}</strong></div>`;
+// Cambiar objetivo
+function cambiarObjetivo(habitId, nombreHabit) {
+    let html = `<div style="padding:20px;">
+        <div style="font-weight:700;margin-bottom:12px;color:#e0e7ff;">🎯 Objetivo para</div>
+        <div style="margin-bottom:16px;font-size:15px;">${nombreHabit}</div>`;
 
     hitos.forEach(h => {
         html += `
-            <div onclick="aplicarNuevoObjetivo(${habitId}, ${h.seg});" 
-                 style="padding:14px 16px; margin:6px 0; background:#334155; border-radius:12px; cursor:pointer;">
+            <div onclick="aplicarObjetivo(${habitId}, ${h.seg});" 
+                 style="padding:14px 16px;margin:6px 0;background:#334155;border-radius:12px;cursor:pointer;color:white;">
                 ${h.nombre}
-            </div>
-        `;
+            </div>`;
     });
 
-    menu.innerHTML = html + `<div onclick="this.remove()" style="text-align:center;margin-top:12px;color:#94a3b8;cursor:pointer;">Cancelar</div>`;
-    document.body.appendChild(menu);
+    html += `</div>`;
+
+    const modal = document.createElement('div');
+    modal.style.cssText = `position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:999999;display:flex;align-items:center;justify-content:center;`;
+    modal.innerHTML = `<div style="background:#1e293b;width:90%;max-width:340px;border-radius:20px;">${html}</div>`;
+    document.body.appendChild(modal);
+
+    modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
 }
+
+function aplicarObjetivo(habitId, segundos) {
+    habitObjectives[habitId] = segundos;
+    document.querySelectorAll('div[style*="position:fixed"]').forEach(m => m.remove());
+    actualizarTodosLosContadores();
+    showToast("✅ Objetivo actualizado");
+}
+
+// Inicializar contadores
+setInterval(actualizarTodosLosContadores, 1000);
+actualizarTodosLosContadores();
+// ==================== SUBIR HISTORIA ====================
+function openStoryUpload() {
+    // Por ahora redirige a la página de crear historia
+    // Puedes cambiar esto después por un modal si prefieres
+    window.location.href = '/Story/Create';
+}
+
+// Opcional: Si quieres un modal bonito en el futuro, avísame y lo creamos
+// ==================== SISTEMA DE OBJETIVOS PERSONALIZADOS ====================
+// ==================== OBJETIVOS PERSONALIZADOS ====================
+// ==================== CONTADOR TIEMPO REAL + OBJETIVOS ====================
+
+
 
 function aplicarNuevoObjetivo(habitId, segundos) {
     habitObjectives[habitId] = segundos;
@@ -1156,86 +1131,6 @@ function aplicarNuevoObjetivo(habitId, segundos) {
 
 
 // Abrir selector de objetivo para un hábito
-function seleccionarObjetivo(habitId, nombreHabit) {
-    const opciones = [
-        { seg: 86400,    nombre: "24 Horas" },
-        { seg: 259200,   nombre: "3 Días" },
-        { seg: 604800,   nombre: "1 Semana" },
-        { seg: 1209600,  nombre: "2 Semanas" },
-        { seg: 2592000,  nombre: "1 Mes" },
-        { seg: 7776000,  nombre: "3 Meses" },
-        { seg: 15552000, nombre: "6 Meses" },
-        { seg: 31536000, nombre: "1 Año" }
-    ];
-
-    let html = `
-        <div style="padding:20px;">
-            <h3 style="margin-bottom:16px;">🎯 Elige tu objetivo para</h3>
-            <strong style="display:block;margin-bottom:16px;">${nombreHabit}</strong>
-    `;
-
-    opciones.forEach(op => {
-        const dias = Math.round(op.seg / 86400);
-        html += `
-            <button onclick="aplicarObjetivo(${habitId}, ${op.seg}, '${op.nombre}')" 
-                    style="width:100%;padding:14px;margin-bottom:8px;border-radius:16px;border:1px solid #e2e8f0;background:white;font-size:15px;font-weight:600;cursor:pointer;">
-                ${op.nombre} <span style="color:#64748b;font-size:13px;">(${dias} días)</span>
-            </button>
-        `;
-    });
-
-    html += `</div>`;
-
-    // Mostrar como modal simple
-    const tempModal = document.createElement('div');
-    tempModal.style.cssText = `position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:999999;display:flex;align-items:center;justify-content:center;`;
-    tempModal.innerHTML = `
-        <div style="background:white;border-radius:24px;width:90%;max-width:380px;max-height:85vh;overflow:auto;">
-            ${html}
-            <div style="padding:16px;text-align:center;">
-                <button onclick="this.closest('.modal-temp').remove()" style="padding:10px 24px;border:none;background:#e2e8f0;border-radius:999px;font-weight:700;">Cancelar</button>
-            </div>
-        </div>
-    `;
-    tempModal.className = 'modal-temp';
-    document.body.appendChild(tempModal);
-}
-
-function aplicarObjetivo(habitId, segundos, nombre) {
-    habitObjectives[habitId] = segundos;
-    document.querySelectorAll('.modal-temp').forEach(m => m.remove());
-    
-    // Actualizar visualmente
-    actualizarTodosLosContadores();
-    
-    showToast(`Objetivo cambiado a: ${nombre}`);
-}
-function actualizarTodosLosContadores() {
-    const ahora = Date.now() / 1000;
-    document.querySelectorAll('.hx-habit').forEach(habitDiv => {
-        const startDateStr = habitDiv.getAttribute('data-start-date');
-        if (!startDateStr) return;
-        const start = new Date(startDateStr).getTime() / 1000;
-        if (isNaN(start)) return;
-        let diff = ahora - start;
-        if (diff < 0) diff = 0;
-        const dias = Math.floor(diff / 86400);
-        const horas = Math.floor((diff % 86400) / 3600);
-        const minutos = Math.floor((diff % 3600) / 60);
-        const segundos = Math.floor(diff % 60);
-        const timeStr = `${dias}d ${horas.toString().padStart(2,'0')}h ${minutos.toString().padStart(2,'0')}m ${segundos.toString().padStart(2,'0')}s`;
-        const habitId = habitDiv.getAttribute('data-habit-id');
-        const timeSpan = document.getElementById(`time-${habitId}`);
-        if (timeSpan) timeSpan.innerHTML = `⏱️ ${timeStr}`;
-        const prog = calcularProgreso(diff);
-        const percSpan = document.getElementById(`perc-${habitId}`);
-        if (percSpan) percSpan.textContent = `${Math.floor(prog.porc)}%`;
-        const goalSpan = document.getElementById(`goal-${habitId}`);
-        if (goalSpan) goalSpan.textContent = `Objetivo: ${prog.nombre}`;
-    });
-}
-setInterval(actualizarTodosLosContadores, 1000);
-actualizarTodosLosContadores();
 
 // ==================== MODAL HÁBITO ====================
 let isEditing = false;
