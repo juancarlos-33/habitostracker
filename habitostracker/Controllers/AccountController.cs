@@ -1864,43 +1864,29 @@ namespace HabitTrackerApp.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> GuestRegister(string username)
         {
-            var ip = HttpContext.Request.Headers["X-Forwarded-For"].FirstOrDefault();
-            if (string.IsNullOrEmpty(ip))
-                ip = HttpContext.Connection.RemoteIpAddress?.ToString();
-
-        
-
-            var blockedUser = _context.Users.FirstOrDefault(u => u.LastIp == ip && u.IsIpBlocked);
-            if (blockedUser != null)
-                return RedirectToAction("Login", new { blocked = true });
-
-            if (string.IsNullOrWhiteSpace(username))
+            if (string.IsNullOrWhiteSpace(username) || username.Length < 3)
             {
-                ModelState.AddModelError("", "El nombre de usuario es obligatorio.");
+                ModelState.AddModelError("", "El nombre de usuario debe tener al menos 3 caracteres.");
                 return View();
             }
 
-            if (_context.Users.Any(u => u.Username == username) ||
-      username.ToLower() == "habittracker")
+            if (_context.Users.Any(u => u.Username.ToLower() == username.ToLower()))
             {
-                ModelState.AddModelError("", username.ToLower() == "habittracker"
-                    ? "Este nombre de usuario está reservado y no puede usarse."
-                    : "Ese usuario ya existe.");
+                ModelState.AddModelError("", "Ese nombre de usuario ya existe.");
                 return View();
             }
 
             var user = new User
             {
-                Username = username,
-                Email = $"guest_{Guid.NewGuid()}@guest.local",
+                Username = username.Trim(),
+                Email = $"guest_{Guid.NewGuid().ToString().Substring(0, 8)}@guest.local",
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword(Guid.NewGuid().ToString()),
                 EmailConfirmed = true,
                 Role = "Guest",
                 CreatedAt = DateTime.Now,
                 IsActive = true,
-                IsGoogleAccount = false,
                 Gender = "No especificado",
-                FullName = "Invitado",
+                FullName = username,
                 Bio = "Usuario invitado"
             };
 
@@ -1910,6 +1896,7 @@ namespace HabitTrackerApp.Controllers
             await SignInUser(user);
             HttpContext.Session.SetString("Guest", "true");
 
+            TempData["Success"] = "✅ Bienvenido como invitado";
             return RedirectToAction("Index", "Habit");
         }
         [HttpGet]
