@@ -1091,7 +1091,10 @@ function actualizarTodosLosContadores() {
         if (goalSpan) goalSpan.textContent = `Objetivo: ${prog.nombre}`;
     });
 }
-
+// Subir historia
+function openStoryUpload() {
+    window.location.href = '/Story/Create';
+}
 // ==================== MODAL DE OBJETIVO ====================
 function cambiarObjetivo(habitId, nombreHabit) {
     let html = `

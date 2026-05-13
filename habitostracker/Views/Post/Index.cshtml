@@ -1431,37 +1431,31 @@ function addCommentToList(comment) {
 function closeCommentsModal() {
     const modal = document.getElementById('commentsModal');
     if (!modal) return;
-    
+
     modal.style.display = 'none';
-    document.body.style.removeProperty('overflow');
-    document.body.style.removeProperty('padding-right');
-    document.body.style.removeProperty('position');
-    document.body.classList.remove('modal-open');
-    document.documentElement.style.removeProperty('overflow');
-    document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
-    
-    // Remover listener de tecla Escape específico del modal
-    document.removeEventListener('keydown', handleEscapeKey);
-    
+
+    // Restaurar scroll correctamente
+    document.body.style.overflow = '';
+    document.body.style.position = '';
+    document.body.style.paddingRight = '';
+    document.documentElement.style.overflow = '';
+
+    // Limpiar todo
     if (commentConnection && commentConnection.state === 'Connected' && currentPostId) {
-        commentConnection.invoke("LeavePostGroup", currentPostId).catch(e=>console.warn);
+        commentConnection.invoke("LeavePostGroup", currentPostId).catch(() => {});
     }
-    
-    // Limpiar cualquier formulario de respuesta activo
+
     if (activeReplyForm) {
         activeReplyForm.remove();
         activeReplyForm = null;
     }
-    
+
     currentPostId = null;
     selectedCommentImage = null;
     commentsCache = [];
-    commentsSort = 'recent';
-    document.querySelectorAll('.cm-tab').forEach(btn => btn.classList.toggle('active', btn.dataset.sort === 'recent'));
-    
-    // Opcional: cancelar cualquier petición fetch en curso (no es fácil, pero se puede usar AbortController)
-    // Si hay un setTimeout del typing indicator, limpiarlo
-    if (window.typingTimeout) clearTimeout(window.typingTimeout);
+
+    // Remover listener de Escape
+    document.removeEventListener('keydown', handleEscapeKey);
 }
 async function toggleCommentLikeModal(btn, commentId) {
     const isLiked = btn.classList.contains('liked');
