@@ -1219,39 +1219,66 @@ document.getElementById('saveHabitBtn').addEventListener('click', async function
         document.getElementById('habitModalError').style.display = 'block';
         return;
     }
+
     const url = isEditing ? '/Habit/EditAjax' : '/Habit/CreateAjax';
     const data = isEditing ? { id: currentEditId, name: name } : { name: name };
+
     this.disabled = true;
     this.innerHTML = '⏳ Guardando...';
+
     try {
+        const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value || '';
+
         const res = await fetch(url, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value || '' },
+            headers: {
+                'Content-Type': 'application/json',
+                'RequestVerificationToken': token
+            },
             body: JSON.stringify(data)
         });
+
+        // Si devuelve HTML en vez de JSON (redirección a login)
+        if (res.headers.get('content-type')?.includes('text/html')) {
+            alert("⚠️ Tu sesión expiró. Por favor inicia sesión nuevamente.");
+            window.location.href = '/Account/Login';
+            return;
+        }
+
         const result = await res.json();
+
         if (result.success) {
-            if (isEditing) {
-                const habitDiv = document.querySelector(`.hx-habit[data-habit-id="${currentEditId}"]`);
-                if (habitDiv) {
-                    const nameLink = habitDiv.querySelector('.hx-hname');
-                    if (nameLink) nameLink.textContent = name;
-                }
-            } else {
-                location.reload();
-            }
+            showToast("✅ Hábito guardado correctamente");
             closeHabitModal();
+            setTimeout(() => location.reload(), 800);
         } else {
-            alert(result.error || 'Error al guardar');
+            alert(result.error || "Error al guardar el hábito");
         }
     } catch (err) {
         console.error(err);
-        alert('Error de conexión');
+        alert("❌ Error de conexión. Inténtalo de nuevo.");
     } finally {
         this.disabled = false;
         this.innerHTML = '💾 Guardar';
     }
 });
+function showToast(message) {
+    const toast = document.createElement('div');
+    toast.style.cssText = `
+        position:fixed; bottom:20px; left:50%; transform:translateX(-50%);
+        background:#1e293b; color:white; padding:12px 24px; border-radius:999px;
+        font-weight:600; box-shadow:0 10px 30px rgba(0,0,0,0.4); z-index:999999;
+        white-space:nowrap;
+    `;
+    toast.textContent = message;
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.style.transition = '0.4s';
+        toast.style.opacity = '0';
+        setTimeout(() => toast.remove(), 400);
+    }, 2500);
+}
 
 // Reemplazar botones "Editar" y "Nuevo hábito"
 function reemplazarBotones() {
