@@ -154,10 +154,11 @@ function renderMessage(msg) {
             <div class="pc-meta"><span class="pc-name">${escapeHtml(msg.username)}</span><span class="pc-time">${escapeHtml(msg.sentAt)}</span></div>
             ${reply}
             <div class="pc-text">${escapeHtml(msg.content)}</div>
-            <div class="pc-actions"><button type="button" class="pc-action">Responder</button></div>
+            <div class="pc-actions"><button type="button" class="pc-action pc-reply-action">Responder</button><button type="button" class="pc-action pc-react-action">❤️ <span class="pc-react-count">0</span></button></div>
         </div>`;
 
-    wrap.querySelector(".pc-action").addEventListener("click", () => setReply(msg));
+    wrap.querySelector(".pc-reply-action").addEventListener("click", () => setReply(msg));
+    wrap.querySelector(".pc-react-action").addEventListener("click", () => pcConnection.invoke("ReactPublicChatMessage", msg.id).catch(() => {}));
     messagesEl.appendChild(wrap);
     messagesEl.scrollTop = messagesEl.scrollHeight;
 }
@@ -191,13 +192,24 @@ function renderPresence(text) {
     messagesEl.scrollTop = messagesEl.scrollHeight;
 }
 
-pcConnection.on("PublicChatHistory", history => {
-    messagesEl.querySelectorAll(".pc-msg,.pc-presence").forEach(x => x.remove());
-    if (history && history.length) history.forEach(renderMessage);
-});
+pcConnection.on("PublicChatReady", count => stateEl.textContent = `${count} en vivo`);
+pcConnection.on("PublicChatOnlineCount", count => stateEl.textContent = `${count} en vivo`);
 
 pcConnection.on("ReceivePublicChatMessage", renderMessage);
 pcConnection.on("PublicChatPresence", renderPresence);
+let pcTypingTimer = null;
+pcConnection.on("PublicChatTyping", username => {
+    renderPresence(`${username} está escribiendo...`);
+    clearTimeout(pcTypingTimer);
+    pcTypingTimer = setTimeout(() => {
+        const last = messagesEl.lastElementChild;
+        if (last && last.classList.contains("pc-presence") && last.textContent.includes("escribiendo")) last.remove();
+    }, 1200);
+});
+pcConnection.on("PublicChatReaction", (messageId, count) => {
+    const btn = document.querySelector(`#pc-msg-${CSS.escape(messageId)} .pc-react-count`);
+    if (btn) btn.textContent = count;
+});
 
 async function startChat() {
     if (started) return;
@@ -231,6 +243,9 @@ inputEl.addEventListener("input", () => {
     sendBtn.disabled = inputEl.value.trim().length === 0;
     inputEl.style.height = "auto";
     inputEl.style.height = Math.min(inputEl.scrollHeight, 120) + "px";
+    if (pcConnection.state === signalR.HubConnectionState.Connected) {
+        pcConnection.invoke("PublicChatTyping", myPublicName).catch(() => {});
+    }
 });
 inputEl.addEventListener("keydown", e => {
     if (e.key === "Enter" && !e.shiftKey) {

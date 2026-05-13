@@ -11,7 +11,8 @@ namespace HabitTrackerApp.Hubs
         private static readonly HashSet<string> ConnectedUsers = new HashSet<string>();
         private static readonly Dictionary<string, HashSet<string>> ActiveGroupChats = new();
         private static readonly object PublicChatLock = new();
-        private static readonly List<PublicChatMessage> PublicChatHistory = new();
+        private static readonly HashSet<string> PublicChatConnections = new();
+        private static readonly Dictionary<string, int> PublicChatReactions = new();
         private readonly HabitDbContext _context;
         private readonly OnlineUsersService _onlineUsers;
 
@@ -155,6 +156,21 @@ namespace HabitTrackerApp.Hubs
                 }
                 await Clients.All.SendAsync("UserOffline", userId);
             }
+
+            var wasInPublicChat = false;
+            int publicCount;
+            lock (PublicChatLock)
+            {
+                wasInPublicChat = PublicChatConnections.Remove(Context.ConnectionId);
+                publicCount = PublicChatConnections.Count;
+            }
+
+            if (wasInPublicChat)
+            {
+                await Clients.Group("public-login-chat")
+                    .SendAsync("PublicChatOnlineCount", publicCount);
+            }
+
             await base.OnDisconnectedAsync(exception);
         }
 
@@ -353,15 +369,18 @@ namespace HabitTrackerApp.Hubs
             var safeUsername = NormalizePublicUsername(username);
             await Groups.AddToGroupAsync(Context.ConnectionId, "public-login-chat");
 
-            List<PublicChatMessage> history;
+            int onlineCount;
             lock (PublicChatLock)
             {
-                history = PublicChatHistory.ToList();
+                PublicChatConnections.Add(Context.ConnectionId);
+                onlineCount = PublicChatConnections.Count;
             }
 
-            await Clients.Caller.SendAsync("PublicChatHistory", history);
+            await Clients.Caller.SendAsync("PublicChatReady", onlineCount);
             await Clients.OthersInGroup("public-login-chat")
                 .SendAsync("PublicChatPresence", $"{safeUsername} se unió al chat");
+            await Clients.Group("public-login-chat")
+                .SendAsync("PublicChatOnlineCount", onlineCount);
         }
 
         public async Task SendPublicChatMessage(
@@ -391,14 +410,31 @@ namespace HabitTrackerApp.Hubs
                     (replyContent.Length > 140 ? replyContent.Substring(0, 140) + "..." : replyContent)
             };
 
+            await Clients.Group("public-login-chat").SendAsync("ReceivePublicChatMessage", message);
+        }
+
+        public async Task PublicChatTyping(string username)
+        {
+            var safeUsername = NormalizePublicUsername(username);
+            await Clients.OthersInGroup("public-login-chat")
+                .SendAsync("PublicChatTyping", safeUsername);
+        }
+
+        public async Task ReactPublicChatMessage(string messageId)
+        {
+            if (string.IsNullOrWhiteSpace(messageId)) return;
+
+            int count;
             lock (PublicChatLock)
             {
-                PublicChatHistory.Add(message);
-                if (PublicChatHistory.Count > 80)
-                    PublicChatHistory.RemoveRange(0, PublicChatHistory.Count - 80);
+                PublicChatReactions[messageId] = PublicChatReactions.TryGetValue(messageId, out var current)
+                    ? current + 1
+                    : 1;
+                count = PublicChatReactions[messageId];
             }
 
-            await Clients.Group("public-login-chat").SendAsync("ReceivePublicChatMessage", message);
+            await Clients.Group("public-login-chat")
+                .SendAsync("PublicChatReaction", messageId, count);
         }
 
         private static string NormalizePublicUsername(string? username)

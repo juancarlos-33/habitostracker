@@ -8,6 +8,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Cabinet+Grotesk:wght@400;500;700;800;900&family=Satoshi:wght@300;400;500;700;900&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
 
 <style>
 :root{--bg:#03060f;--ind:#6366f1;--blu:#3b82f6;--vio:#8b5cf6;--mut:rgba(255,255,255,0.38);--brd:rgba(255,255,255,0.07);--fnt:rgba(255,255,255,0.04);}
@@ -64,6 +65,53 @@ body::after{content:'';position:fixed;inset:0;z-index:9998;pointer-events:none;o
 .vc-main{top:50%;left:50%;transform:translate(-50%,-50%);width:280px;z-index:3;}
 .vc-streak{top:10%;right:-5%;width:160px;z-index:2;animation:float 7s ease-in-out 1s infinite;}
 .vc-badge{bottom:5%;left:-8%;width:150px;z-index:2;animation:float 8s ease-in-out 2s infinite;}
+
+.landing-chat-section{position:relative;z-index:2;padding:20px 60px 100px;margin-top:-42px;}
+.landing-chat-wrap{max-width:1080px;margin:0 auto;display:grid;grid-template-columns:minmax(0,.9fr) minmax(360px,1.1fr);gap:28px;align-items:center;}
+.landing-chat-copy{max-width:430px;}
+.landing-chat-kicker{display:inline-flex;align-items:center;gap:8px;padding:7px 13px;border-radius:999px;background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.18);color:#86efac;font-size:11px;font-weight:900;margin-bottom:14px;}
+.landing-chat-copy h2{font-family:'Cabinet Grotesk',sans-serif;font-size:44px;line-height:1;font-weight:900;margin:0 0 14px;color:white;}
+.landing-chat-copy p{font-size:15px;line-height:1.75;color:rgba(255,255,255,.38);margin:0 0 18px;}
+.landing-chat-note{display:flex;gap:10px;flex-wrap:wrap;}
+.landing-chat-note span{font-size:11px;font-weight:800;color:rgba(255,255,255,.45);padding:8px 10px;border-radius:999px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);}
+.landing-chat-card{height:590px;max-height:calc(100vh - 96px);min-height:520px;border-radius:28px;background:linear-gradient(180deg,rgba(15,23,42,.98),rgba(2,6,23,.98));border:1px solid rgba(255,255,255,.09);box-shadow:0 30px 90px rgba(0,0,0,.45);overflow:hidden;display:grid;grid-template-rows:auto auto 1fr auto;position:relative;}
+.landing-chat-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 18px;border-bottom:1px solid rgba(255,255,255,.07);background:rgba(255,255,255,.025);}
+.landing-chat-room{font-size:14px;font-weight:900;color:white;}
+.landing-chat-status{font-size:11px;font-weight:900;color:#86efac;padding:6px 9px;border-radius:999px;background:rgba(34,197,94,.08);}
+.landing-chat-name{display:flex;gap:8px;padding:12px 14px;border-bottom:1px solid rgba(255,255,255,.06);background:rgba(255,255,255,.018);}
+.landing-chat-name input{flex:1;min-width:0;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.05);border-radius:14px;color:white;padding:11px 12px;font:inherit;font-size:13px;outline:none;}
+.landing-chat-name button{border:none;border-radius:14px;padding:0 14px;background:linear-gradient(135deg,#22c55e,#2563eb);color:white;font-weight:900;font-size:12px;cursor:pointer;}
+.landing-chat-feed{min-height:0;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px;scroll-behavior:smooth;}
+.landing-chat-empty{margin:auto;text-align:center;max-width:320px;color:rgba(255,255,255,.38);font-size:13px;line-height:1.7;}
+.landing-chat-msg{display:flex;gap:9px;align-items:flex-end;max-width:86%;}
+.landing-chat-msg.mine{align-self:flex-end;flex-direction:row-reverse;}
+.landing-chat-avatar{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;flex:0 0 34px;color:white;font-weight:900;background:linear-gradient(135deg,#6366f1,#22c55e);}
+.landing-chat-bubble{min-width:0;border:1px solid rgba(255,255,255,.07);background:rgba(255,255,255,.06);border-radius:17px 17px 17px 6px;padding:9px 11px;}
+.landing-chat-msg.mine .landing-chat-bubble{background:linear-gradient(135deg,#2563eb,#4f46e5);border-color:rgba(255,255,255,.12);border-radius:17px 17px 6px 17px;}
+.landing-chat-meta{display:flex;align-items:center;gap:7px;margin-bottom:4px;}
+.landing-chat-user{font-size:12px;font-weight:900;color:white;}
+.landing-chat-time{font-size:10px;color:rgba(255,255,255,.45);}
+.landing-chat-text{font-size:13px;line-height:1.45;color:rgba(255,255,255,.88);white-space:pre-wrap;overflow-wrap:anywhere;}
+.landing-chat-reply{border-left:3px solid rgba(134,239,172,.8);background:rgba(0,0,0,.18);border-radius:10px;padding:6px 8px;margin-bottom:7px;}
+.landing-chat-reply strong{display:block;color:#bbf7d0;font-size:11px;margin-bottom:2px;}
+.landing-chat-reply span{display:block;color:rgba(255,255,255,.56);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:280px;}
+.landing-chat-actions{display:flex;gap:7px;margin-top:7px;}
+.landing-chat-actions button{border:none;background:rgba(255,255,255,.08);color:rgba(255,255,255,.68);font-size:11px;font-weight:800;border-radius:999px;padding:5px 8px;cursor:pointer;}
+.landing-chat-actions button:hover{background:rgba(255,255,255,.14);color:white;}
+.landing-chat-presence{text-align:center;font-size:11px;color:rgba(255,255,255,.36);}
+.landing-chat-typing{display:none;padding:0 16px 8px;color:#86efac;font-size:12px;font-weight:700;}
+.landing-chat-typing.show{display:block;}
+.landing-chat-compose{border-top:1px solid rgba(255,255,255,.07);padding:12px;background:rgba(255,255,255,.025);}
+.landing-chat-replying{display:none;align-items:center;justify-content:space-between;gap:10px;margin-bottom:9px;padding:9px 11px;border-radius:14px;background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.14);}
+.landing-chat-replying.open{display:flex;}
+.landing-chat-replying strong{font-size:12px;color:#bbf7d0;}
+.landing-chat-replying span{display:block;font-size:12px;color:rgba(255,255,255,.58);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:420px;}
+.landing-chat-replying button{background:none;border:none;color:#bbf7d0;font-weight:900;cursor:pointer;}
+.landing-chat-row{display:flex;gap:8px;}
+.landing-chat-input{flex:1;min-height:44px;max-height:92px;resize:none;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.06);color:white;border-radius:15px;padding:12px 13px;outline:none;font:inherit;font-size:13px;}
+.landing-chat-input:focus{border-color:rgba(34,197,94,.4);box-shadow:0 0 0 4px rgba(34,197,94,.08);}
+.landing-chat-send{width:48px;border:none;border-radius:15px;background:linear-gradient(135deg,#22c55e,#2563eb);color:white;font-weight:900;cursor:pointer;}
+.landing-chat-send:disabled{opacity:.45;cursor:not-allowed;}
 
 .section{padding:100px 60px;position:relative;z-index:1;}
 .sec-tag{font-size:10px;font-weight:800;color:var(--ind);text-transform:uppercase;letter-spacing:3px;margin-bottom:12px;}
@@ -184,6 +232,12 @@ body::after{content:'';position:fixed;inset:0;z-index:9998;pointer-events:none;o
     .hero-btns{justify-content:center;flex-direction:column;align-items:center;gap:10px;}
     .hero-btns .btn-primary,.hero-btns .btn-ghost{width:100%;max-width:100%;justify-content:center;padding:14px 20px;box-sizing:border-box;}
     .hero-kpis{margin:36px auto 0;width:100%;display:grid;grid-template-columns:repeat(2,1fr);border-radius:16px;overflow:hidden;box-sizing:border-box;}
+    .landing-chat-section{padding:24px 14px 60px;margin-top:0;}
+    .landing-chat-wrap{grid-template-columns:1fr;gap:18px;}
+    .landing-chat-copy{text-align:center;max-width:100%;}
+    .landing-chat-copy h2{font-size:32px;}
+    .landing-chat-note{justify-content:center;}
+    .landing-chat-card{height:calc(100vh - 116px);min-height:520px;max-height:680px;border-radius:22px;}
     .hkpi{padding:14px 12px;}
     .hkpi:nth-child(2)::after{display:none;}
     .hkn{font-size:20px;}
@@ -378,6 +432,54 @@ window.doLogin = () => false;
             </div>
             <div class="vis-card vc-streak"><div style="font-size:20px;margin-bottom:4px;">🔥</div><div style="font-family:'Cabinet Grotesk',sans-serif;font-size:24px;font-weight:900;color:white;">47</div><div style="font-size:10px;color:rgba(255,255,255,0.3);font-weight:700;text-transform:uppercase;letter-spacing:1px;">días de racha</div></div>
             <div class="vis-card vc-badge"><div style="font-size:18px;margin-bottom:4px;">🏆</div><div style="font-size:12px;font-weight:700;color:white;">Logro desbloqueado</div><div style="font-size:10px;color:rgba(255,255,255,0.3);margin-top:2px;">30 días seguidos</div></div>
+        </div>
+    </div>
+</section>
+
+<!-- CHAT PUBLICO -->
+<section class="landing-chat-section" id="public-chat">
+    <div class="landing-chat-wrap">
+        <div class="landing-chat-copy">
+            <div class="landing-chat-kicker"><span class="tag-pulse"></span> Chat abierto en vivo</div>
+            <h2>Conversa antes de entrar.</h2>
+            <p>Únete con un nombre, habla en tiempo real, responde mensajes y mira quién está activo. Los nuevos solo ven lo que se envía después de unirse.</p>
+            <div class="landing-chat-note">
+                <span>Sin correo</span>
+                <span>Respuestas</span>
+                <span>Reacciones</span>
+                <span>Typing en vivo</span>
+            </div>
+        </div>
+
+        <div class="landing-chat-card">
+            <div class="landing-chat-head">
+                <div>
+                    <div class="landing-chat-room">Sala pública HabitTracker</div>
+                    <div class="m-sub">Para visitantes y usuarios nuevos</div>
+                </div>
+                <div class="landing-chat-status" id="landingChatStatus">0 en vivo</div>
+            </div>
+            <div class="landing-chat-name" id="landingChatNameBox">
+                <input id="landingChatName" maxlength="24" placeholder="Tu nombre para chatear" autocomplete="nickname" />
+                <button type="button" id="landingChatJoin">Entrar</button>
+            </div>
+            <div class="landing-chat-feed" id="landingChatFeed">
+                <div class="landing-chat-empty" id="landingChatEmpty">El chat está listo. Escribe tu nombre para unirte; solo verás los mensajes enviados desde ese momento.</div>
+            </div>
+            <div class="landing-chat-typing" id="landingChatTyping"></div>
+            <div class="landing-chat-compose">
+                <div class="landing-chat-replying" id="landingChatReplying">
+                    <div>
+                        <strong id="landingChatReplyUser"></strong>
+                        <span id="landingChatReplyText"></span>
+                    </div>
+                    <button type="button" onclick="landingClearReply()">X</button>
+                </div>
+                <div class="landing-chat-row">
+                    <textarea class="landing-chat-input" id="landingChatInput" placeholder="Primero escribe tu nombre..." maxlength="600" disabled></textarea>
+                    <button class="landing-chat-send" id="landingChatSend" type="button" disabled>➤</button>
+                </div>
+            </div>
         </div>
     </div>
 </section>
@@ -611,6 +713,136 @@ function onP(inp){
     for(let i=1;i<=4;i++)document.getElementById("b"+i).style.background=i<=s?c[s-1]:"rgba(255,255,255,0.04)";
 }
 function tPwd(){const i=document.getElementById("pinp");if(!i)return;i.type=i.type==="password"?"text":"password";document.querySelector(".ptog").textContent=i.type==="password"?"👁️":"🙈";}
+
+// ── CHAT PUBLICO EN LANDING
+let landingChatName = localStorage.getItem("ht_public_chat_name") || "";
+let landingChatStarted = false;
+let landingReplyTarget = null;
+let landingTypingTimer = null;
+const landingChatFeed = document.getElementById("landingChatFeed");
+const landingChatInput = document.getElementById("landingChatInput");
+const landingChatSend = document.getElementById("landingChatSend");
+const landingChatStatus = document.getElementById("landingChatStatus");
+const landingChatEmpty = document.getElementById("landingChatEmpty");
+const landingChatConn = new signalR.HubConnectionBuilder().withUrl("/chatHub").withAutomaticReconnect().build();
+
+function landingEscape(value){
+    return (value || "").replace(/[&<>"']/g, ch => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]));
+}
+function landingColor(name){
+    let h=0; for(let i=0;i<name.length;i++) h=(h*31+name.charCodeAt(i))%360;
+    return `linear-gradient(135deg,hsl(${h},78%,56%),hsl(${(h+48)%360},74%,45%))`;
+}
+function landingRenderMessage(msg){
+    landingChatEmpty?.remove();
+    const mine=(msg.username || "").toLowerCase()===landingChatName.toLowerCase();
+    const el=document.createElement("div");
+    el.className="landing-chat-msg"+(mine?" mine":"");
+    el.id="landing-msg-"+msg.id;
+    const reply=msg.replyContent?`<div class="landing-chat-reply" onclick="landingScrollTo('${landingEscape(msg.replyToId)}')"><strong>${landingEscape(msg.replyUsername)}</strong><span>${landingEscape(msg.replyContent)}</span></div>`:"";
+    el.innerHTML=`
+        <div class="landing-chat-avatar" style="background:${landingColor(msg.username || "U")}">${landingEscape((msg.username || "U").charAt(0).toUpperCase())}</div>
+        <div class="landing-chat-bubble">
+            <div class="landing-chat-meta"><span class="landing-chat-user">${landingEscape(msg.username)}</span><span class="landing-chat-time">${landingEscape(msg.sentAt)}</span></div>
+            ${reply}
+            <div class="landing-chat-text">${landingEscape(msg.content)}</div>
+            <div class="landing-chat-actions">
+                <button type="button" class="landing-reply-btn">Responder</button>
+                <button type="button" class="landing-react-btn">❤️ <span>0</span></button>
+            </div>
+        </div>`;
+    el.querySelector(".landing-reply-btn").addEventListener("click",()=>landingSetReply(msg));
+    el.querySelector(".landing-react-btn").addEventListener("click",()=>landingChatConn.invoke("ReactPublicChatMessage",msg.id).catch(()=>{}));
+    landingChatFeed.appendChild(el);
+    landingChatFeed.scrollTop=landingChatFeed.scrollHeight;
+}
+function landingRenderPresence(text){
+    const el=document.createElement("div");
+    el.className="landing-chat-presence";
+    el.textContent=text;
+    landingChatFeed.appendChild(el);
+    landingChatFeed.scrollTop=landingChatFeed.scrollHeight;
+}
+function landingSetReply(msg){
+    landingReplyTarget=msg;
+    document.getElementById("landingChatReplyUser").textContent="Respondiendo a "+msg.username;
+    document.getElementById("landingChatReplyText").textContent=msg.content;
+    document.getElementById("landingChatReplying").classList.add("open");
+    landingChatInput.focus();
+}
+function landingClearReply(){
+    landingReplyTarget=null;
+    document.getElementById("landingChatReplying").classList.remove("open");
+}
+function landingScrollTo(id){
+    const el=document.getElementById("landing-msg-"+id);
+    if(!el)return;
+    el.scrollIntoView({behavior:"smooth",block:"center"});
+    el.style.outline="2px solid rgba(134,239,172,.8)";
+    setTimeout(()=>el.style.outline="",1200);
+}
+async function landingStartChat(){
+    if(landingChatStarted)return;
+    landingChatStarted=true;
+    try{
+        if(landingChatConn.state===signalR.HubConnectionState.Disconnected) await landingChatConn.start();
+        await landingChatConn.invoke("JoinPublicChat",landingChatName);
+        document.getElementById("landingChatNameBox").style.display="none";
+        landingChatInput.disabled=false;
+        landingChatInput.placeholder="Escribe un mensaje...";
+    }catch{
+        landingChatStarted=false;
+        setTimeout(landingStartChat,1600);
+    }
+}
+async function landingSendMessage(){
+    const content=landingChatInput.value.trim();
+    if(!content || landingChatConn.state!==signalR.HubConnectionState.Connected)return;
+    const id=crypto.randomUUID?crypto.randomUUID():Date.now().toString();
+    const replyId=landingReplyTarget?.id || "";
+    const replyUser=landingReplyTarget?.username || "";
+    const replyContent=landingReplyTarget?.content || "";
+    landingChatInput.value="";
+    landingChatSend.disabled=true;
+    landingChatInput.style.height="auto";
+    landingClearReply();
+    await landingChatConn.invoke("SendPublicChatMessage",landingChatName,content,id,replyId,replyUser,replyContent);
+}
+landingChatConn.on("PublicChatReady",count=>landingChatStatus.textContent=`${count} en vivo`);
+landingChatConn.on("PublicChatOnlineCount",count=>landingChatStatus.textContent=`${count} en vivo`);
+landingChatConn.on("ReceivePublicChatMessage",landingRenderMessage);
+landingChatConn.on("PublicChatPresence",landingRenderPresence);
+landingChatConn.on("PublicChatReaction",(messageId,count)=>{
+    const btn=document.querySelector(`#landing-msg-${CSS.escape(messageId)} .landing-react-btn span`);
+    if(btn)btn.textContent=count;
+});
+landingChatConn.on("PublicChatTyping",username=>{
+    const el=document.getElementById("landingChatTyping");
+    el.textContent=`${username} está escribiendo...`;
+    el.classList.add("show");
+    clearTimeout(landingTypingTimer);
+    landingTypingTimer=setTimeout(()=>el.classList.remove("show"),1400);
+});
+document.getElementById("landingChatJoin")?.addEventListener("click",()=>{
+    const name=document.getElementById("landingChatName").value.trim();
+    if(!name)return;
+    landingChatName=name.substring(0,24);
+    localStorage.setItem("ht_public_chat_name",landingChatName);
+    landingStartChat();
+});
+document.getElementById("landingChatName")?.addEventListener("keydown",e=>{if(e.key==="Enter")document.getElementById("landingChatJoin").click();});
+landingChatInput?.addEventListener("input",()=>{
+    landingChatSend.disabled=landingChatInput.value.trim().length===0;
+    landingChatInput.style.height="auto";
+    landingChatInput.style.height=Math.min(landingChatInput.scrollHeight,92)+"px";
+    if(landingChatConn.state===signalR.HubConnectionState.Connected) landingChatConn.invoke("PublicChatTyping",landingChatName).catch(()=>{});
+});
+landingChatInput?.addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();landingSendMessage();}});
+landingChatSend?.addEventListener("click",landingSendMessage);
+if(landingChatName){
+    document.getElementById("landingChatName").value=landingChatName;
+    landingStartChat();
+}
 
 function doLogin(){
     const u=document.getElementById("uinp")?.value.trim();
