@@ -1006,6 +1006,7 @@ function filtH(tipo,btn){document.querySelectorAll('.hx-htab').forEach(t=>t.clas
 
 // ==================== OBJETIVOS PERSONALIZADOS + CONTADOR ====================
 // ==================== CONTADOR + OBJETIVOS PERSONALIZADOS ====================
+// ==================== CONTADOR + OBJETIVOS AVANZADOS ====================
 const hitos = [
     { seg: 86400,    nombre: "24 Horas" },
     { seg: 259200,   nombre: "3 Días" },
@@ -1019,9 +1020,25 @@ const hitos = [
 
 let habitObjectives = {};
 
+function getNextObjective(currentSeg) {
+    for (let i = 0; i < hitos.length - 1; i++) {
+        if (hitos[i].seg === currentSeg) return hitos[i+1].seg;
+    }
+    return hitos[hitos.length-1].seg; // máximo
+}
+
 function calcularProgreso(tiempoSeg, habitId = null) {
-    let objetivoSeg = 604800; 
-    if (habitId && habitObjectives[habitId]) objetivoSeg = habitObjectives[habitId];
+    let objetivoSeg = 604800; // default 1 semana
+
+    if (habitId && habitObjectives[habitId]) {
+        objetivoSeg = habitObjectives[habitId];
+    }
+
+    // Avance automático si ya superó el objetivo actual
+    while (tiempoSeg > objetivoSeg && objetivoSeg < hitos[hitos.length-1].seg) {
+        objetivoSeg = getNextObjective(objetivoSeg);
+        if (habitId) habitObjectives[habitId] = objetivoSeg;
+    }
 
     let porc = Math.min((tiempoSeg / objetivoSeg) * 100, 100);
 
@@ -1029,11 +1046,13 @@ function calcularProgreso(tiempoSeg, habitId = null) {
     for (let h of hitos) {
         if (h.seg === objetivoSeg) { nombre = h.nombre; break; }
     }
-    return { porc: Math.floor(porc), nombre: nombre };
+
+    return { porc: Math.floor(porc), nombre: nombre, objetivoSeg: objetivoSeg };
 }
 
 function actualizarTodosLosContadores() {
     const ahora = Date.now() / 1000;
+
     document.querySelectorAll('.hx-habit').forEach(habitDiv => {
         const startStr = habitDiv.getAttribute('data-start-date');
         const habitId = habitDiv.getAttribute('data-habit-id');
@@ -1047,70 +1066,61 @@ function actualizarTodosLosContadores() {
 
         const prog = calcularProgreso(diff, habitId);
 
-        // Tiempo
+        // Tiempo transcurrido
         const d = Math.floor(diff / 86400);
         const h = Math.floor((diff % 86400) / 3600);
         const m = Math.floor((diff % 3600) / 60);
         const timeStr = `${d}d ${h.toString().padStart(2,'0')}h ${m.toString().padStart(2,'0')}m`;
 
-        document.getElementById(`time-${habitId}`).textContent = `⏱️ ${timeStr}`;
-        document.getElementById(`perc-${habitId}`).textContent = `${prog.porc}%`;
-        document.getElementById(`goal-${habitId}`).textContent = `Objetivo: ${prog.nombre}`;
+        const timeSpan = document.getElementById(`time-${habitId}`);
+        if (timeSpan) timeSpan.textContent = `⏱️ ${timeStr}`;
+
+        const percSpan = document.getElementById(`perc-${habitId}`);
+        if (percSpan) percSpan.textContent = `${prog.porc}%`;
+
+        const goalSpan = document.getElementById(`goal-${habitId}`);
+        if (goalSpan) goalSpan.textContent = `Objetivo: ${prog.nombre}`;
     });
 }
 
-// Botón objetivo
+// Modal con botón X
 function cambiarObjetivo(habitId, nombreHabit) {
-    let html = `<div style="padding:20px 16px;">
-        <div style="font-weight:700;margin-bottom:12px;">🎯 Objetivo para<br><strong>${nombreHabit}</strong></div>`;
+    let html = `
+        <div style="padding:20px 16px 10px; position:relative;">
+            <button onclick="this.closest('div[style*=\'position:fixed\']').remove()" 
+                    style="position:absolute;top:12px;right:12px;background:none;border:none;font-size:24px;color:#94a3b8;cursor:pointer;">×</button>
+            
+            <div style="font-weight:700;margin-bottom:12px;color:#e0e7ff;">🎯 Objetivo para</div>
+            <div style="margin-bottom:16px;font-size:15px;">${nombreHabit}</div>`;
 
     hitos.forEach(h => {
-        html += `<div onclick="aplicarObjetivo(${habitId},${h.seg});" style="padding:14px;margin:6px 0;background:#334155;border-radius:12px;cursor:pointer;color:white;">${h.nombre}</div>`;
+        html += `
+            <div onclick="aplicarObjetivo(${habitId}, ${h.seg});" 
+                 style="padding:14px 16px;margin:6px 0;background:#334155;border-radius:12px;cursor:pointer;color:white;">
+                ${h.nombre}
+            </div>`;
     });
+
+    html += `</div>`;
 
     const modal = document.createElement('div');
     modal.style.cssText = `position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:999999;display:flex;align-items:center;justify-content:center;`;
     modal.innerHTML = `<div style="background:#1e293b;width:90%;max-width:340px;border-radius:20px;">${html}</div>`;
     document.body.appendChild(modal);
-    modal.onclick = (e) => { if(e.target === modal) modal.remove(); };
 }
 
 function aplicarObjetivo(habitId, seg) {
     habitObjectives[habitId] = seg;
     document.querySelectorAll('div[style*="position:fixed"]').forEach(m => m.remove());
     actualizarTodosLosContadores();
-    showToast("✅ Objetivo cambiado");
+    showToast("✅ Objetivo actualizado");
 }
 
-// Iniciar contadores
+// Iniciar todo
 document.addEventListener('DOMContentLoaded', () => {
     actualizarTodosLosContadores();
-    setInterval(actualizarTodosLosContadores, 1000);
+    setInterval(actualizarTodosLosContadores, 1000);   // Actualiza cada segundo
 });
-
-// Inicializar contadores
-setInterval(actualizarTodosLosContadores, 1000);
-actualizarTodosLosContadores();
-// ==================== SUBIR HISTORIA ====================
-function openStoryUpload() {
-    // Por ahora redirige a la página de crear historia
-    // Puedes cambiar esto después por un modal si prefieres
-    window.location.href = '/Story/Create';
-}
-
-// Opcional: Si quieres un modal bonito en el futuro, avísame y lo creamos
-// ==================== SISTEMA DE OBJETIVOS PERSONALIZADOS ====================
-// ==================== OBJETIVOS PERSONALIZADOS ====================
-// ==================== CONTADOR TIEMPO REAL + OBJETIVOS ====================
-
-
-
-function aplicarNuevoObjetivo(habitId, segundos) {
-    habitObjectives[habitId] = segundos;
-    document.querySelectorAll('.modal-temp, div[style*="position:fixed"]').forEach(el => el.remove());
-    actualizarTodosLosContadores();
-    showToast("Objetivo actualizado ✅");
-}
 
 
 
