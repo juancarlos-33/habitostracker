@@ -1489,17 +1489,23 @@ namespace HabitTrackerApp.Controllers
         {
             var userId = int.Parse(User.FindFirst("UserId").Value);
 
-            var group = await _context.Groups.FindAsync(groupId);
+            var group = await _context.Groups
+                .FirstOrDefaultAsync(g => g.Id == groupId && g.IsActive);
             if (group == null)
                 return Json(new { success = false, error = "Grupo no encontrado" });
 
             if (group.CreatorId != userId)
-                return Json(new { success = false, error = "No tienes permiso" });
+                return Json(new { success = false, error = "Solo el creador puede cambiar la visibilidad del grupo." });
 
             group.Type = group.Type == "public" ? "private" : "public";
+            group.IsPublic = group.Type == "public";
             await _context.SaveChangesAsync();
 
-            return Json(new { success = true, newType = group.Type });
+            await CreateSystemMessage(groupId, group.Type == "public"
+                ? "🌍 El grupo ahora es publico"
+                : "🔒 El grupo ahora es privado");
+
+            return Json(new { success = true, newType = group.Type, isPublic = group.IsPublic });
         }
         // 🔥 buscar amigos que no están en el grupo para añadir
         [HttpGet]

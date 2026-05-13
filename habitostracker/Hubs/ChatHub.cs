@@ -10,6 +10,8 @@ namespace HabitTrackerApp.Hubs
     {
         private static readonly HashSet<string> ConnectedUsers = new HashSet<string>();
         private static readonly Dictionary<string, HashSet<string>> ActiveGroupChats = new();
+        private static readonly object PublicChatLock = new();
+        private static readonly List<PublicChatMessage> PublicChatHistory = new();
         private readonly HabitDbContext _context;
         private readonly OnlineUsersService _onlineUsers;
 
@@ -343,6 +345,78 @@ namespace HabitTrackerApp.Hubs
         public async Task NewSessionDetected(string userId)
         {
             await Clients.Group(userId).SendAsync("NewSessionDetected");
+        }
+
+        // ── CHAT PÚBLICO DEL LOGIN ───────────────────────────────
+        public async Task JoinPublicChat(string username)
+        {
+            var safeUsername = NormalizePublicUsername(username);
+            await Groups.AddToGroupAsync(Context.ConnectionId, "public-login-chat");
+
+            List<PublicChatMessage> history;
+            lock (PublicChatLock)
+            {
+                history = PublicChatHistory.ToList();
+            }
+
+            await Clients.Caller.SendAsync("PublicChatHistory", history);
+            await Clients.OthersInGroup("public-login-chat")
+                .SendAsync("PublicChatPresence", $"{safeUsername} se unió al chat");
+        }
+
+        public async Task SendPublicChatMessage(
+            string username,
+            string content,
+            string clientId,
+            string replyToId = "",
+            string replyUsername = "",
+            string replyContent = "")
+        {
+            var safeUsername = NormalizePublicUsername(username);
+            var safeContent = (content ?? "").Trim();
+            if (string.IsNullOrWhiteSpace(safeContent)) return;
+
+            if (safeContent.Length > 600)
+                safeContent = safeContent.Substring(0, 600);
+
+            var message = new PublicChatMessage
+            {
+                Id = string.IsNullOrWhiteSpace(clientId) ? Guid.NewGuid().ToString("N") : clientId,
+                Username = safeUsername,
+                Content = safeContent,
+                SentAt = DateTime.Now.ToString("hh:mm tt"),
+                ReplyToId = replyToId ?? "",
+                ReplyUsername = NormalizePublicUsername(replyUsername),
+                ReplyContent = string.IsNullOrWhiteSpace(replyContent) ? "" :
+                    (replyContent.Length > 140 ? replyContent.Substring(0, 140) + "..." : replyContent)
+            };
+
+            lock (PublicChatLock)
+            {
+                PublicChatHistory.Add(message);
+                if (PublicChatHistory.Count > 80)
+                    PublicChatHistory.RemoveRange(0, PublicChatHistory.Count - 80);
+            }
+
+            await Clients.Group("public-login-chat").SendAsync("ReceivePublicChatMessage", message);
+        }
+
+        private static string NormalizePublicUsername(string? username)
+        {
+            var value = (username ?? "").Trim();
+            if (string.IsNullOrWhiteSpace(value)) return "Invitado";
+            return value.Length > 24 ? value.Substring(0, 24) : value;
+        }
+
+        public class PublicChatMessage
+        {
+            public string Id { get; set; } = "";
+            public string Username { get; set; } = "";
+            public string Content { get; set; } = "";
+            public string SentAt { get; set; } = "";
+            public string ReplyToId { get; set; } = "";
+            public string ReplyUsername { get; set; } = "";
+            public string ReplyContent { get; set; } = "";
         }
     }
 }

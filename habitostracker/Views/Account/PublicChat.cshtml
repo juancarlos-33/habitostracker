@@ -1,0 +1,259 @@
+@{
+    ViewData["Title"] = "Chat publico";
+    Layout = "_LayoutLogin";
+}
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
+
+<style>
+body{background:#070b14!important;font-family:'Inter',sans-serif;color:#eef2ff;}
+.pc-shell{max-width:960px;margin:0 auto;padding:28px 14px 34px;}
+.pc-top{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:18px;}
+.pc-brand{display:flex;align-items:center;gap:12px;text-decoration:none;color:#fff;}
+.pc-logo{width:42px;height:42px;border-radius:14px;background:linear-gradient(135deg,#22c55e,#3b82f6);display:grid;place-items:center;font-weight:900;box-shadow:0 16px 40px rgba(34,197,94,.22);}
+.pc-title{font-size:18px;font-weight:900;line-height:1.1;}
+.pc-sub{font-size:12px;color:rgba(255,255,255,.42);margin-top:3px;}
+.pc-back{padding:10px 14px;border-radius:12px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.04);color:rgba(255,255,255,.7);text-decoration:none;font-size:13px;font-weight:700;}
+.pc-card{min-height:720px;border:1px solid rgba(255,255,255,.08);background:linear-gradient(180deg,rgba(15,23,42,.96),rgba(2,6,23,.96));border-radius:24px;box-shadow:0 30px 90px rgba(0,0,0,.35);overflow:hidden;display:grid;grid-template-rows:auto 1fr auto;}
+.pc-room-head{display:flex;align-items:center;justify-content:space-between;padding:18px 20px;border-bottom:1px solid rgba(255,255,255,.07);background:rgba(255,255,255,.025);}
+.pc-room-name{font-size:15px;font-weight:900;}
+.pc-room-state{font-size:12px;color:#86efac;font-weight:700;}
+.pc-messages{padding:18px;overflow-y:auto;display:flex;flex-direction:column;gap:12px;scroll-behavior:smooth;}
+.pc-empty{text-align:center;margin:auto;color:rgba(255,255,255,.38);font-size:14px;line-height:1.7;max-width:360px;}
+.pc-msg{display:flex;gap:10px;align-items:flex-end;max-width:82%;}
+.pc-msg.mine{align-self:flex-end;flex-direction:row-reverse;}
+.pc-avatar{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;flex:0 0 36px;color:white;font-weight:900;background:linear-gradient(135deg,#6366f1,#22c55e);}
+.pc-bubble{border:1px solid rgba(255,255,255,.07);background:rgba(255,255,255,.06);border-radius:18px 18px 18px 6px;padding:10px 12px;min-width:0;}
+.pc-msg.mine .pc-bubble{background:linear-gradient(135deg,#2563eb,#4f46e5);border-color:rgba(255,255,255,.12);border-radius:18px 18px 6px 18px;}
+.pc-meta{display:flex;align-items:center;gap:8px;margin-bottom:4px;}
+.pc-name{font-size:12px;font-weight:900;color:#fff;}
+.pc-time{font-size:10px;color:rgba(255,255,255,.42);}
+.pc-text{font-size:14px;line-height:1.5;color:rgba(255,255,255,.88);white-space:pre-wrap;overflow-wrap:anywhere;}
+.pc-reply-preview{border-left:3px solid rgba(134,239,172,.8);padding:7px 9px;margin-bottom:8px;border-radius:10px;background:rgba(0,0,0,.18);}
+.pc-reply-user{font-size:11px;font-weight:900;color:#bbf7d0;margin-bottom:2px;}
+.pc-reply-text{font-size:12px;color:rgba(255,255,255,.58);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:360px;}
+.pc-actions{display:flex;gap:8px;margin-top:8px;}
+.pc-action{border:none;background:rgba(255,255,255,.08);color:rgba(255,255,255,.66);font-size:11px;font-weight:800;border-radius:999px;padding:5px 9px;cursor:pointer;}
+.pc-action:hover{background:rgba(255,255,255,.14);color:white;}
+.pc-presence{text-align:center;font-size:12px;color:rgba(255,255,255,.38);padding:3px 0;}
+.pc-compose{border-top:1px solid rgba(255,255,255,.07);padding:14px;background:rgba(255,255,255,.025);}
+.pc-replying{display:none;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;padding:10px 12px;border-radius:14px;background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.14);}
+.pc-replying.open{display:flex;}
+.pc-replying strong{font-size:12px;color:#bbf7d0;}
+.pc-replying span{display:block;font-size:12px;color:rgba(255,255,255,.56);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:680px;}
+.pc-replying button{background:none;border:none;color:#bbf7d0;font-weight:900;cursor:pointer;}
+.pc-input-row{display:flex;gap:10px;}
+.pc-input{flex:1;min-height:46px;max-height:120px;resize:none;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.06);color:white;border-radius:16px;padding:13px 14px;outline:none;font:inherit;font-size:14px;}
+.pc-input:focus{border-color:rgba(34,197,94,.4);box-shadow:0 0 0 4px rgba(34,197,94,.08);}
+.pc-send{width:52px;border:none;border-radius:16px;background:linear-gradient(135deg,#22c55e,#2563eb);color:white;font-weight:900;cursor:pointer;box-shadow:0 12px 26px rgba(37,99,235,.25);}
+.pc-send:disabled{opacity:.45;cursor:not-allowed;box-shadow:none;}
+.pc-namegate{position:fixed;inset:0;z-index:50;background:rgba(2,6,23,.86);backdrop-filter:blur(18px);display:flex;align-items:center;justify-content:center;padding:18px;}
+.pc-namebox{width:100%;max-width:380px;border:1px solid rgba(255,255,255,.09);background:#0f172a;border-radius:24px;padding:24px;box-shadow:0 30px 80px rgba(0,0,0,.55);}
+.pc-namebox h1{font-size:22px;font-weight:900;margin:0 0 8px;color:white;}
+.pc-namebox p{font-size:13px;color:rgba(255,255,255,.46);line-height:1.6;margin:0 0 18px;}
+.pc-namebox input{width:100%;border:1px solid rgba(255,255,255,.09);background:rgba(255,255,255,.05);border-radius:14px;color:white;padding:13px 14px;outline:none;font:inherit;margin-bottom:12px;}
+.pc-namebox button{width:100%;border:none;border-radius:14px;padding:13px;background:linear-gradient(135deg,#22c55e,#2563eb);color:white;font-weight:900;cursor:pointer;}
+@@media(max-width:640px){.pc-shell{padding:12px 0 0}.pc-card{min-height:calc(100vh - 24px);border-radius:0;border-left:0;border-right:0}.pc-top{padding:0 14px}.pc-msg{max-width:94%}.pc-back{font-size:12px;padding:9px 11px}.pc-reply-text{max-width:230px}}
+</style>
+
+<div class="pc-shell">
+    <div class="pc-top">
+        <a href="/Account/Login" class="pc-brand">
+            <div class="pc-logo">HT</div>
+            <div>
+                <div class="pc-title">Chat publico</div>
+                <div class="pc-sub">Habla en tiempo real sin crear cuenta completa</div>
+            </div>
+        </a>
+        <a href="/Account/Login" class="pc-back">Volver al login</a>
+    </div>
+
+    <div class="pc-card">
+        <div class="pc-room-head">
+            <div>
+                <div class="pc-room-name">Sala abierta HabitTracker</div>
+                <div class="pc-sub">Solo necesitas un nombre para escribir</div>
+            </div>
+            <div class="pc-room-state" id="pcState">Conectando...</div>
+        </div>
+
+        <div class="pc-messages" id="pcMessages">
+            <div class="pc-empty" id="pcEmpty">Cuando alguien escriba, los mensajes apareceran aqui en vivo. Puedes responder cualquier mensaje con el boton Responder.</div>
+        </div>
+
+        <div class="pc-compose">
+            <div class="pc-replying" id="pcReplying">
+                <div>
+                    <strong id="pcReplyUser"></strong>
+                    <span id="pcReplyText"></span>
+                </div>
+                <button type="button" onclick="clearReply()">X</button>
+            </div>
+            <div class="pc-input-row">
+                <textarea class="pc-input" id="pcInput" placeholder="Escribe un mensaje..." maxlength="600"></textarea>
+                <button class="pc-send" id="pcSend" type="button" disabled>➤</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="pc-namegate" id="pcNameGate">
+    <div class="pc-namebox">
+        <h1>Elige tu nombre</h1>
+        <p>Este nombre se usara solo para esta sala publica. No necesitas correo ni contrasena.</p>
+        <input id="pcNameInput" maxlength="24" placeholder="Ej: JuanHabitos" autocomplete="nickname" />
+        <button type="button" id="pcNameBtn">Entrar al chat</button>
+    </div>
+</div>
+
+<script>
+let myPublicName = localStorage.getItem("ht_public_chat_name") || "";
+let replyTarget = null;
+let started = false;
+
+const messagesEl = document.getElementById("pcMessages");
+const emptyEl = document.getElementById("pcEmpty");
+const inputEl = document.getElementById("pcInput");
+const sendBtn = document.getElementById("pcSend");
+const stateEl = document.getElementById("pcState");
+
+const pcConnection = new signalR.HubConnectionBuilder()
+    .withUrl("/chatHub")
+    .withAutomaticReconnect()
+    .build();
+
+function escapeHtml(value) {
+    return (value || "").replace(/[&<>"']/g, ch => ({
+        "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+    }[ch]));
+}
+
+function colorFromName(name) {
+    let h = 0;
+    for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) % 360;
+    return `linear-gradient(135deg,hsl(${h},78%,56%),hsl(${(h + 45) % 360},72%,45%))`;
+}
+
+function renderMessage(msg) {
+    emptyEl?.remove();
+    const mine = (msg.username || "").toLowerCase() === myPublicName.toLowerCase();
+    const wrap = document.createElement("div");
+    wrap.className = "pc-msg" + (mine ? " mine" : "");
+    wrap.id = "pc-msg-" + msg.id;
+
+    const reply = msg.replyContent ? `
+        <div class="pc-reply-preview" onclick="scrollToMsg('${escapeHtml(msg.replyToId)}')">
+            <div class="pc-reply-user">${escapeHtml(msg.replyUsername)}</div>
+            <div class="pc-reply-text">${escapeHtml(msg.replyContent)}</div>
+        </div>` : "";
+
+    wrap.innerHTML = `
+        <div class="pc-avatar" style="background:${colorFromName(msg.username || "U")}">${escapeHtml((msg.username || "U").charAt(0).toUpperCase())}</div>
+        <div class="pc-bubble">
+            <div class="pc-meta"><span class="pc-name">${escapeHtml(msg.username)}</span><span class="pc-time">${escapeHtml(msg.sentAt)}</span></div>
+            ${reply}
+            <div class="pc-text">${escapeHtml(msg.content)}</div>
+            <div class="pc-actions"><button type="button" class="pc-action">Responder</button></div>
+        </div>`;
+
+    wrap.querySelector(".pc-action").addEventListener("click", () => setReply(msg));
+    messagesEl.appendChild(wrap);
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+}
+
+function setReply(msg) {
+    replyTarget = msg;
+    document.getElementById("pcReplyUser").textContent = "Respondiendo a " + msg.username;
+    document.getElementById("pcReplyText").textContent = msg.content;
+    document.getElementById("pcReplying").classList.add("open");
+    inputEl.focus();
+}
+
+function clearReply() {
+    replyTarget = null;
+    document.getElementById("pcReplying").classList.remove("open");
+}
+
+function scrollToMsg(id) {
+    const el = document.getElementById("pc-msg-" + id);
+    if (!el) return;
+    el.scrollIntoView({ behavior: "smooth", block: "center" });
+    el.style.outline = "2px solid rgba(134,239,172,.75)";
+    setTimeout(() => el.style.outline = "", 1200);
+}
+
+function renderPresence(text) {
+    const el = document.createElement("div");
+    el.className = "pc-presence";
+    el.textContent = text;
+    messagesEl.appendChild(el);
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+}
+
+pcConnection.on("PublicChatHistory", history => {
+    messagesEl.querySelectorAll(".pc-msg,.pc-presence").forEach(x => x.remove());
+    if (history && history.length) history.forEach(renderMessage);
+});
+
+pcConnection.on("ReceivePublicChatMessage", renderMessage);
+pcConnection.on("PublicChatPresence", renderPresence);
+
+async function startChat() {
+    if (started) return;
+    started = true;
+    try {
+        await pcConnection.start();
+        stateEl.textContent = "En vivo";
+        await pcConnection.invoke("JoinPublicChat", myPublicName);
+    } catch {
+        started = false;
+        stateEl.textContent = "Reintentando...";
+        setTimeout(startChat, 1500);
+    }
+}
+
+async function sendMessage() {
+    const content = inputEl.value.trim();
+    if (!content || pcConnection.state !== signalR.HubConnectionState.Connected) return;
+
+    const id = crypto.randomUUID ? crypto.randomUUID() : Date.now().toString();
+    const replyId = replyTarget?.id || "";
+    const replyUser = replyTarget?.username || "";
+    const replyContent = replyTarget?.content || "";
+    inputEl.value = "";
+    sendBtn.disabled = true;
+    clearReply();
+    await pcConnection.invoke("SendPublicChatMessage", myPublicName, content, id, replyId, replyUser, replyContent);
+}
+
+inputEl.addEventListener("input", () => {
+    sendBtn.disabled = inputEl.value.trim().length === 0;
+    inputEl.style.height = "auto";
+    inputEl.style.height = Math.min(inputEl.scrollHeight, 120) + "px";
+});
+inputEl.addEventListener("keydown", e => {
+    if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        sendMessage();
+    }
+});
+sendBtn.addEventListener("click", sendMessage);
+
+document.getElementById("pcNameBtn").addEventListener("click", () => {
+    const name = document.getElementById("pcNameInput").value.trim();
+    if (!name) return;
+    myPublicName = name.substring(0, 24);
+    localStorage.setItem("ht_public_chat_name", myPublicName);
+    document.getElementById("pcNameGate").style.display = "none";
+    startChat();
+});
+document.getElementById("pcNameInput").addEventListener("keydown", e => {
+    if (e.key === "Enter") document.getElementById("pcNameBtn").click();
+});
+
+if (myPublicName) {
+    document.getElementById("pcNameGate").style.display = "none";
+    startChat();
+}
+</script>

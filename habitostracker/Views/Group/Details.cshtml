@@ -460,7 +460,7 @@
 
 <!-- INPUTS OCULTOS -->
 <input type="file" id="groupImageInput" accept="image/*" style="display:none;" onchange="uploadGroupImage(this)" />
-<input type="hidden" id="antiforgery-token" value="@Html.AntiForgeryToken().ToString().Replace("\"", "&quot;")" />
+@Html.AntiForgeryToken()
 
 <!-- PHOTO OVERLAY -->
 <div class="gd-photo-overlay" id="photoOverlay" onclick="cerrarFoto()">
@@ -847,7 +847,7 @@ let selectedMembers = new Set();
 let allFriends = [];
 let currentInviteLink = '';
 
-const token = () => document.getElementById('antiforgery-token')?.value ?? "";
+const token = () => document.querySelector('input[name="__RequestVerificationToken"]')?.value ?? "";
 
 function showToast(msg) {
     const t = document.createElement("div");
@@ -984,6 +984,28 @@ async function promoverAdmin(userId, username) {
         }
     });
 }
+
+async function quitarAdmin(userId, username) {
+    confirmarAccion({
+        title: "Quitar admin",
+        message: `¿Quitar permisos de admin a ${username}?`,
+        confirmText: "Quitar admin",
+        onConfirm: async () => {
+            const res = await fetch("/Group/DemoteAdmin", {
+                method: "POST",
+                headers: {"Content-Type": "application/x-www-form-urlencoded", "RequestVerificationToken": token()},
+                body: `groupId=${groupId}&memberId=${userId}`
+            });
+            const data = await res.json();
+            if (data.success) {
+                showToast("✅ Admin actualizado");
+                setTimeout(() => location.reload(), 700);
+            } else {
+                showToast("❌ " + (data.message || "No se pudo actualizar"));
+            }
+        }
+    });
+}
 // COMPARTIR GRUPO
 function compartirGrupo() {
     const url = `${window.location.origin}/Group/Chat/${groupId}`;
@@ -1040,12 +1062,12 @@ async function toggleGroupType() {
                     body: `groupId=${groupId}`
                 });
 
-                if (res.ok) {
+                const data = await res.json();
+                if (data.success) {
                     showToast("✅ Visibilidad cambiada correctamente");
                     setTimeout(() => location.reload(), 800);
                 } else {
-                    const text = await res.text();
-                    showToast("❌ Error: " + (text || "No tienes permiso"));
+                    showToast("❌ " + (data.error || "No tienes permiso"));
                 }
             } catch (e) {
                 showToast("❌ Error de conexión");
@@ -1109,6 +1131,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Miembros
     document.querySelectorAll('.gd-mbtn.promote').forEach(btn => btn.addEventListener('click', () => promoverAdmin(btn.dataset.userId, btn.dataset.username)));
+    document.querySelectorAll('.gd-mbtn.demote').forEach(btn => btn.addEventListener('click', () => quitarAdmin(btn.dataset.userId, btn.dataset.username)));
     document.querySelectorAll('.gd-mbtn.remove').forEach(btn => btn.addEventListener('click', () => removeMember(btn.dataset.userId, btn.dataset.username)));
 });
 </script>

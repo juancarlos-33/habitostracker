@@ -510,6 +510,7 @@ namespace HabitTrackerApp.Controllers
             if (post == null) return NotFound();
 
             ViewBag.PostId = postId;
+            ViewBag.Post = post;
             ViewBag.CommentsDisabled = post.CommentsDisabled;  // ✅ NUEVA LÍNEA
 
             var comments = _context.PostComments

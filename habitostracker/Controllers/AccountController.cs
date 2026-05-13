@@ -1453,6 +1453,9 @@ namespace HabitTrackerApp.Controllers
         new Claim("SessionToken", sessionToken)
     };
 
+            if (user.Role == "Guest")
+                claims.Add(new Claim("IsGuest", "true"));
+
             var claimsIdentity = new ClaimsIdentity(
                 claims, CookieAuthenticationDefaults.AuthenticationScheme);
 
@@ -1840,6 +1843,14 @@ namespace HabitTrackerApp.Controllers
                 return RedirectToAction("Login");
             }
         }
+        [HttpGet]
+        public IActionResult PublicChat()
+        {
+            Response.Headers["Cache-Control"] = "no-store, no-cache, must-revalidate";
+            Response.Headers["Pragma"] = "no-cache";
+            return View();
+        }
+
         [HttpGet]
         public IActionResult GuestRegister()
         {
@@ -2242,6 +2253,8 @@ namespace HabitTrackerApp.Controllers
             if (userIdClaim == null) return RedirectToAction("Login");
             var userId = int.Parse(userIdClaim.Value);
             var user = _context.Users.FirstOrDefault(u => u.Id == userId);
+            if (user != null && user.Role == "Guest")
+                return RedirectToAction("Index", "Habit");
             if (user != null && user.OnboardingComplete)
                 return RedirectToAction("Index", "Habit");
             return View();
@@ -2295,6 +2308,7 @@ namespace HabitTrackerApp.Controllers
             var userId = int.Parse(userIdClaim.Value);
             var user = _context.Users.FirstOrDefault(u => u.Id == userId);
             if (user == null) return RedirectToAction("Login");
+            if (user.Role == "Guest") return RedirectToAction("Index", "Habit");
 
             user.Gender = gender;
             user.Bio = bio;
