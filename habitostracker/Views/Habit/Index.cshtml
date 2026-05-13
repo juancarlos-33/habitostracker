@@ -1023,8 +1023,15 @@ let habitObjectives = {};
 function calcularProgreso(tiempoSeg, habitId = null) {
     let objetivoSeg = 604800; // 1 semana por defecto
 
+    // Si el usuario ya eligió manualmente un objetivo
     if (habitId && habitObjectives[habitId]) {
         objetivoSeg = habitObjectives[habitId];
+    }
+
+    // Avance automático al siguiente objetivo si ya se superó el actual
+    while (tiempoSeg > objetivoSeg && objetivoSeg < 31536000) {
+        objetivoSeg = getNextObjective(objetivoSeg);
+        if (habitId) habitObjectives[habitId] = objetivoSeg; // guardar automáticamente
     }
 
     let porc = Math.min((tiempoSeg / objetivoSeg) * 100, 100);
@@ -1038,6 +1045,16 @@ function calcularProgreso(tiempoSeg, habitId = null) {
     }
 
     return { porc: Math.floor(porc), nombre: nombre };
+}
+
+// Función auxiliar (agrega también esta si no la tienes)
+function getNextObjective(currentSeg) {
+    for (let i = 0; i < hitos.length - 1; i++) {
+        if (hitos[i].seg === currentSeg) {
+            return hitos[i + 1].seg;
+        }
+    }
+    return hitos[hitos.length - 1].seg; // 1 Año como máximo
 }
 
 function actualizarTodosLosContadores() {
