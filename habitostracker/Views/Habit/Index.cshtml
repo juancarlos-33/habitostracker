@@ -822,11 +822,13 @@ body.bg-dark .hx-btn.ghost{background:#111827!important;border-color:rgba(255,25
                                     <span class="hx-hstreak">🔥 @habit.StreakDays días</span>
                                     <span class="hx-hrec">🏆 @habit.MaxStreak máx</span>
                                 </div>
-                                <div class="hx-progress-detail">
-                                    <span class="hx-time-live" id="time-@habit.Id">⏱️ 0s</span>
-                                    <span class="hx-percent-live" id="perc-@habit.Id">0%</span>
-                                    <span class="hx-goal-live" id="goal-@habit.Id">Objetivo: --</span>
-                                </div>
+                              <div class="hx-progress-detail">
+    <span class="hx-time-live" id="time-@habit.Id">⏱️ 0s</span>
+    <span class="hx-percent-live" id="perc-@habit.Id">0%</span>
+    <span class="hx-goal-live" id="goal-@habit.Id" style="cursor:pointer;" onclick="seleccionarObjetivo(@habit.Id, '@habit.Name.Replace("'", "\\'")')">
+        🎯 Objetivo
+    </span>
+</div>
                             </div>
                             <span class="hx-hstatus">@badge</span>
                             <div class="hx-hacts">
@@ -1018,27 +1020,88 @@ function openStoryUpload() {
 }
 
 // Opcional: Si quieres un modal bonito en el futuro, avísame y lo creamos
-function calcularProgreso(tiempoSeg) {
-    let anterior = { seg: 0, nombre: "0 DÍAS" };
-    let siguiente = hitos[0];
-    for (let i = 0; i < hitos.length; i++) {
-        if (tiempoSeg >= hitos[i].seg) {
-            anterior = hitos[i];
-            siguiente = hitos[i+1] || hitos[i];
-        } else {
-            if (i === 0) siguiente = hitos[0];
-            else siguiente = hitos[i];
+// ==================== SISTEMA DE OBJETIVOS PERSONALIZADOS ====================
+let habitObjectives = {}; // Guardará el objetivo elegido por cada hábito (en memoria)
+
+function calcularProgreso(tiempoSeg, habitId = null) {
+    let objetivoSeg = 604800; // Por defecto = 7 días
+
+    // Si el usuario ya eligió un objetivo para este hábito
+    if (habitId && habitObjectives[habitId]) {
+        objetivoSeg = habitObjectives[habitId];
+    }
+
+    let porc = Math.min((tiempoSeg / objetivoSeg) * 100, 100);
+    
+    // Buscar nombre del objetivo actual
+    let nombreObjetivo = "Personalizado";
+    for (let h of hitos) {
+        if (Math.abs(h.seg - objetivoSeg) < 3600) { // tolerancia de 1 hora
+            nombreObjetivo = h.nombre;
             break;
         }
     }
-    if (tiempoSeg >= hitos[hitos.length-1].seg) {
-        return { porc: 100, nombre: hitos[hitos.length-1].nombre, siguienteSeg: hitos[hitos.length-1].seg };
-    }
-    const rango = siguiente.seg - anterior.seg;
-    const avanzado = tiempoSeg - anterior.seg;
-    let porc = (avanzado / rango) * 100;
-    porc = Math.min(porc, 99.9);
-    return { porc: porc, nombre: siguiente.nombre, siguienteSeg: siguiente.seg };
+
+    return { 
+        porc: Math.floor(porc), 
+        nombre: nombreObjetivo,
+        objetivoSeg: objetivoSeg 
+    };
+}
+// Abrir selector de objetivo para un hábito
+function seleccionarObjetivo(habitId, nombreHabit) {
+    const opciones = [
+        { seg: 86400,    nombre: "24 Horas" },
+        { seg: 259200,   nombre: "3 Días" },
+        { seg: 604800,   nombre: "1 Semana" },
+        { seg: 1209600,  nombre: "2 Semanas" },
+        { seg: 2592000,  nombre: "1 Mes" },
+        { seg: 7776000,  nombre: "3 Meses" },
+        { seg: 15552000, nombre: "6 Meses" },
+        { seg: 31536000, nombre: "1 Año" }
+    ];
+
+    let html = `
+        <div style="padding:20px;">
+            <h3 style="margin-bottom:16px;">🎯 Elige tu objetivo para</h3>
+            <strong style="display:block;margin-bottom:16px;">${nombreHabit}</strong>
+    `;
+
+    opciones.forEach(op => {
+        const dias = Math.round(op.seg / 86400);
+        html += `
+            <button onclick="aplicarObjetivo(${habitId}, ${op.seg}, '${op.nombre}')" 
+                    style="width:100%;padding:14px;margin-bottom:8px;border-radius:16px;border:1px solid #e2e8f0;background:white;font-size:15px;font-weight:600;cursor:pointer;">
+                ${op.nombre} <span style="color:#64748b;font-size:13px;">(${dias} días)</span>
+            </button>
+        `;
+    });
+
+    html += `</div>`;
+
+    // Mostrar como modal simple
+    const tempModal = document.createElement('div');
+    tempModal.style.cssText = `position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:999999;display:flex;align-items:center;justify-content:center;`;
+    tempModal.innerHTML = `
+        <div style="background:white;border-radius:24px;width:90%;max-width:380px;max-height:85vh;overflow:auto;">
+            ${html}
+            <div style="padding:16px;text-align:center;">
+                <button onclick="this.closest('.modal-temp').remove()" style="padding:10px 24px;border:none;background:#e2e8f0;border-radius:999px;font-weight:700;">Cancelar</button>
+            </div>
+        </div>
+    `;
+    tempModal.className = 'modal-temp';
+    document.body.appendChild(tempModal);
+}
+
+function aplicarObjetivo(habitId, segundos, nombre) {
+    habitObjectives[habitId] = segundos;
+    document.querySelectorAll('.modal-temp').forEach(m => m.remove());
+    
+    // Actualizar visualmente
+    actualizarTodosLosContadores();
+    
+    showToast(`Objetivo cambiado a: ${nombre}`);
 }
 function actualizarTodosLosContadores() {
     const ahora = Date.now() / 1000;
