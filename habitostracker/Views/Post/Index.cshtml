@@ -986,41 +986,33 @@ let commentsCache = [];
 let commentsSort = 'recent';
 
 async function openCommentsModal(postId) {
-    // Evitar abrir si ya está abierto
     if (document.getElementById('commentsModal').style.display === 'flex') return;
     
     currentPostId = postId;
     const modal = document.getElementById('commentsModal');
     const body = document.getElementById('commentsModalBody');
-    const footer = document.getElementById('commentsModalFooter');
     
     modal.style.display = 'flex';
     document.body.style.overflow = 'hidden';
-    document.documentElement.style.overflow = 'hidden'; // también bloquea scroll en html
+    
     body.innerHTML = '<div class="comments-loading">Cargando comentarios...</div>';
     
-    // Inicializar SignalR si no está
-    if (!commentConnection && window.connectionGlobal) {
-        commentConnection = window.connectionGlobal;
-        setupCommentSignalR();
-    }
-    
-    // Unirse al grupo de la publicación
-    if (commentConnection && commentConnection.state === 'Connected') {
-        try {
-            await commentConnection.invoke("JoinPostGroup", postId);
-        } catch(e) { console.warn("SignalR JoinPostGroup error:", e); }
-    }
-    
-    // Cargar comentarios
     try {
         const res = await fetch(`/Post/GetComments?postId=${postId}`);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        
         const data = await res.json();
+        
         if (data.success) {
-            renderComments(data.comments, data.commentsDisabled);
+            renderComments(data.comments || [], data.commentsDisabled);
+            
             const subtitle = document.getElementById('commentsModalSubtitle');
-            if (subtitle) subtitle.textContent = `${data.comments?.length || 0} comentario${(data.comments?.length || 0) === 1 ? '' : 's'} en esta publicación`;
+            if (subtitle) {
+                const count = data.comments ? data.comments.length : 0;
+                subtitle.textContent = `${count} comentario${count === 1 ? '' : 's'}`;
+            }
+
+            const footer = document.getElementById('commentsModalFooter');
             if (data.commentsDisabled) {
                 footer.innerHTML = `<div class="comments-disabled-msg">🔒 Los comentarios están deshabilitados para esta publicación.</div>`;
             } else {
@@ -1041,17 +1033,17 @@ async function openCommentsModal(postId) {
                 attachCommentEvents();
             }
         } else {
-            body.innerHTML = `<div class="comments-loading">Error: ${data.error || 'desconocido'}</div>`;
+            body.innerHTML = `<div class="comments-loading" style="color:#ef4444;">${data.error || 'Error al cargar comentarios'}</div>`;
         }
     } catch(e) {
-        console.error(e);
-        body.innerHTML = '<div class="comments-loading">Error de conexión</div>';
+        console.error("Error cargando comentarios:", e);
+        body.innerHTML = `
+            <div class="comments-loading" style="color:#ef4444;">
+                ❌ Error de conexión<br>
+                <small style="font-size:12px;">Inténtalo de nuevo</small>
+            </div>`;
     }
-    
-    // Agregar listener para tecla Escape (solo cuando el modal está abierto)
-    document.addEventListener('keydown', handleEscapeKey);
 }
-
 function handleEscapeKey(e) {
     if (e.key === 'Escape') {
         closeCommentsModal();
@@ -1065,8 +1057,8 @@ function renderComments(comments, commentsDisabled) {
         ? [...commentsCache].sort((a, b) => (b.likeCount || 0) - (a.likeCount || 0))
         : [...commentsCache];
 
-    if (!list || list.length === 0) {
-        body.innerHTML = '<div class="comments-loading">Todavía no hay comentarios. Sé el primero en comentar.</div>';
+    if (list.length === 0) {
+        body.innerHTML = '<div class="comments-loading">Todavía no hay comentarios. Sé el primero.</div>';
         return;
     }
 
@@ -1074,7 +1066,7 @@ function renderComments(comments, commentsDisabled) {
     list.forEach(c => {
         const avatar = c.profileImage 
             ? `<img src="${c.profileImage}" class="comment-avatar" onclick="goToUserProfile(${c.userId})" />` 
-            : `<div class="comment-avatar-letter">${c.username.charAt(0).ToUpperCase()}</div>`;
+            : `<div class="comment-avatar-letter">${c.username?.charAt(0).ToUpperCase() || 'U'}</div>`;
 
         const img = c.imagePath ? `<img src="${c.imagePath}" class="comment-img" onclick="window.open('${c.imagePath}', '_blank')" />` : '';
 
@@ -1083,21 +1075,20 @@ function renderComments(comments, commentsDisabled) {
                 ${avatar}
                 <div class="comment-content">
                     <div class="comment-head">
-                        <a href="/User/Profile/${c.userId}" class="comment-username">${escapeHtml(c.username)}</a>
-                        <span class="comment-time">${c.createdAt}</span>
+                        <a href="/User/Profile/${c.userId}" class="comment-username">${escapeHtml(c.username || '')}</a>
+                        <span class="comment-time">${c.createdAt || ''}</span>
                     </div>
-                    <div class="comment-text">${escapeHtml(c.comment)}</div>
+                    <div class="comment-text">${escapeHtml(c.comment || '')}</div>
                     ${img}
 
                     <div class="comment-actions">
-                        <button class="comment-like-btn ${c.isLiked ? 'liked' : ''}" data-comment-id="${c.id}" onclick="toggleCommentLikeModal(this, ${c.id})">
+                        <button class="comment-like-btn ${c.isLiked ? 'liked' : ''}" onclick="toggleCommentLikeModal(this, ${c.id})">
                             ${c.isLiked ? '❤️' : '🤍'} <span class="like-count">${c.likeCount || 0}</span>
                         </button>
-                        <button class="comment-reply-btn" data-comment-id="${c.id}" data-username="${escapeHtml(c.username)}" onclick="showReplyForm(this, ${c.id}, 'comment')">Responder</button>
+                        <button class="comment-reply-btn" data-comment-id="${c.id}" data-username="${escapeHtml(c.username || '')}" onclick="showReplyForm(this, ${c.id}, 'comment')">Responder</button>
                         ${c.isMine ? `<button class="comment-delete-btn" onclick="deleteCommentModal(${c.id})">Eliminar</button>` : ''}
                     </div>
 
-                    <!-- PREVIEW DE RESPUESTAS -->
                     <div class="replies-container" id="replies-${c.id}">
                         ${renderRepliesPreview(c.replies || [], c.id)}
                     </div>
