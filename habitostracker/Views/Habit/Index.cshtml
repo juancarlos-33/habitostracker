@@ -702,17 +702,17 @@ body.bg-dark .hx-btn.ghost{background:#111827!important;border-color:rgba(255,25
 {
     <div class="hx-stories">
         <div class="hx-stories-inner" id="storiesBar">
-            <div class="hx-si" onclick="openCreateModal()">
-                <div class="hx-sring mine">
-                    <div class="hx-sinner">
-                        @{ var myPic = User.FindFirst("ProfileImage")?.Value; var myUn = User.Identity?.Name ?? "Yo"; }
-                        @if (!string.IsNullOrEmpty(myPic)) { <img src="@myPic" /> }
-                        else { <div class="hx-sletter">@myUn.Substring(0,1).ToUpper()</div> }
-                    </div>
-                    <div class="hx-sadd">+</div>
-                </div>
-                <div class="hx-sname">Mi historia</div>
-            </div>
+          <div class="hx-si" onclick="openStoryUpload()">
+    <div class="hx-sring mine">
+        <div class="hx-sinner">
+            @{ var myPic = User.FindFirst("ProfileImage")?.Value; var myUn = User.Identity?.Name ?? "Yo"; }
+            @if (!string.IsNullOrEmpty(myPic)) { <img src="@myPic" /> }
+            else { <div class="hx-sletter">@myUn.Substring(0,1).ToUpper()</div> }
+        </div>
+        <div class="hx-sadd">+</div>
+    </div>
+    <div class="hx-sname">Mi historia</div>
+</div>
             <div id="friendStories" style="display:contents;"></div>
         </div>
     </div>
@@ -1010,6 +1010,14 @@ const hitos = [
     { seg: 15552000, nombre: "6 MESES" },  // 180d
     { seg: 31536000, nombre: "1 AÑO" }     // 365d
 ];
+// ==================== SUBIR HISTORIA ====================
+function openStoryUpload() {
+    // Por ahora redirige a la página de crear historia
+    // Puedes cambiar esto después por un modal si prefieres
+    window.location.href = '/Story/Create';
+}
+
+// Opcional: Si quieres un modal bonito en el futuro, avísame y lo creamos
 function calcularProgreso(tiempoSeg) {
     let anterior = { seg: 0, nombre: "0 DÍAS" };
     let siguiente = hitos[0];
