@@ -825,9 +825,11 @@ body.bg-dark .hx-btn.ghost{background:#111827!important;border-color:rgba(255,25
                               <div class="hx-progress-detail">
     <span class="hx-time-live" id="time-@habit.Id">⏱️ 0s</span>
     <span class="hx-percent-live" id="perc-@habit.Id">0%</span>
-    <span class="hx-goal-live" id="goal-@habit.Id" style="cursor:pointer;" onclick="seleccionarObjetivo(@habit.Id, '@habit.Name.Replace("'", "\\'")')">
-        🎯 Objetivo
-    </span>
+   <span class="hx-goal-live" id="goal-@habit.Id" 
+      onclick="cambiarObjetivo(@habit.Id, '@habit.Name.Replace("'", "\\'")')" 
+      style="cursor:pointer; text-decoration:underline dotted;">
+    🎯 Objetivo
+</span>
 </div>
                             </div>
                             <span class="hx-hstatus">@badge</span>
@@ -1021,33 +1023,75 @@ function openStoryUpload() {
 
 // Opcional: Si quieres un modal bonito en el futuro, avísame y lo creamos
 // ==================== SISTEMA DE OBJETIVOS PERSONALIZADOS ====================
-let habitObjectives = {}; // Guardará el objetivo elegido por cada hábito (en memoria)
+// ==================== OBJETIVOS PERSONALIZADOS ====================
+const hitos = [
+    { seg: 86400,    nombre: "24 Horas",   dias: 1 },
+    { seg: 259200,   nombre: "3 Días",    dias: 3 },
+    { seg: 604800,   nombre: "1 Semana",  dias: 7 },
+    { seg: 1209600,  nombre: "2 Semanas", dias: 14 },
+    { seg: 2592000,  nombre: "1 Mes",     dias: 30 },
+    { seg: 7776000,  nombre: "3 Meses",   dias: 90 },
+    { seg: 15552000, nombre: "6 Meses",   dias: 180 },
+    { seg: 31536000, nombre: "1 Año",     dias: 365 }
+];
+
+let habitObjectives = {}; // objetivo guardado por hábito
 
 function calcularProgreso(tiempoSeg, habitId = null) {
-    let objetivoSeg = 604800; // Por defecto = 7 días
+    let objetivoSeg = 604800; // default 1 semana
 
-    // Si el usuario ya eligió un objetivo para este hábito
     if (habitId && habitObjectives[habitId]) {
         objetivoSeg = habitObjectives[habitId];
     }
 
-    let porc = Math.min((tiempoSeg / objetivoSeg) * 100, 100);
-    
-    // Buscar nombre del objetivo actual
-    let nombreObjetivo = "Personalizado";
+    let porc = (tiempoSeg / objetivoSeg) * 100;
+    if (porc > 100) porc = 100; // no pasa de 100%
+
+    let nombre = "1 Semana";
     for (let h of hitos) {
-        if (Math.abs(h.seg - objetivoSeg) < 3600) { // tolerancia de 1 hora
-            nombreObjetivo = h.nombre;
+        if (h.seg === objetivoSeg) {
+            nombre = h.nombre;
             break;
         }
     }
 
     return { 
         porc: Math.floor(porc), 
-        nombre: nombreObjetivo,
-        objetivoSeg: objetivoSeg 
+        nombre: nombre 
     };
 }
+function cambiarObjetivo(habitId, nombreHabit) {
+    const menu = document.createElement('div');
+    menu.style.cssText = `
+        position:fixed; top:50%; left:50%; transform:translate(-50%,-50%);
+        background:#1e293b; color:white; border-radius:20px; padding:20px; 
+        z-index:999999; min-width:280px; box-shadow:0 20px 50px rgba(0,0,0,0.6);
+    `;
+
+    let html = `<div style="margin-bottom:16px;font-weight:700;">🎯 Objetivo para<br><strong>${nombreHabit}</strong></div>`;
+
+    hitos.forEach(h => {
+        html += `
+            <div onclick="aplicarNuevoObjetivo(${habitId}, ${h.seg});" 
+                 style="padding:14px 16px; margin:6px 0; background:#334155; border-radius:12px; cursor:pointer;">
+                ${h.nombre}
+            </div>
+        `;
+    });
+
+    menu.innerHTML = html + `<div onclick="this.remove()" style="text-align:center;margin-top:12px;color:#94a3b8;cursor:pointer;">Cancelar</div>`;
+    document.body.appendChild(menu);
+}
+
+function aplicarNuevoObjetivo(habitId, segundos) {
+    habitObjectives[habitId] = segundos;
+    document.querySelectorAll('.modal-temp, div[style*="position:fixed"]').forEach(el => el.remove());
+    actualizarTodosLosContadores();
+    showToast("Objetivo actualizado ✅");
+}
+
+
+
 // Abrir selector de objetivo para un hábito
 function seleccionarObjetivo(habitId, nombreHabit) {
     const opciones = [
