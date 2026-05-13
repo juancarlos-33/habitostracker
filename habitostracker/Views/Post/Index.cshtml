@@ -1038,10 +1038,7 @@ async function openCommentsModal(postId) {
 }
 function handleEscapeKey(e) {
     if (e.key === 'Escape') {
-        const modal = document.getElementById('commentsModal');
-        if (modal && modal.style.display === 'flex') {
-            closeCommentsModal();
-        }
+        closeCommentsModal();
     }
 }
 function renderComments(comments, commentsDisabled) {
@@ -1438,36 +1435,38 @@ function closeCommentsModal() {
 
     modal.style.display = 'none';
 
-    // Restaurar scroll de forma agresiva
-    document.body.style.overflow = '';
-    document.body.style.position = '';
-    document.body.style.paddingRight = '';
-    document.body.style.top = '';
-    document.documentElement.style.overflow = '';
-    
-    // Quitar cualquier clase residual
-    document.body.classList.remove('modal-open', 'overflow-hidden');
+    // Limpieza agresiva de scroll
+    document.body.style.cssText = `
+        overflow: visible !important;
+        position: static !important;
+        padding-right: 0 !important;
+        top: 0 !important;
+    `;
+    document.documentElement.style.overflow = 'visible';
+
+    // Quitar clases residuales
+    document.body.classList.remove('modal-open', 'overflow-hidden', 'no-scroll');
 
     // Limpiar SignalR
-    if (commentConnection && commentConnection.state === 'Connected' && currentPostId) {
+    if (commentConnection && currentPostId) {
         commentConnection.invoke("LeavePostGroup", currentPostId).catch(() => {});
     }
 
-    // Limpiar formularios de respuesta
+    // Limpiar formulario de respuesta activo
     if (activeReplyForm) {
         activeReplyForm.remove();
         activeReplyForm = null;
     }
 
-    // Resetear variables
+    // Resetear variables globales
     currentPostId = null;
     selectedCommentImage = null;
     commentsCache = [];
 
-    // Remover listener de Escape
+    // Remover listener de Escape (evita duplicados)
     document.removeEventListener('keydown', handleEscapeKey);
 
-    console.log("✅ Modal cerrado y scroll restaurado");
+    console.log("✅ Modal cerrado completamente");
 }
 async function toggleCommentLikeModal(btn, commentId) {
     const isLiked = btn.classList.contains('liked');
