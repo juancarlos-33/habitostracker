@@ -432,8 +432,14 @@ window.doLogin = () => false;
         </div>
     </div>
 </section>
+<!-- BOTÓN CHAT EN VIVO DESTACADO -->
+<div style="text-align:center;margin: -40px 0 60px 0; z-index:10; position:relative;">
+    <button onclick="showPublicChat()" 
+            style="background:linear-gradient(135deg,#22c55e,#10b981); color:white; border:none; padding:14px 32px; border-radius:999px; font-size:15px; font-weight:700; box-shadow:0 8px 25px rgba(34,197,94,0.4); display:inline-flex; align-items:center; gap:10px; cursor:pointer;">
+        💬 Chat en vivo <span style="background:rgba(255,255,255,0.3); padding:2px 9px; border-radius:999px; font-size:12px;">Ahora</span>
+    </button>
 
-<!-- CHAT PUBLICO -->
+    <!-- CHAT PUBLICO -->
 <section class="landing-chat-section" id="public-chat">
     <div class="landing-chat-wrap">
         <div class="landing-chat-copy">
@@ -480,6 +486,10 @@ window.doLogin = () => false;
         </div>
     </div>
 </section>
+
+</div>
+
+
 
 <!-- FEATURES -->
 <section class="section" id="features">
@@ -611,6 +621,16 @@ document.querySelectorAll(".feat-card").forEach(card=>{
         gsap.to(card,{rotateY:0,rotateX:0,translateZ:0,duration:0.6,ease:"elastic.out(1,0.4)"});
     });
 });
+// Abrir chat público desde botón
+function showPublicChat() {
+    document.getElementById('public-chat').scrollIntoView({ behavior: 'smooth' });
+    
+    // Si el usuario no ha entrado al chat aún, enfocar el input de nombre
+    setTimeout(() => {
+        const nameInput = document.getElementById('landingChatName');
+        if (nameInput) nameInput.focus();
+    }, 800);
+}
 
 // ── MODAL TILT
 const mc=document.getElementById("mc");
