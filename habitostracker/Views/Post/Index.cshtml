@@ -984,13 +984,13 @@ let commentConnection = null;
 let selectedCommentImage = null;
 let commentsCache = [];
 let commentsSort = 'recent';
-
 async function openCommentsModal(postId) {
     if (document.getElementById('commentsModal').style.display === 'flex') return;
     
     currentPostId = postId;
     const modal = document.getElementById('commentsModal');
     const body = document.getElementById('commentsModalBody');
+    const footer = document.getElementById('commentsModalFooter');
     
     modal.style.display = 'flex';
     document.body.style.overflow = 'hidden';
@@ -1004,15 +1004,11 @@ async function openCommentsModal(postId) {
         const data = await res.json();
         
         if (data.success) {
-            renderComments(data.comments || [], data.commentsDisabled);
+            renderComments(data.comments || [], data.commentsDisabled || false);
             
             const subtitle = document.getElementById('commentsModalSubtitle');
-            if (subtitle) {
-                const count = data.comments ? data.comments.length : 0;
-                subtitle.textContent = `${count} comentario${count === 1 ? '' : 's'}`;
-            }
+            if (subtitle) subtitle.textContent = `${data.comments?.length || 0} comentario${(data.comments?.length || 0) === 1 ? '' : 's'}`;
 
-            const footer = document.getElementById('commentsModalFooter');
             if (data.commentsDisabled) {
                 footer.innerHTML = `<div class="comments-disabled-msg">🔒 Los comentarios están deshabilitados para esta publicación.</div>`;
             } else {
@@ -1033,18 +1029,13 @@ async function openCommentsModal(postId) {
                 attachCommentEvents();
             }
         } else {
-            body.innerHTML = `<div class="comments-loading" style="color:#ef4444;">${data.error || 'Error al cargar comentarios'}</div>`;
+            body.innerHTML = `<div class="comments-loading" style="color:#ef4444;">${data.error || 'Error al cargar'}</div>`;
         }
-    } catch(e) {
-        console.error("Error cargando comentarios:", e);
-        body.innerHTML = `
-            <div class="comments-loading" style="color:#ef4444;">
-                ❌ Error de conexión<br>
-                <small style="font-size:12px;">Inténtalo de nuevo</small>
-            </div>`;
+    } catch (e) {
+        console.error(e);
+        body.innerHTML = `<div class="comments-loading" style="color:#ef4444;">❌ Error de conexión.<br><small>Inténtalo de nuevo</small></div>`;
     }
-}
-function handleEscapeKey(e) {
+}function handleEscapeKey(e) {
     if (e.key === 'Escape') {
         closeCommentsModal();
     }
@@ -1052,49 +1043,46 @@ function handleEscapeKey(e) {
 function renderComments(comments, commentsDisabled) {
     const body = document.getElementById('commentsModalBody');
     commentsCache = Array.isArray(comments) ? comments : [];
-    
-    const list = commentsSort === 'top'
-        ? [...commentsCache].sort((a, b) => (b.likeCount || 0) - (a.likeCount || 0))
-        : [...commentsCache];
 
-    if (list.length === 0) {
-        body.innerHTML = '<div class="comments-loading">Todavía no hay comentarios. Sé el primero.</div>';
+    if (commentsCache.length === 0) {
+        body.innerHTML = '<div class="comments-loading">No hay comentarios aún. Sé el primero.</div>';
         return;
     }
 
-    let html = '';
-    list.forEach(c => {
-        const avatar = c.profileImage 
-            ? `<img src="${c.profileImage}" class="comment-avatar" onclick="goToUserProfile(${c.userId})" />` 
-            : `<div class="comment-avatar-letter">${c.username?.charAt(0).ToUpperCase() || 'U'}</div>`;
+    const sorted = commentsSort === 'top' 
+        ? [...commentsCache].sort((a,b) => (b.likeCount||0) - (a.likeCount||0))
+        : [...commentsCache];
 
-        const img = c.imagePath ? `<img src="${c.imagePath}" class="comment-img" onclick="window.open('${c.imagePath}', '_blank')" />` : '';
+    let html = '';
+    sorted.forEach(c => {
+        const avatar = c.profileImage 
+            ? `<img src="${c.profileImage}" class="comment-avatar" onclick="goToUserProfile(${c.userId})"/>`
+            : `<div class="comment-avatar-letter">${(c.username||'U').charAt(0).toUpperCase()}</div>`;
+
+        const img = c.imagePath ? `<img src="${c.imagePath}" class="comment-img" onclick="window.open('${c.imagePath}','_blank')"/>` : '';
 
         html += `
             <div class="comment-item" id="comment-${c.id}" data-comment-id="${c.id}">
                 ${avatar}
                 <div class="comment-content">
                     <div class="comment-head">
-                        <a href="/User/Profile/${c.userId}" class="comment-username">${escapeHtml(c.username || '')}</a>
-                        <span class="comment-time">${c.createdAt || ''}</span>
+                        <a href="/User/Profile/${c.userId}" class="comment-username">${escapeHtml(c.username)}</a>
+                        <span class="comment-time">${c.createdAt}</span>
                     </div>
-                    <div class="comment-text">${escapeHtml(c.comment || '')}</div>
+                    <div class="comment-text">${escapeHtml(c.comment)}</div>
                     ${img}
-
                     <div class="comment-actions">
-                        <button class="comment-like-btn ${c.isLiked ? 'liked' : ''}" onclick="toggleCommentLikeModal(this, ${c.id})">
-                            ${c.isLiked ? '❤️' : '🤍'} <span class="like-count">${c.likeCount || 0}</span>
+                        <button class="comment-like-btn ${c.isLiked?'liked':''}" onclick="toggleCommentLikeModal(this, ${c.id})">
+                            ${c.isLiked?'❤️':'🤍'} <span class="like-count">${c.likeCount||0}</span>
                         </button>
-                        <button class="comment-reply-btn" data-comment-id="${c.id}" data-username="${escapeHtml(c.username || '')}" onclick="showReplyForm(this, ${c.id}, 'comment')">Responder</button>
+                        <button class="comment-reply-btn" data-comment-id="${c.id}" onclick="showReplyForm(this, ${c.id}, 'comment')">Responder</button>
                         ${c.isMine ? `<button class="comment-delete-btn" onclick="deleteCommentModal(${c.id})">Eliminar</button>` : ''}
                     </div>
-
                     <div class="replies-container" id="replies-${c.id}">
                         ${renderRepliesPreview(c.replies || [], c.id)}
                     </div>
                 </div>
-            </div>
-        `;
+            </div>`;
     });
 
     body.innerHTML = html;
