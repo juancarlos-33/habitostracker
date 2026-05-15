@@ -726,22 +726,24 @@ body.bg-dark .hx-btn.ghost{background:#111827!important;border-color:rgba(255,25
             <p class="hx-qt" id="quoteText"></p>
         </div>
 
-        <div class="hx-actions">
-            <button class="hx-btn primary" id="openCreateModalBtn">➕ Nuevo hábito</button>
-            <a href="/Habit/History" class="hx-btn ghost">📅 Historial</a>
-            <a href="/Habit/Calendar" class="hx-btn ghost">📆 Calendario</a>
-            @if (isPremium)
-            {
-                <a href="/Habit/Statistics" class="hx-btn ghost">📈 Estadísticas</a>
-                <a href="/Habit/Export" class="hx-btn ghost">📤 Exportar</a>
-            }
-            else
-            {
-                <div class="hx-btn locked" style="display:inline-flex; align-items:center; gap:6px; cursor:not-allowed;">🔒 Estadísticas</div>
-                <div class="hx-btn locked" style="display:inline-flex; align-items:center; gap:6px; cursor:not-allowed;">🔒 Exportar</div>
-            }
-            <a href="/Habit/Achievements" class="hx-btn ghost">🏆 Logros</a>
-        </div>
+       <div class="hx-actions">
+    <button class="hx-btn primary" id="openCreateModalBtn">➕ Nuevo hábito</button>
+    <a href="/Habit/History" class="hx-btn ghost">📅 Historial</a>
+    <a href="/Habit/Calendar" class="hx-btn ghost">📆 Calendario</a>
+    
+    @if (isPremium)
+    {
+        <a href="/Habit/Statistics" class="hx-btn ghost">📈 Estadísticas</a>
+        <a href="/Habit/ExportHistory" class="hx-btn ghost">📤 Exportar</a>
+    }
+    else
+    {
+        <div class="hx-btn locked" style="display:inline-flex; align-items:center; gap:6px; cursor:not-allowed;" title="Solo Premium">🔒 Estadísticas</div>
+        <div class="hx-btn locked" style="display:inline-flex; align-items:center; gap:6px; cursor:not-allowed;" title="Solo Premium">🔒 Exportar</div>
+    }
+    
+    <a href="/Habit/Achievements" class="hx-btn ghost">🏆 Logros</a>
+</div>
 
         <div class="hx-kpi-grid">
             <a href="/Habit/Index" class="hx-kpi kb">
