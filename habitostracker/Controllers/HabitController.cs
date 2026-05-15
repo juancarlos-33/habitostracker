@@ -55,15 +55,13 @@ namespace HabitTrackerApp.Controllers
         {
             Response.Headers["Cache-Control"] = "no-store, no-cache, must-revalidate";
             Response.Headers["Pragma"] = "no-cache";
-            var userId = GetUserId();
 
+            var userId = GetUserId();
             var user = _context.Users.FirstOrDefault(u => u.Id == userId);
             if (user == null) return RedirectToAction("Login", "Account");
 
-            // 🔥 Si es Google y el perfil está incompleto → forzar CompleteProfile
             if (!user.OnboardingComplete)
             {
-                // Si ya tiene género y bio configurados, marcar como completo y continuar
                 bool perfilCompleto = !string.IsNullOrEmpty(user.Gender)
                     && user.Gender != "No especificado"
                     && !string.IsNullOrEmpty(user.Bio)
