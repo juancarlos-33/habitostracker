@@ -195,7 +195,7 @@
                 </div>
 
                 <!-- ══ AVATARES ══ -->
-              <div class="my-card">
+         <div class="my-card">
     <div class="my-card-header">
         <div>
             <div class="my-card-title">🧑‍🎤 Avatar prediseñado</div>
@@ -223,19 +223,17 @@
         ⏳ Cargando avatares...
     </div>
 
-    <!-- Avatar seleccionado -->
     <div id="avatarSelected" style="display:none;margin-top:16px;padding:14px 18px;background:rgba(34,197,94,0.12);border:1px solid rgba(34,197,94,0.3);border-radius:16px;align-items:center;gap:14px;">
         <img id="avatarSelectedImg" style="width:52px;height:52px;border-radius:50%;border:3px solid #4ade80;" />
         <div style="flex:1;">
             <div style="font-weight:700;color:#4ade80;">✅ Avatar seleccionado</div>
-            <div style="font-size:13px;color:rgba(255,255,255,0.5);">Haz clic en Guardar para aplicarlo</div>
+            <div style="font-size:13px;color:rgba(255,255,255,0.5);">Guarda los cambios para aplicarlo</div>
         </div>
         <button type="button" onclick="cancelAvatarSelection()" style="background:none;border:none;color:#ef4444;font-size:22px;cursor:pointer;">✕</button>
     </div>
 
     <input type="hidden" id="selectedAvatarUrl" name="selectedAvatarUrl" />
     
-    <!-- Botón subir foto -->
     <div style="margin-top:20px;text-align:center;">
         <label class="my-upload-btn">
             📸 Subir mi propia foto
@@ -759,7 +757,44 @@
     font-family:inherit;
 }
 .my-remove-photo-btn:hover { background:rgba(239,68,68,0.12); }
+.my-avatar-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
+    gap: 12px;
+    margin-top: 16px;
+    padding: 10px;
+}
 
+.avatar-option {
+    width: 100%;
+    height: 70px;
+    border-radius: 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: 2px solid transparent;
+}
+
+.avatar-option:hover {
+    transform: scale(1.08);
+    box-shadow: 0 0 0 4px rgba(99,102,241,0.3);
+}
+
+.my-upload-btn {
+    display: inline-block;
+    padding: 12px 24px;
+    background: rgba(99,102,241,0.1);
+    border: 1px solid rgba(99,102,241,0.3);
+    border-radius: 999px;
+    color: #818cf8;
+    font-weight: 700;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.my-upload-btn:hover {
+    background: rgba(99,102,241,0.2);
+    color: white;
+}
 /* ══ FIELDS ══ */
 .my-fields-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
 @@media(max-width:600px){ .my-fields-grid { grid-template-columns:1fr; } }
@@ -1130,6 +1165,7 @@ function cerrarFotoPerfil() {
     }
 }
 // ==================== AVATAR SELECTOR ====================
+// ==================== AVATAR SELECTOR (limpio) ====================
 let currentStyle = "";
 let selectedAvatarUrl = "";
 
@@ -1143,7 +1179,6 @@ function loadAvatarStyle(style) {
     grid.innerHTML = '';
     loading.style.display = 'block';
 
-    // Generar avatares con DiceBear
     const seeds = ["A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z"];
     let html = '';
 
@@ -1159,7 +1194,7 @@ function loadAvatarStyle(style) {
     setTimeout(() => {
         grid.innerHTML = html;
         loading.style.display = 'none';
-    }, 400);
+    }, 450);
 }
 
 function selectAvatar(url) {
@@ -1177,7 +1212,6 @@ function cancelAvatarSelection() {
 
 function uploadProfilePhoto(input) {
     if (!input.files[0]) return;
-    
     const reader = new FileReader();
     reader.onload = function(e) {
         selectedAvatarUrl = e.target.result;
