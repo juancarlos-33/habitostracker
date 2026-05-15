@@ -1129,22 +1129,26 @@ function cerrarFotoPerfil() {
         setTimeout(() => { overlay.remove(); document.body.style.overflow = ''; }, 200);
     }
 }
+// ==================== AVATAR SELECTOR ====================
 let currentStyle = "";
+let selectedAvatarUrl = "";
 
 function loadAvatarStyle(style) {
     currentStyle = style;
     const grid = document.getElementById('avatarGrid');
     const loading = document.getElementById('avatarLoading');
     
+    if (!grid || !loading) return;
+    
     grid.innerHTML = '';
     loading.style.display = 'block';
 
-    // Usando DiceBear API (muy estable)
-    const seedList = ["A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z"];
-    
+    // Generar avatares con DiceBear
+    const seeds = ["A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z"];
     let html = '';
-    seedList.forEach(seed => {
-        const url = `https://api.dicebear.com/7.x/${style}/svg?seed=${seed}`;
+
+    seeds.forEach(seed => {
+        const url = `https://api.dicebear.com/7.x/${style}/svg?seed=${seed}&backgroundColor=1e293b`;
         html += `
             <img src="${url}" class="avatar-option" 
                  onclick="selectAvatar('${url}')" 
@@ -1155,42 +1159,34 @@ function loadAvatarStyle(style) {
     setTimeout(() => {
         grid.innerHTML = html;
         loading.style.display = 'none';
-    }, 600);
+    }, 400);
 }
 
 function selectAvatar(url) {
+    selectedAvatarUrl = url;
     document.getElementById('selectedAvatarUrl').value = url;
     document.getElementById('avatarSelectedImg').src = url;
     document.getElementById('avatarSelected').style.display = 'flex';
-    
-    // Resaltar el seleccionado
-    document.querySelectorAll('.avatar-option').forEach(img => {
-        img.style.border = img.src === url ? '3px solid #4ade80' : 'none';
-    });
 }
 
 function cancelAvatarSelection() {
+    selectedAvatarUrl = '';
     document.getElementById('selectedAvatarUrl').value = '';
     document.getElementById('avatarSelected').style.display = 'none';
 }
 
 function uploadProfilePhoto(input) {
-    if (!input.files || !input.files[0]) return;
+    if (!input.files[0]) return;
     
-    const file = input.files[0];
     const reader = new FileReader();
-    
     reader.onload = function(e) {
-        const url = e.target.result;
-        document.getElementById('selectedAvatarUrl').value = url;
-        document.getElementById('avatarSelectedImg').src = url;
+        selectedAvatarUrl = e.target.result;
+        document.getElementById('selectedAvatarUrl').value = selectedAvatarUrl;
+        document.getElementById('avatarSelectedImg').src = selectedAvatarUrl;
         document.getElementById('avatarSelected').style.display = 'flex';
     };
-    
-    reader.readAsDataURL(file);
+    reader.readAsDataURL(input.files[0]);
 }
-
-// Estilo para los avatares (agrega esto en tu <style>)
 
 document.getElementById("cropButton").addEventListener("click", function() {
     if (!cropper) return;
