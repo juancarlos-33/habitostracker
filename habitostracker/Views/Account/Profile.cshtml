@@ -195,42 +195,54 @@
                 </div>
 
                 <!-- ══ AVATARES ══ -->
-                <div class="my-card">
-                    <div class="my-card-header">
-                        <div>
-                            <div class="my-card-title">🧑‍🎤 Avatar prediseñado</div>
-                            <div class="my-card-sub">Elige un avatar o sube tu propia foto</div>
-                        </div>
-                    </div>
+              <div class="my-card">
+    <div class="my-card-header">
+        <div>
+            <div class="my-card-title">🧑‍🎤 Avatar prediseñado</div>
+            <div class="my-card-sub">Elige un estilo o sube tu propia foto</div>
+        </div>
+    </div>
 
-                    <div class="my-avatar-styles" id="avatarStyles">
-                        @foreach (var style in new[] {
-                            ("pixel-art","🎮 Pixel"),("adventurer","🧝 Adventurer"),
-                            ("notionists","🌸 Notion"),("bottts","👾 Bottts"),
-                            ("lorelei","🦊 Lorelei"),("personas","🎭 Personas"),("micah","🐱 Micah")
-                        })
-                        {
-                            <button type="button" class="my-style-btn" data-style="@style.Item1"
-                                    onclick="loadAvatarStyle('@style.Item1')">
-                                @style.Item2
-                            </button>
-                        }
-                    </div>
+    <div class="my-avatar-styles" id="avatarStyles">
+        @foreach (var style in new[] {
+            ("pixel-art","🎮 Pixel"), ("adventurer","🧝 Adventurer"),
+            ("notionists","🌸 Notion"), ("bottts","👾 Bottts"),
+            ("lorelei","🦊 Lorelei"), ("personas","🎭 Personas"),
+            ("micah","🐱 Micah")
+        })
+        {
+            <button type="button" class="my-style-btn" data-style="@style.Item1"
+                    onclick="loadAvatarStyle('@style.Item1')">
+                @style.Item2
+            </button>
+        }
+    </div>
 
-                    <div id="avatarGrid" class="my-avatar-grid"></div>
-                    <div id="avatarLoading" style="text-align:center;padding:16px;color:rgba(255,255,255,0.3);display:none;">⏳ Cargando...</div>
+    <div id="avatarGrid" class="my-avatar-grid"></div>
+    <div id="avatarLoading" style="text-align:center;padding:30px;color:rgba(255,255,255,0.4);display:none;">
+        ⏳ Cargando avatares...
+    </div>
 
-               <div id="avatarSelected" style="display:none;margin-top:12px;padding:12px 16px;background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.2);border-radius:14px;gap:12px;align-items:center;">
-                        <img id="avatarSelectedImg" style="width:44px;height:44px;border-radius:50%;border:2px solid rgba(34,197,94,0.4);" />
-                        <div style="flex:1;">
-                            <div style="font-size:13px;font-weight:700;color:#4ade80;">✅ Avatar seleccionado</div>
-                            <div style="font-size:11px;color:rgba(255,255,255,0.3);">Guarda los cambios para aplicarlo</div>
-                        </div>
-                        <button type="button" onclick="cancelAvatar()" style="background:none;border:none;color:rgba(255,255,255,0.3);cursor:pointer;font-size:18px;padding:0;">✕</button>
-                    </div>
-                    <input type="hidden" id="selectedAvatarUrl" name="selectedAvatarUrl" />
-                </div>
+    <!-- Avatar seleccionado -->
+    <div id="avatarSelected" style="display:none;margin-top:16px;padding:14px 18px;background:rgba(34,197,94,0.12);border:1px solid rgba(34,197,94,0.3);border-radius:16px;align-items:center;gap:14px;">
+        <img id="avatarSelectedImg" style="width:52px;height:52px;border-radius:50%;border:3px solid #4ade80;" />
+        <div style="flex:1;">
+            <div style="font-weight:700;color:#4ade80;">✅ Avatar seleccionado</div>
+            <div style="font-size:13px;color:rgba(255,255,255,0.5);">Haz clic en Guardar para aplicarlo</div>
+        </div>
+        <button type="button" onclick="cancelAvatarSelection()" style="background:none;border:none;color:#ef4444;font-size:22px;cursor:pointer;">✕</button>
+    </div>
 
+    <input type="hidden" id="selectedAvatarUrl" name="selectedAvatarUrl" />
+    
+    <!-- Botón subir foto -->
+    <div style="margin-top:20px;text-align:center;">
+        <label class="my-upload-btn">
+            📸 Subir mi propia foto
+            <input type="file" id="profilePhotoUpload" accept="image/*" style="display:none;" onchange="uploadProfilePhoto(this)">
+        </label>
+    </div>
+</div>
                 <!-- ══ PERSONALIZACIÓN ══ -->
                 <div class="my-card">
                     <div class="my-card-header">
@@ -783,6 +795,44 @@
     font-weight:700; cursor:pointer; font-size:14px; font-family:inherit; transition:0.2s;
 }
 .my-crop-btn:hover { transform:translateY(-1px); box-shadow:0 6px 16px rgba(22,163,74,0.3); }
+.my-avatar-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
+    gap: 12px;
+    margin-top: 16px;
+    padding: 10px;
+}
+
+.avatar-option {
+    width: 100%;
+    height: 70px;
+    border-radius: 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: 2px solid transparent;
+}
+
+.avatar-option:hover {
+    transform: scale(1.08);
+    box-shadow: 0 0 0 4px rgba(99,102,241,0.3);
+}
+
+.my-upload-btn {
+    display: inline-block;
+    padding: 12px 24px;
+    background: rgba(99,102,241,0.1);
+    border: 1px solid rgba(99,102,241,0.3);
+    border-radius: 999px;
+    color: #818cf8;
+    font-weight: 700;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.my-upload-btn:hover {
+    background: rgba(99,102,241,0.2);
+    color: white;
+}
 
 /* ══ AVATARES ══ */
 .my-avatar-styles { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:14px; }
@@ -1079,6 +1129,68 @@ function cerrarFotoPerfil() {
         setTimeout(() => { overlay.remove(); document.body.style.overflow = ''; }, 200);
     }
 }
+let currentStyle = "";
+
+function loadAvatarStyle(style) {
+    currentStyle = style;
+    const grid = document.getElementById('avatarGrid');
+    const loading = document.getElementById('avatarLoading');
+    
+    grid.innerHTML = '';
+    loading.style.display = 'block';
+
+    // Usando DiceBear API (muy estable)
+    const seedList = ["A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z"];
+    
+    let html = '';
+    seedList.forEach(seed => {
+        const url = `https://api.dicebear.com/7.x/${style}/svg?seed=${seed}`;
+        html += `
+            <img src="${url}" class="avatar-option" 
+                 onclick="selectAvatar('${url}')" 
+                 title="${seed}">
+        `;
+    });
+
+    setTimeout(() => {
+        grid.innerHTML = html;
+        loading.style.display = 'none';
+    }, 600);
+}
+
+function selectAvatar(url) {
+    document.getElementById('selectedAvatarUrl').value = url;
+    document.getElementById('avatarSelectedImg').src = url;
+    document.getElementById('avatarSelected').style.display = 'flex';
+    
+    // Resaltar el seleccionado
+    document.querySelectorAll('.avatar-option').forEach(img => {
+        img.style.border = img.src === url ? '3px solid #4ade80' : 'none';
+    });
+}
+
+function cancelAvatarSelection() {
+    document.getElementById('selectedAvatarUrl').value = '';
+    document.getElementById('avatarSelected').style.display = 'none';
+}
+
+function uploadProfilePhoto(input) {
+    if (!input.files || !input.files[0]) return;
+    
+    const file = input.files[0];
+    const reader = new FileReader();
+    
+    reader.onload = function(e) {
+        const url = e.target.result;
+        document.getElementById('selectedAvatarUrl').value = url;
+        document.getElementById('avatarSelectedImg').src = url;
+        document.getElementById('avatarSelected').style.display = 'flex';
+    };
+    
+    reader.readAsDataURL(file);
+}
+
+// Estilo para los avatares (agrega esto en tu <style>)
 
 document.getElementById("cropButton").addEventListener("click", function() {
     if (!cropper) return;
