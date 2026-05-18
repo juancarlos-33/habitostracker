@@ -11,7 +11,17 @@ namespace HabitTrackerApp.Filters
 
         private static readonly HashSet<string> _allowedHabitActions = new(StringComparer.OrdinalIgnoreCase)
         {
-            "Index", "Create", "History", "Calendar"
+            "Index",
+            "Create",
+            "CreateAjax",
+            "Edit",
+            "EditAjax",
+            "Delete",
+            "Complete",
+            "FailHabit",
+            "History",
+            "Calendar",
+            "Achievements"
         };
 
         private static readonly HashSet<string> _allowedAccountActions = new(StringComparer.OrdinalIgnoreCase)

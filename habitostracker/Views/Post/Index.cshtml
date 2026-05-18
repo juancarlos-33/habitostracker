@@ -1099,7 +1099,7 @@ function renderComments(comments, commentsDisabled) {
                 <div class="comment-content">
                     <div class="comment-head">
                         <a href="/User/Profile/${c.userId}" class="comment-username">${escapeHtml(c.username)}</a>
-                        <span class="comment-time">${c.createdAt}</span>
+                        ${isSystem ? '' : `<span class="comment-time">${c.createdAt}</span>`}
                     </div>
                     <div class="comment-text">${escapeHtml(c.comment)}</div>
                     ${systemNote}
@@ -1364,14 +1364,21 @@ async function toggleReplyLikeModal(btn, replyId) {
 }
 
 async function deleteReplyModal(replyId) {
-    if (!confirm('¿Eliminar esta respuesta?')) return;
-    try {
-        const res = await fetch(`/Post/DeleteReply/${replyId}`, { method: 'GET' });
-        if (res.ok) {
-            const replyEl = document.querySelector(`.reply-item[data-reply-id="${replyId}"]`);
-            if (replyEl) replyEl.remove();
-        } else alert('Error al eliminar');
-    } catch(e) { alert('Error de conexión'); }
+    showConfirm({
+        icon:'🗑️',
+        title:'Eliminar respuesta',
+        message:'Esta respuesta desaparecerá de la conversación.',
+        confirmText:'Eliminar',
+        onConfirm: async () => {
+            try {
+                const res = await fetch(`/Post/DeleteReply/${replyId}`, { method: 'GET' });
+                if (res.ok) {
+                    const replyEl = document.querySelector(`.reply-item[data-reply-id="${replyId}"]`);
+                    if (replyEl) replyEl.remove();
+                } else alert('Error al eliminar');
+            } catch(e) { alert('Error de conexión'); }
+        }
+    });
 }
 function clearCommentImage() {
     selectedCommentImage = null;
@@ -1517,14 +1524,21 @@ async function toggleCommentLikeModal(btn, commentId) {
 }
 
 async function deleteCommentModal(commentId) {
-    if (!confirm('¿Eliminar este comentario?')) return;
-    try {
-        const res = await fetch(`/Post/DeleteComment/${commentId}`, { method: 'GET' });
-        if (res.ok) {
-            const commentEl = document.getElementById(`comment-${commentId}`);
-            if (commentEl) commentEl.remove();
-        } else alert('Error al eliminar');
-    } catch(e) { alert('Error de conexión'); }
+    showConfirm({
+        icon:'🗑️',
+        title:'Eliminar comentario',
+        message:'Se quitará este comentario de la publicación.',
+        confirmText:'Eliminar',
+        onConfirm: async () => {
+            try {
+                const res = await fetch(`/Post/DeleteComment/${commentId}`, { method: 'GET' });
+                if (res.ok) {
+                    const commentEl = document.getElementById(`comment-${commentId}`);
+                    if (commentEl) commentEl.remove();
+                } else alert('Error al eliminar');
+            } catch(e) { alert('Error de conexión'); }
+        }
+    });
 }
 
 function escapeHtml(text) {

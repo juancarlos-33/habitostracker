@@ -1328,10 +1328,25 @@ function loadAvatarStyle(style) {
     if (!grid) return;
     grid.innerHTML = '';
     loading.style.display = 'block';
-    let loaded = 0, errors = 0;
+    const palettes = {
+        'pixel-art': ['#111827','#22c55e','#60a5fa','#f97316'],
+        'adventurer': ['#312e81','#f59e0b','#fef3c7','#1f2937'],
+        'notionists': ['#0f172a','#f9fafb','#f472b6','#6366f1'],
+        'bottts': ['#0f766e','#67e8f9','#334155','#f8fafc'],
+        'lorelei': ['#831843','#f9a8d4','#fef2f2','#7c2d12'],
+        'personas': ['#1d4ed8','#bfdbfe','#facc15','#0f172a'],
+        'micah': ['#166534','#bbf7d0','#fef08a','#1e293b']
+    };
+    const makeAvatar = (seed, i) => {
+        const p = palettes[style] || palettes.adventurer;
+        const face = seed.charAt(0).toUpperCase();
+        const bg = p[i % p.length];
+        const accent = p[(i + 1) % p.length];
+        const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="160" height="160" viewBox="0 0 160 160"><rect width="160" height="160" rx="36" fill="${bg}"/><circle cx="80" cy="72" r="42" fill="${accent}" opacity=".92"/><circle cx="65" cy="66" r="6" fill="#0f172a"/><circle cx="95" cy="66" r="6" fill="#0f172a"/><path d="M61 91c10 10 28 10 38 0" fill="none" stroke="#0f172a" stroke-width="7" stroke-linecap="round"/><text x="80" y="141" text-anchor="middle" font-family="Arial, sans-serif" font-size="34" font-weight="900" fill="white">${face}</text></svg>`;
+        return 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
+    };
     avatarSeeds.forEach(seed => {
-        // SVG es más confiable que PNG (sin CORS, render inmediato, peso ínfimo)
-        const url = 'https://api.dicebear.com/7.x/' + encodeURIComponent(style) + '/svg?seed=' + encodeURIComponent(seed) + '&backgroundColor=b6e3f4,c0aede,d1d4f9,ffd5dc,ffdfbf';
+        const url = makeAvatar(seed, avatarSeeds.indexOf(seed));
         const div = document.createElement('div');
         div.className = 'my-avatar-opt';
         div.onclick = () => selectAvatar(url, div);
@@ -1339,19 +1354,10 @@ function loadAvatarStyle(style) {
         img.alt = seed;
         img.loading = 'lazy';
         img.src = url;
-        img.onload = () => { loaded++; if (loaded + errors >= avatarSeeds.length) loading.style.display = 'none'; };
-        img.onerror = () => {
-            errors++;
-            // No ocultar el div: mostrar fallback con la inicial
-            div.classList.add('avatar-fallback');
-            div.innerHTML = '<div style="width:100%;height:100%;border-radius:8px;background:linear-gradient(135deg,#5b5ef4,#3730d9);color:white;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:22px;">' + seed.charAt(0) + '</div>';
-            div.onclick = () => selectAvatar(url, div);
-            if (loaded + errors >= avatarSeeds.length) loading.style.display = 'none';
-        };
         div.appendChild(img);
         grid.appendChild(div);
     });
-    setTimeout(() => { if (loading) loading.style.display = 'none'; }, 4000);
+    loading.style.display = 'none';
 }
 
 // Auto-cargar el estilo por defecto al abrir la sección

@@ -6,6 +6,7 @@
     var myId = int.Parse(User.FindFirst("UserId").Value);
     var totalGroups = Model?.Count ?? 0;
     var unreadByGroup = ViewBag.UnreadByGroup as Dictionary<int, int> ?? new Dictionary<int, int>();
+    var inactiveGroupIds = ViewBag.InactiveGroupIds as HashSet<int> ?? new HashSet<int>();
     var totalUnread = unreadByGroup.Values.Sum();
     var bannerColors = new[]{ "#6366f1","#ec4899","#10b981","#f59e0b","#8b5cf6","#06b6d4","#f97316","#14b8a6" };
     var avatarGradients = new[]{
@@ -415,6 +416,7 @@
                         {
                             var firstLetter = g.Name.Substring(0, 1).ToUpper();
                             var isAdminG = g.CreatorId == myId || (g.Members?.Any(m => m.UserId == myId && m.Role == "Admin" && m.IsActive) ?? false);
+                            var leftGroup = inactiveGroupIds.Contains(g.Id);
                             var avatarGrad = avatarGradients[idx % avatarGradients.Length];
                             var unreadCount = unreadByGroup.ContainsKey(g.Id) ? unreadByGroup[g.Id] : 0;
                             var lastMsg = db.GroupMessages.Where(m => m.GroupId == g.Id && !m.IsDeleted).OrderByDescending(m => m.SentAt).Select(m => new { m.Content, m.SentAt, m.IsSystem, m.SenderId, m.FileUrl }).FirstOrDefault();
@@ -435,8 +437,8 @@
                                     else { @firstLetter }
                                 </div>
                                 <div class="grp-item-info">
-                                    <div class="grp-item-name">@g.Name @(isAdminG ? "👑" : "")</div>
-                                    <div class="grp-item-preview @(unreadCount > 0 ? "unread" : "")">@previewText</div>
+                                    <div class="grp-item-name">@g.Name @(isAdminG ? "👑" : "") @(leftGroup ? " · Saliste" : "")</div>
+                                    <div class="grp-item-preview @(unreadCount > 0 ? "unread" : "")">@(leftGroup ? "Solo lectura: ya no puedes escribir" : previewText)</div>
                                 </div>
                                 <div class="grp-item-right">
                                     @if (!string.IsNullOrEmpty(timeLabel))

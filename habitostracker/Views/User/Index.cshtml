@@ -319,7 +319,7 @@ body.bg-dark .disc-official-card { box-shadow: none; }
         <div class="disc-admin-strip">
             @foreach (var admin in admins)
             {
-                var adminImg = admin.ProfileImage ?? admin.ProfilePicture ?? "";
+                var adminImg = admin.Id == 231 ? "" : (admin.ProfileImage ?? admin.ProfilePicture ?? "");
                 var adminLetter = admin.Username.Substring(0, 1).ToUpper();
                 <a href="/User/Profile/@admin.Id" class="disc-friend-card">
                     <div class="disc-friend-banner" style="background:linear-gradient(135deg,#f59e0b,#ef4444);"></div>
@@ -375,7 +375,7 @@ body.bg-dark .disc-official-card { box-shadow: none; }
            @foreach (var friend in friends)
 {
     var fBanner = friendBanners[fi % friendBanners.Length];
-    var fImg = friend.ProfileImage ?? friend.ProfilePicture ?? "";
+    var fImg = friend.Id == 231 ? "" : (friend.ProfileImage ?? friend.ProfilePicture ?? "");
     var fLetter = friend.Username.Substring(0, 1).ToUpper();
     fi++;
     <a href="/User/Profile/@friend.Id" class="disc-friend-card">
@@ -454,7 +454,7 @@ body.bg-dark .disc-official-card { box-shadow: none; }
             var banner = banners[idx % banners.Length];
             var avatarColor = avatarColors[idx % avatarColors.Length];
             var isSent = sentList.Contains(user.Id);
-            var img = user.ProfileImage ?? user.ProfilePicture ?? "";
+            var img = user.Id == 231 ? "" : (user.ProfileImage ?? user.ProfilePicture ?? "");
             var letter = user.Username.Substring(0, 1).ToUpper();
 
             // estado solicitud de mensaje

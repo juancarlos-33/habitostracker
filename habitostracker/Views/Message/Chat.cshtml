@@ -292,6 +292,8 @@ else
                                 { <video controls class="msg-media"><source src="@msg.Content" type="video/mp4" /></video> }
                                 else if (msg.Content.StartsWith("http") && (msg.Content.Contains("cloudinary") || msg.Content.Contains("/audios/") || msg.Content.EndsWith(".webm")))
                                 { <audio controls class="msg-audio"><source src="@msg.Content" /></audio> }
+                                else if (msg.Content.StartsWith("[sticker]"))
+                                { <span class="dm-sticker">@msg.Content.Replace("[sticker]", "")</span> }
                                 else if (!msg.Content.StartsWith("http") && !msg.Content.EndsWith(".jpg") && !msg.Content.EndsWith(".png"))
                                 { <span class="msg-text">@msg.Content</span> }
                             }
@@ -404,6 +406,7 @@ else
             <line x1="15" y1="9" x2="15.01" y2="9"/>
         </svg>
     </button>
+    <button type="button" class="bar-btn" onclick="toggleDmStickers()" title="Stickers" data-no-loader>🏷</button>
     <button type="button" class="bar-btn" onclick="document.getElementById('fileInput').click()" title="Adjuntar" data-no-loader>
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
             <path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/>
@@ -430,6 +433,13 @@ else
     </svg>
 </button>
         </div>
+
+<div class="dm-sticker-panel" id="dmStickerPanel">
+    @foreach (var sticker in new[]{"🔥","💪","🏆","🎯","✨","🎉","🚀","💯","❤️","😂","🥳","😎","🌟","⚡","🫶","👏"})
+    {
+        <button type="button" onclick="sendDmSticker('@sticker')">@sticker</button>
+    }
+</div>
     </form>
 </div>
 
@@ -615,6 +625,10 @@ form { flex-shrink: 0; padding: 8px 12px 10px; background: white; border-top: 1p
 .send-btn { width: 40px; height: 40px; border-radius: 50%; border: none; background: linear-gradient(135deg, #6366f1, #4f46e5); color: white; cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 4px 14px rgba(99,102,241,0.4); }
 .send-btn:hover { transform: scale(1.08); }
 .send-btn:disabled { background: #cbd5e1; cursor: not-allowed; transform: none; box-shadow: none; }
+.dm-sticker { font-size: 54px; line-height: 1; display: inline-block; padding: 4px 2px; filter: drop-shadow(0 8px 18px rgba(0,0,0,.18)); }
+.dm-sticker-panel { display:none; grid-template-columns:repeat(8,1fr); gap:8px; padding:10px 12px; border-top:1px solid #e2e8f0; background:white; }
+.dm-sticker-panel button { border:0;background:#f8fafc;border-radius:12px;font-size:28px;padding:8px;cursor:pointer;transition:.15s; }
+.dm-sticker-panel button:hover { transform:translateY(-2px); background:#eef2ff; }
 .preview-container { position: relative; padding: 8px; margin-bottom: 8px; background: #f8fafc; border-radius: 12px; border: 1px solid #e2e8f0; }
 .preview-close { position: absolute; top: 4px; right: 4px; background: #dc2626; color: white; border-radius: 50%; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 12px; font-weight: 700; }
 .preview-container img, .preview-container video { max-width: 130px; border-radius: 10px; }
@@ -735,6 +749,8 @@ async function loadNewMessages() {
         if (msg.content && msg.content.trim() !== "") {
             if (msg.content.startsWith("http") && (msg.content.includes("cloudinary") || msg.content.includes("/audios/")))
                 contentHTML = `<audio controls class="msg-audio"><source src="${msg.content}" /></audio>`;
+            else if (msg.content.startsWith("[sticker]"))
+                contentHTML = `<span class="dm-sticker">${escapeHtmlDM(msg.content.replace('[sticker]', ''))}</span>`;
             else if (!msg.fileUrl)
                 contentHTML = `<span class="msg-text">${msg.content}</span>`;
         }
@@ -814,15 +830,22 @@ function ctxClose() {
 async function ctxDelete(scope) {
     const msgId = ctxMessageId; ctxClose();
     if (!msgId) return;
-    if (!confirm(scope === "all" ? "¿Eliminar para todos?" : "¿Eliminar para ti?")) return;
-    const res = await fetch(`/Message/Delete?messageId=${msgId}&scope=${scope}`, { method: "POST" });
-    if (res.ok) {
-        const el = document.getElementById("msg-" + msgId);
-        if (el) {
-            if (scope === "all") { const b = el.querySelector(".msg-bubble"); if(b) b.innerHTML = `<span style="font-style:italic;opacity:0.6;font-size:13px;">Mensaje eliminado</span>`; }
-            else { el.style.opacity = "0"; el.style.transition = "0.3s"; setTimeout(() => el.remove(), 300); }
+    showConfirm({
+        icon:'🗑️',
+        title: scope === "all" ? "Eliminar para todos" : "Eliminar para ti",
+        message: scope === "all" ? "El mensaje quedará marcado como eliminado en el chat." : "Solo se ocultará en tu conversación.",
+        confirmText:'Eliminar',
+        onConfirm: async () => {
+            const res = await fetch(`/Message/Delete?messageId=${msgId}&scope=${scope}`, { method: "POST" });
+            if (res.ok) {
+                const el = document.getElementById("msg-" + msgId);
+                if (el) {
+                    if (scope === "all") { const b = el.querySelector(".msg-bubble"); if(b) b.innerHTML = `<span style="font-style:italic;opacity:0.6;font-size:13px;">Mensaje eliminado</span>`; }
+                    else { el.style.opacity = "0"; el.style.transition = "0.3s"; setTimeout(() => el.remove(), 300); }
+                }
+            }
         }
-    }
+    });
 }
 
 document.getElementById("chatForm").addEventListener("submit", async function(e) {
@@ -855,7 +878,7 @@ document.getElementById("chatForm").addEventListener("submit", async function(e)
     wrap.innerHTML = `
         <div class="msg-content-wrap"><div class="msg-bubble bubble-mine" data-msg-id="${tempId}" data-sender-name="@(ViewBag.MyUsername ?? "Yo")" data-content-preview="${escapeHtmlDM(previewC)}">
             ${replyHTML}
-            ${content ? `<span class="msg-text">${content}</span>` : ""}${mediaHTML}
+            ${content ? (content.startsWith('[sticker]') ? `<span class="dm-sticker">${escapeHtmlDM(content.replace('[sticker]', ''))}</span>` : `<span class="msg-text">${content}</span>`) : ""}${mediaHTML}
             <div class="msg-footer"><span class="msg-time">${makeTime()}</span><span class="msg-check pending" id="check-${tempId}">🕐</span></div>
         </div></div>`;
 
@@ -906,6 +929,23 @@ document.getElementById("chatForm").addEventListener("submit", async function(e)
 
 function escapeHtmlDM(s){ return (s||'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
+function toggleDmStickers() {
+    const panel = document.getElementById('dmStickerPanel');
+    const emoji = document.getElementById('emojiPanel');
+    if (!panel) return;
+    if (emoji) emoji.style.display = 'none';
+    panel.style.display = panel.style.display === 'grid' ? 'none' : 'grid';
+}
+
+function sendDmSticker(sticker) {
+    const input = document.getElementById('messageInput');
+    const panel = document.getElementById('dmStickerPanel');
+    input.value = '[sticker]' + sticker;
+    if (panel) panel.style.display = 'none';
+    sendBtn.disabled = false;
+    document.getElementById('chatForm').requestSubmit();
+}
+
 // 🔥 SIGNALR LISTENERS
 chatConnection.on("ReceiveMessage", (senderId, rcvId, senderName, message, fileUrl, msgId, replyId, replySender, replyContent) => {
     if (String(senderId) !== String(receiverId) && String(rcvId) !== String(receiverId)) return;
@@ -932,7 +972,7 @@ chatConnection.on("ReceiveMessage", (senderId, rcvId, senderName, message, fileU
     wrap.innerHTML = `
         <div class="msg-content-wrap"><div class="msg-bubble bubble-theirs" data-msg-id="${msgId||''}" data-sender-name="${escapeHtmlDM(senderName||'')}" data-content-preview="${escapeHtmlDM(previewC)}">
             ${replyHTML}
-            ${(message && message.trim() !== "") ? `<span class="msg-text">${message}</span>` : ""}${mediaHTML}
+            ${(message && message.trim() !== "") ? (message.startsWith('[sticker]') ? `<span class="dm-sticker">${escapeHtmlDM(message.replace('[sticker]', ''))}</span>` : `<span class="msg-text">${message}</span>`) : ""}${mediaHTML}
             <div class="msg-footer"><span class="msg-time">${makeTime()}</span></div>
         </div></div>`;
 
@@ -1130,10 +1170,17 @@ function silenciarNotificaciones() {
         .then(r => r.json())
         .then(data => {
             if (data.muted) {
-                if (confirm("🔔 Las notificaciones están silenciadas. ¿Desactivar silencio?")) {
+                showConfirm({
+                    icon:'🔔',
+                    title:'Activar notificaciones',
+                    message:'Volverás a recibir avisos de tus chats.',
+                    confirmText:'Activar',
+                    confirmColor:'#22c55e',
+                    onConfirm: () => {
                     fetch("/Message/UnmuteChat", { method: "POST" })
                         .then(() => showChatToast("🔔 Notificaciones activadas"));
-                }
+                    }
+                });
             } else {
                 document.getElementById("silenciarModal").style.display = "flex";
             }
@@ -1171,13 +1218,20 @@ function anclarChat() {
         .then(r => r.json())
         .then(data => {
             if (data.pinned) {
-                if (confirm("📌 Este chat ya está anclado. ¿Desanclarlo?")) {
+                showConfirm({
+                    icon:'📌',
+                    title:'Desanclar chat',
+                    message:'Este chat dejará de aparecer fijo arriba.',
+                    confirmText:'Desanclar',
+                    confirmColor:'#f59e0b',
+                    onConfirm: () => {
                     fetch("/Message/UnpinChat", {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({ userId: parseInt(receiverId) })
                     }).then(() => showChatToast("📌 Chat desanclado"));
-                }
+                    }
+                });
             } else {
                 document.getElementById("anclarModal").style.display = "flex";
             }
@@ -1199,17 +1253,25 @@ function confirmarAnclar() {
 async function denunciarUsuario() {
     document.getElementById("headerMenu").style.display = "none";
     const motivos = ["Contenido inapropiado", "Acoso o intimidación", "Spam o publicidad", "Lenguaje ofensivo", "Otro"];
-    const motivo = prompt("¿Por qué quieres denunciar a este usuario?\n\n" + motivos.map((m, i) => `${i + 1}. ${m}`).join("\n") + "\n\nEscribe el número del motivo:");
-    if (!motivo) return;
-    const idx = parseInt(motivo.trim()) - 1;
-    const reason = (idx >= 0 && idx < motivos.length) ? motivos[idx] : "Otro";
-    const res = await fetch("/User/ReportUser", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ reportedId: parseInt(receiverId), reason })
+    showTextPrompt({
+        icon:'🚩',
+        title:'Reportar usuario',
+        message:'Escribe el número o motivo: ' + motivos.map((m, i) => `${i + 1}. ${m}`).join(' · '),
+        placeholder:'Ej: 1 o describe el problema...',
+        confirmText:'Enviar reporte',
+        confirmColor:'#ef4444',
+        onConfirm: async (motivo) => {
+            const idx = parseInt(motivo.trim()) - 1;
+            const reason = (idx >= 0 && idx < motivos.length) ? motivos[idx] : motivo.trim();
+            const res = await fetch("/User/ReportUser", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ reportedId: parseInt(receiverId), reason })
+            });
+            const data = await res.json();
+            showChatToast(data.success ? "✅ Reporte enviado. Lo revisaremos pronto." : (data.error ?? "No se pudo enviar el reporte."));
+        }
     });
-    const data = await res.json();
-    showChatToast(data.success ? "✅ Reporte enviado. Lo revisaremos pronto." : (data.error ?? "No se pudo enviar el reporte."));
 }
 
 async function bloquearUsuario() {
@@ -1218,23 +1280,38 @@ async function bloquearUsuario() {
     const status = await statusRes.json();
 
     if (status.blocked) {
-        if (!confirm("¿Desbloquear a este usuario?")) return;
-        const res = await fetch("/User/UnblockUser", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ blockedId: parseInt(receiverId) })
+        showConfirm({
+            icon:'✅',
+            title:'Desbloquear usuario',
+            message:'Podrá volver a escribirte según tus permisos.',
+            confirmText:'Desbloquear',
+            confirmColor:'#22c55e',
+            onConfirm: async () => {
+                const res = await fetch("/User/UnblockUser", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ blockedId: parseInt(receiverId) })
+                });
+                const data = await res.json();
+                if (data.success) { showChatToast("✅ Usuario desbloqueado."); setTimeout(() => location.reload(), 1500); }
+            }
         });
-        const data = await res.json();
-        if (data.success) { showChatToast("✅ Usuario desbloqueado."); setTimeout(() => location.reload(), 1500); }
     } else {
-        if (!confirm("¿Bloquear a este usuario?")) return;
-        const res = await fetch("/User/BlockUser", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ blockedId: parseInt(receiverId) })
+        showConfirm({
+            icon:'🚫',
+            title:'Bloquear usuario',
+            message:'No podrá escribirte ni interactuar contigo en este chat.',
+            confirmText:'Bloquear',
+            onConfirm: async () => {
+                const res = await fetch("/User/BlockUser", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ blockedId: parseInt(receiverId) })
+                });
+                const data = await res.json();
+                if (data.success) { mostrarAnuncioBloqueo(true); deshabilitarChat(); }
+            }
         });
-        const data = await res.json();
-        if (data.success) { mostrarAnuncioBloqueo(true); deshabilitarChat(); }
     }
 }
 async function responderSolicitud(requestId, accept) {

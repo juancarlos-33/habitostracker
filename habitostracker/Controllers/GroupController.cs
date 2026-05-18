@@ -108,10 +108,15 @@ namespace HabitTrackerApp.Controllers
         public IActionResult Index()
         {
             var userId = int.Parse(User.FindFirst("UserId").Value);
-            var groups = _context.GroupMembers
-    .Where(m => m.UserId == userId && m.IsActive)
+            var memberships = _context.GroupMembers
+    .Where(m => m.UserId == userId)
     .Include(m => m.Group).ThenInclude(g => g.Members)
     .Include(m => m.Group).ThenInclude(g => g.Creator)
+    .ToList();
+
+            var inactiveGroupIds = memberships.Where(m => !m.IsActive).Select(m => m.GroupId).ToHashSet();
+
+            var groups = memberships
     .Select(m => m.Group)
     .Where(g => g.IsActive)
     .OrderByDescending(g => g.CreatedAt)
@@ -135,6 +140,7 @@ namespace HabitTrackerApp.Controllers
                 unreadByGroup[g.Id] = unread;
             }
             ViewBag.UnreadByGroup = unreadByGroup;
+            ViewBag.InactiveGroupIds = inactiveGroupIds;
 
             return View(groups);
 
@@ -1161,7 +1167,7 @@ namespace HabitTrackerApp.Controllers
             // 🔥 mensaje de sistema
             await CreateSystemMessage(groupId, $"👋 {user?.Username} salió del grupo");
 
-            return RedirectToAction("Index");
+            return RedirectToAction("Chat", new { id = groupId });
         }
 
         // 🔥 agregar miembro con notificación

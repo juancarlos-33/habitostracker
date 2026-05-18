@@ -217,6 +217,13 @@ body.bg-dark .grp-reaction-btn { background: rgba(99,102,241,0.12) !important; c
 .grp-msg-media { max-width: 200px; border-radius: 12px; display: block; margin-top: 4px; cursor: pointer; transition: transform 0.2s; }
 .grp-msg-media:hover { transform: scale(1.02); }
 .grp-media-caption { margin-top: 7px; white-space: pre-wrap; }
+.grp-sticker { font-size: 54px; line-height: 1; display: inline-block; padding: 4px 2px; filter: drop-shadow(0 8px 18px rgba(0,0,0,.18)); }
+.grp-sticker-panel {
+    flex-shrink: 0; display: none; padding: 10px 12px; background: white;
+    border-top: 1px solid #e2e8f0; grid-template-columns: repeat(8, 1fr); gap: 8px;
+}
+.grp-sticker-panel button { border:0;background:#f8fafc;border-radius:12px;font-size:28px;padding:8px;cursor:pointer;transition:.15s; }
+.grp-sticker-panel button:hover { transform: translateY(-2px); background:#eef2ff; }
 .grp-msg-audio { width: 200px; height: 36px; margin-top: 4px; accent-color: #6366f1; }
 .grp-msg-row.mine .grp-msg-audio { accent-color: white; }
 
@@ -557,7 +564,14 @@ else if (!string.IsNullOrEmpty(msg.Content) && (msg.Content.Contains("cloudinary
             }
             else if (!string.IsNullOrEmpty(msg.Content))
             {
-                @msg.Content
+                if (msg.Content.StartsWith("[sticker]"))
+                {
+                    <span class="grp-sticker">@msg.Content.Replace("[sticker]", "")</span>
+                }
+                else
+                {
+                    @msg.Content
+                }
             }
         </div>
         <div class="grp-msg-footer">
@@ -639,6 +653,13 @@ else
         </div>
     </div>
 
+    <div class="grp-sticker-panel" id="stickerPanel">
+        @foreach (var sticker in new[]{"🔥","💪","🏆","🎯","✨","🎉","🚀","💯","❤️","😂","🥳","😎","🌟","⚡","🫶","👏"})
+        {
+            <button type="button" onclick="sendGroupSticker('@sticker')" title="Sticker">@sticker</button>
+        }
+    </div>
+
     <div class="grp-reply-preview" id="grpReplyPreview">
         <div class="grp-reply-preview-content">
             <div class="grp-reply-preview-name" id="grpReplyName"></div>
@@ -650,6 +671,7 @@ else
     <div class="grp-input-bar">
         <button class="grp-bar-btn" onclick="document.getElementById('grpFileInput').click()" title="Adjuntar">📎</button>
         <button class="grp-bar-btn" id="emojiBtn" onclick="toggleGroupEmoji()" data-no-loader title="Emoji">😊</button>
+        <button class="grp-bar-btn" onclick="toggleStickerPanel()" data-no-loader title="Stickers">🏷</button>
         <textarea class="grp-msg-input" id="msgInput" placeholder="Escribe un mensaje..." rows="1"></textarea>
         <button class="grp-bar-btn" id="grpRecBtn" onclick="toggleGrabacion()" title="Grabar audio">🎙</button>
         <button class="grp-send-btn" id="sendBtn" onclick="sendGroupMessage()" disabled title="Enviar">
@@ -817,6 +839,7 @@ grpConnection.on("ReceiveGroupMessage", (senderId, senderName, senderImage, cont
     if (fileType === "audio") contentHTML = `<audio controls class="grp-msg-audio"><source src="${content}" /></audio>`;
     else if (fileType === "image") contentHTML = `<img src="${fileUrl}" class="grp-msg-media" onclick="window.open('${fileUrl}', '_blank')" />${content ? `<div class="grp-media-caption">${escapeHtml(content)}</div>` : ''}`;
     else if (fileType === "video") contentHTML = `<video controls class="grp-msg-media"><source src="${fileUrl}" /></video>${content ? `<div class="grp-media-caption">${escapeHtml(content)}</div>` : ''}`;
+    else if (content && content.startsWith('[sticker]')) contentHTML = `<span class="grp-sticker">${escapeHtml(content.replace('[sticker]', ''))}</span>`;
     else contentHTML = escapeHtml(content);
 
     const replyHTML = (replyToMessageId && replyContent)
@@ -1177,7 +1200,7 @@ const reactions = document.getElementById("reactions-" + tempId); if (reactions)
             }
         } catch (err) { console.error(err); }
     } else {
-        agregarBurbujaMia(escapeHtml(content), tempId);
+        agregarBurbujaMia(content.startsWith('[sticker]') ? `<span class="grp-sticker">${escapeHtml(content.replace('[sticker]', ''))}</span>` : escapeHtml(content), tempId);
         try {
             const res = await fetch("/Group/SendMessage", {
                 method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -1198,6 +1221,21 @@ await grpConnection.invoke("SendGroupMessage", groupId.toString(), myId, myName,
         } catch (err) { console.error(err); document.getElementById(tempId)?.remove(); }
     }
     if (msgInput) msgInput.focus();
+}
+
+function toggleStickerPanel() {
+    const panel = document.getElementById('stickerPanel');
+    const emoji = document.getElementById('emojiPanel');
+    if (!panel) return;
+    if (emoji) emoji.style.display = 'none';
+    panel.style.display = panel.style.display === 'grid' ? 'none' : 'grid';
+}
+
+async function sendGroupSticker(sticker) {
+    if (!msgInput) return;
+    document.getElementById('stickerPanel').style.display = 'none';
+    msgInput.value = '[sticker]' + sticker;
+    await sendGroupMessage();
 }
 
 function responderMensaje(msgId, senderName, content) {
@@ -1378,16 +1416,23 @@ picker.innerHTML = EMOJIS_REACCION.map(em =>
 }
 async function eliminarMensaje(msgId) {
     document.querySelectorAll('.grp-reaction-picker').forEach(p => p.remove());
-    if (!confirm("¿Eliminar este mensaje?")) return;
-    try {
-        const res = await fetch("/Group/DeleteMessage", {
-            method: "POST",
-            headers: { "Content-Type": "application/x-www-form-urlencoded" },
-            body: `messageId=${msgId}&__RequestVerificationToken=${encodeURIComponent(token())}`
-        });
-        const data = await res.json();
-        if (!data.success) showToast("❌ No se pudo eliminar");
-    } catch { showToast("❌ Error de conexión"); }
+    showConfirm({
+        icon:'🗑️',
+        title:'Eliminar mensaje',
+        message:'Este mensaje quedará marcado como eliminado dentro del grupo.',
+        confirmText:'Eliminar',
+        onConfirm: async () => {
+            try {
+                const res = await fetch("/Group/DeleteMessage", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                    body: `messageId=${msgId}&__RequestVerificationToken=${encodeURIComponent(token())}`
+                });
+                const data = await res.json();
+                if (!data.success) showToast("❌ No se pudo eliminar");
+            } catch { showToast("❌ Error de conexión"); }
+        }
+    });
 }
 let pinnedMsgId = @(Model.PinnedMessageId?.ToString() ?? "null");
 
@@ -1647,9 +1692,9 @@ function actualizarReacciones(msgId, reactions) {
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                 body: `groupId=@Model.Id&__RequestVerificationToken=${encodeURIComponent(document.querySelector('input[name="__RequestVerificationToken"]')?.value ?? '')}`
             });
-            window.location.href = '/Group/Index';
+            window.location.href = '/Group/Chat/@Model.Id';
         } catch {
-            window.location.href = '/Group/Index';
+            window.location.href = '/Group/Chat/@Model.Id';
         }
     };
 })();

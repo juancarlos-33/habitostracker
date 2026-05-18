@@ -1327,7 +1327,9 @@ namespace HabitTrackerApp.Controllers
             {
                 user.ProfileImage = null;
             }
-            else if (!string.IsNullOrEmpty(selectedAvatarUrl) && selectedAvatarUrl.StartsWith("https://api.dicebear.com"))
+            else if (!string.IsNullOrEmpty(selectedAvatarUrl) &&
+                     (selectedAvatarUrl.StartsWith("https://api.dicebear.com") ||
+                      selectedAvatarUrl.StartsWith("data:image/svg+xml")))
             {
                 user.ProfileImage = selectedAvatarUrl;
                 user.ProfilePicture = null;

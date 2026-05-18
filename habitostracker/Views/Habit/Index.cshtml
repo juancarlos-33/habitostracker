@@ -667,6 +667,7 @@ body.bg-dark .hx-btn.ghost{background:#111827!important;border-color:rgba(255,25
 
 <!-- MODAL HÁBITO (se renderiza aquí) -->
 <div id="habitModal" class="habit-modal" style="display:none;">
+    @Html.AntiForgeryToken()
     <div class="habit-modal-overlay" onclick="closeHabitModal()"></div>
     <div class="habit-modal-container">
         <div class="habit-modal-header">
@@ -816,12 +817,13 @@ body.bg-dark .hx-btn.ghost{background:#111827!important;border-color:rgba(255,25
                         DateTime startDate = habit.LastFailDate ?? habit.CreatedDate;
                         string startDateIso = startDate.ToString("yyyy-MM-ddTHH:mm:ssZ");
 
-                        <div class="hx-habit @sc" data-status="@sc" data-habit-id="@habit.Id" data-start-date="@startDateIso" data-streak="@habit.StreakDays">
+                        <div class="hx-habit @sc" id="hb-@habit.Id" data-status="@sc" data-habit-id="@habit.Id" data-start-date="@startDateIso" data-streak="@habit.StreakDays" onclick="goHabitDetail(event, @habit.Id)">
                             <div class="hx-hico">@icon</div>
                             <div class="hx-hinfo">
                                 <div class="hx-hname">@habit.Name</div>
                                 <div class="hx-hmeta">
                                     <span class="hx-hstreak">🔥 @habit.StreakDays días</span>
+                                    <span class="hx-hrec">🏅 récord @habit.MaxStreak</span>
                                 </div>
                               <div class="hx-progress-detail">
     <span class="hx-time-live" id="time-@habit.Id">⏱️ 0s</span>
@@ -1001,7 +1003,16 @@ setInterval(()=>{qt.style.opacity='0';qt.style.transform='translateY(4px)';setTi
 if(navigator.geolocation){navigator.geolocation.getCurrentPosition(pos=>{const{latitude:lat,longitude:lon}=pos.coords;fetch('https://api.open-meteo.com/v1/forecast?latitude='+lat+'&longitude='+lon+'&current_weather=true&timezone=auto').then(r=>r.json()).then(d=>{const code=d.current_weather.weathercode;const icon=code>=80?'🌧️':code>=61?'🌦️':code>=45?'🌫️':code>=3?'⛅':code>=1?'🌤️':'☀️';document.getElementById('wIcon').textContent=icon;document.getElementById('wTemp').textContent=Math.round(d.current_weather.temperature)+'°';const pill=document.getElementById('weatherPill');if(pill)pill.style.display='inline-flex';fetch('https://nominatim.openstreetmap.org/reverse?format=json&lat='+lat+'&lon='+lon,{headers:{'Accept-Language':'es'}}).then(r=>r.json()).then(g=>{document.getElementById('wCity').textContent=g.address?.city||g.address?.town||'';}).catch(()=>{});}).catch(()=>{});},()=>{},{timeout:6000});}
 
 // ── FILTER ──
-function filtH(tipo,btn){document.querySelectorAll('.hx-htab').forEach(t=>t.classList.remove('on'));btn.classList.add('on');document.querySelectorAll('.hx-habit').forEach(h=>{const s=h.getAttribute('data-status');const show=tipo==='todos'||(tipo==='pendientes'&&s==='pending')||(tipo==='completados'&&s==='done');const id=h.id.replace('hb-','');h.style.display=show?'flex':'none';const cw=document.getElementById('cw-'+id);if(cw)cw.style.display=show?'block':'none';});}
+function filtH(tipo,btn){document.querySelectorAll('.hx-htab').forEach(t=>t.classList.remove('on'));btn.classList.add('on');document.querySelectorAll('.hx-habit').forEach(h=>{const s=h.getAttribute('data-status');const show=tipo==='todos'||(tipo==='pendientes'&&s==='pending')||(tipo==='completados'&&s==='done');const id=h.getAttribute('data-habit-id');h.style.display=show?'flex':'none';const cw=document.getElementById('cw-'+id);if(cw)cw.style.display=show?'block':'none';});}
+
+function goHabitDetail(event, habitId) {
+    if (event.target.closest('button, a, input, form, textarea, .hx-goal-live')) return;
+    if (@(isGuest ? "true" : "false")) {
+        try { new bootstrap.Modal(document.getElementById('guestModal')).show(); } catch(e) {}
+        return;
+    }
+    window.location.href = '/Habit/Detail/' + habitId;
+}
 
 // ==================== CONTADOR TIEMPO REAL ====================
 
@@ -1013,6 +1024,7 @@ const hitos = [
     { seg: 259200,   nombre: "3 Días" },
     { seg: 604800,   nombre: "1 Semana" },
     { seg: 864000,   nombre: "10 Días" },
+    { seg: 1209600,  nombre: "2 Semanas" },
     { seg: 2592000,  nombre: "1 Mes" },
     { seg: 94608000, nombre: "3 Años" },
     { seg: 157680000, nombre: "5 Años" },
@@ -1467,17 +1479,24 @@ async function toggleHL(){
     }catch(e){}
 }
 async function delS(){
-    if(!confirm('¿Eliminar esta historia?'))return;
-    const s=svStories[svIdx];
-    try{
-        const res=await fetch('/Story/Delete',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(s.id)});
-        if(!res.ok){alert('Error');return;}
-        svStories.splice(svIdx,1);
-        if(!svStories.length){closeSV();await loadStories();return;}
-        buildBars();
-        showS(Math.min(svIdx,svStories.length-1));
-        await loadStories();
-    }catch(e){console.error(e);}
+    showConfirm({
+        icon:'🗑️',
+        title:'Eliminar historia',
+        message:'La historia se quitará de tu perfil y no se podrá ver de nuevo.',
+        confirmText:'Eliminar',
+        onConfirm: async () => {
+            const s=svStories[svIdx];
+            try{
+                const res=await fetch('/Story/Delete',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(s.id)});
+                if(!res.ok){alert('Error');return;}
+                svStories.splice(svIdx,1);
+                if(!svStories.length){closeSV();await loadStories();return;}
+                buildBars();
+                showS(Math.min(svIdx,svStories.length-1));
+                await loadStories();
+            }catch(e){console.error(e);}
+        }
+    });
 }
 async function openSVViews(){
     const s=svStories[svIdx];
@@ -1500,13 +1519,21 @@ function tAgo(d){const diff=Math.floor((Date.now()-d)/60000);if(diff<1)return'ah
 // ── FALL HABIT (sin cambios) ──
 async function failHabit(event, habitId, habitName) {
     event.preventDefault();
-    if (!confirm(`⚠️ ¿Estás seguro de que has fallado en "${habitName}"?\nEsto reiniciará el contador de tiempo y tu racha actual a 0.`)) return;
-    try {
-        const res = await fetch(`/Habit/FailHabit/${habitId}`, { method: 'POST', headers: { 'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value } });
-        const data = await res.json();
-        if (data.success) location.reload();
-        else alert(data.message || "Error");
-    } catch (err) { alert("Error de conexión"); }
+    showConfirm({
+        icon: '⚠️',
+        title: '¿Marcar como fallado?',
+        message: `"${habitName}" reiniciará la racha actual y el contador. Tu récord máximo se mantiene y volverá a subir cuando lo superes.`,
+        confirmText: 'Marcar fallado',
+        confirmColor: '#ef4444',
+        onConfirm: async () => {
+            try {
+                const res = await fetch(`/Habit/FailHabit/${habitId}`, { method: 'POST', headers: { 'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value } });
+                const data = await res.json();
+                if (data.success) location.reload();
+                else showToast(data.message || "Error");
+            } catch (err) { showToast("Error de conexión"); }
+        }
+    });
 }
 
 function confirmarEliminarHabito(id, nombre) {

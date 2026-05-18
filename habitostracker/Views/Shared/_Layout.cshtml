@@ -1041,6 +1041,193 @@ document.addEventListener("DOMContentLoaded", () => {
 if ("Notification" in window) Notification.requestPermission();
 </script>
 
+<style>
+.ht-cmt-modal{position:fixed;inset:0;z-index:999999;display:none;align-items:center;justify-content:center;background:rgba(15,23,42,.58);backdrop-filter:blur(8px);padding:18px}
+.ht-cmt-card{width:min(680px,100%);max-height:min(760px,92vh);background:#fff;border-radius:22px;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 28px 80px rgba(15,23,42,.35);border:1px solid rgba(15,23,42,.08)}
+.ht-cmt-head{display:flex;align-items:center;justify-content:space-between;padding:15px 18px;border-bottom:1px solid #e5e7eb}
+.ht-cmt-title{font-weight:900;color:#0f172a}.ht-cmt-sub{font-size:12px;color:#64748b;font-weight:700}
+.ht-cmt-close{width:34px;height:34px;border-radius:50%;border:0;background:#f1f5f9;font-weight:900;cursor:pointer}
+.ht-cmt-body{padding:14px;overflow:auto;display:flex;flex-direction:column;gap:12px;background:#f8fafc}
+.ht-cmt-row{display:flex;gap:10px}.ht-cmt-avatar{width:42px;height:42px;border-radius:50%;object-fit:cover;flex-shrink:0}.ht-cmt-letter{width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#6366f1,#2563eb);color:white;font-weight:900;flex-shrink:0}
+.ht-cmt-content{flex:1;background:white;border:1px solid #e5e7eb;border-radius:16px;padding:10px 12px}.ht-cmt-row.system .ht-cmt-content{background:linear-gradient(135deg,rgba(245,158,11,.08),rgba(99,102,241,.06));border-color:rgba(245,158,11,.28)}
+.ht-cmt-name{font-size:13px;font-weight:900;color:#0f172a;text-decoration:none}.ht-cmt-time{font-size:11px;color:#94a3b8;margin-left:7px}.ht-cmt-text{font-size:14px;color:#334155;white-space:pre-wrap;line-height:1.5;margin-top:5px}
+.ht-cmt-note{margin-top:8px;font-size:11px;font-weight:800;color:#475569;background:rgba(15,23,42,.06);border-radius:10px;padding:8px 10px}
+.ht-cmt-actions{display:flex;gap:8px;margin-top:9px;flex-wrap:wrap}.ht-cmt-btn{border:1px solid #e2e8f0;background:#f8fafc;color:#475569;border-radius:999px;padding:6px 10px;font-size:12px;font-weight:900;cursor:pointer}.ht-cmt-btn.liked{color:#ef4444}.ht-cmt-lock{background:#fffbeb;color:#92400e;border:1px solid #fde68a;border-radius:999px;padding:6px 10px;font-size:11px;font-weight:900}
+.ht-cmt-footer{padding:12px 14px;border-top:1px solid #e5e7eb;background:white}.ht-cmt-inputrow{display:flex;gap:8px;align-items:flex-end}.ht-cmt-input{flex:1;min-height:42px;max-height:100px;border:1.5px solid #e2e8f0;border-radius:16px;padding:10px 12px;resize:none;outline:none}.ht-cmt-send{width:42px;height:42px;border:0;border-radius:14px;background:linear-gradient(135deg,#6366f1,#2563eb);color:white;font-weight:900;cursor:pointer}.ht-cmt-send:disabled{background:#cbd5e1}
+body.bg-dark .ht-cmt-card,body.bg-dark .ht-cmt-content,body.bg-dark .ht-cmt-footer{background:#1e293b;color:#f1f5f9;border-color:#334155}body.bg-dark .ht-cmt-body{background:#0f172a}body.bg-dark .ht-cmt-title,body.bg-dark .ht-cmt-name{color:#f1f5f9}body.bg-dark .ht-cmt-text{color:#cbd5e1}
+</style>
+<script>
+(function(){
+    let activePostId = null;
+
+    function ensureCommentsModal(){
+        let modal = document.getElementById('htGlobalCommentsModal');
+        if (modal) return modal;
+        modal = document.createElement('div');
+        modal.id = 'htGlobalCommentsModal';
+        modal.className = 'ht-cmt-modal';
+        modal.innerHTML = `
+            <div class="ht-cmt-card">
+                <div class="ht-cmt-head">
+                    <div><div class="ht-cmt-title">Comentarios</div><div class="ht-cmt-sub" id="htCmtSub">Conversación</div></div>
+                    <button class="ht-cmt-close" type="button" onclick="closeGlobalCommentsModal()">✕</button>
+                </div>
+                <div class="ht-cmt-body" id="htCmtBody"><div style="text-align:center;color:#64748b;padding:24px;">Cargando...</div></div>
+                <div class="ht-cmt-footer" id="htCmtFooter"></div>
+            </div>`;
+        modal.addEventListener('click', e => { if (e.target === modal) closeGlobalCommentsModal(); });
+        document.body.appendChild(modal);
+        return modal;
+    }
+
+    window.closeGlobalCommentsModal = function(){
+        const modal = document.getElementById('htGlobalCommentsModal');
+        if (modal) modal.style.display = 'none';
+        document.body.style.overflow = '';
+        activePostId = null;
+    };
+
+    if (!window.openCommentsModal) {
+        window.openCommentsModal = async function(postId){
+            activePostId = postId;
+            const modal = ensureCommentsModal();
+            const body = document.getElementById('htCmtBody');
+            const footer = document.getElementById('htCmtFooter');
+            modal.style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+            body.innerHTML = '<div style="text-align:center;color:#64748b;padding:24px;">Cargando...</div>';
+            footer.innerHTML = '';
+            try {
+                const res = await fetch('/Post/GetComments?postId=' + postId);
+                const data = await res.json();
+                if (!data.success) throw new Error(data.error || 'Error');
+                renderGlobalComments(data.comments || []);
+                document.getElementById('htCmtSub').textContent = `${(data.comments||[]).length} comentario${(data.comments||[]).length === 1 ? '' : 's'}`;
+                footer.innerHTML = data.commentsDisabled
+                    ? '<div class="ht-cmt-lock" style="display:inline-flex;">🔒 Los comentarios están deshabilitados</div>'
+                    : `<div class="ht-cmt-inputrow"><textarea id="htCmtText" class="ht-cmt-input" placeholder="Añade un comentario..." rows="1"></textarea><button id="htCmtSend" class="ht-cmt-send" disabled>➤</button></div>`;
+                if (!data.commentsDisabled) {
+                    const input = document.getElementById('htCmtText');
+                    const send = document.getElementById('htCmtSend');
+                    input.addEventListener('input', () => { send.disabled = input.value.trim() === ''; });
+                    send.onclick = sendGlobalComment;
+                }
+            } catch(e) {
+                body.innerHTML = '<div style="text-align:center;color:#ef4444;padding:24px;">No se pudieron cargar los comentarios.</div>';
+            }
+        };
+    }
+
+    function renderGlobalComments(comments){
+        const body = document.getElementById('htCmtBody');
+        if (!comments.length) {
+            body.innerHTML = '<div style="text-align:center;color:#64748b;padding:24px;">No hay comentarios aún.</div>';
+            return;
+        }
+        body.innerHTML = comments.map(c => {
+            const isSystem = c.isSystemComment === true;
+            const avatar = c.profileImage ? `<img src="${c.profileImage}" class="ht-cmt-avatar">` : `<div class="ht-cmt-letter">${(c.username||'U').charAt(0).toUpperCase()}</div>`;
+            const actions = isSystem
+                ? '<div class="ht-cmt-actions"><span class="ht-cmt-lock">🔒 Sin respuestas ni reacciones</span></div>'
+                : `<div class="ht-cmt-actions"><button class="ht-cmt-btn ${c.isLiked?'liked':''}" onclick="toggleGlobalCommentLike(this, ${c.id})">${c.isLiked?'❤️':'🤍'} <span>${c.likeCount||0}</span></button><button class="ht-cmt-btn" onclick="showGlobalReply(${c.id})">Responder</button></div>`;
+            return `<div class="ht-cmt-row ${isSystem?'system':''}" id="ht-cmt-${c.id}">
+                ${avatar}
+                <div class="ht-cmt-content">
+                    <a href="/User/Profile/${c.userId}" class="ht-cmt-name">${escapeHtmlGlobal(c.username)}</a>${isSystem?'':`<span class="ht-cmt-time">${c.createdAt}</span>`}
+                    <div class="ht-cmt-text">${escapeHtmlGlobal(c.comment)}</div>
+                    ${isSystem?'<div class="ht-cmt-note">Este es un comentario automático del sistema.</div>':''}
+                    ${c.imagePath?`<img src="${c.imagePath}" class="msg-media" style="max-width:220px;margin-top:8px;border-radius:12px;">`:''}
+                    ${actions}
+                </div>
+            </div>`;
+        }).join('');
+    }
+
+    window.toggleGlobalCommentLike = async function(btn, id){
+        const res = await fetch('/Post/ToggleCommentLike?commentId=' + id, { method:'POST' });
+        const data = await res.json();
+        if (data.locked) return;
+        btn.classList.toggle('liked', data.liked);
+        btn.innerHTML = `${data.liked?'❤️':'🤍'} <span>${data.count}</span>`;
+    };
+
+    window.showGlobalReply = function(commentId){
+        const submitReply = (text) => {
+            if (!text || !text.trim()) return;
+        const fd = new FormData();
+        fd.append('commentId', commentId);
+        fd.append('text', text.trim());
+        fetch('/Post/ReplyComment', { method:'POST', body: fd }).then(r=>r.json()).then(d=>{
+            if (!d.success) alert(d.error || 'No se pudo responder');
+        });
+        };
+        if (window.showTextPrompt) {
+            showTextPrompt({
+                icon:'💬',
+                title:'Responder comentario',
+                message:'Escribe una respuesta clara y respetuosa.',
+                placeholder:'Tu respuesta...',
+                confirmText:'Responder',
+                onConfirm: submitReply
+            });
+        } else {
+            alert('No se pudo abrir el formulario de respuesta.');
+        }
+    };
+
+    async function sendGlobalComment(){
+        const input = document.getElementById('htCmtText');
+        const text = input.value.trim();
+        if (!text || !activePostId) return;
+        const fd = new FormData();
+        fd.append('postId', activePostId);
+        fd.append('comment', text);
+        const res = await fetch('/Post/AddCommentAjax', { method:'POST', body: fd });
+        const data = await res.json();
+        if (data.success) {
+            input.value = '';
+            await window.openCommentsModal(activePostId);
+        } else alert(data.error || 'No se pudo comentar');
+    }
+
+    function escapeHtmlGlobal(v){ return String(v || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+    document.addEventListener('click', function(e){
+        const img = e.target.closest('img.msg-media, img.grp-msg-media');
+        if (img) {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            openMediaModal(img.src);
+            return;
+        }
+        const link = e.target.closest('a[href*="/Post/Comments"]');
+        if (!link) return;
+        const href = link.getAttribute('href') || '';
+        const id = new URL(href, location.origin).searchParams.get('postId');
+        if (!id) return;
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        window.openCommentsModal(parseInt(id, 10));
+    }, true);
+
+    window.openMediaModal = function(src){
+        let modal = document.getElementById('htMediaModal');
+        if (!modal) {
+            modal = document.createElement('div');
+            modal.id = 'htMediaModal';
+            modal.style.cssText = 'position:fixed;inset:0;z-index:9999999;background:rgba(0,0,0,.88);display:none;align-items:center;justify-content:center;padding:22px;backdrop-filter:blur(10px);';
+            modal.innerHTML = '<button type="button" style="position:fixed;top:18px;right:18px;width:38px;height:38px;border:0;border-radius:50%;background:rgba(255,255,255,.12);color:white;font-size:20px;cursor:pointer;">✕</button><img style="max-width:94vw;max-height:88vh;border-radius:16px;object-fit:contain;box-shadow:0 24px 80px rgba(0,0,0,.55);" />';
+            modal.querySelector('button').onclick = () => { modal.style.display = 'none'; document.body.style.overflow = ''; };
+            modal.addEventListener('click', e => { if (e.target === modal) { modal.style.display = 'none'; document.body.style.overflow = ''; } });
+            document.body.appendChild(modal);
+        }
+        modal.querySelector('img').src = src;
+        modal.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+    };
+})();
+</script>
+
 @RenderSection("Scripts", required: false)
 @if (User.Identity.IsAuthenticated)
 
@@ -1173,6 +1360,54 @@ function showConfirm({icon='⚠️', title, message, confirmText='Confirmar', co
 function closeConfirm(){
     document.getElementById('confirmModal').style.display = 'none';
     document.body.style.overflow = '';
+}
+
+function showTextPrompt({icon='✍️', title='Escribir', message='', placeholder='', confirmText='Enviar', confirmColor='#6366f1', onConfirm}){
+    let modal = document.getElementById('textPromptModal');
+    if(!modal){
+        modal = document.createElement('div');
+        modal.id = 'textPromptModal';
+        modal.style.cssText = 'display:none;position:fixed;inset:0;z-index:9999999;background:rgba(0,0,0,.72);backdrop-filter:blur(10px);align-items:center;justify-content:center;padding:20px;';
+        modal.innerHTML = `
+            <div style="background:linear-gradient(135deg,#0d1220,#111827);border:1px solid rgba(255,255,255,.08);border-radius:24px;max-width:390px;width:100%;padding:26px 22px;box-shadow:0 30px 70px rgba(0,0,0,.6);animation:cmIn .25s cubic-bezier(.34,1.56,.64,1);">
+                <div id="tpIcon" style="font-size:38px;text-align:center;margin-bottom:10px;"></div>
+                <div id="tpTitle" style="font-size:17px;font-weight:800;color:white;text-align:center;margin-bottom:6px;font-family:'Syne',sans-serif;"></div>
+                <div id="tpMsg" style="font-size:13px;color:rgba(255,255,255,.5);text-align:center;margin-bottom:16px;line-height:1.5;"></div>
+                <textarea id="tpInput" style="width:100%;min-height:92px;resize:vertical;border-radius:15px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06);color:white;padding:13px;outline:none;font:inherit;font-size:13px;margin-bottom:14px;"></textarea>
+                <div style="display:flex;gap:10px;">
+                    <button id="tpCancel" type="button" style="flex:1;padding:12px;border-radius:13px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.05);color:rgba(255,255,255,.65);font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;">Cancelar</button>
+                    <button id="tpConfirm" type="button" style="flex:2;padding:12px;border-radius:13px;border:none;color:white;font-size:13px;font-weight:800;cursor:pointer;font-family:inherit;"></button>
+                </div>
+            </div>`;
+        document.body.appendChild(modal);
+    }
+    document.getElementById('tpIcon').textContent = icon;
+    document.getElementById('tpTitle').textContent = title;
+    document.getElementById('tpMsg').textContent = message;
+    const input = document.getElementById('tpInput');
+    input.value = '';
+    input.placeholder = placeholder;
+    const confirmBtn = document.getElementById('tpConfirm');
+    confirmBtn.textContent = confirmText;
+    confirmBtn.style.background = confirmColor;
+    confirmBtn.style.boxShadow = `0 4px 14px ${confirmColor}55`;
+    modal.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+    input.focus();
+
+    const newConfirm = confirmBtn.cloneNode(true);
+    confirmBtn.parentNode.replaceChild(newConfirm, confirmBtn);
+    const cancelBtn = document.getElementById('tpCancel');
+    const newCancel = cancelBtn.cloneNode(true);
+    cancelBtn.parentNode.replaceChild(newCancel, cancelBtn);
+    const close = () => { modal.style.display = 'none'; document.body.style.overflow = ''; };
+    document.getElementById('tpConfirm').addEventListener('click', () => {
+        const value = input.value.trim();
+        if(!value) return;
+        close();
+        onConfirm(value);
+    });
+    document.getElementById('tpCancel').addEventListener('click', close);
 }
 </script>
 
