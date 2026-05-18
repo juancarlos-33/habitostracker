@@ -784,13 +784,7 @@ body.bg-dark .hx-btn.ghost{background:#111827!important;border-color:rgba(255,25
                 <button class="hx-hadd" onclick="openCreateModal()">+ Nuevo</button>
             </div>
 
-            @if (totalHabits > 0)
-            {
-                <div class="hx-htabs">
-                    <button class="hx-htab on" onclick="filtH('todos',this)">Todos (@totalHabits)</button>
-                    <button class="hx-htab" onclick="filtH('completados',this)">Completados (@completedHabits.Count)</button>
-                </div>
-            }
+         
 
             @if (!isPremium && Model.Count >= 5)
             { <div class="hx-limit">🚫 Límite · <a href="/User/Pay">Hazte Premium 🔥</a></div> }
