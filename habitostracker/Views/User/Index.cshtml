@@ -37,6 +37,27 @@
 
 /* AMIGOS SECTION */
 .disc-friends-section { margin-bottom: 28px; }
+.disc-official-grid {
+    display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; margin-bottom: 20px;
+}
+.disc-official-card {
+    display: flex; align-items: center; gap: 16px; padding: 18px;
+    background: linear-gradient(135deg, #0f172a, #1e293b);
+    border-radius: 18px; color: white; text-decoration: none;
+    border: 1px solid rgba(255,255,255,.08); box-shadow: 0 12px 32px rgba(15,23,42,.18);
+}
+.disc-official-avatar {
+    width: 58px; height: 58px; border-radius: 18px; object-fit: cover;
+    background: linear-gradient(135deg,#6366f1,#06b6d4);
+    display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 24px;
+    border: 2px solid rgba(255,255,255,.2); flex-shrink: 0;
+}
+.disc-official-name { font-size: 18px; font-weight: 900; display: flex; align-items: center; gap: 8px; }
+.disc-official-check { display:inline-flex; align-items:center; justify-content:center; width:19px; height:19px; border-radius:50%; background:#2563eb; color:white; font-size:12px; }
+.disc-official-sub { font-size: 12px; color: rgba(255,255,255,.55); margin-top: 3px; }
+.disc-admin-strip {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 12px; margin-bottom: 24px;
+}
 .disc-section-header {
     display: flex; align-items: center; gap: 10px;
     margin-bottom: 14px;
@@ -229,6 +250,7 @@ body.bg-dark .disc-no-friends-text { color: #f1f5f9 !important; }
 body.bg-dark .disc-search-input { background: #1e293b !important; border-color: #2d3748 !important; color: #f1f5f9 !important; }
 body.bg-dark .disc-card-btn.msg { background: #2d3748 !important; color: #94a3b8 !important; border-color: #334155 !important; }
 body.bg-dark .disc-divider-line { background: #2d3748 !important; }
+body.bg-dark .disc-official-card { box-shadow: none; }
 
 @@media (max-width: 640px) {
     .disc-friends-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
@@ -262,6 +284,60 @@ body.bg-dark .disc-divider-line { background: #2d3748 !important; }
         <div class="disc-hero-sub">Tus amigos y personas que puedes conocer</div>
     </div>
 
+    @{
+        var official = Model.FirstOrDefault(u => u.Username == "HabitTracker");
+        var admins = Model.Where(u => u.Role == "Admin").ToList();
+    }
+
+    @if (official != null)
+    {
+        var officialImg = official.ProfileImage ?? official.ProfilePicture ?? "";
+        <div class="disc-section-header">
+            <div class="disc-section-title">Cuenta creadora</div>
+            <span class="disc-section-count">Oficial</span>
+        </div>
+        <div class="disc-official-grid">
+            <a href="/User/Profile/@official.Id" class="disc-official-card">
+                @if (!string.IsNullOrEmpty(officialImg))
+                { <img src="@officialImg" class="disc-official-avatar" /> }
+                else
+                { <div class="disc-official-avatar">H</div> }
+                <div>
+                    <div class="disc-official-name">HabitTracker <span class="disc-official-check">✓</span></div>
+                    <div class="disc-official-sub">Creador oficial de la página y cuenta del sistema</div>
+                </div>
+            </a>
+        </div>
+    }
+
+    @if (admins.Any())
+    {
+        <div class="disc-section-header">
+            <div class="disc-section-title">Administradores de la página</div>
+            <span class="disc-section-count">@admins.Count</span>
+        </div>
+        <div class="disc-admin-strip">
+            @foreach (var admin in admins)
+            {
+                var adminImg = admin.ProfileImage ?? admin.ProfilePicture ?? "";
+                var adminLetter = admin.Username.Substring(0, 1).ToUpper();
+                <a href="/User/Profile/@admin.Id" class="disc-friend-card">
+                    <div class="disc-friend-banner" style="background:linear-gradient(135deg,#f59e0b,#ef4444);"></div>
+                    <div class="disc-friend-body">
+                        <div class="disc-friend-avatar-wrap">
+                            @if (!string.IsNullOrEmpty(adminImg))
+                            { <img src="@adminImg" class="disc-friend-avatar" /> }
+                            else
+                            { <div class="disc-friend-avatar-letter" style="background:linear-gradient(135deg,#f59e0b,#ef4444);">@adminLetter</div> }
+                        </div>
+                        <div class="disc-friend-name">@admin.Username</div>
+                        <div class="disc-role-badge admin">🛡️ Admin</div>
+                    </div>
+                </a>
+            }
+        </div>
+    }
+
     <!-- SECCIÓN AMIGOS -->
     <div class="disc-friends-section">
         <div class="disc-section-header">
@@ -270,7 +346,7 @@ body.bg-dark .disc-divider-line { background: #2d3748 !important; }
         </div>
 
         @{
-          var friends = Model.Where(u => friendList.Contains(u.Id) && u.Role != "System" && u.Role != "Guest").ToList();
+          var friends = Model.Where(u => friendList.Contains(u.Id) && u.Role != "System" && u.Role != "Guest" && u.Role != "Admin").ToList();
             var friendBanners = new[]
             {
                 "linear-gradient(135deg,#6366f1,#2563eb)",
@@ -339,7 +415,7 @@ body.bg-dark .disc-divider-line { background: #2d3748 !important; }
     <!-- GRID DESCUBRIR -->
     <div class="disc-grid" id="userGrid">
         @{
-          var nonFriends = Model.Where(u => u.Id != myId && !friendList.Contains(u.Id) && u.Role != "System").ToList();
+          var nonFriends = Model.Where(u => u.Id != myId && !friendList.Contains(u.Id) && u.Role != "System" && u.Role != "Admin").ToList();
             var banners = new[]
             {
                 "linear-gradient(135deg,#6366f1,#2563eb)",

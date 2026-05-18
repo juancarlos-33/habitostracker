@@ -216,6 +216,7 @@ body.bg-dark .grp-reaction-btn { background: rgba(99,102,241,0.12) !important; c
 
 .grp-msg-media { max-width: 200px; border-radius: 12px; display: block; margin-top: 4px; cursor: pointer; transition: transform 0.2s; }
 .grp-msg-media:hover { transform: scale(1.02); }
+.grp-media-caption { margin-top: 7px; white-space: pre-wrap; }
 .grp-msg-audio { width: 200px; height: 36px; margin-top: 4px; accent-color: #6366f1; }
 .grp-msg-row.mine .grp-msg-audio { accent-color: white; }
 
@@ -541,10 +542,18 @@ else if (!string.IsNullOrEmpty(msg.Content) && (msg.Content.Contains("cloudinary
             else if (isImage)
             {
                 <img src="@msg.FileUrl" class="grp-msg-media" onclick="window.open('@msg.FileUrl', '_blank')" />
+                @if (!string.IsNullOrWhiteSpace(msg.Content))
+                {
+                    <div class="grp-media-caption">@msg.Content</div>
+                }
             }
             else if (isVideo)
             {
                 <video controls class="grp-msg-media"><source src="@msg.FileUrl" /></video>
+                @if (!string.IsNullOrWhiteSpace(msg.Content))
+                {
+                    <div class="grp-media-caption">@msg.Content</div>
+                }
             }
             else if (!string.IsNullOrEmpty(msg.Content))
             {
@@ -806,8 +815,8 @@ grpConnection.on("ReceiveGroupMessage", (senderId, senderName, senderImage, cont
         ? `<img src="${senderImage}" style="width:100%;height:100%;object-fit:cover;" />` : letter;
     let contentHTML = "";
     if (fileType === "audio") contentHTML = `<audio controls class="grp-msg-audio"><source src="${content}" /></audio>`;
-    else if (fileType === "image") contentHTML = `<img src="${fileUrl}" class="grp-msg-media" onclick="window.open('${fileUrl}', '_blank')" />`;
-    else if (fileType === "video") contentHTML = `<video controls class="grp-msg-media"><source src="${fileUrl}" /></video>`;
+    else if (fileType === "image") contentHTML = `<img src="${fileUrl}" class="grp-msg-media" onclick="window.open('${fileUrl}', '_blank')" />${content ? `<div class="grp-media-caption">${escapeHtml(content)}</div>` : ''}`;
+    else if (fileType === "video") contentHTML = `<video controls class="grp-msg-media"><source src="${fileUrl}" /></video>${content ? `<div class="grp-media-caption">${escapeHtml(content)}</div>` : ''}`;
     else contentHTML = escapeHtml(content);
 
     const replyHTML = (replyToMessageId && replyContent)
@@ -1152,9 +1161,10 @@ async function sendGroupMessage() {
     if (selectedFile) {
         const file = selectedFile; selectedFile = null; cancelarArchivo();
         const url = URL.createObjectURL(file); const isImg = file.type.startsWith("image");
-        agregarBurbujaMia(isImg ? `<img src="${url}" class="grp-msg-media" />` : `<video controls class="grp-msg-media"><source src="${url}" /></video>`, tempId);
+        const captionHtml = content ? `<div class="grp-media-caption">${escapeHtml(content)}</div>` : "";
+        agregarBurbujaMia((isImg ? `<img src="${url}" class="grp-msg-media" />` : `<video controls class="grp-msg-media"><source src="${url}" /></video>`) + captionHtml, tempId);
         const formData = new FormData();
-        formData.append("file", file); formData.append("groupId", groupId); formData.append("__RequestVerificationToken", token());
+        formData.append("file", file); formData.append("groupId", groupId); formData.append("content", content); formData.append("__RequestVerificationToken", token());
         try {
             const res = await fetch("/Group/SendFile", { method: "POST", body: formData });
             const data = await res.json();
@@ -1163,7 +1173,7 @@ async function sendGroupMessage() {
 const check = document.getElementById("check-" + tempId); if (check) check.id = "check-" + data.id;
 const reactions = document.getElementById("reactions-" + tempId); if (reactions) reactions.id = "reactions-" + data.id;
                 currentTotalMembers = data.totalMembers;
-                await grpConnection.invoke("SendGroupMessage", groupId.toString(), myId, myName, "", data.id.toString(), data.fileUrl, data.fileType);
+                await grpConnection.invoke("SendGroupMessage", groupId.toString(), myId, myName, data.content || "", data.id.toString(), data.fileUrl, data.fileType);
             }
         } catch (err) { console.error(err); }
     } else {

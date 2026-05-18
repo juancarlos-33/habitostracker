@@ -210,8 +210,8 @@ body.bg-dark .ach-lock-text { color: #f1f5f9 !important; }
                 <div class="ach-hint">
                     <span class="ach-hint-icon">💪</span>
                     <div>
-                        <div class="ach-hint-title">30 días seguidos</div>
-                        <div class="ach-hint-desc">Mantén la racha durante un mes completo</div>
+                        <div class="ach-hint-title">15 días seguidos</div>
+                        <div class="ach-hint-desc">Supera dos semanas con el mismo hábito</div>
                     </div>
                 </div>
                 <div class="ach-hint">
@@ -235,6 +235,7 @@ body.bg-dark .ach-lock-text { color: #f1f5f9 !important; }
 
                 if (a.Title.Contains("100")) { icon = "🧠"; cardClass = "diamond"; ribbon = "ÉLITE"; }
                 else if (a.Title.Contains("30")) { icon = "💪"; cardClass = "gold"; ribbon = "ORO"; }
+                else if (a.Title.Contains("15")) { icon = "⚡"; cardClass = "gold"; ribbon = "ORO"; }
                 else if (a.Title.Contains("7")) { icon = "🔥"; cardClass = "silver"; ribbon = "PLATA"; }
 
                 <div class="ach-card @cardClass">

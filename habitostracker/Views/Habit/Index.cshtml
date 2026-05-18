@@ -812,7 +812,7 @@ body.bg-dark .hx-btn.ghost{background:#111827!important;border-color:rgba(255,25
                         bool failed = habit.LastCheckDate == DateTime.Today && !habit.Completed;
                         string sc = done ? "done" : failed ? "failed" : "pending";
                         string icon = done ? "✔" : failed ? "✖" : "○";
-                        string badge = done ? "✔ Completado" : failed ? "✖ Fallado" : "";
+                        string badge = done ? "✔ Completado hoy" : failed ? "✖ Fallado hoy" : "";
                         DateTime startDate = habit.LastFailDate ?? habit.CreatedDate;
                         string startDateIso = startDate.ToString("yyyy-MM-ddTHH:mm:ssZ");
 
@@ -822,7 +822,6 @@ body.bg-dark .hx-btn.ghost{background:#111827!important;border-color:rgba(255,25
                                 <div class="hx-hname">@habit.Name</div>
                                 <div class="hx-hmeta">
                                     <span class="hx-hstreak">🔥 @habit.StreakDays días</span>
-                                    <span class="hx-hrec">🏆 @habit.MaxStreak máx</span>
                                 </div>
                               <div class="hx-progress-detail">
     <span class="hx-time-live" id="time-@habit.Id">⏱️ 0s</span>
@@ -837,7 +836,7 @@ body.bg-dark .hx-btn.ghost{background:#111827!important;border-color:rgba(255,25
                             <span class="hx-hstatus">@badge</span>
                             <div class="hx-hacts">
                                 <button class="hx-ha no fail-btn" data-id="@habit.Id" title="Fallar (reinicia contador)" onclick="failHabit(event, @habit.Id, '@habit.Name')">✗</button>
-                                <button class="hx-ha ed" data-id="@habit.Id" data-name="@habit.Name" onclick="openEditModal(@habit.Id, '@habit.Name'">✏</button>
+                                <button class="hx-ha ed" data-id="@habit.Id" data-name="@habit.Name" onclick="openEditModal(@habit.Id, '@habit.Name.Replace("'", "\\'")')">✏</button>
                                 <button class="hx-ha rm" data-id="@habit.Id" onclick="confirmarEliminarHabito(@habit.Id, '@habit.Name')">🗑</button>
                             </div>
                         </div>
@@ -1013,27 +1012,27 @@ const hitos = [
     { seg: 86400,    nombre: "24 Horas" },
     { seg: 259200,   nombre: "3 Días" },
     { seg: 604800,   nombre: "1 Semana" },
-    { seg: 1209600,  nombre: "2 Semanas" },
+    { seg: 864000,   nombre: "10 Días" },
     { seg: 2592000,  nombre: "1 Mes" },
-    { seg: 7776000,  nombre: "3 Meses" },
-    { seg: 15552000, nombre: "6 Meses" },
-    { seg: 31536000, nombre: "1 Año" }
+    { seg: 94608000, nombre: "3 Años" },
+    { seg: 157680000, nombre: "5 Años" },
+    { seg: 315360000, nombre: "10 Años" }
 ];
 
-let habitObjectives = {};
+let habitObjectives = JSON.parse(localStorage.getItem('ht_habit_objectives') || '{}');
+
+function saveHabitObjectives() {
+    localStorage.setItem('ht_habit_objectives', JSON.stringify(habitObjectives));
+}
 
 function calcularProgreso(tiempoSeg, habitId = null) {
-    let objetivoSeg = 604800; // 1 semana por defecto
+    let objetivoSeg = hitos[0].seg;
 
-    // Si el usuario ya eligió manualmente un objetivo
     if (habitId && habitObjectives[habitId]) {
-        objetivoSeg = habitObjectives[habitId];
-    }
-
-    // Avance automático al siguiente objetivo si ya se superó el actual
-    while (tiempoSeg > objetivoSeg && objetivoSeg < 31536000) {
-        objetivoSeg = getNextObjective(objetivoSeg);
-        if (habitId) habitObjectives[habitId] = objetivoSeg; // guardar automáticamente
+        objetivoSeg = Number(habitObjectives[habitId]);
+    } else {
+        const next = hitos.find(h => tiempoSeg < h.seg);
+        objetivoSeg = next ? next.seg : hitos[hitos.length - 1].seg;
     }
 
     let porc = Math.min((tiempoSeg / objetivoSeg) * 100, 100);
@@ -1131,6 +1130,7 @@ function cerrarModalObjetivo(el) {
 
 function aplicarObjetivo(habitId, seg) {
     habitObjectives[habitId] = seg;
+    saveHabitObjectives();
     const modal = document.getElementById("modalObjetivoTemp");
     if (modal) modal.remove();
     

@@ -608,10 +608,16 @@ else
         <div class="modal-content border-0 shadow-lg">
             <div class="modal-body text-center p-4">
                 <div style="font-size:44px;margin-bottom:12px;">🔐</div>
-                <h4 class="fw-bold mb-2">Accede para continuar</h4>
-                <p class="text-muted small">Crea una cuenta para interactuar con otras personas.</p>
+                <h4 class="fw-bold mb-2">Modo invitado</h4>
+                <p class="text-muted small mb-3">Puedes probar la app, pero tu cuenta invitada tiene límites importantes.</p>
+                <div class="text-start small mb-3" style="background:#f8fafc;border:1px solid #e5e7eb;border-radius:14px;padding:12px 14px;">
+                    <div class="fw-semibold mb-1">Riesgos de seguir como invitado</div>
+                    <div>• Puedes perder acceso si olvidas tu usuario invitado.</div>
+                    <div>• No podrás socializar libremente con amigos, grupos y mensajes.</div>
+                    <div>• Algunas acciones estarán bloqueadas por seguridad.</div>
+                </div>
                 <a asp-controller="Account" asp-action="UpgradeAccount" class="btn btn-primary w-100 mb-2 rounded-pill py-2 fw-semibold">
-                    Iniciar sesión o crear cuenta
+                    Crear cuenta para socializar
                 </a>
                 <button id="closeGuestModal" type="button" class="btn btn-outline-secondary w-100 rounded-pill py-2 fw-semibold">
                     👤 Seguir como invitado
@@ -1003,6 +1009,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
     modalEl.addEventListener('hidden.bs.modal', cleanBackdrop);
     if (window.location.search.includes("showGuestModal=true")) setTimeout(() => guestModal.show(), 300);
+    if (isGuest && !localStorage.getItem('ht_guest_first_warning_seen')) {
+        setTimeout(() => guestModal.show(), 450);
+    }
 
     document.addEventListener("click", e => {
         if (!isGuest) return;
@@ -1020,7 +1029,11 @@ document.addEventListener("DOMContentLoaded", () => {
         e.preventDefault(); guestModal.show();
     }, true);
 
-    document.getElementById("closeGuestModal").addEventListener("click", () => { guestModal.hide(); cleanBackdrop(); });
+    document.getElementById("closeGuestModal").addEventListener("click", () => {
+        localStorage.setItem('ht_guest_first_warning_seen', '1');
+        guestModal.hide();
+        cleanBackdrop();
+    });
 });
 </script>
 

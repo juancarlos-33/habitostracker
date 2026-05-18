@@ -334,7 +334,7 @@ window.doLogin = () => false;
             </form>
         }
 
-        <a href="/Account/ExternalLogin?provider=Google" class="gbtn" id="gBtn">
+        <a href="/Account/ExternalLogin?provider=Google" class="gbtn" id="gBtn" onclick="sessionStorage.setItem('ht_google_oauth_started','1'); window.location.replace(this.href); return false;">
             <img src="https://developers.google.com/identity/images/g-logo.png" alt="G"/>
             <span>Continuar con Google</span>
         </a>

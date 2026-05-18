@@ -463,6 +463,19 @@ body.bg-dark .post-privacy-badge.public { background:rgba(21,128,61,0.2); color:
 .comment-text { font-size: 14px; color: #334155; margin: 5px 0 8px; line-height:1.55; word-break: break-word; white-space:pre-wrap; }
 .comment-img { max-width: 100%; max-height: 240px; border-radius: 14px; margin-top: 7px; cursor: pointer; object-fit:cover; box-shadow:0 10px 28px rgba(15,23,42,.12); }
 .comment-actions { display: flex; gap: 8px; margin-top: 9px; flex-wrap:wrap; }
+.comment-item.system-comment .comment-content {
+    border: 1px solid rgba(245,158,11,.28);
+    background: linear-gradient(135deg, rgba(245,158,11,.08), rgba(99,102,241,.06));
+}
+.comment-system-note {
+    margin-top: 8px; padding: 8px 10px; border-radius: 10px;
+    background: rgba(15,23,42,.06); color: #475569;
+    font-size: 11px; font-weight: 800;
+}
+.comment-system-lock {
+    color: #92400e; background: #fffbeb; border: 1px solid #fde68a;
+    padding: 5px 10px; border-radius: 999px; font-size: 11px; font-weight: 800;
+}
 .comment-like-btn {
     background: #f8fafc; border: 1px solid #e2e8f0; font-size: 12px; font-weight: 900;
     color: #64748b; cursor: pointer; padding: 6px 10px;
@@ -985,15 +998,22 @@ let selectedCommentImage = null;
 let commentsCache = [];
 let commentsSort = 'recent';
 async function openCommentsModal(postId) {
-    if (document.getElementById('commentsModal').style.display === 'flex') return;
+    const modal = document.getElementById('commentsModal');
+    if (!modal || modal.style.display === 'flex') return;
     
     currentPostId = postId;
-    const modal = document.getElementById('commentsModal');
     const body = document.getElementById('commentsModalBody');
     const footer = document.getElementById('commentsModalFooter');
     
     modal.style.display = 'flex';
     document.body.style.overflow = 'hidden';
+    document.body.classList.add('modal-open');
+    document.addEventListener('keydown', handleEscapeKey);
+    const loader = document.getElementById('ht-loader');
+    if (loader) {
+        loader.style.display = 'none';
+        loader.style.opacity = '0';
+    }
     
     body.innerHTML = '<div class="comments-loading">Cargando comentarios...</div>';
     
@@ -1061,9 +1081,20 @@ function renderComments(comments, commentsDisabled) {
             : `<div class="comment-avatar-letter">${(c.username||'U').charAt(0).toUpperCase()}</div>`;
 
         const img = c.imagePath ? `<img src="${c.imagePath}" class="comment-img" onclick="window.open('${c.imagePath}','_blank')"/>` : '';
+        const isSystem = c.isSystemComment === true;
+        const systemNote = isSystem ? `<div class="comment-system-note">Este es un comentario automático del sistema.</div>` : '';
+        const actions = isSystem
+            ? `<div class="comment-actions"><span class="comment-system-lock">🔒 Sin respuestas ni reacciones</span></div>`
+            : `<div class="comment-actions">
+                        <button class="comment-like-btn ${c.isLiked?'liked':''}" onclick="toggleCommentLikeModal(this, ${c.id})">
+                            ${c.isLiked?'❤️':'🤍'} <span class="like-count">${c.likeCount||0}</span>
+                        </button>
+                        <button class="comment-reply-btn" data-comment-id="${c.id}" onclick="showReplyForm(this, ${c.id}, 'comment')">Responder</button>
+                        ${c.isMine ? `<button class="comment-delete-btn" onclick="deleteCommentModal(${c.id})">Eliminar</button>` : ''}
+                    </div>`;
 
         html += `
-            <div class="comment-item" id="comment-${c.id}" data-comment-id="${c.id}">
+            <div class="comment-item ${isSystem ? 'system-comment' : ''}" id="comment-${c.id}" data-comment-id="${c.id}">
                 ${avatar}
                 <div class="comment-content">
                     <div class="comment-head">
@@ -1071,16 +1102,11 @@ function renderComments(comments, commentsDisabled) {
                         <span class="comment-time">${c.createdAt}</span>
                     </div>
                     <div class="comment-text">${escapeHtml(c.comment)}</div>
+                    ${systemNote}
                     ${img}
-                    <div class="comment-actions">
-                        <button class="comment-like-btn ${c.isLiked?'liked':''}" onclick="toggleCommentLikeModal(this, ${c.id})">
-                            ${c.isLiked?'❤️':'🤍'} <span class="like-count">${c.likeCount||0}</span>
-                        </button>
-                        <button class="comment-reply-btn" data-comment-id="${c.id}" onclick="showReplyForm(this, ${c.id}, 'comment')">Responder</button>
-                        ${c.isMine ? `<button class="comment-delete-btn" onclick="deleteCommentModal(${c.id})">Eliminar</button>` : ''}
-                    </div>
+                    ${actions}
                     <div class="replies-container" id="replies-${c.id}">
-                        ${renderRepliesPreview(c.replies || [], c.id)}
+                        ${isSystem ? '' : renderRepliesPreview(c.replies || [], c.id)}
                     </div>
                 </div>
             </div>`;
@@ -1101,7 +1127,7 @@ function renderRepliesPreview(replies, commentId) {
         const r = replies[i];
         html += `
             <div class="reply-item" data-reply-id="${r.id}">
-                ${r.profileImage ? `<img src="${r.profileImage}" class="reply-avatar" onclick="goToUserProfile(${r.userId})" />` : `<div class="reply-avatar-letter">${r.username.charAt(0).ToUpperCase()}</div>`}
+                ${r.profileImage ? `<img src="${r.profileImage}" class="reply-avatar" onclick="goToUserProfile(${r.userId})" />` : `<div class="reply-avatar-letter">${r.username.charAt(0).toUpperCase()}</div>`}
                 <div class="reply-content">
                     <div class="reply-header">
                         <a href="/User/Profile/${r.userId}" class="reply-username-link">${escapeHtml(r.username)}</a>
@@ -1435,17 +1461,20 @@ function closeCommentsModal() {
 
     modal.style.display = 'none';
 
-    // Limpieza agresiva de scroll
-    document.body.style.cssText = `
-        overflow: visible !important;
-        position: static !important;
-        padding-right: 0 !important;
-        top: 0 !important;
-    `;
-    document.documentElement.style.overflow = 'visible';
+    document.body.style.removeProperty('overflow');
+    document.body.style.removeProperty('position');
+    document.body.style.removeProperty('padding-right');
+    document.body.style.removeProperty('top');
+    document.documentElement.style.removeProperty('overflow');
 
     // Quitar clases residuales
     document.body.classList.remove('modal-open', 'overflow-hidden', 'no-scroll');
+    document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
+    const loader = document.getElementById('ht-loader');
+    if (loader) {
+        loader.style.display = 'none';
+        loader.style.opacity = '0';
+    }
 
     // Limpiar SignalR
     if (commentConnection && currentPostId) {
@@ -1510,6 +1539,7 @@ document.querySelectorAll('.post-actions a.action-btn[href*="/Post/Comments"]').
     if (match) {
         const postId = match[1];
         link.setAttribute('href', 'javascript:void(0)');
+        link.setAttribute('data-no-loader', 'true');
         link.setAttribute('onclick', `openCommentsModal(${postId})`);
     }
 });

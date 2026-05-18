@@ -1166,11 +1166,11 @@ function cerrarFotoPerfil() {
 }
 // ==================== AVATAR SELECTOR ====================
 // ==================== AVATAR SELECTOR (limpio) ====================
-let currentStyle = "";
-let selectedAvatarUrl = "";
+var legacyAvatarStyle = "";
+var selectedAvatarUrl = "";
 
 function loadAvatarStyle(style) {
-    currentStyle = style;
+    legacyAvatarStyle = style;
     const grid = document.getElementById('avatarGrid');
     const loading = document.getElementById('avatarLoading');
     
@@ -1215,7 +1215,8 @@ function uploadProfilePhoto(input) {
     const reader = new FileReader();
     reader.onload = function(e) {
         selectedAvatarUrl = e.target.result;
-        document.getElementById('selectedAvatarUrl').value = selectedAvatarUrl;
+        document.getElementById('selectedAvatarUrl').value = '';
+        document.getElementById('croppedImageInput').value = selectedAvatarUrl;
         document.getElementById('avatarSelectedImg').src = selectedAvatarUrl;
         document.getElementById('avatarSelected').style.display = 'flex';
     };

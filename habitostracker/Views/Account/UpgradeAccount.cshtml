@@ -263,7 +263,7 @@ body {
             <div class="benefit-item"><i class="bi bi-shield-check-fill"></i><span>Perfil propio</span></div>
         </div>
 
-        <a href="/Account/GoogleLogin" class="google-btn">
+        <a href="/Account/GoogleLogin" class="google-btn" onclick="sessionStorage.setItem('ht_google_oauth_started','1'); window.location.replace(this.href); return false;">
             <img src="https://developers.google.com/identity/images/g-logo.png" />
             Continuar con Google
         </a>

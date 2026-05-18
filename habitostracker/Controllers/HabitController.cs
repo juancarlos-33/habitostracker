@@ -46,6 +46,23 @@ namespace HabitTrackerApp.Controllers
             }
             // Registrar la fecha de fallo (reinicia el contador de tiempo)
             habit.LastFailDate = DateTime.UtcNow;
+            var today = DateTime.Today;
+            var todayHistory = await _context.HabitHistories
+                .FirstOrDefaultAsync(h => h.HabitId == habit.Id && h.Date.Date == today);
+            if (todayHistory == null)
+            {
+                _context.HabitHistories.Add(new HabitHistory
+                {
+                    HabitId = habit.Id,
+                    HabitName = habit.Name,
+                    Date = today,
+                    Completed = false
+                });
+            }
+            else
+            {
+                todayHistory.Completed = false;
+            }
             await _context.SaveChangesAsync();
 
             return Ok(new { success = true });
@@ -84,6 +101,16 @@ namespace HabitTrackerApp.Controllers
                 .Include(h => h.Comments)
                 .ThenInclude(c => c.User)
                 .ToList();
+
+            var changed = false;
+            foreach (var habit in habits)
+            {
+                changed |= SyncHabitRuntimeStats(habit);
+                changed |= CreateAchievementsIfNeeded(habit);
+            }
+
+            if (changed)
+                _context.SaveChanges();
 
             return View(habits);
         }
@@ -239,7 +266,7 @@ namespace HabitTrackerApp.Controllers
                 Completed = true
             });
 
-            CreateAchievementIfNeeded(habit);
+            CreateAchievementsIfNeeded(habit);
             _context.SaveChanges();
 
             return RedirectToAction("Index");
@@ -284,32 +311,57 @@ namespace HabitTrackerApp.Controllers
             return RedirectToAction("Index");
         }
 
-        private void CreateAchievementIfNeeded(Habit habit)
+        private bool SyncHabitRuntimeStats(Habit habit)
         {
-            string achievementTitle = null;
+            var start = habit.LastFailDate ?? habit.CreatedDate;
+            var elapsedDays = Math.Max(0, (int)Math.Floor((DateTime.Now - start).TotalDays));
+            var changed = false;
 
-            if (habit.StreakDays == 7)
-                achievementTitle = "🔥 7 días seguidos";
-            else if (habit.StreakDays == 30)
-                achievementTitle = "💪 30 días seguidos";
-            else if (habit.StreakDays == 100)
-                achievementTitle = "🧠 100 días seguidos";
-
-            if (achievementTitle == null) return;
-
-            bool exists = _context.Achievements
-                .Any(a => a.HabitId == habit.Id && a.Title == achievementTitle);
-
-            if (!exists)
+            if (elapsedDays > habit.StreakDays)
             {
+                habit.StreakDays = elapsedDays;
+                changed = true;
+            }
+
+            if (habit.StreakDays > habit.MaxStreak)
+            {
+                habit.MaxStreak = habit.StreakDays;
+                changed = true;
+            }
+
+            return changed;
+        }
+
+        private bool CreateAchievementsIfNeeded(Habit habit)
+        {
+            var changed = false;
+            var streak = Math.Max(habit.StreakDays, habit.MaxStreak);
+            var achievements = new[]
+            {
+                new { Days = 7, Title = "🔥 7 días seguidos" },
+                new { Days = 15, Title = "⚡ 15 días seguidos" },
+                new { Days = 30, Title = "💪 30 días seguidos" },
+                new { Days = 100, Title = "🧠 100 días seguidos" }
+            };
+
+            foreach (var item in achievements.Where(a => streak >= a.Days))
+            {
+                bool exists = _context.Achievements
+                    .Any(a => a.HabitId == habit.Id && a.Title == item.Title);
+
+                if (exists) continue;
+
                 _context.Achievements.Add(new Achievement
                 {
                     HabitId = habit.Id,
                     HabitName = habit.Name,
-                    Title = achievementTitle,
+                    Title = item.Title,
                     DateUnlocked = DateTime.Now
                 });
+                changed = true;
             }
+
+            return changed;
         }
 
         // 📊 DETALLE DEL HÁBITO CON GRÁFICA INDIVIDUAL

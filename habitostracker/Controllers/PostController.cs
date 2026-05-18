@@ -425,6 +425,13 @@ namespace HabitTrackerApp.Controllers
             {
                 var userId = int.Parse(User.FindFirst("UserId").Value);
                 var user = await _context.Users.FindAsync(userId);
+                var parentComment = await _context.PostComments.FindAsync(commentId);
+                if (parentComment == null)
+                    return Json(new { success = false, error = "Comentario no encontrado" });
+
+                var parentAuthor = await _context.Users.FindAsync(parentComment.UserId);
+                if (parentAuthor?.Role == "System" || parentAuthor?.Username == "HabitTracker")
+                    return Json(new { success = false, error = "No se puede responder a comentarios automáticos del sistema." });
 
                 if (string.IsNullOrWhiteSpace(text))
                     return Json(new { success = false, error = "El comentario no puede estar vacío" });
@@ -444,7 +451,6 @@ namespace HabitTrackerApp.Controllers
                 await _context.SaveChangesAsync();
 
                 // Notificación al dueño del comentario (si no es el mismo)
-                var parentComment = await _context.PostComments.FindAsync(commentId);
                 if (parentComment != null && parentComment.UserId != userId)
                 {
                     _context.Notifications.Add(new Notification
@@ -685,6 +691,15 @@ namespace HabitTrackerApp.Controllers
         public async Task<IActionResult> ToggleCommentLike(int commentId)
         {
             var userId = int.Parse(User.FindFirst("UserId").Value);
+            var comment = await _context.PostComments.FindAsync(commentId);
+            if (comment == null) return Json(new { liked = false, count = 0, error = "Comentario no encontrado" });
+
+            var author = await _context.Users.FindAsync(comment.UserId);
+            if (author?.Role == "System" || author?.Username == "HabitTracker")
+            {
+                var systemCount = await _context.CommentLikes.CountAsync(x => x.CommentId == commentId);
+                return Json(new { liked = false, count = systemCount, locked = true });
+            }
 
             var existingLike = await _context.CommentLikes
                 .FirstOrDefaultAsync(x => x.CommentId == commentId && x.UserId == userId);
@@ -745,6 +760,8 @@ Por tu rol de administrador no serás sancionado de inmediato, pero esta es tu P
 
 Cualquier reincidencia resultará en la suspensión de tu cuenta y tu inclusión en la lista negra** de la plataforma.  
 Esta publicación ha sido marcada y los comentarios han sido deshabilitados.  
+
+Este es un comentario automático del sistema.
 
 — Equipo de HabitTracker ✅",
                     CreatedAt = DateTime.Now
@@ -960,10 +977,18 @@ Esta publicación ha sido marcada y los comentarios han sido deshabilitados.
 
                 var currentUserId = int.Parse(User.FindFirst("UserId").Value);
 
-                var comments = await _context.PostComments
+                var rawComments = await _context.PostComments
                     .Where(c => c.PostId == postId)
                     .OrderByDescending(c => c.CreatedAt)
-                    .Select(c => new
+                    .ToListAsync();
+
+                var commentUserIds = rawComments.Select(c => c.UserId).Distinct().ToList();
+                var systemUserIds = await _context.Users
+                    .Where(u => commentUserIds.Contains(u.Id) && (u.Role == "System" || u.Username == "HabitTracker"))
+                    .Select(u => u.Id)
+                    .ToListAsync();
+
+                var comments = rawComments.Select(c => new
                     {
                         c.Id,
                         UserId = c.UserId,
@@ -973,10 +998,11 @@ Esta publicación ha sido marcada y los comentarios han sido deshabilitados.
                         ImagePath = c.ImagePath,
                         CreatedAt = c.CreatedAt.ToString("dd MMM yyyy · hh:mm tt"),
                         IsMine = c.UserId == currentUserId,
-                        LikeCount = _context.CommentLikes.Count(l => l.CommentId == c.Id),
-                        IsLiked = _context.CommentLikes.Any(l => l.CommentId == c.Id && l.UserId == currentUserId)
+                        IsSystemComment = systemUserIds.Contains(c.UserId),
+                        LikeCount = systemUserIds.Contains(c.UserId) ? 0 : _context.CommentLikes.Count(l => l.CommentId == c.Id),
+                        IsLiked = !systemUserIds.Contains(c.UserId) && _context.CommentLikes.Any(l => l.CommentId == c.Id && l.UserId == currentUserId)
                     })
-                    .ToListAsync();
+                    .ToList();
 
                 return Json(new { success = true, comments, commentsDisabled = post.CommentsDisabled });
             }

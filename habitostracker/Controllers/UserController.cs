@@ -55,8 +55,10 @@ namespace HabitTrackerApp.Controllers
             var myId = int.Parse(User.FindFirst("UserId").Value);
 
             var users = _context.Users
-                .Where(u => u.Role != "SuperAdmin" && u.Role != "Guest" && u.Role != "System" && u.IsActive)
-                .OrderByDescending(u => u.Role == "Admin")
+                .Where(u => u.Role != "SuperAdmin" && u.Role != "Guest" && u.IsActive
+                    && (u.Role != "System" || u.Username == "HabitTracker"))
+                .OrderByDescending(u => u.Username == "HabitTracker")
+                .ThenByDescending(u => u.Role == "Admin")
                 .ThenBy(u => u.Username)
                 .ToList()
                 .DistinctBy(u => u.Id)

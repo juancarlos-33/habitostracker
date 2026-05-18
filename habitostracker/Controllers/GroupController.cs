@@ -923,7 +923,7 @@ namespace HabitTrackerApp.Controllers
             });
         }
         [HttpPost]
-        public async Task<IActionResult> SendFile(int groupId, IFormFile file)
+        public async Task<IActionResult> SendFile(int groupId, IFormFile file, string? content)
         {
             var userId = int.Parse(User.FindFirst("UserId").Value);
             var member = _context.GroupMembers
@@ -968,14 +968,21 @@ namespace HabitTrackerApp.Controllers
                 fileUrl = r.SecureUrl.ToString();
             }
 
-            var msg = new GroupMessage { GroupId = groupId, SenderId = userId, Content = "", FileUrl = fileUrl, SentAt = DateTime.UtcNow };
+            var msg = new GroupMessage
+            {
+                GroupId = groupId,
+                SenderId = userId,
+                Content = content?.Trim() ?? "",
+                FileUrl = fileUrl,
+                SentAt = DateTime.UtcNow
+            };
             _context.GroupMessages.Add(msg);
             await _context.SaveChangesAsync();
             _context.GroupMessageReads.Add(new GroupMessageRead { GroupMessageId = msg.Id, UserId = userId, ReadAt = DateTime.UtcNow });
             await _context.SaveChangesAsync();
 
             var totalMembers = _context.GroupMembers.Count(m => m.GroupId == groupId && m.IsActive);
-            return Json(new { success = true, id = msg.Id, content = "", sentAt = msg.SentAt.ToLocalTime().ToString("hh:mm tt"), senderName = sender?.Username ?? "Usuario", senderImage = sender?.ProfileImage ?? sender?.ProfilePicture ?? "", fileUrl, fileType, totalMembers });
+            return Json(new { success = true, id = msg.Id, content = msg.Content, sentAt = msg.SentAt.ToLocalTime().ToString("hh:mm tt"), senderName = sender?.Username ?? "Usuario", senderImage = sender?.ProfileImage ?? sender?.ProfilePicture ?? "", fileUrl, fileType, totalMembers });
         }
 
         [HttpPost]
