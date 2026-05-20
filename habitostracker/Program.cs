@@ -67,11 +67,21 @@ namespace HabitTrackerApp
                     ? Microsoft.AspNetCore.Http.CookieSecurePolicy.Always
                     : Microsoft.AspNetCore.Http.CookieSecurePolicy.SameAsRequest;
             })
+            .AddCookie("External", options =>
+            {
+                options.Cookie.Name = "HabitTracker.External";
+                options.ExpireTimeSpan = TimeSpan.FromMinutes(5);
+                options.Cookie.HttpOnly = true;
+                options.Cookie.SameSite = Microsoft.AspNetCore.Http.SameSiteMode.Lax;
+                options.Cookie.SecurePolicy = builder.Environment.IsProduction()
+                    ? Microsoft.AspNetCore.Http.CookieSecurePolicy.Always
+                    : Microsoft.AspNetCore.Http.CookieSecurePolicy.SameAsRequest;
+            })
             .AddGoogle(options =>
             {
                 options.ClientId = builder.Configuration["Google:ClientId"] ?? "";
                 options.ClientSecret = builder.Configuration["Google:ClientSecret"] ?? "";
-                options.SignInScheme = "Cookies";
+                options.SignInScheme = "External";
             })
             .AddJwtBearer(JwtBearerDefaults.AuthenticationScheme, options =>
             {
@@ -161,6 +171,21 @@ namespace HabitTrackerApp
 
             app.UseRouting();
             app.UseAuthentication();
+
+            app.Use(async (context, next) =>
+            {
+                var path = context.Request.Path.Value?.ToLower() ?? "";
+                var isAuthenticated = context.User.Identity?.IsAuthenticated == true;
+                var captchaPassed = context.Session.GetString("CaptchaPassed") == "true";
+
+                if (isAuthenticated && path.StartsWith("/habit") && !captchaPassed)
+                {
+                    context.Response.Redirect("/Account/Captcha");
+                    return;
+                }
+
+                await next();
+            });
 
             // ── Sesión activa ──
             app.Use(async (context, next) =>

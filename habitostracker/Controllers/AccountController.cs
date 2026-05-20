@@ -33,19 +33,22 @@ namespace HabitTrackerApp.Controllers
         private readonly IWebHostEnvironment _environment;
 
         private readonly CloudinaryService _cloudinaryService;
+        private readonly IConfiguration _configuration;
 
         public AccountController(
            HabitDbContext context,
            EmailService emailService,
            IWebHostEnvironment environment,
            IHubContext<ChatHub> hubContext,
-           CloudinaryService cloudinaryService)
+           CloudinaryService cloudinaryService,
+           IConfiguration configuration)
         {
             _context = context;
             _emailService = emailService;
             _environment = environment;
             _hubContext = hubContext;
             _cloudinaryService = cloudinaryService;
+            _configuration = configuration;
         }
 
 
@@ -63,7 +66,10 @@ namespace HabitTrackerApp.Controllers
             // 🚫 Si la IP está bloqueada, NO redirigir aunque esté autenticado
             if (blockedIp == null && User.Identity != null && User.Identity.IsAuthenticated)
             {
-                return RedirectToAction("Index", "Habit");
+                if (HttpContext.Session.GetString("CaptchaPassed") == "true")
+                    return RedirectToAction("Index", "Habit");
+
+                return RedirectToAction("Captcha", "Account");
             }
 
             return View();
@@ -494,6 +500,90 @@ namespace HabitTrackerApp.Controllers
 
             return Json(new { deleted = false });
         }
+
+        [HttpGet]
+        public IActionResult Captcha()
+        {
+            if (User.Identity?.IsAuthenticated != true)
+                return RedirectToAction("Login");
+
+            if (HttpContext.Session.GetString("CaptchaPassed") == "true")
+                return RedirectToAction("Index", "Habit");
+
+            var siteKey = _configuration["Recaptcha:SiteKey"];
+            ViewBag.RecaptchaSiteKey = siteKey ?? "";
+
+            if (string.IsNullOrWhiteSpace(siteKey))
+            {
+                var rng = new Random();
+                var a = rng.Next(2, 10);
+                var b = rng.Next(2, 10);
+                HttpContext.Session.SetInt32("CaptchaAnswer", a + b);
+                ViewBag.LocalCaptchaQuestion = $"{a} + {b}";
+            }
+
+            return View();
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Captcha(string? captchaAnswer, string? gRecaptchaResponse)
+        {
+            if (User.Identity?.IsAuthenticated != true)
+                return RedirectToAction("Login");
+
+            var siteKey = _configuration["Recaptcha:SiteKey"];
+            var secretKey = _configuration["Recaptcha:SecretKey"];
+            var passed = false;
+
+            if (!string.IsNullOrWhiteSpace(siteKey) && !string.IsNullOrWhiteSpace(secretKey))
+            {
+                gRecaptchaResponse = Request.Form["g-recaptcha-response"].ToString();
+                passed = await VerifyRecaptchaAsync(gRecaptchaResponse, secretKey);
+            }
+            else
+            {
+                var expected = HttpContext.Session.GetInt32("CaptchaAnswer");
+                passed = expected.HasValue
+                    && int.TryParse(captchaAnswer, out var answer)
+                    && answer == expected.Value;
+            }
+
+            if (!passed)
+            {
+                TempData["Error"] = "No pudimos verificar que eres una persona. Inténtalo de nuevo.";
+                return RedirectToAction("Captcha");
+            }
+
+            HttpContext.Session.SetString("CaptchaPassed", "true");
+            return RedirectToAction("Index", "Habit");
+        }
+
+        private async Task<bool> VerifyRecaptchaAsync(string? token, string secretKey)
+        {
+            if (string.IsNullOrWhiteSpace(token)) return false;
+
+            try
+            {
+                using var client = new HttpClient();
+                var response = await client.PostAsync(
+                    "https://www.google.com/recaptcha/api/siteverify",
+                    new FormUrlEncodedContent(new Dictionary<string, string>
+                    {
+                        ["secret"] = secretKey,
+                        ["response"] = token,
+                        ["remoteip"] = HttpContext.Connection.RemoteIpAddress?.ToString() ?? ""
+                    }));
+
+                var json = await response.Content.ReadAsStringAsync();
+                using var doc = System.Text.Json.JsonDocument.Parse(json);
+                return doc.RootElement.TryGetProperty("success", out var success) && success.GetBoolean();
+            }
+            catch
+            {
+                return false;
+            }
+        }
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Login(LoginViewModel login, double? Latitude, double? Longitude)
@@ -618,7 +708,7 @@ namespace HabitTrackerApp.Controllers
                         .SendAsync("UserConnectedNotification", user.Username);
             }
 
-            return RedirectToAction("Index", "Habit", null, "https");
+            return RedirectToAction("Captcha", "Account", null, "https");
         }
         // =====================================================
         // 🔁 REENVIAR CONFIRMACIÓN
@@ -1465,6 +1555,8 @@ namespace HabitTrackerApp.Controllers
                 CookieAuthenticationDefaults.AuthenticationScheme,
                 new ClaimsPrincipal(claimsIdentity));
 
+            HttpContext.Session.SetString("CaptchaPassed", "false");
+
             // 🔥 registrar sesión en BD
             var userAgent = HttpContext.Request.Headers["User-Agent"].ToString();
             var ip = HttpContext.Request.Headers["X-Forwarded-For"].FirstOrDefault()
@@ -1681,8 +1773,10 @@ namespace HabitTrackerApp.Controllers
         }
 
         [HttpGet]
-        public IActionResult ExternalLogin(string provider)
+        public async Task<IActionResult> ExternalLogin(string provider)
         {
+            await HttpContext.SignOutAsync("External");
+
             var redirectUrl = Url.Action("ExternalLoginCallback", "Account");
 
             var properties = new AuthenticationProperties
@@ -1708,7 +1802,7 @@ namespace HabitTrackerApp.Controllers
                 if (blocked != null)
                     return RedirectToAction("Login", new { ipblocked = true });
 
-                var result = await HttpContext.AuthenticateAsync(GoogleDefaults.AuthenticationScheme);
+                var result = await HttpContext.AuthenticateAsync("External");
                 if (!result.Succeeded)
                 {
                     await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
@@ -1811,6 +1905,7 @@ namespace HabitTrackerApp.Controllers
                 var identity = new ClaimsIdentity(claims, "Cookies");
                 var principal = new ClaimsPrincipal(identity);
                 await HttpContext.SignInAsync("Cookies", principal);
+                HttpContext.Session.SetString("CaptchaPassed", "false");
 
                 try
                 {
@@ -1831,6 +1926,8 @@ namespace HabitTrackerApp.Controllers
                 {
                     Console.WriteLine($"❌ Error guardando sesión: {ex.Message}");
                 }
+
+                await HttpContext.SignOutAsync("External");
 
                 // 🔥 solo mandar a CompleteProfile si es nuevo usuario
                 if (isNewUser)
@@ -1857,7 +1954,7 @@ namespace HabitTrackerApp.Controllers
         public IActionResult GuestRegister()
         {
             if (User.Identity.IsAuthenticated && User.IsInRole("Guest"))
-                return RedirectToAction("Index", "Habit");
+                return RedirectToAction("Captcha", "Account");
 
             return View();
         }
@@ -1908,8 +2005,7 @@ namespace HabitTrackerApp.Controllers
 
             TempData["Success"] = $"✅ Bienvenido, {username}!";
 
-            // Redirección directa y forzada al Index
-            return RedirectToAction("Index", "Habit");
+            return RedirectToAction("Captcha", "Account");
         }
         [HttpGet]
         public IActionResult UpgradeAccount()
@@ -1952,8 +2048,10 @@ namespace HabitTrackerApp.Controllers
             }
         }
 
-        public IActionResult GoogleLogin()
+        public async Task<IActionResult> GoogleLogin()
         {
+            await HttpContext.SignOutAsync("External");
+
             string ip = HttpContext.Request.Headers["X-Forwarded-For"].FirstOrDefault();
             if (!string.IsNullOrEmpty(ip))
                 ip = ip.Split(',').First().Trim();
@@ -1987,7 +2085,7 @@ namespace HabitTrackerApp.Controllers
             else
                 ip = HttpContext.Connection.RemoteIpAddress?.ToString();
 
-            var result = await HttpContext.AuthenticateAsync("Cookies");
+            var result = await HttpContext.AuthenticateAsync("External");
             if (!result.Succeeded)
             {
                 foreach (var cookie in HttpContext.Request.Cookies.Keys)
@@ -2040,6 +2138,7 @@ namespace HabitTrackerApp.Controllers
                   
 
                     await SignInUser(currentUser);
+                    await HttpContext.SignOutAsync("External");
                     return RedirectToAction("CompleteProfile", "Account");
                 }
             }
@@ -2109,6 +2208,7 @@ namespace HabitTrackerApp.Controllers
     };
             var sessionIdentity = new ClaimsIdentity(sessionClaims, CookieAuthenticationDefaults.AuthenticationScheme);
             await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(sessionIdentity));
+            HttpContext.Session.SetString("CaptchaPassed", "false");
 
             try
             {
@@ -2132,8 +2232,12 @@ namespace HabitTrackerApp.Controllers
             }
 
             if (isNewUser)
+            {
+                await HttpContext.SignOutAsync("External");
                 return RedirectToAction("CompleteProfile", "Account");
+            }
 
+            await HttpContext.SignOutAsync("External");
             return RedirectToAction("OAuthLanding", "Account");
         }
         [HttpPost]
@@ -2172,7 +2276,7 @@ namespace HabitTrackerApp.Controllers
 
             await SignInUser(user);
 
-            return RedirectToAction("Index", "Habit");
+            return RedirectToAction("Captcha", "Account");
         }
 
         [HttpPost]
@@ -2239,8 +2343,9 @@ namespace HabitTrackerApp.Controllers
             var principal = new ClaimsPrincipal(identity);
 
             await HttpContext.SignInAsync("Cookies", principal);
+            HttpContext.Session.SetString("CaptchaPassed", "false");
             
-            return RedirectToAction("Index", "Habit");
+            return RedirectToAction("Captcha", "Account");
         }
         [HttpGet]
         public IActionResult CompleteProfile()

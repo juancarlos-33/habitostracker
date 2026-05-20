@@ -1,71 +1,121 @@
-﻿@model List<HabitTrackerApp.Models.FriendRequest>
+@model List<HabitTrackerApp.Models.FriendRequest>
+@using HabitTrackerApp.Models
 
 @{
     ViewData["Title"] = "Mis amigos";
     var myId = int.Parse(User.FindFirst("UserId").Value);
+    var users = ViewBag.FriendUsers as Dictionary<int, User> ?? new Dictionary<int, User>();
+    var onlineIds = ViewBag.OnlineIds as HashSet<string> ?? new HashSet<string>();
 }
 
-<div class="container mt-4">
+<style>
+.friends-page{max-width:1050px;margin:0 auto;padding:18px 0 70px;color:var(--text);}
+.friends-hero{display:flex;align-items:center;justify-content:space-between;gap:18px;margin-bottom:18px;padding:22px;border-radius:22px;background:var(--surface);border:1px solid var(--border);box-shadow:var(--shadow);}
+.friends-title{font-size:24px;font-weight:900;letter-spacing:0;margin:0;}
+.friends-sub{font-size:13px;color:var(--text-muted);margin-top:5px;}
+.friends-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;}
+.friends-btn{display:inline-flex;align-items:center;gap:7px;padding:10px 14px;border-radius:12px;border:1px solid var(--border);background:var(--surface-2);color:var(--text);font-size:13px;font-weight:800;text-decoration:none;transition:.16s;}
+.friends-btn.primary{border:0;background:linear-gradient(135deg,var(--primary),var(--accent));color:white;}
+.friends-btn:hover{transform:translateY(-1px);color:var(--primary);}
+.friends-btn.primary:hover{color:white;}
+.friends-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px;}
+.friend-card{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:16px;box-shadow:0 10px 28px rgba(15,23,42,.06);transition:.18s;}
+.friend-card:hover{transform:translateY(-2px);border-color:rgba(99,102,241,.26);box-shadow:0 16px 42px rgba(15,23,42,.10);}
+.friend-top{display:flex;align-items:center;gap:12px;min-width:0;}
+.friend-avatar{position:relative;width:54px;height:54px;border-radius:50%;flex:0 0 54px;}
+.friend-avatar img,.friend-letter{width:54px;height:54px;border-radius:50%;object-fit:cover;border:2px solid rgba(99,102,241,.22);}
+.friend-letter{display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,var(--primary),var(--accent));color:white;font-size:18px;font-weight:900;}
+.friend-online{position:absolute;right:1px;bottom:1px;width:13px;height:13px;border-radius:50%;background:#22c55e;border:2px solid var(--surface);}
+.friend-info{min-width:0;flex:1;}
+.friend-name{font-size:15px;font-weight:900;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.friend-full{font-size:12px;color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px;}
+.friend-meta{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin:13px 0 14px;}
+.friend-chip{font-size:11px;font-weight:800;padding:5px 8px;border-radius:999px;background:rgba(99,102,241,.09);color:var(--primary);}
+.friend-chip.online{background:rgba(34,197,94,.10);color:#16a34a;}
+.friend-card-actions{display:grid;grid-template-columns:1fr 42px;gap:8px;}
+.friend-main-action,.friend-icon-action{display:flex;align-items:center;justify-content:center;border-radius:12px;text-decoration:none;font-weight:800;font-size:12px;min-height:40px;}
+.friend-main-action{background:var(--surface-2);border:1px solid var(--border);color:var(--text);}
+.friend-icon-action{background:rgba(99,102,241,.10);color:var(--primary);border:1px solid rgba(99,102,241,.16);}
+.friends-empty{background:var(--surface);border:1px solid var(--border);border-radius:22px;padding:46px 22px;text-align:center;box-shadow:var(--shadow);}
+.friends-empty-icon{width:72px;height:72px;margin:0 auto 14px;border-radius:22px;background:rgba(99,102,241,.10);display:flex;align-items:center;justify-content:center;font-size:34px;}
+.friends-empty h3{font-size:19px;font-weight:900;margin:0 0 8px;color:var(--text);}
+.friends-empty p{max-width:380px;margin:0 auto 18px;color:var(--text-muted);font-size:13px;line-height:1.6;}
+body.bg-dark .friend-card{box-shadow:none;}
+@@media(max-width:640px){.friends-hero{align-items:flex-start;flex-direction:column}.friends-actions{width:100%;justify-content:stretch}.friends-btn{flex:1;justify-content:center}.friends-grid{grid-template-columns:1fr}}
+</style>
 
-    <h2 class="mb-4">👥 Mis amigos</h2>
+<div class="friends-page">
+    <section class="friends-hero">
+        <div>
+            <h1 class="friends-title">Mis amigos</h1>
+            <div class="friends-sub">@Model.Count conexión@(Model.Count == 1 ? "" : "es") aceptada@(Model.Count == 1 ? "" : "s") en tu círculo.</div>
+        </div>
+        <div class="friends-actions">
+            <a class="friends-btn" asp-controller="User" asp-action="FriendRequests">📩 Solicitudes</a>
+            <a class="friends-btn primary" asp-controller="User" asp-action="Index">➕ Buscar amigos</a>
+        </div>
+    </section>
 
-    <table class="table table-bordered text-center align-middle">
-
-        <thead class="table-light">
-
-            <tr>
-                <th>Foto</th>
-                <th>Usuario</th>
-                <th>Perfil</th>
-            </tr>
-
-        </thead>
-
-        <tbody>
-
-            @foreach (var friend in Model)
+    @if (!Model.Any())
+    {
+        <div class="friends-empty">
+            <div class="friends-empty-icon">👥</div>
+            <h3>Aún no tienes amigos agregados</h3>
+            <p>Explora usuarios, envía solicitudes y crea un círculo para compartir avances, mensajes y hábitos.</p>
+            <a class="friends-btn primary" asp-controller="User" asp-action="Index">Encontrar personas</a>
+        </div>
+    }
+    else
+    {
+        <div class="friends-grid">
+            @foreach (var friendship in Model)
             {
-                var friendUser = friend.SenderId == myId ? friend.ReceiverId : friend.SenderId;
+                var friendId = friendship.SenderId == myId ? friendship.ReceiverId : friendship.SenderId;
+                users.TryGetValue(friendId, out var friend);
+                var username = friend?.Username ?? $"Usuario {friendId}";
+                var image = friend?.ProfileImage ?? friend?.ProfilePicture;
+                var isOnline = onlineIds.Contains(friendId.ToString());
 
-                <tr>
-
-                    <td>
-                        👤
-                    </td>
-
-                    <td>
-                        Usuario @friendUser
-                    </td>
-
-                    <td>
-                        <div class="dropdown">
-
-                            <button class="btn btn-sm btn-light border"
-                                    type="button"
-                                    data-bs-toggle="dropdown">
-                                ⋮
-                            </button>
-
-                            <ul class="dropdown-menu">
-
-                                <li>
-                                    <a class="dropdown-item"
-                                       href="/Feedback/Create">
-                                        Enviar comentario
-                                    </a>
-                                </li>
-
-                            </ul>
-
+                <article class="friend-card">
+                    <div class="friend-top">
+                        <div class="friend-avatar">
+                            @if (!string.IsNullOrEmpty(image))
+                            {
+                                <img src="@image" alt="@username" />
+                            }
+                            else
+                            {
+                                <div class="friend-letter">@username.Substring(0, 1).ToUpper()</div>
+                            }
+                            @if (isOnline)
+                            {
+                                <span class="friend-online" title="En línea"></span>
+                            }
                         </div>
+                        <div class="friend-info">
+                            <div class="friend-name">@username</div>
+                            <div class="friend-full">@(string.IsNullOrEmpty(friend?.FullName) ? "Compañero de hábitos" : friend.FullName)</div>
+                        </div>
+                    </div>
 
-                    </td>
+                    <div class="friend-meta">
+                        <span class="friend-chip @(isOnline ? "online" : "")">@(isOnline ? "En línea" : "Amigo")</span>
+                        @if (friend?.IsPrivate == true)
+                        {
+                            <span class="friend-chip">Privado</span>
+                        }
+                        @if (friend?.IsPremium == true)
+                        {
+                            <span class="friend-chip">Premium</span>
+                        }
+                    </div>
 
-                </tr>
+                    <div class="friend-card-actions">
+                        <a class="friend-main-action" href="/User/Profile/@friendId">Ver perfil</a>
+                        <a class="friend-icon-action" href="/Message/Chat/@friendId" title="Enviar mensaje">💬</a>
+                    </div>
+                </article>
             }
-
-        </tbody>
-
-    </table>
-
+        </div>
+    }
 </div>

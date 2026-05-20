@@ -356,7 +356,23 @@ namespace HabitTrackerApp.Controllers
             var userId = int.Parse(User.FindFirst("UserId").Value);
             var friends = _context.FriendRequests
                 .Where(r => (r.SenderId == userId || r.ReceiverId == userId) && r.Status == "Accepted")
+                .OrderByDescending(r => r.CreatedAt)
                 .ToList();
+
+            var friendIds = friends
+                .Select(r => r.SenderId == userId ? r.ReceiverId : r.SenderId)
+                .Distinct()
+                .ToList();
+
+            var friendUsers = _context.Users
+                .Where(u => friendIds.Contains(u.Id))
+                .ToDictionary(u => u.Id, u => u);
+
+            var onlineIds = _onlineUsers.GetOnlineUsers().ToHashSet();
+
+            ViewBag.FriendUsers = friendUsers;
+            ViewBag.OnlineIds = onlineIds;
+
             return View(friends);
         }
 

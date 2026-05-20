@@ -329,6 +329,35 @@ body.bg-dark .ht-bn-item { color: #475569; }
 body.bg-dark .ht-bn-item.active { color: #818cf8; }
 body.bg-dark .modal-content .text-muted { color: #94a3b8 !important; }
 body.bg-dark .modal-content .btn-outline-secondary { border-color: #475569; color: #94a3b8; }
+.guest-warning-modal .modal-content{
+    background:var(--surface) !important;
+    color:var(--text) !important;
+    border:1px solid var(--border) !important;
+    border-radius:22px !important;
+}
+.guest-warning-icon{
+    width:56px;height:56px;margin:0 auto 14px;border-radius:18px;
+    display:flex;align-items:center;justify-content:center;font-size:28px;
+    background:rgba(99,102,241,0.10);color:var(--primary);
+}
+.guest-warning-panel{
+    background:var(--surface-2);
+    border:1px solid var(--border);
+    border-radius:14px;
+    padding:12px 14px;
+    color:var(--text-muted);
+}
+.guest-warning-panel strong{display:block;color:var(--text);margin-bottom:6px;}
+.guest-warning-panel div{line-height:1.55;}
+body.bg-dark .guest-warning-modal .btn-outline-secondary{
+    background:#0f172a;
+    color:#cbd5e1 !important;
+    border-color:rgba(255,255,255,0.12);
+}
+body.bg-dark .guest-warning-modal .btn-outline-secondary:hover{
+    background:#1e293b;
+    color:#f8fafc !important;
+}
 
 /* ══════════════════════════════════
    MODAL
@@ -603,15 +632,15 @@ else
 </div>
 
 <!-- MODAL GUEST -->
-<div class="modal fade" id="guestModal" tabindex="-1">
+<div class="modal fade guest-warning-modal" id="guestModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-0 shadow-lg">
             <div class="modal-body text-center p-4">
-                <div style="font-size:44px;margin-bottom:12px;">🔐</div>
+                <div class="guest-warning-icon">🔐</div>
                 <h4 class="fw-bold mb-2">Modo invitado</h4>
                 <p class="text-muted small mb-3">Puedes probar la app, pero tu cuenta invitada tiene límites importantes.</p>
-                <div class="text-start small mb-3" style="background:#f8fafc;border:1px solid #e5e7eb;border-radius:14px;padding:12px 14px;">
-                    <div class="fw-semibold mb-1">Riesgos de seguir como invitado</div>
+                <div class="guest-warning-panel text-start small mb-3">
+                    <strong>Riesgos de seguir como invitado</strong>
                     <div>• Puedes perder acceso si olvidas tu usuario invitado.</div>
                     <div>• No podrás socializar libremente con amigos, grupos y mensajes.</div>
                     <div>• Algunas acciones estarán bloqueadas por seguridad.</div>

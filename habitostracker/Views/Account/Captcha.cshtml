@@ -1,0 +1,57 @@
+@{
+    ViewData["Title"] = "Verificación";
+    Layout = "_LayoutLogin";
+    var siteKey = ViewBag.RecaptchaSiteKey as string ?? "";
+    var question = ViewBag.LocalCaptchaQuestion as string ?? "";
+}
+
+@if (!string.IsNullOrWhiteSpace(siteKey))
+{
+    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+}
+
+<style>
+body{min-height:100vh;background:#03060f;color:white;font-family:'Inter',system-ui,sans-serif;display:flex;align-items:center;justify-content:center;padding:22px;}
+.captcha-shell{width:min(92vw,430px);background:rgba(8,12,24,.92);border:1px solid rgba(255,255,255,.09);border-radius:26px;padding:30px;box-shadow:0 30px 90px rgba(0,0,0,.55);text-align:center;}
+.captcha-mark{width:66px;height:66px;margin:0 auto 16px;border-radius:20px;background:linear-gradient(135deg,#6366f1,#2563eb);display:flex;align-items:center;justify-content:center;font-size:30px;box-shadow:0 12px 36px rgba(99,102,241,.35);}
+.captcha-title{font-size:24px;font-weight:900;margin:0 0 7px;}
+.captcha-copy{font-size:13px;line-height:1.65;color:rgba(255,255,255,.48);margin:0 0 22px;}
+.captcha-local{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.09);border-radius:18px;padding:16px;margin-bottom:18px;text-align:left;}
+.captcha-label{display:block;font-size:12px;font-weight:800;color:rgba(255,255,255,.72);margin-bottom:8px;}
+.captcha-question{font-size:20px;font-weight:900;color:white;margin-bottom:10px;}
+.captcha-input{width:100%;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.07);border-radius:14px;padding:13px 14px;color:white;outline:none;font:inherit;font-weight:800;text-align:center;}
+.captcha-input:focus{border-color:#6366f1;box-shadow:0 0 0 4px rgba(99,102,241,.12);}
+.captcha-submit{width:100%;border:0;border-radius:15px;padding:14px;background:linear-gradient(135deg,#6366f1,#2563eb);color:white;font-weight:900;cursor:pointer;box-shadow:0 12px 30px rgba(99,102,241,.35);}
+.captcha-error{border:1px solid rgba(239,68,68,.28);background:rgba(239,68,68,.10);color:#fecaca;border-radius:14px;padding:10px 12px;font-size:12px;font-weight:800;margin-bottom:16px;}
+.g-recaptcha{display:inline-block;margin-bottom:18px;max-width:100%;}
+</style>
+
+<main class="captcha-shell">
+    <div class="captcha-mark">✓</div>
+    <h1 class="captcha-title">Verificación rápida</h1>
+    <p class="captcha-copy">Antes de entrar a tus hábitos, confirma que eres una persona. Esto aplica para invitado, login normal y Google.</p>
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="captcha-error">@TempData["Error"]</div>
+    }
+
+    <form asp-controller="Account" asp-action="Captcha" method="post">
+        @Html.AntiForgeryToken()
+
+        @if (!string.IsNullOrWhiteSpace(siteKey))
+        {
+            <div class="g-recaptcha" data-sitekey="@siteKey"></div>
+        }
+        else
+        {
+            <div class="captcha-local">
+                <label class="captcha-label" for="captchaAnswer">Reto local</label>
+                <div class="captcha-question">@question</div>
+                <input id="captchaAnswer" name="captchaAnswer" class="captcha-input" inputmode="numeric" autocomplete="off" placeholder="Respuesta" required />
+            </div>
+        }
+
+        <button class="captcha-submit" type="submit">Continuar</button>
+    </form>
+</main>

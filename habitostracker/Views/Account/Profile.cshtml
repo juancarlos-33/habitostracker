@@ -131,6 +131,17 @@
                     <div class="my-meta-item">📅 Miembro desde @Model.CreatedAt.Value.ToString("MMM yyyy", culture)</div>
                 }
 
+                <div class="my-settings-box">
+                    <button type="button" class="my-settings-btn" onclick="openProfileSettings()">
+                        <span class="my-settings-icon">⚙️</span>
+                        <span>
+                            <strong>Configuración</strong>
+                            <small>Privacidad, seguridad y preferencias</small>
+                        </span>
+                        <span class="my-settings-arrow">›</span>
+                    </button>
+                </div>
+
                 <button type="button" id="removePhotoBtn" data-no-loader class="my-remove-photo-btn">
                     🗑️ Eliminar foto de perfil
                 </button>
@@ -145,7 +156,7 @@
                 <input type="file" id="imageInput" name="profilePhoto" accept="image/*" style="display:none;" />
 
                 <!-- ══ INFO PERSONAL ══ -->
-                <div class="my-card">
+                <div class="my-card" id="privacySettings">
                     <div class="my-card-header">
                         <div>
                             <div class="my-card-title">✏️ Información personal</div>
@@ -645,6 +656,15 @@
 .my-card-header { margin-bottom:20px; }
 .my-card-title { font-size:15px; font-weight:800; color:white; margin-bottom:3px; }
 .my-card-sub { font-size:12px; color:rgba(255,255,255,0.35); }
+.my-settings-box{margin:16px 0 12px;}
+.my-settings-btn{width:100%;display:flex;align-items:center;gap:12px;text-align:left;border:1px solid rgba(255,255,255,0.09);background:rgba(255,255,255,0.055);color:white;border-radius:16px;padding:12px 13px;cursor:pointer;font-family:inherit;transition:.18s;}
+.my-settings-btn:hover{background:rgba(99,102,241,0.14);border-color:rgba(99,102,241,0.28);transform:translateY(-1px);}
+.my-settings-icon{width:34px;height:34px;border-radius:11px;background:rgba(99,102,241,0.16);display:flex;align-items:center;justify-content:center;flex:0 0 34px;}
+.my-settings-btn strong{display:block;font-size:13px;font-weight:900;margin-bottom:2px;}
+.my-settings-btn small{display:block;font-size:11px;color:rgba(255,255,255,0.42);line-height:1.25;}
+.my-settings-arrow{margin-left:auto;color:rgba(255,255,255,0.45);font-size:25px;line-height:1;}
+#privacySettings.settings-focus{animation:settingsPulse 1.15s ease;}
+@@keyframes settingsPulse{0%{box-shadow:0 0 0 0 rgba(99,102,241,.45);}100%{box-shadow:0 0 0 18px rgba(99,102,241,0);}}
 
 /* ══ AVATAR ZONE ══ */
 .my-avatar-zone { display:flex; align-items:center; gap:16px; margin-bottom:18px; }
@@ -1433,6 +1453,15 @@ function openFollowModal(type) {
 
 function guardarPerfil() {
     document.querySelector('form[action*="Profile"]').submit();
+}
+
+function openProfileSettings() {
+    const section = document.getElementById('privacySettings');
+    if (!section) return;
+    section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    section.classList.remove('settings-focus');
+    void section.offsetWidth;
+    section.classList.add('settings-focus');
 }
 // ========== FUNCIONES PARA LIKES, SHARE, SAVE ==========
 function revealSensitive(postId) {
