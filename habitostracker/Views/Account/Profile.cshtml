@@ -370,6 +370,7 @@
         var commentCounts = ViewBag.CommentCounts as Dictionary<int, int> ?? new Dictionary<int, int>();
         var myLikes = ViewBag.MyLikes as HashSet<int> ?? new HashSet<int>();
         var myId = int.Parse(User.FindFirst("UserId").Value);
+        var repostedIds = ViewBag.RepostedIds as List<int> ?? new List<int>();
     }
     @if (!misPosts.Any())
     {
@@ -395,6 +396,12 @@
 
                 <article class="post-card" id="post-@post.Id" style="background:rgba(255,255,255,0.05); border-radius:20px; padding:16px; margin-bottom:20px; border:1px solid rgba(255,255,255,0.08); transition:0.2s;">
                     <!-- HEADER -->
+                    @if (repostedIds.Contains(post.Id) && post.UserId != myId)
+{
+    <div style="font-size:12px; color:rgba(255,255,255,0.4); margin-bottom:8px;">
+        🔁 Reposteado
+    </div>
+}
                     <div class="post-header" style="display:flex; justify-content:space-between; margin-bottom:12px;">
                         <div style="display:flex; gap:10px;">
                             <a asp-controller="User" asp-action="Profile" asp-route-id="@post.UserId" class="avatar-link">
