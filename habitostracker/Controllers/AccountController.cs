@@ -1301,11 +1301,16 @@ namespace HabitTrackerApp.Controllers
                 ViewBag.Following = _context.Follows.Count(f => f.FollowerId == myId);
 
                 // Cargar publicaciones del usuario (mi perfil)
-                var misPosts = _context.Posts
-      .Include(p => p.User)
-      .Where(p => p.UserId == me.Id)
-      .OrderByDescending(p => p.CreatedAt)
+                var misPostIds = _context.Reposts
+      .Where(r => r.UserId == myId)
+      .Select(r => r.PostId)
       .ToList();
+
+                var misPosts = _context.Posts
+                    .Include(p => p.User)
+                    .Where(p => p.UserId == me.Id || misPostIds.Contains(p.Id))
+                    .OrderByDescending(p => p.CreatedAt)
+                    .ToList();
                 ViewBag.UserPosts = misPosts;
 
                 // ========== ESTADÍSTICAS DE LIKES Y COMENTARIOS ==========
@@ -1354,8 +1359,14 @@ namespace HabitTrackerApp.Controllers
             ViewBag.FollowingCount = _context.Follows.Count(f => f.FollowerId == user.Id);
 
             // Cargar publicaciones del otro usuario
+            var repostedIds = _context.Reposts
+     .Where(r => r.UserId == user.Id)
+     .Select(r => r.PostId)
+     .ToList();
+
             var userPosts = _context.Posts
-                .Where(p => p.UserId == user.Id)
+                .Include(p => p.User)
+                .Where(p => p.UserId == user.Id || repostedIds.Contains(p.Id))
                 .OrderByDescending(p => p.CreatedAt)
                 .ToList();
             ViewBag.UserPosts = userPosts;
