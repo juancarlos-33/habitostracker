@@ -861,41 +861,7 @@ body.bg-dark .hx-btn.ghost{background:#111827!important;border-color:rgba(255,25
         </div>
     </div>
 
-    <!-- DERECHA (desktop) -->
-    <div class="hx-right">
-        <div class="hx-prog">
-            <div class="hx-ptitle">📊 Progreso de hoy</div>
-            <div class="hx-pitem">
-                <div class="hx-plbl"><span>Completados</span><span>@completedToday / @totalHabits</span></div>
-                <div class="hx-pbar"><div class="hx-pfill g" id="prog1" style="width:0%"></div></div>
-            </div>
-            <div class="hx-pitem">
-                <div class="hx-plbl"><span>Tasa de éxito</span><span>@completionRate%</span></div>
-                <div class="hx-pbar"><div class="hx-pfill b" id="prog2" style="width:0%"></div></div>
-            </div>
-            <div class="hx-pitem">
-                <div class="hx-plbl"><span>Racha promedio</span><span>@avgStreak días</span></div>
-                <div class="hx-pbar"><div class="hx-pfill o" id="prog3" style="width:0%"></div></div>
-            </div>
-        </div>
-        <div class="hx-chart">
-            <div class="hx-chtitle">📈 Últimos 7 días</div>
-            <div class="hx-chwrap"><canvas id="habitChart"></canvas></div>
-        </div>
-        <div class="hx-cal">
-            <div class="hx-caltitle">📅 Actividad reciente</div>
-            <div class="hx-calhd">
-                @foreach (var d in new[]{"D","L","M","M","J","V","S"}) { <span>@d</span> }
-            </div>
-            <div class="hx-calgrid" id="calGrid"></div>
-        </div>
-        <div class="hx-tips">
-            <div class="hx-tipstitle">💡 Tips del día</div>
-            <div class="hx-tip"><span class="hx-tipico">🎯</span><span class="hx-tiptxt"><strong>Regla de 2 min:</strong> Si tarda menos de 2 minutos, hazlo ahora.</span></div>
-            <div class="hx-tip"><span class="hx-tipico">🔗</span><span class="hx-tiptxt"><strong>Apilamiento:</strong> Encadena hábitos nuevos con rutinas ya establecidas.</span></div>
-            <div class="hx-tip"><span class="hx-tipico">🏆</span><span class="hx-tiptxt"><strong>No rompas la cadena:</strong> Cada día refuerza tu identidad.</span></div>
-        </div>
-    </div>
+
 </div>
 
 <!-- STORY VIEWER (estructura completa) -->
