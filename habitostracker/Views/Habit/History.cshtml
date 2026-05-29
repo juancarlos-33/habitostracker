@@ -71,10 +71,10 @@
             </table>
         </div>
 
-        <div class="hist-footer">
-            <span class="hist-count">@Model.Count registro@(Model.Count != 1 ? "s" : "")</span>
-            <button class="hist-btn-secondary" onclick="window.print()">🖨 Imprimir</button>
-        </div>
+      <div class="hist-footer">
+    <span class="hist-count">@Model.Count registro@(Model.Count != 1 ? "s" : "")</span>
+    <button class="hist-btn-secondary hist-no-print" onclick="window.print()">🖨 Imprimir</button>
+</div>
     }
 </div>
 
@@ -105,6 +105,12 @@
     font-weight: 800;
     color: #111827;
     margin: 0 0 2px;
+}
+
+@@media print {
+    .hist-no-print {
+        display: none !important;
+    }
 }
 
 .hist-subtitle {
@@ -223,6 +229,94 @@
     box-shadow: 0 2px 12px rgba(0,0,0,0.06);
     border: 1px solid rgba(0,0,0,0.05);
     margin-bottom: 16px;
+}
+
+@@media print {
+    /* Ocultar navegación y elementos innecesarios */
+    nav, header, footer, .hist-filter-card, .hist-footer button {
+        display: none !important;
+    }
+
+    body {
+        background: white !important;
+        color: black !important;
+        font-size: 12px;
+    }
+
+    .hist-page {
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+
+    .hist-header {
+        margin-bottom: 16px;
+    }
+
+    .hist-title {
+        font-size: 18px;
+        color: black !important;
+    }
+
+    .hist-subtitle {
+        font-size: 12px;
+        color: #444 !important;
+    }
+
+    .hist-table-card {
+        box-shadow: none !important;
+        border: 1px solid #ccc;
+        border-radius: 0 !important;
+    }
+
+    .hist-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .hist-table th,
+    .hist-table td {
+        border: 1px solid #ccc;
+        padding: 8px 12px;
+        text-align: left;
+        color: black !important;
+    }
+
+    .hist-table thead {
+        background-color: #f0f0f0 !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+
+    .hist-pill {
+        border: 1px solid #ccc;
+        padding: 2px 8px;
+        border-radius: 4px;
+        font-size: 11px;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+
+    .hist-pill-ok {
+        background-color: #d4edda !important;
+        color: #155724 !important;
+    }
+
+    .hist-pill-fail {
+        background-color: #f8d7da !important;
+        color: #721c24 !important;
+    }
+
+    .hist-date-day {
+        font-size: 10px;
+        color: #666 !important;
+    }
+
+    .hist-count {
+        display: block;
+        margin-top: 12px;
+        font-size: 11px;
+        color: #444;
+    }
 }
 
 .hist-table {
