@@ -326,15 +326,7 @@ body.bg-dark .detail-ring-info-sub { color: #94a3b8 !important; }
     <div class="detail-hero">
         <div class="detail-hero-top">
             <a href="/Habit/Index" class="detail-back">← Mis hábitos</a>
-            @{
-                var statusLabel = Model.LastCheckDate == DateTime.Today && Model.Completed ? "✔ Completado hoy" :
-                                  Model.LastCheckDate == DateTime.Today && !Model.Completed ? "✖ Fallado hoy" : "⏳ Pendiente hoy";
-                var statusColor = Model.LastCheckDate == DateTime.Today && Model.Completed ? "#22c55e" :
-                                  Model.LastCheckDate == DateTime.Today && !Model.Completed ? "#ef4444" : "#f59e0b";
-            }
-            <span style="padding:6px 14px;border-radius:20px;font-size:12px;font-weight:700;background:rgba(255,255,255,0.08);color:@statusColor;position:relative;z-index:1;">
-                @statusLabel
-            </span>
+        
         </div>
         <div class="detail-habit-name">@Model.Name</div>
         <div class="detail-habit-meta">📅 Creado el @Model.CreatedDate.ToString("dd MMM yyyy", culture)</div>
