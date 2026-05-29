@@ -88,9 +88,16 @@
                 </form>
 
                 <!-- Aquí iría la lista de comentarios existentes (puedes cargarlos desde el controlador) -->
-                <div id="commentsList">
-                    @await Component.InvokeAsync("PostComments", new { postId = Model.Id })
-                </div>
+             <div id="commentsList">
+    @foreach (var comment in ViewBag.Comments as List<HabitTrackerApp.Models.PostComment> ?? new List<HabitTrackerApp.Models.PostComment>())
+    {
+        <div style="padding:10px 0; border-bottom:1px solid #eee;">
+            <strong>@comment.Username</strong>
+            <span style="font-size:12px; color:#999; margin-left:8px;">@comment.CreatedAt.ToString("dd MMM yyyy · hh:mm tt")</span>
+            <p style="margin:4px 0 0;">@comment.Comment</p>
+        </div>
+    }
+</div>
             }
             else
             {

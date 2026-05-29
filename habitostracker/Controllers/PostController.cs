@@ -414,6 +414,11 @@ namespace HabitTrackerApp.Controllers
             if (post == null)
                 return NotFound();
 
+            ViewBag.Comments = _context.PostComments
+                .Where(c => c.PostId == id)
+                .OrderByDescending(c => c.CreatedAt)
+                .ToList();
+
             return View(post);
         }
 
