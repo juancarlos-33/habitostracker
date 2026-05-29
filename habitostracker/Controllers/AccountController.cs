@@ -1805,9 +1805,7 @@ namespace HabitTrackerApp.Controllers
                 var result = await HttpContext.AuthenticateAsync("External");
                 if (!result.Succeeded)
                 {
-                    await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-                    foreach (var cookie in HttpContext.Request.Cookies.Keys)
-                        HttpContext.Response.Cookies.Delete(cookie);
+                    await HttpContext.SignOutAsync("External");
                     return RedirectToAction("Login");
                 }
 
@@ -1817,12 +1815,9 @@ namespace HabitTrackerApp.Controllers
                 var userCheck = _context.Users.FirstOrDefault(u => u.Email == email);
                 if (userCheck != null && userCheck.IsIpBlocked)
                 {
-                    await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-                    foreach (var cookie in HttpContext.Request.Cookies.Keys)
-                        HttpContext.Response.Cookies.Delete(cookie);
+                    await HttpContext.SignOutAsync("External");
                     return Redirect("/Account/Login?blocked=true");
                 }
-
                 var name = result.Principal.FindFirst(ClaimTypes.Name)?.Value;
                 var picture = result.Principal.FindFirst("picture")?.Value;
 
