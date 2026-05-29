@@ -121,21 +121,13 @@ body.bg-dark .stats-progress-track { background:#2d3748 !important; }
 
     <!-- KPIs -->
     <div class="stats-kpis">
-        <div class="stats-kpi">
-            <div class="stats-kpi-icon">✅</div>
-            <div class="stats-kpi-val green">@totalCompleted</div>
-            <div class="stats-kpi-label">Completados</div>
-        </div>
+      
         <div class="stats-kpi">
             <div class="stats-kpi-icon">❌</div>
             <div class="stats-kpi-val red">@totalFailed</div>
             <div class="stats-kpi-label">Fallados</div>
         </div>
-        <div class="stats-kpi">
-            <div class="stats-kpi-icon">📈</div>
-            <div class="stats-kpi-val blue">@overallRate%</div>
-            <div class="stats-kpi-label">Tasa de éxito</div>
-        </div>
+      
         <div class="stats-kpi">
             <div class="stats-kpi-icon">🔥</div>
             <div class="stats-kpi-val yellow">@totalStreak</div>
@@ -162,43 +154,7 @@ body.bg-dark .stats-progress-track { background:#2d3748 !important; }
         </div>
     }
 
-    <!-- GRÁFICAS -->
-    <div class="stats-grid">
-
-        <!-- Tendencia semanal -->
-        <div class="stats-card">
-            <div class="stats-card-title">
-                📉 Tendencia semanal
-                <span class="stats-card-badge">4 semanas</span>
-            </div>
-            <div class="stats-chart-wrap">
-                <canvas id="trendChart"></canvas>
-            </div>
-        </div>
-
-        <!-- Por día de semana -->
-        <div class="stats-card">
-            <div class="stats-card-title">
-                📅 Mejor día de la semana
-                <span class="stats-card-badge">90 días</span>
-            </div>
-            <div class="stats-chart-wrap">
-                <canvas id="dayChart"></canvas>
-            </div>
-        </div>
-
-        <!-- Por mes -->
-        <div class="stats-card stats-card-full">
-            <div class="stats-card-title">
-                🗓️ Comparativa mensual
-                <span class="stats-card-badge">Últimos 3 meses</span>
-            </div>
-            <div class="stats-chart-wrap">
-                <canvas id="monthChart"></canvas>
-            </div>
-        </div>
-
-    </div>
+ 
 
     <!-- PROGRESO POR HÁBITO -->
     <div class="stats-card">
