@@ -370,7 +370,7 @@
         var commentCounts = ViewBag.CommentCounts as Dictionary<int, int> ?? new Dictionary<int, int>();
         var myLikes = ViewBag.MyLikes as HashSet<int> ?? new HashSet<int>();
         var myId = int.Parse(User.FindFirst("UserId").Value);
-        var repostedIds = ViewBag.RepostedIds as List<int> ?? new List<int>();
+     var repostedIds = (ViewBag.RepostedIds as IEnumerable<int>)?.ToList() ?? new List<int>();
     }
     @if (!misPosts.Any())
     {

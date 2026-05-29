@@ -1312,6 +1312,7 @@ namespace HabitTrackerApp.Controllers
                     .OrderByDescending(p => p.CreatedAt)
                     .ToList();
                 ViewBag.UserPosts = misPosts;
+                ViewBag.RepostedIds = misPostIds.ToList();
 
                 // ========== ESTADÍSTICAS DE LIKES Y COMENTARIOS ==========
                 var postIds = misPosts.Select(p => p.Id).ToList();
@@ -1370,6 +1371,7 @@ namespace HabitTrackerApp.Controllers
                 .OrderByDescending(p => p.CreatedAt)
                 .ToList();
             ViewBag.UserPosts = userPosts;
+            ViewBag.RepostedIds = repostedIds.ToList();
 
             // ========== ESTADÍSTICAS DE LIKES Y COMENTARIOS ==========
             var userPostIds = userPosts.Select(p => p.Id).ToList();
