@@ -993,6 +993,7 @@ function cerrarAnuncioPosts() {
 
 // ==================== MODAL COMENTARIOS ====================
 let currentPostId = null;
+let commentsDisabled = false;
 let commentConnection = null;
 let selectedCommentImage = null;
 let commentsCache = [];
@@ -1008,7 +1009,8 @@ async function openCommentsModal(postId) {
     modal.style.display = 'flex';
     document.body.style.overflow = 'hidden';
     document.body.classList.add('modal-open');
-    document.addEventListener('keydown', handleEscapeKey);
+document.removeEventListener('keydown', handleEscapeKey);
+document.addEventListener('keydown', handleEscapeKey);
     const loader = document.getElementById('ht-loader');
     if (loader) {
         loader.style.display = 'none';
@@ -1023,8 +1025,10 @@ async function openCommentsModal(postId) {
         
         const data = await res.json();
         
-        if (data.success) {
-            renderComments(data.comments || [], data.commentsDisabled || false);
+      if (data.success) {
+    commentsCache = data.comments || [];
+    commentsDisabled = data.commentsDisabled || false;
+    renderComments(commentsCache, commentsDisabled);
             
             const subtitle = document.getElementById('commentsModalSubtitle');
             if (subtitle) subtitle.textContent = `${data.comments?.length || 0} comentario${(data.comments?.length || 0) === 1 ? '' : 's'}`;
@@ -1163,7 +1167,7 @@ function renderRepliesPreview(replies, commentId) {
 function setCommentsSort(sort) {
     commentsSort = sort;
     document.querySelectorAll('.cm-tab').forEach(btn => btn.classList.toggle('active', btn.dataset.sort === sort));
-    renderComments(commentsCache, false);
+   renderComments(commentsCache, commentsDisabled);
 }
 
 function goToUserProfile(userId) {
@@ -1500,7 +1504,9 @@ function closeCommentsModal() {
     commentsCache = [];
 
     // Remover listener de Escape (evita duplicados)
-    document.removeEventListener('keydown', handleEscapeKey);
+   document.removeEventListener('keydown', handleEscapeKey);
+commentsCache = [];
+commentsDisabled = false;
 
     console.log("✅ Modal cerrado completamente");
 }
