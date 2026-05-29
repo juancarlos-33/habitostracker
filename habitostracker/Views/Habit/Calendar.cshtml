@@ -1,9 +1,6 @@
-﻿<div id="cal-content">
-
-@model List<HabitTrackerApp.Models.HabitHistory>
+﻿@model List<HabitTrackerApp.Models.HabitHistory>
 
 @{
-    var todayFirstDay = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1).ToString("yyyy-MM-dd");
     ViewData["Title"] = "Calendario";
 
     int year = DateTime.Today.Year;
@@ -217,11 +214,11 @@ body.bg-dark .cal-best-day { background: rgba(34,197,94,0.08) !important; }
                 <div class="cal-hero-title">📅 Calendario de hábitos</div>
                 <div class="cal-hero-sub">Visualiza tu progreso mes a mes</div>
             </div>
-          <div class="cal-nav">
-    <a class="cal-nav-btn" href="#" onclick="loadMonth('@prevMonth'); return false;">‹</a>
-    <div class="cal-month-label">@monthName</div>
-    <a class="cal-nav-btn" href="#" onclick="loadMonth('@nextMonth'); return false;">›</a>
-</div>
+            <div class="cal-nav">
+                <a class="cal-nav-btn" asp-action="Calendar" asp-route-month="@prevMonth">‹</a>
+                <div class="cal-month-label">@monthName</div>
+                <a class="cal-nav-btn" asp-action="Calendar" asp-route-month="@nextMonth">›</a>
+            </div>
         </div>
 
        
@@ -317,37 +314,3 @@ body.bg-dark .cal-best-day { background: rgba(34,197,94,0.08) !important; }
     </div>
 
 </div>
-</div>
-
-                    <script>
-const currentMonth = '@firstDay.ToString("yyyy-MM-dd")';
-const todayMonth = '@todayFirstDay';
-
-async function loadMonth(month) {
-    // Bloquear ir atrás del mes actual si no hay fallos
-    if (month < todayMonth) {
-        const hasFails = await checkFails(month);
-        if (!hasFails) return;
-    }
-
-    const res = await fetch(`/Habit/Calendar?month=${month}`, {
-        headers: { 'X-Requested-With': 'XMLHttpRequest' }
-    });
-    const html = await res.text();
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(html, 'text/html');
-    const newContent = doc.getElementById('cal-content');
-    if (newContent) {
-        document.getElementById('cal-content').innerHTML = newContent.innerHTML;
-    }
-    history.pushState(null, '', `?month=${month}`);
-}
-
-async function checkFails(month) {
-    const res = await fetch(`/Habit/Calendar?month=${month}`, {
-        headers: { 'X-Requested-With': 'XMLHttpRequest' }
-    });
-    const html = await res.text();
-   return html.includes('cal-level-failed');
-}
-</script>
