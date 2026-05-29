@@ -103,8 +103,8 @@
                            class="report-btn view">
                             👀 Ver post
                         </a>
-                      <a href="#" class="report-btn delete"
-   onclick="event.preventDefault(); showConfirm({icon:'🗑️',title:'Eliminar publicación',message:'La publicación y todos sus comentarios serán eliminados permanentemente.',confirmText:'🗑 Eliminar',confirmColor:'#ef4444',onConfirm:()=>window.location.href='@Url.Action("Delete","Post",new{id=report.PostId})'})">
+                   <a href="#" class="report-btn delete"
+   onclick="event.preventDefault(); showConfirm({icon:'🗑️',title:'Eliminar publicación',message:'La publicación y todos sus comentarios serán eliminados permanentemente.',confirmText:'🗑 Eliminar',confirmColor:'#ef4444',onConfirm:()=>deletePost(@report.PostId)})">
     🗑 Eliminar
 </a>
                     </div>
@@ -114,7 +114,26 @@
         </div>
     }
 </div>
+<script>
 
+function deletePost(postId) {
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = '/Post/Delete/' + postId;
+    
+    const token = document.querySelector('input[name="__RequestVerificationToken"]');
+    if (token) {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = '__RequestVerificationToken';
+        input.value = token.value;
+        form.appendChild(input);
+    }
+    
+    document.body.appendChild(form);
+    form.submit();
+}
+</script>
 <style>
 .reports-page { max-width: 1000px; margin: 0 auto; }
 
