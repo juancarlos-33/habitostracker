@@ -55,7 +55,7 @@ body.bg-dark{
 .hx-alert{padding:12px 18px;border-radius:14px;margin-bottom:14px;font-size:14px;font-weight:600;display:flex;align-items:center;gap:8px;}
 .hx-alert.danger{background:rgba(239,68,68,0.08);color:var(--red);border:1px solid rgba(239,68,68,0.2);}
 .hx-alert.success{background:rgba(0,196,140,0.08);color:var(--green);border:1px solid rgba(0,196,140,0.2);}
-.hx-page{max-width:1100px;margin:0 auto;font-family:'DM Sans',sans-serif;color:var(--text);padding-bottom:70px;}
+.hx-page{max-width:100%;margin:0 auto;font-family:'DM Sans',sans-serif;color:var(--text);padding-bottom:70px;padding-left:20px;padding-right:20px;}
 
 /* HERO */
 .hx-hero{position:relative;border-radius:26px;overflow:hidden;margin-bottom:16px;padding:24px 26px 22px;}
@@ -111,7 +111,7 @@ body.bg-dark .hx-sinner{background:#1e293b;border-color:var(--card);}
 .hx-sadd{position:absolute;bottom:-1px;right:-1px;width:18px;height:18px;border-radius:50%;background:var(--accent);color:white;font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center;border:2px solid var(--card);}
 .hx-sname{font-size:10px;font-weight:600;color:var(--muted);text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:66px;}
 
-.hx-body{display:grid;grid-template-columns:1fr 340px;gap:16px;align-items:start;}
+.hx-body{display:grid;grid-template-columns:1fr;gap:16px;align-items:start;}
 .hx-left{display:flex;flex-direction:column;gap:14px;}
 .hx-right{display:flex;flex-direction:column;gap:14px;}
 
@@ -145,7 +145,7 @@ body.bg-dark .hx-goal-modal-card{box-shadow:0 28px 80px rgba(0,0,0,0.55);}
 .hx-kpi.locked-k:hover{opacity:0.8;transform:translateY(-1px);}
 
 /* KPI */
-.hx-kpi-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;}
+.hx-kpi-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
 .hx-kpi{background:var(--card);border-radius:var(--r2);border:1px solid var(--border);padding:16px 14px;display:flex;align-items:center;gap:12px;text-decoration:none;color:var(--text);transition:0.22s;position:relative;overflow:hidden;}
 .hx-kpi::after{content:'';position:absolute;top:0;left:0;right:0;height:2px;}
 .hx-kpi.kb::after{background:linear-gradient(90deg,#3b82f6,#6366f1);}
