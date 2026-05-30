@@ -250,42 +250,7 @@ namespace HabitTrackerApp.Controllers
             return RedirectToAction("Index");
         }
 
-        // ✅ COMPLETE
-        public IActionResult Complete(int id)
-        {
-            var userId = GetUserId();
-            var habit = _context.Habits.FirstOrDefault(h => h.Id == id && h.UserId == userId);
-            if (habit == null) return NotFound();
-
-            var today = DateTime.Today;
-
-            if (habit.LastCheckDate == null)
-                habit.StreakDays = 1;
-            else if (habit.LastCheckDate.Value.Date == today.AddDays(-1))
-                habit.StreakDays += 1;
-            else if (habit.LastCheckDate.Value.Date != today)
-                habit.StreakDays = 1;
-
-            if (habit.StreakDays > habit.MaxStreak)
-                habit.MaxStreak = habit.StreakDays;
-
-            habit.Completed = true;
-            habit.LastCheckDate = today;
-
-            _context.HabitHistories.Add(new HabitHistory
-            {
-                HabitId = habit.Id,
-                HabitName = habit.Name,
-                Date = today,
-                Completed = true
-            });
-
-            CreateAchievementsIfNeeded(habit);
-            _context.SaveChanges();
-
-            return RedirectToAction("Index");
-        }
-
+       
         // ❌ FAIL
       
 
