@@ -1280,10 +1280,7 @@ namespace HabitTrackerApp.Controllers
         public IActionResult TestLatencia()
         {
             var sw = System.Diagnostics.Stopwatch.StartNew();
-
-            // Consulta COUNT a la tabla más importante
             var totalUsuarios = _context.Users.Count();
-
             sw.Stop();
 
             return Json(new
