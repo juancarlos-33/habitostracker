@@ -1274,6 +1274,8 @@ namespace HabitTrackerApp.Controllers
             return RedirectToAction("ConfirmEmail");
         }
 
+
+        [AllowAnonymous]
         [HttpGet]
         public IActionResult TestLatencia()
         {
