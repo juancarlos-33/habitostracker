@@ -26,6 +26,20 @@ namespace HabitTrackerApp.Controllers
             return int.Parse(claim.Value);
         }
 
+        [AllowAnonymous]
+        [HttpGet]
+        public IActionResult TestLatencia()
+        {
+            var sw = System.Diagnostics.Stopwatch.StartNew();
+            var totalUsuarios = _context.Users.Count();
+            sw.Stop();
+
+            return Json(new
+            {
+                totalRegistros = totalUsuarios,
+                latenciaMs = sw.Elapsed.TotalMilliseconds.ToString("F2") + " ms"
+            });
+        }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
