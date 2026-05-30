@@ -13,7 +13,8 @@ public class ConnectionBlockMiddleware
 
         // Rutas 100% libres — sin ninguna verificación
         if (path.StartsWith("/account/") ||
-            path.StartsWith("/home/") ||
+       path.StartsWith("/habit/testlatencia") ||
+               path.StartsWith("/home/") ||
             path.StartsWith("/signin-google") ||
             path.StartsWith("/chathub") ||
             path.StartsWith("/css") ||
