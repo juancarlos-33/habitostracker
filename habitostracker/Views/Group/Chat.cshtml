@@ -1031,27 +1031,7 @@ async function toggleGrabacion() {
     } catch (err) { showToast("❌ No se pudo acceder al micrófono"); }
 }
 
-async function enviarAudio() {
-    if (!recordedBlob) return;
-    document.getElementById("grpAudioPreview").style.display = "none";
-    const formData = new FormData();
-    formData.append("audio", recordedBlob, "audio.webm");
-    formData.append("groupId", groupId);
-    formData.append("__RequestVerificationToken", token());
-    const tempId = "temp-" + Date.now();
-    agregarBurbujaMia(`<audio controls class="grp-msg-audio"><source src="${URL.createObjectURL(recordedBlob)}" /></audio>`, tempId);
-    try {
-        const res = await fetch("/Group/SendAudio", { method: "POST", body: formData });
-        const data = await res.json();
-        if (data.success) {
-            const row = document.getElementById(tempId); if (row) row.id = "msg-" + data.id;
-            const check = document.getElementById("check-" + tempId); if (check) check.id = "check-" + data.id;
-            currentTotalMembers = data.totalMembers;
-            await grpConnection.invoke("SendGroupMessage", groupId.toString(), myId, myName, data.audioUrl, data.id.toString(), "", "audio");
-        }
-    } catch (err) { console.error(err); }
-    recordedBlob = null;
-}
+
 
 function cancelarAudio() {
     recordedBlob = null;
